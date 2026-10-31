@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from conftest import PNG, Api, FakeHabbo, apply_update, furni, furnidata
 from swf_builder import furni_swf
+from wiredbench.services.assets import AssetCache
 
 FIGURE = "hd-180-1.ch-210-66.lg-270-82"
 
@@ -182,3 +185,14 @@ def test_bad_rooms_are_refused(api: Api, changes: dict) -> None:
     assert res.status_code == 422
     assert res.json()["error"] == "invalid_room"
     assert "<script>" not in res.text
+
+
+def test_cached_states_reads_only_what_is_on_disk(tmp_path: Path) -> None:
+    cache = AssetCache(tmp_path, None)  # type: ignore[arg-type]
+    assert cache.cached_states(7, "switch") is None, "nothing downloaded, and no upstream to ask"
+    folder = tmp_path / "7" / "switch"
+    folder.mkdir(parents=True)
+    (folder / "manifest.json").write_text('{"states": [0, 1, 2]}')
+    assert cache.cached_states(7, "switch*3") == [0, 1, 2], "colour variants share one file"
+    (folder / "manifest.json").write_text("not json")
+    assert cache.cached_states(7, "switch") is None

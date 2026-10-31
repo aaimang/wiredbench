@@ -73,6 +73,15 @@ class AssetCache:
         _write_atomic(path, fetched.body)
         return path
 
+    def cached_states(self, revision: int, classname: str) -> list[int] | None:
+        """A furni's states from art already on disk. Never downloads, because a room is about to run."""
+        manifest = self._folder(revision, classname.split("*")[0]) / "manifest.json"
+        try:
+            states = json.loads(manifest.read_text()).get("states")
+        except (OSError, ValueError):
+            return None
+        return states if isinstance(states, list) and all(isinstance(s, int) for s in states) else None
+
     def furni(self, revision: int, classname: str) -> tuple[Path, Path] | None:
         """Manifest and atlas paths, built on first use. None if the furni cannot be drawn."""
         base = classname.split("*")[0]  # Colour variants share one SWF.

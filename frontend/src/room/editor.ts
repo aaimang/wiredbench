@@ -9,7 +9,10 @@ import {
   Footprints,
   Grid2x2,
   Hammer,
+  Move,
+  PackageOpen,
   Play,
+  Power,
   Redo2,
   RotateCw,
   Save,
@@ -60,6 +63,12 @@ const SECONDS_PER_STEP = 0.5;
 const WALK_FRAMES_PER_SECOND = 8;
 const AUTOSAVE_MS = 1500;
 const PALETTE_SIZE = 60;
+const ARROW_STEPS: Record<string, [number, number]> = {
+  arrowup: [0, -1],
+  arrowdown: [0, 1],
+  arrowleft: [-1, 0],
+  arrowright: [1, 0],
+};
 
 interface SandboxData {
   id: number;
@@ -91,6 +100,7 @@ class WbEditor extends HTMLElement {
   private picking: { field: BoxField; item: PlacedFurni; chosen: number[] } | null = null;
   private selected: Hit | null = null;
   private placing: { classname: string; rot: number } | null = null;
+  private moving: number | null = null;
   private hover: [number, number] | null = null;
   private walkers = new Map<number, Walker>();
   private clock = 0;
@@ -106,6 +116,7 @@ class WbEditor extends HTMLElement {
   private paletteList = h("div", { class: "palette-list", "data-testid": "palette-list" });
   private canvasHost = h("div", { class: "editor-canvas" });
   private selectionBar = h("div", { class: "selection-bar" });
+  private furniCard = h("div", { class: "furni-card", "data-testid": "furni-card", hidden: true });
   private stage = h("div", { class: "editor-stage" });
   private inspector = h("aside", { class: "editor-inspector", "data-testid": "inspector" });
   private statusLine = h("span", { class: "muted status-line", "data-testid": "save-status" });
@@ -137,7 +148,7 @@ class WbEditor extends HTMLElement {
       );
       return;
     }
-    this.stage.append(this.canvasHost, this.selectionBar);
+    this.stage.append(this.canvasHost, this.selectionBar, this.furniCard);
     replace(
       this,
       this.toolbar,
@@ -217,16 +228,18 @@ class WbEditor extends HTMLElement {
   };
 
   private ghost(): Scene["ghost"] {
-    if (!this.placing || !this.hover) return null;
+    const moved = this.movingFurni();
+    const source = moved ?? this.placing;
+    if (!source || !this.hover) return null;
     const [x, y] = this.hover;
-    const { classname, rot } = this.placing;
+    const { classname, rot } = source;
     const tiles = footprint({ x, y }, this.lookup(classname), rot);
     return {
       classname,
       x,
       y,
       rot,
-      z: stackHeight(this.room, this.lookup, tiles),
+      z: stackHeight(this.room, this.lookup, tiles, moved?.id),
       valid: fitsInRoom(this.room, tiles),
     };
   }
@@ -360,13 +373,22 @@ class WbEditor extends HTMLElement {
       this.needsDraw = true;
     });
     canvas.addEventListener("pointerup", (event) => {
-      const wasDrag = down?.moved;
+      if (!down) return;
+      const wasDrag = down.moved;
       down = null;
-      if (!wasDrag) this.handleClick(position(event));
+      if (!wasDrag) this.handleClick(position(event), event);
+    });
+    // On a Mac, Ctrl+click is a right-click and may never send pointerup.
+    canvas.addEventListener("contextmenu", (event) => {
+      event.preventDefault();
+      if (event.ctrlKey && down && !down.moved) {
+        down = null;
+        this.handleClick(position(event as unknown as PointerEvent), event);
+      }
     });
   }
 
-  private handleClick(at: { x: number; y: number }): void {
+  private handleClick(at: { x: number; y: number }, keys: MouseEvent): void {
     const renderer = this.renderer;
     if (!renderer) return;
     const tile = renderer.tileAt(at.x, at.y);
@@ -376,13 +398,19 @@ class WbEditor extends HTMLElement {
       if (picked?.kind === "furni") this.togglePick(picked.id);
       return;
     }
-    if (this.placing) {
-      if (inside) this.placeAt(tile);
+    if (this.placing || this.moving !== null) {
+      if (inside) {
+        if (this.placing) this.placeAt(tile);
+        else this.moveTo(tile);
+      } else if (state.settings?.click_outside_cancels !== false) {
+        this.stopPlacing();
+      }
       return;
     }
     const hit = renderer.hitAt(at.x, at.y);
     if (this.mode === "build") {
       this.select(hit);
+      if (hit?.kind === "furni") this.applyClickKeys(keys);
       return;
     }
     if (hit?.kind === "avatar") {
@@ -395,6 +423,60 @@ class WbEditor extends HTMLElement {
     }
     const goal: [number, number] | null = clicked ? [clicked.x, clicked.y] : inside ? tile : null;
     if (goal) this.walkTo(goal);
+  }
+
+  /** Shift turns, Ctrl or Cmd moves, and both together pick up. */
+  private applyClickKeys(keys: MouseEvent): void {
+    const furni = this.selectedFurni();
+    if (!furni) return;
+    const command = keys.ctrlKey || keys.metaKey;
+    if (command && keys.shiftKey) {
+      if (state.settings?.pickup_shortcut !== false) this.removeSelected();
+    } else if (command) {
+      this.startMoving(furni);
+    } else if (keys.shiftKey) {
+      void this.rotateFurni(furni);
+    }
+  }
+
+  private movingFurni(): PlacedFurni | null {
+    return this.room.furni.find((f) => f.id === this.moving) ?? null;
+  }
+
+  private startMoving(item: PlacedFurni): void {
+    this.moving = item.id;
+    this.needsDraw = true;
+    this.renderPanels();
+  }
+
+  private stopPlacing(): void {
+    this.placing = null;
+    this.moving = null;
+    this.needsDraw = true;
+    this.renderPanels();
+  }
+
+  private moveTo(tile: [number, number]): void {
+    const item = this.movingFurni();
+    if (!item) return;
+    const [dx, dy] = [tile[0] - item.x, tile[1] - item.y];
+    if (!this.canMove(item, dx, dy)) {
+      toast(T.doesNotFit, "error");
+      return;
+    }
+    this.moveFurni(item, dx, dy);
+    this.stopPlacing();
+  }
+
+  private async useFurni(item: PlacedFurni): Promise<void> {
+    const revision = this.items.get(item.classname)?.revision;
+    const art =
+      revision === undefined ? null : await this.renderer?.loadFurni(item.classname, revision);
+    const states = art?.manifest.states ?? [0, 1];
+    const next = states[(states.indexOf(item.state) + 1) % states.length] ?? 0;
+    this.change(() => {
+      item.state = next;
+    });
   }
 
   private select(hit: Hit | null): void {
@@ -458,6 +540,7 @@ class WbEditor extends HTMLElement {
       return;
     }
     this.mode = "build";
+    this.moving = null;
     this.placing = null; // Art can be slow to download, and a click meanwhile must not place the old choice.
     this.renderPanels();
     await this.loadItems([item.classname]);
@@ -688,6 +771,7 @@ class WbEditor extends HTMLElement {
       void this.save();
     } else if (key === "escape") {
       this.placing = null;
+      this.moving = null;
       this.select(null);
     } else if (key === "delete" || key === "backspace") {
       this.removeSelected();
@@ -695,6 +779,22 @@ class WbEditor extends HTMLElement {
       const furni = this.selectedFurni();
       if (furni) void this.rotateFurni(furni);
       else if (this.placing) void this.rotatePlacing();
+    } else if (this.mode === "build" && this.selectedFurni()) {
+      this.handleFurniKey(event, key, this.selectedFurni() as PlacedFurni);
+    }
+  }
+
+  private handleFurniKey(event: KeyboardEvent, key: string, furni: PlacedFurni): void {
+    const step = ARROW_STEPS[key];
+    if (step) {
+      event.preventDefault();
+      this.moveFurni(furni, step[0], step[1]);
+    } else if (key === "m") {
+      this.startMoving(furni);
+    } else if (key === "u") {
+      void this.useFurni(furni);
+    } else if (key === "p" && state.settings?.pickup_shortcut !== false) {
+      this.removeSelected();
     }
   }
 
@@ -712,6 +812,7 @@ class WbEditor extends HTMLElement {
   private renderPanels(): void {
     this.renderToolbar();
     this.renderSelectionBar();
+    this.renderFurniCard();
     this.renderInspector();
   }
 
@@ -1170,14 +1271,20 @@ class WbEditor extends HTMLElement {
       replace(
         this.selectionBar,
         h("span", { class: "selection-hint" }, T.placingHint),
-        this.toolButton(T.cancelPlacing, X, () => {
-          this.placing = null;
-          this.needsDraw = true;
-          this.renderPanels();
-        }),
+        this.toolButton(T.cancelPlacing, X, () => this.stopPlacing()),
       );
       this.selectionBar.dataset.placing = this.placing.classname;
       this.selectionBar.hidden = false;
+      return;
+    }
+    if (this.moving !== null) {
+      replace(
+        this.selectionBar,
+        h("span", { class: "selection-hint" }, T.movingHint),
+        this.toolButton(T.cancelMoving, X, () => this.stopPlacing()),
+      );
+      this.selectionBar.hidden = false;
+      delete this.selectionBar.dataset.placing;
       return;
     }
     delete this.selectionBar.dataset.placing;
@@ -1219,6 +1326,57 @@ class WbEditor extends HTMLElement {
       ),
     );
     this.selectionBar.hidden = false;
+  }
+
+  private renderFurniCard(): void {
+    const furni = this.selectedFurni();
+    if (!furni || this.mode !== "build" || this.placing || this.moving !== null) {
+      this.furniCard.hidden = true;
+      return;
+    }
+    const info = this.items.get(furni.classname);
+    const picture = h("span", { class: "furni-icon" });
+    if (info) {
+      const image = h("img", { src: iconUrl(info), alt: "" });
+      image.addEventListener("error", () => replace(picture, icon(Box, 16)));
+      picture.append(image);
+    } else {
+      picture.append(icon(Box, 16));
+    }
+    const action = (label: string, node: Parameters<typeof icon>[0], run: () => void) =>
+      h("button", { class: "btn btn-small", onclick: run }, icon(node, 14), label);
+    const pickUp = state.settings?.pickup_shortcut !== false;
+    replace(
+      this.furniCard,
+      h(
+        "div",
+        { class: "furni-card-head" },
+        picture,
+        h("h2", {}, info?.name || furni.classname),
+        h(
+          "button",
+          {
+            class: "btn btn-quiet btn-icon",
+            "aria-label": T.closeCard,
+            title: T.closeCard,
+            onclick: () => this.select(null),
+          },
+          icon(X),
+        ),
+      ),
+      ...(info?.description ? [h("p", {}, info.description)] : []),
+      h(
+        "div",
+        { class: "furni-card-actions" },
+        action(T.move, Move, () => this.startMoving(furni)),
+        action(T.rotate, RotateCw, () => void this.rotateFurni(furni)),
+        action(T.pickUp, PackageOpen, () => this.removeSelected()),
+        action(T.use, Power, () => void this.useFurni(furni)),
+        action(T.inspect, Search, () => this.inspector.querySelector("h2")?.scrollIntoView()),
+      ),
+      h("p", { class: "muted" }, pickUp ? T.shortcuts : T.shortcutsNoPickUp),
+    );
+    this.furniCard.hidden = false;
   }
 
   private renderInspector(): void {

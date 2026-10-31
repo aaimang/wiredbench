@@ -11,6 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from wiredbench.api.deps import Services, audit, get_db, get_services, viewer
+from wiredbench.api.engine import furni_states
 from wiredbench.engine.core import MAX_ADVANCE_MS
 from wiredbench.engine.sessions import Run
 from wiredbench.errors import ApiError, not_found
@@ -142,7 +143,8 @@ def enter_room(
     if run is None:
         document = sandbox.document if isinstance(sandbox.document, dict) else {}
         tick_ms = preferences.load(db, services.settings).tick_ms
-        run = services.runs.start(sandbox_id, document, secrets.randbelow(2**31), tick_ms)
+        states = furni_states(services, sandbox)
+        run = services.runs.start(sandbox_id, document, secrets.randbelow(2**31), tick_ms, states)
     audit(db, request, "view_as_enter", sandbox.name)
     db.commit()
     hidden, _ = _hidden_ids(services, sandbox)

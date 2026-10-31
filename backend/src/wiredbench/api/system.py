@@ -25,6 +25,8 @@ class PreferencesUpdate(BaseModel):
     tick_ms: int | None = Field(None, ge=50, le=5000)
     rate_limit_mock: int | None = Field(None, ge=1, le=1_000_000)
     audit_days: int | None = Field(None, ge=1, le=3650)
+    click_outside_cancels: bool | None = None
+    pickup_shortcut: bool | None = None
 
 
 @router.api_route("/healthz", methods=["GET", "HEAD"])

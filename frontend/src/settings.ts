@@ -104,6 +104,26 @@ class WbSettings extends HTMLElement {
           value: settings.cache_max_mb,
         }),
       ),
+      h(
+        "label",
+        { class: "setting-toggle" },
+        h("input", {
+          name: "click_outside_cancels",
+          type: "checkbox",
+          checked: settings.click_outside_cancels,
+        }),
+        T.clickOutside,
+      ),
+      h(
+        "label",
+        { class: "setting-toggle" },
+        h("input", {
+          name: "pickup_shortcut",
+          type: "checkbox",
+          checked: settings.pickup_shortcut,
+        }),
+        T.pickupShortcut,
+      ),
       field(
         "tick_ms",
         T.tickMs,
@@ -155,6 +175,8 @@ class WbSettings extends HTMLElement {
           tick_ms: Number(values.tick_ms),
           rate_limit_mock: Number(values.rate_limit_mock),
           audit_days: Number(values.audit_days),
+          click_outside_cancels: "click_outside_cancels" in values,
+          pickup_shortcut: "pickup_shortcut" in values,
         });
         state.settings = saved;
         applyTheme(saved.theme);

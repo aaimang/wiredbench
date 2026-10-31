@@ -42,8 +42,15 @@ class RunRegistry:
         self._runs: OrderedDict[int, Run] = OrderedDict()
         self._lock = threading.Lock()
 
-    def start(self, sandbox_id: int, document: dict[str, Any], seed: int, tick_ms: int = TICK_MS) -> Run:
-        run = Run(Engine(document, seed=seed, tick_ms=tick_ms), threading.Lock())
+    def start(
+        self,
+        sandbox_id: int,
+        document: dict[str, Any],
+        seed: int,
+        tick_ms: int = TICK_MS,
+        furni_states: dict[str, list[int]] | None = None,
+    ) -> Run:
+        run = Run(Engine(document, seed=seed, tick_ms=tick_ms, furni_states=furni_states), threading.Lock())
         with self._lock:
             self._runs[sandbox_id] = run
             self._runs.move_to_end(sandbox_id)

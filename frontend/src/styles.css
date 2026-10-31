@@ -1337,6 +1337,62 @@ wb-room-view {
   overflow: hidden;
 }
 
+.setting-toggle {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.setting-toggle input {
+  width: 16px;
+  height: 16px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+}
+
+/* Furni card */
+
+.furni-card {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  gap: 8px;
+  width: min(280px, calc(100% - 24px));
+  padding: 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  background: var(--panel, var(--bg));
+}
+
+.furni-card[hidden] {
+  display: none;
+}
+
+.furni-card-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: start;
+}
+
+.furni-card h2 {
+  margin: 0;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.furni-card p {
+  margin: 0;
+}
+
+.furni-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
 /* Toasts */
 
 #toasts {

@@ -544,3 +544,33 @@ def test_unknown_input_and_people_are_ignored() -> None:
 def test_antenna_constant_is_a_real_furni() -> None:
     assert any(f["id"] == ANTENNA_CALC for f in time_tracking()["furni"])
     assert any(f["id"] == SEAT for f in time_tracking()["furni"])
+
+
+def state_room() -> dict[str, Any]:
+    return {
+        "furni": [{"id": 1, "classname": "wf_floor_switch1", "x": 1, "y": 1}],
+        "avatars": [{"id": 2, "name": "A", "x": 2, "y": 2}],
+    }
+
+
+def uses(engine: Engine, count: int) -> list[int]:
+    seen = []
+    for _ in range(count):
+        engine.apply_input({"type": "use", "user": 2, "furni": 1})
+        seen.append(engine.furni[1]["state"])
+    return seen
+
+
+def test_using_furni_loops_through_its_states() -> None:
+    assert uses(Engine(state_room()), 5) == [1, 0, 1, 0, 1], "two states when the art is unknown"
+    three = Engine(state_room(), furni_states={"wf_floor_switch1": [0, 1, 2]})
+    assert uses(three, 4) == [1, 2, 0, 1]
+    assert uses(Engine(state_room(), furni_states={"wf_floor_switch1": [0]}), 2) == [0, 0]
+    gaps = Engine(state_room(), furni_states={"wf_floor_switch1": [0, 5]})
+    assert uses(gaps, 3) == [5, 0, 5]
+
+
+def test_a_state_the_furni_lacks_returns_to_its_first() -> None:
+    document = state_room()
+    document["furni"][0]["state"] = 9
+    assert uses(Engine(document), 1) == [0]

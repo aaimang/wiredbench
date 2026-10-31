@@ -130,9 +130,11 @@ class Engine:
         heights: dict[str, float] | None = None,
         seed: int = 1,
         tick_ms: int = TICK_MS,
+        furni_states: dict[str, list[int]] | None = None,
     ) -> None:
         self.seed = seed
         self.tick_ms = tick_ms
+        self.furni_states = furni_states or {}
         self.random = random.Random(seed)  # noqa: S311 - Replays need a seed; this is not for security.
         self.now_ms = 0
         self.heights = heights or {}
@@ -303,7 +305,7 @@ class Engine:
 
     def _use(self, user_id: int, furni_id: int) -> None:
         if furni_id in self.furni:
-            self._set_state(furni_id, self.furni[furni_id]["state"] + 1)
+            self._set_state(furni_id, self._next_state(furni_id))
             self._fire("wf_trg_state_changed", user=user_id, furni=furni_id)
 
     def _leave(self, user_id: int) -> None:
@@ -758,6 +760,15 @@ class Engine:
     _do_call_stacks = _call
     _do_neg_call_stacks = _call
 
+    def _states(self, furni_id: int) -> list[int]:
+        # Without art to read, assume an on and off furni.
+        return self.furni_states.get(self.furni[furni_id]["classname"]) or [0, 1]
+
+    def _next_state(self, furni_id: int) -> int:
+        states = self._states(furni_id)
+        current = self.furni[furni_id]["state"]
+        return states[(states.index(current) + 1) % len(states)] if current in states else states[0]
+
     def _set_state(self, furni_id: int, state: int) -> None:
         item = self.furni.get(furni_id)
         if item:
@@ -766,11 +777,11 @@ class Engine:
 
     def _do_toggle_state(self, box: Box, ctx: Context) -> None:
         for furni_id in self._furni_for(box, ctx):
-            self._set_state(furni_id, (self.furni[furni_id]["state"] + 1) % 2)
+            self._set_state(furni_id, self._next_state(furni_id))
 
     def _do_toggle_to_rnd(self, box: Box, ctx: Context) -> None:
         for furni_id in self._furni_for(box, ctx):
-            self._set_state(furni_id, self.random.randint(0, 1))
+            self._set_state(furni_id, self.random.choice(self._states(furni_id)))
 
     def _text(self, box: Box, ctx: Context, user: int | None) -> str:
         values: dict[str, str] = {}
@@ -897,9 +908,10 @@ def replay(
     until_ms: int,
     heights: dict[str, float] | None = None,
     tick_ms: int = TICK_MS,
+    furni_states: dict[str, list[int]] | None = None,
 ) -> Engine:
     """Rebuilds a run from its inputs. The result matches the original run exactly."""
-    engine = Engine(document, heights, seed, tick_ms)
+    engine = Engine(document, heights, seed, tick_ms, furni_states)
     for entry in inputs:
         when = entry["at_ms"]
         if when > engine.now_ms:
