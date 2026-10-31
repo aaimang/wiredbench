@@ -134,6 +134,10 @@ test("the guide lists boxes, filters them and adds an example room", async ({ pa
   const list = page.getByTestId("guide-list");
   await expect(list).toContainText("wf_act_toggle_state");
   await expect(list).toContainText("Tried in a real room");
+  await expect(page.getByTestId("guide-coverage")).toContainText("Checked in a real room");
+  await page.getByLabel("All evidence").selectOption("real_room");
+  await expect(list).toContainText("Checked in a real room on 2026-10-31");
+  await page.getByLabel("All evidence").selectOption("");
   await page.getByLabel("Search boxes").fill("toggle_state");
   await expect(list.getByRole("listitem")).toHaveCount(1);
   await page.getByLabel("Search boxes").fill("no such box");

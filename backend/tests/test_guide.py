@@ -5,7 +5,7 @@ from __future__ import annotations
 from conftest import Api, FakeHabbo, apply_update, furni, furnidata
 from wiredbench.engine.boxes import BOXES
 from wiredbench.engine.core import Engine
-from wiredbench.engine.guide import GUIDE, REAL_ROOM_CHECKED
+from wiredbench.engine.guide import GUIDE
 from wiredbench.engine.tutorials import AVATAR, TUTORIALS, score_counter, signal_relay, switch_flip
 from wiredbench.services import exchange, room
 
@@ -13,7 +13,6 @@ from wiredbench.services import exchange, room
 def test_every_simulated_box_is_explained() -> None:
     assert set(GUIDE) == set(BOXES)
     assert all(purpose and example for purpose, example in GUIDE.values())
-    assert set(BOXES) >= REAL_ROOM_CHECKED
 
 
 def test_guide_without_a_catalogue_still_lists_simulated_boxes(api: Api) -> None:

@@ -35,6 +35,7 @@ Wiredbench is not affiliated with, endorsed, sponsored, or specifically approved
   worked in a real room, and larger setups are still unproven. A Wiredbench file backs up a room exactly.
 - **Guide:** every WIRED box with its official name, purpose, an example and how far its simulation can be
   trusted, plus example rooms you can add to your workspace.
+- **Coverage:** [docs/box-coverage.md](docs/box-coverage.md) shows how far each box's options have been checked.
 - **Workspace:** nested folders of sandboxes, with rename, move, duplicate, version history and a
   30-day trash.
 - **Settings:** default hotel, theme, automatic update checks, cache limit, engine tick, mock API rate

@@ -9,9 +9,10 @@ from sqlalchemy.orm import Session
 
 from wiredbench.api.deps import Services, audit, get_db, get_services
 from wiredbench.config import Hotel
+from wiredbench.engine import coverage
 from wiredbench.engine.boxes import BOXES, catalogue
 from wiredbench.engine.core import MAX_ADVANCE_MS
-from wiredbench.engine.guide import GUIDE, REAL_ROOM_CHECKED
+from wiredbench.engine.guide import GUIDE
 from wiredbench.engine.sessions import Run, run_command, state
 from wiredbench.engine.tutorials import TUTORIALS
 from wiredbench.errors import ApiError, not_found
@@ -190,10 +191,13 @@ def guide(
         if len(page["items"]) < GUIDE_PAGE:
             break
     rows = []
+    tracked = {row["classname"]: row for row in coverage.rows()}
+    checked = coverage.room_checked()
     for classname in sorted(listed | dict.fromkeys(BOXES, {})):
         item, spec = listed.get(classname, {}), BOXES.get(classname)
         purpose, example = GUIDE.get(classname, (item.get("description") or "", ""))
-        if classname in REAL_ROOM_CHECKED:
+        evidence = tracked.get(classname)
+        if classname in checked and spec:
             status = "real_room"
         else:
             status = spec["fidelity"] if spec else "not_simulated"
@@ -207,9 +211,13 @@ def guide(
                 "status": status,
                 "release_stage": item.get("release_stage", "unknown"),
                 "revision": item.get("revision"),
+                # A box the tracker has never seen is new to Habbo since the last check.
+                "evidence": evidence["evidence"] if evidence else "new",
+                "room_checked_on": evidence["room_checked_on"] if evidence else None,
+                "options_mapped": bool(evidence and evidence["options_mapped"]),
             }
         )
-    return {"hotel": chosen, "rows": rows}
+    return {"hotel": chosen, "rows": rows, "coverage": coverage.summary()}
 
 
 @router.post("/tutorials/{slug}", status_code=201)

@@ -1,0 +1,534 @@
+{
+ "boxes": {
+  "wf_act_adjust_clock": {
+   "reference": true
+  },
+  "wf_act_bot_clothes": {
+   "reference": true
+  },
+  "wf_act_bot_follow_avatar": {
+   "reference": true
+  },
+  "wf_act_bot_give_handitem": {
+   "reference": true
+  },
+  "wf_act_bot_move": {
+   "reference": true
+  },
+  "wf_act_bot_talk": {
+   "preset": true,
+   "reference": true
+  },
+  "wf_act_bot_talk_to_avatar": {
+   "reference": true
+  },
+  "wf_act_bot_teleport": {},
+  "wf_act_call_stacks": {},
+  "wf_act_cancel_transaction": {},
+  "wf_act_change_var_val": {
+   "preset": true
+  },
+  "wf_act_chase": {},
+  "wf_act_click_conf": {
+   "reference": true
+  },
+  "wf_act_control_clock": {
+   "reference": true
+  },
+  "wf_act_flee": {},
+  "wf_act_freeze": {
+   "reference": true
+  },
+  "wf_act_furni_to_furni": {},
+  "wf_act_furni_to_user": {},
+  "wf_act_give_currency": {},
+  "wf_act_give_furni": {},
+  "wf_act_give_reward": {
+   "reference": true
+  },
+  "wf_act_give_score": {
+   "reference": true
+  },
+  "wf_act_give_score_tm": {},
+  "wf_act_give_var": {
+   "preset": true
+  },
+  "wf_act_init_transaction": {},
+  "wf_act_join_team": {
+   "reference": true
+  },
+  "wf_act_kick_user": {
+   "reference": true
+  },
+  "wf_act_leave_team": {},
+  "wf_act_log": {
+   "preset": true
+  },
+  "wf_act_match_to_sshot": {
+   "reference": true
+  },
+  "wf_act_move_furni_as_group": {},
+  "wf_act_move_furni_to": {
+   "reference": true
+  },
+  "wf_act_move_rotate": {
+   "reference": true
+  },
+  "wf_act_move_rotate_user": {},
+  "wf_act_move_to_dir": {},
+  "wf_act_mute_triggerer": {
+   "reference": true
+  },
+  "wf_act_neg_call_stacks": {},
+  "wf_act_neg_log": {},
+  "wf_act_neg_send_signal": {},
+  "wf_act_place_furni": {},
+  "wf_act_progress_ach": {},
+  "wf_act_rel_mov": {},
+  "wf_act_remove_furni": {},
+  "wf_act_remove_var": {
+   "preset": true
+  },
+  "wf_act_reset_timers": {},
+  "wf_act_send_dataframe": {
+   "reference": true
+  },
+  "wf_act_send_message": {
+   "reference": true
+  },
+  "wf_act_send_signal": {
+   "preset": true,
+   "reference": true
+  },
+  "wf_act_set_altitude": {
+   "reference": true
+  },
+  "wf_act_set_highlight": {
+   "reference": true
+  },
+  "wf_act_set_visibility": {
+   "reference": true
+  },
+  "wf_act_show_message": {
+   "reference": true
+  },
+  "wf_act_teleport_to": {},
+  "wf_act_teleport_to_room": {},
+  "wf_act_toggle_state": {
+   "preset": true,
+   "reference": true,
+   "room": "2026-10-31"
+  },
+  "wf_act_toggle_to_rnd": {},
+  "wf_act_unfreeze": {},
+  "wf_act_user_to_furni": {},
+  "wf_antenna1": {},
+  "wf_antenna2": {},
+  "wf_arrowplate": {},
+  "wf_arrowplate_8dir": {},
+  "wf_blob": {},
+  "wf_blob2": {},
+  "wf_blob2_vis": {},
+  "wf_blob_invis": {},
+  "wf_box": {},
+  "wf_button": {},
+  "wf_button_arrow": {},
+  "wf_button_blue": {},
+  "wf_button_green": {},
+  "wf_button_red": {},
+  "wf_button_x": {},
+  "wf_button_yellow": {},
+  "wf_cnd_actor_dir": {
+   "reference": true
+  },
+  "wf_cnd_actor_in_group": {
+   "reference": true
+  },
+  "wf_cnd_actor_in_team": {
+   "reference": true
+  },
+  "wf_cnd_chest_has_item_type": {},
+  "wf_cnd_chest_has_items": {},
+  "wf_cnd_counter_time_matches": {
+   "reference": true
+  },
+  "wf_cnd_date_rng_active": {
+   "reference": true
+  },
+  "wf_cnd_furnis_hv_avtrs": {
+   "reference": true
+  },
+  "wf_cnd_has_altitude": {
+   "reference": true
+  },
+  "wf_cnd_has_furni_on": {
+   "reference": true
+  },
+  "wf_cnd_has_handitem": {
+   "reference": true
+  },
+  "wf_cnd_has_var": {
+   "reference": true
+  },
+  "wf_cnd_match_date": {
+   "reference": true
+  },
+  "wf_cnd_match_snapshot": {
+   "reference": true
+  },
+  "wf_cnd_match_time": {
+   "reference": true
+  },
+  "wf_cnd_neg_has_var": {
+   "reference": true
+  },
+  "wf_cnd_not_furni_on": {
+   "reference": true
+  },
+  "wf_cnd_not_has_handitem": {
+   "reference": true
+  },
+  "wf_cnd_not_hv_avtrs": {
+   "reference": true
+  },
+  "wf_cnd_not_in_group": {
+   "reference": true
+  },
+  "wf_cnd_not_in_team": {},
+  "wf_cnd_not_match_snap": {},
+  "wf_cnd_not_stuff_is": {},
+  "wf_cnd_not_trggrer_on": {},
+  "wf_cnd_not_triggerer_match": {
+   "reference": true
+  },
+  "wf_cnd_not_user_count": {},
+  "wf_cnd_not_user_performs_action": {
+   "reference": true
+  },
+  "wf_cnd_not_wearing_b": {
+   "reference": true
+  },
+  "wf_cnd_not_wearing_fx": {
+   "reference": true
+  },
+  "wf_cnd_slc_quantity": {
+   "preset": true,
+   "reference": true
+  },
+  "wf_cnd_stuff_is": {
+   "reference": true
+  },
+  "wf_cnd_team_has_rank": {
+   "reference": true
+  },
+  "wf_cnd_team_has_score": {
+   "reference": true
+  },
+  "wf_cnd_time_less_than": {
+   "reference": true
+  },
+  "wf_cnd_time_more_than": {
+   "reference": true
+  },
+  "wf_cnd_trggrer_on_frn": {
+   "reference": true
+  },
+  "wf_cnd_triggerer_match": {
+   "preset": true,
+   "reference": true
+  },
+  "wf_cnd_user_count_in": {
+   "reference": true
+  },
+  "wf_cnd_user_performs_action": {
+   "reference": true
+  },
+  "wf_cnd_valid_moves": {
+   "reference": true
+  },
+  "wf_cnd_var_age_match": {
+   "reference": true
+  },
+  "wf_cnd_var_val_match": {
+   "preset": true,
+   "reference": true
+  },
+  "wf_cnd_wearing_badge": {
+   "reference": true
+  },
+  "wf_cnd_wearing_effect": {
+   "reference": true
+  },
+  "wf_colortile": {},
+  "wf_colorwheel": {},
+  "wf_contract_payment": {},
+  "wf_contract_reward": {},
+  "wf_contract_trade": {},
+  "wf_firegate": {},
+  "wf_floor_switch1": {
+   "room": "2026-10-31"
+  },
+  "wf_floor_switch2": {},
+  "wf_fx_firegate": {},
+  "wf_game_upcounter1": {},
+  "wf_game_upcounter2": {},
+  "wf_glassdoor": {},
+  "wf_glowball": {},
+  "wf_knob": {},
+  "wf_label": {},
+  "wf_link": {},
+  "wf_ltdproto_act_toggle_state": {},
+  "wf_maze": {},
+  "wf_numberscreen": {},
+  "wf_numbertile1": {},
+  "wf_numbertile2": {},
+  "wf_pressureplate": {},
+  "wf_proto_cnd_trggrer_on_frn": {},
+  "wf_proto_pyramid": {},
+  "wf_proto_trg_at_given_time": {},
+  "wf_pyramid": {},
+  "wf_ringplate": {},
+  "wf_room_linker": {},
+  "wf_screenseparator": {},
+  "wf_slc_furni_altitude": {},
+  "wf_slc_furni_area": {
+   "preset": true
+  },
+  "wf_slc_furni_bytype": {},
+  "wf_slc_furni_neighborhood": {
+   "preset": true
+  },
+  "wf_slc_furni_onfurni": {},
+  "wf_slc_furni_picks": {},
+  "wf_slc_furni_signal": {},
+  "wf_slc_furni_with_var": {
+   "preset": true
+  },
+  "wf_slc_remote": {},
+  "wf_slc_users_area": {},
+  "wf_slc_users_byaction": {},
+  "wf_slc_users_byname": {
+   "preset": true
+  },
+  "wf_slc_users_bytype": {},
+  "wf_slc_users_group": {},
+  "wf_slc_users_handitem": {},
+  "wf_slc_users_neighborhood": {},
+  "wf_slc_users_onfurni": {},
+  "wf_slc_users_signal": {},
+  "wf_slc_users_team": {},
+  "wf_slc_users_with_var": {
+   "preset": true
+  },
+  "wf_slider": {},
+  "wf_storage_coins1": {},
+  "wf_storage_coins2": {},
+  "wf_storage_furni1": {},
+  "wf_storage_furni2": {},
+  "wf_storage_furni_starter": {},
+  "wf_teamcolorquarter": {},
+  "wf_teamcolortile": {},
+  "wf_teammeter1": {},
+  "wf_teammeter2": {},
+  "wf_teammeter3": {},
+  "wf_teammeter4": {},
+  "wf_test_26secret1": {},
+  "wf_test_26secret2": {},
+  "wf_test_act": {},
+  "wf_test_cnd": {},
+  "wf_test_slc": {},
+  "wf_test_trg": {},
+  "wf_test_var": {},
+  "wf_test_xtra": {},
+  "wf_tile1": {},
+  "wf_tile2": {},
+  "wf_toggle": {},
+  "wf_token1": {},
+  "wf_token10": {},
+  "wf_token11": {},
+  "wf_token2": {},
+  "wf_token3": {},
+  "wf_token4": {},
+  "wf_token5": {},
+  "wf_token6": {},
+  "wf_token7": {},
+  "wf_token8": {},
+  "wf_token9": {},
+  "wf_trg_at_given_time": {},
+  "wf_trg_at_time_long": {},
+  "wf_trg_bot_reached_avtr": {},
+  "wf_trg_bot_reached_stf": {},
+  "wf_trg_click_furni": {
+   "preset": true
+  },
+  "wf_trg_click_tile": {},
+  "wf_trg_click_user": {},
+  "wf_trg_clock_counter": {},
+  "wf_trg_collision": {},
+  "wf_trg_enter_room": {},
+  "wf_trg_game_ends": {},
+  "wf_trg_game_starts": {},
+  "wf_trg_leave_room": {},
+  "wf_trg_period_long": {},
+  "wf_trg_period_short": {
+   "preset": true
+  },
+  "wf_trg_periodically": {},
+  "wf_trg_receive_dataframe": {
+   "reference": true
+  },
+  "wf_trg_receive_message": {
+   "reference": true
+  },
+  "wf_trg_recv_signal": {
+   "preset": true
+  },
+  "wf_trg_room_initializes": {
+   "reference": true
+  },
+  "wf_trg_says_something": {
+   "preset": true
+  },
+  "wf_trg_score_achieved": {},
+  "wf_trg_state_changed": {
+   "preset": true,
+   "room": "2026-10-31"
+  },
+  "wf_trg_stuff_state": {},
+  "wf_trg_transaction_complete": {},
+  "wf_trg_transaction_fail": {},
+  "wf_trg_user_performs_action": {},
+  "wf_trg_var_changed": {
+   "preset": true
+  },
+  "wf_trg_walks_off_furni": {},
+  "wf_trg_walks_on_furni": {},
+  "wf_upcounter1": {},
+  "wf_upcounter2": {},
+  "wf_var_context": {
+   "preset": true,
+   "reference": true
+  },
+  "wf_var_dailytask": {},
+  "wf_var_echo": {
+   "reference": true
+  },
+  "wf_var_furni": {
+   "preset": true,
+   "reference": true
+  },
+  "wf_var_pointer": {
+   "reference": true
+  },
+  "wf_var_quest": {},
+  "wf_var_quest_chain": {},
+  "wf_var_reference": {
+   "reference": true
+  },
+  "wf_var_room": {
+   "preset": true,
+   "reference": true
+  },
+  "wf_var_user": {
+   "preset": true,
+   "reference": true
+  },
+  "wf_vu": {},
+  "wf_wire1": {},
+  "wf_wire2": {},
+  "wf_wire3": {},
+  "wf_wire4": {},
+  "wf_xtra_achievement_enabler": {},
+  "wf_xtra_anim_time": {
+   "reference": true
+  },
+  "wf_xtra_custom_contract": {},
+  "wf_xtra_exec_in_order": {
+   "preset": true,
+   "reference": true
+  },
+  "wf_xtra_execution_limit": {
+   "reference": true
+  },
+  "wf_xtra_filter_furni": {
+   "reference": true
+  },
+  "wf_xtra_filter_furni_by_var": {
+   "reference": true
+  },
+  "wf_xtra_filter_users": {
+   "preset": true,
+   "reference": true
+  },
+  "wf_xtra_filter_users_by_var": {
+   "reference": true
+  },
+  "wf_xtra_link_speaker": {
+   "reference": true
+  },
+  "wf_xtra_mov_carry_users": {
+   "reference": true
+  },
+  "wf_xtra_mov_curve": {
+   "reference": true
+  },
+  "wf_xtra_mov_no_animation": {
+   "reference": true
+  },
+  "wf_xtra_mov_physics": {
+   "reference": true
+  },
+  "wf_xtra_or_eval": {
+   "reference": true
+  },
+  "wf_xtra_random": {
+   "reference": true
+  },
+  "wf_xtra_rotate_to_dir": {},
+  "wf_xtra_scan_chest_furni_by_type": {},
+  "wf_xtra_text_input_variable": {
+   "preset": true,
+   "reference": true
+  },
+  "wf_xtra_text_output_furni_name": {
+   "reference": true
+  },
+  "wf_xtra_text_output_username": {
+   "preset": true,
+   "reference": true
+  },
+  "wf_xtra_text_output_variable": {
+   "preset": true,
+   "reference": true
+  },
+  "wf_xtra_unseen": {
+   "reference": true
+  },
+  "wf_xtra_var_import": {
+   "reference": true
+  },
+  "wf_xtra_var_leaderboard": {},
+  "wf_xtra_var_lvlup_system": {
+   "reference": true
+  },
+  "wf_xtra_var_share": {
+   "reference": true
+  },
+  "wf_xtra_var_text_connector": {
+   "preset": true,
+   "reference": true
+  },
+  "wf_xtra_var_time_util": {
+   "reference": true
+  },
+  "wf_xtra_var_web_api": {},
+  "wf_xtra_varfx_boss": {},
+  "wf_xtra_varfx_hp": {},
+  "wf_xtra_varfx_levelling": {},
+  "wf_xtra_varfx_number": {},
+  "wf_xtra_varfx_prog": {},
+  "wf_xtra_varfx_status": {}
+ },
+ "furnidata_checked_on": "2026-10-31",
+ "reference_commit": "3fc9c06f533c"
+}

@@ -15,6 +15,15 @@ interface GuideRow {
   example: string;
   status: string;
   release_stage: string;
+  evidence: string;
+  room_checked_on: string | null;
+  options_mapped: boolean;
+}
+
+interface Coverage {
+  total: number;
+  real_room: number;
+  options_mapped: number;
 }
 
 interface Tutorial {
@@ -29,6 +38,7 @@ class WbGuide extends HTMLElement {
   private query = "";
   private type = "";
   private status = "";
+  private evidence = "";
   private list = h("ul", { class: "guide-list", "data-testid": "guide-list" });
   private count = h("p", { class: "muted", role: "status", "data-testid": "guide-count" });
 
@@ -40,7 +50,7 @@ class WbGuide extends HTMLElement {
     try {
       const [tutorials, guide] = await Promise.all([
         get<Tutorial[]>("/api/tutorials"),
-        get<{ rows: GuideRow[] }>("/api/guide"),
+        get<{ rows: GuideRow[]; coverage: Coverage }>("/api/guide"),
       ]);
       this.rows = guide.rows;
       replace(
@@ -53,6 +63,15 @@ class WbGuide extends HTMLElement {
           h("p", { class: "muted" }, T.tutorialsHelp),
           h("div", { class: "guide-tutorials" }, ...tutorials.map((item) => this.tutorial(item))),
           h("h2", {}, T.boxes),
+          h(
+            "p",
+            { "data-testid": "guide-coverage" },
+            T.coverage(
+              guide.coverage.real_room,
+              guide.coverage.total,
+              guide.coverage.options_mapped,
+            ),
+          ),
           ...(this.rows.some((row) => row.release_stage !== "unknown")
             ? []
             : [h("p", { class: "note" }, T.noCatalogue)]),
@@ -119,9 +138,20 @@ class WbGuide extends HTMLElement {
       this.status = status.value;
       this.render();
     });
+    const evidence = h(
+      "select",
+      { "aria-label": T.allEvidence },
+      h("option", { value: "" }, T.allEvidence),
+      ...Object.entries(T.evidence).map(([value, label]) => h("option", { value }, label)),
+    );
+    evidence.addEventListener("change", () => {
+      this.evidence = evidence.value;
+      this.render();
+    });
     return h(
       "div",
       { class: "guide-filters" },
+      evidence,
       h("label", { class: "search" }, icon(Search), search),
       type,
       status,
@@ -133,6 +163,7 @@ class WbGuide extends HTMLElement {
       (row) =>
         (!this.type || row.type === this.type) &&
         (!this.status || row.status === this.status) &&
+        (!this.evidence || row.evidence === this.evidence) &&
         (!this.query ||
           `${row.classname} ${row.name} ${row.purpose}`.toLowerCase().includes(this.query)),
     );
@@ -160,6 +191,14 @@ class WbGuide extends HTMLElement {
           { class: `badge guide-status-${row.status}` },
           T.statuses[row.status] ?? row.status,
         ),
+        h(
+          "span",
+          { class: "badge", "data-testid": "guide-evidence" },
+          row.room_checked_on
+            ? T.roomDate(row.room_checked_on)
+            : (T.evidence[row.evidence] ?? row.evidence),
+        ),
+        row.options_mapped && h("span", { class: "badge" }, T.optionsMapped),
         row.release_stage === "not_in_catalogue" && h("span", { class: "badge" }, T.noOffer),
       ),
     );

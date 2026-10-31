@@ -93,7 +93,7 @@ def _option_to_setting(raw: Any, reader: Any) -> Any:
         return reader[raw] if 0 <= raw < len(reader) else None
     if isinstance(reader, dict):
         return reader.get(raw)
-    return raw * reader
+    return round(raw * reader, 3)
 
 
 def _setting_to_option(value: Any, reader: Any) -> int | None:
