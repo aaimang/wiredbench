@@ -190,7 +190,7 @@ BOXES: dict[str, dict[str, Any]] = {
     "wf_cnd_has_var": _box("condition", DOCUMENTED, VARIABLE, USER_SOURCE),
     "wf_cnd_neg_has_var": _box("condition", DOCUMENTED, VARIABLE, USER_SOURCE),
     "wf_cnd_var_val_match": _box(
-        "condition", ASSUMED, VARIABLE, {**COMPARE, "default": ">"}, VALUE, USER_SOURCE
+        "condition", ASSUMED, VARIABLE, {**COMPARE, "default": ">"}, VALUE, REFERENCE[0], USER_SOURCE
     ),
     "wf_cnd_trggrer_on_frn": _box("condition", DOCUMENTED, FURNI, USER_SOURCE),
     "wf_cnd_not_trggrer_on": _box("condition", DOCUMENTED, FURNI, USER_SOURCE),
@@ -317,7 +317,7 @@ BOXES: dict[str, dict[str, Any]] = {
     "wf_var_room": _box("variable", DOCUMENTED, VARIABLE, _availability("active", "persistent", "shared")),
     "wf_var_context": _box("variable", ASSUMED, VARIABLE, HAS_VALUE),
     # Effects
-    "wf_act_give_var": _effect(ASSUMED, VARIABLE, VALUE, OVERWRITE, USER_SOURCE),
+    "wf_act_give_var": _effect(ASSUMED, VARIABLE, VALUE, REFERENCE[0], OVERWRITE, USER_SOURCE),
     "wf_act_remove_var": _effect(DOCUMENTED, VARIABLE, USER_SOURCE),
     "wf_act_change_var_val": _effect(
         ASSUMED,

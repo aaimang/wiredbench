@@ -591,7 +591,9 @@ class Engine:
             case "wf_cnd_neg_has_var":
                 return all(self._holding(name, u, ctx) is None for u in users)
             case "wf_cnd_var_val_match":
-                return bool(users) and all(self._compare(box, self._holding(name, u, ctx)) for u in users)
+                return bool(users) and all(
+                    self._compare(box, self._holding(name, u, ctx), u, ctx) for u in users
+                )
             case "wf_cnd_trggrer_on_frn":
                 return bool(users) and all(self._on_furni(u, picks) for u in users)
             case "wf_cnd_not_trggrer_on":
@@ -636,10 +638,12 @@ class Engine:
             case _:
                 return age < limit
 
-    def _compare(self, box: Box, holding: Holding | None) -> bool:
+    def _compare(self, box: Box, holding: Holding | None, user: int | None, ctx: Context) -> bool:
         if holding is None:
             return False
-        target = _int(box.get("value", 0))
+        target = self._operand(box, user, ctx)
+        if target is None:
+            return False
         match box.get("compare", ">"):  # The real box's default.
             case "=":
                 return holding.value == target
@@ -723,7 +727,10 @@ class Engine:
         for user in self._users_for(box, ctx):
             if self._holding(name, user, ctx) is not None and not box.get("overwrite"):
                 continue
-            self._write(name, user, Holding(_clamp(_int(box.get("value", 0))), self.now_ms, self.now_ms), ctx)
+            amount = self._operand(box, user, ctx)
+            if amount is None:
+                continue
+            self._write(name, user, Holding(_clamp(amount), self.now_ms, self.now_ms), ctx)
             self._changed(name, user)
 
     def _do_remove_var(self, box: Box, ctx: Context) -> None:
@@ -735,21 +742,27 @@ class Engine:
                 self.variables[name].pop(self._key(name, user), None)
             self._changed(name, user)
 
+    def _operand(self, box: Box, user: int | None, ctx: Context) -> int | None:
+        """The box's value, or what another variable holds for the same holder. None if it holds nothing."""
+        reference = str(box.get("from_variable", "")).strip()
+        if not reference:
+            return _int(box.get("value", 0))
+        source = self._holding(reference, user, ctx)
+        if source is None:
+            self._log("error", f"{reference} is not set for user {user}", box=box.id)
+            return None
+        return self._read(source, str(box.get("from_field", "value")))
+
     def _do_change_var_val(self, box: Box, ctx: Context) -> None:
         name = str(box.get("variable", "")).strip()
-        reference = str(box.get("from_variable", "")).strip()
         for user in self._users_for(box, ctx):
             holding = self._holding(name, user, ctx)
             if holding is None:
                 self._log("error", f"{name} is not set for user {user}, so it was not changed", box=box.id)
                 continue
-            amount = _int(box.get("value", 0))
-            if reference:
-                source = self._holding(reference, user, ctx)
-                if source is None:
-                    self._log("error", f"{reference} is not set for user {user}", box=box.id)
-                    continue
-                amount = self._read(source, str(box.get("from_field", "value")))
+            amount = self._operand(box, user, ctx)
+            if amount is None:
+                continue
             value = operations.apply(str(box.get("operation", "set")), holding.value, amount, self.random)
             holding.value = _clamp(value)
             holding.updated_ms = self.now_ms

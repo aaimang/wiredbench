@@ -313,6 +313,41 @@ def test_variable_age_fails_when_nothing_holds_the_variable() -> None:
     assert logs(engine) == []
 
 
+def test_value_can_come_from_another_variable() -> None:
+    engine = room(
+        box(1, "wf_var_user", 5, 5, variable="base"),
+        box(2, "wf_var_user", 6, 6, variable="copy"),
+        box(3, "wf_var_room", 7, 7, variable="limit"),
+        box(4, "wf_trg_says_something", 1, 1, text="go"),
+        box(5, "wf_xtra_exec_in_order", 1, 1, 9),
+        box(6, "wf_act_give_var", 1, 1, 8, variable="copy", from_variable="base", value=1),
+        box(7, "wf_act_log", 1, 1, 7, text="ran"),
+        box(8, "wf_trg_says_something", 2, 2, text="check"),
+        box(9, "wf_cnd_var_val_match", 2, 2, 1, variable="copy", compare=">", from_variable="limit"),
+        box(10, "wf_act_log", 2, 2, 2, text="passed"),
+    )
+    engine.apply_input({"type": "api_set", "variable": "base", "key": "user:100", "value": 9})
+    engine.apply_input({"type": "api_set", "variable": "limit", "key": "global", "value": 5})
+    say(engine, "go")
+    assert engine.variables["copy"]["user:100"].value == 9
+    say(engine, "check")
+    assert "passed" in logs(engine)
+    engine.apply_input({"type": "api_set", "variable": "limit", "key": "global", "value": 50})
+    say(engine, "check")
+    assert logs(engine).count("passed") == 1
+
+
+def test_give_variable_gives_nothing_when_its_source_is_empty() -> None:
+    engine = room(
+        box(1, "wf_var_user", 5, 5, variable="base"),
+        box(2, "wf_var_user", 6, 6, variable="copy"),
+        box(3, "wf_trg_says_something", 1, 1, text="go"),
+        box(4, "wf_act_give_var", 1, 1, 1, variable="copy", from_variable="base", value=1),
+    )
+    say(engine, "go")
+    assert "user:100" not in engine.variables["copy"]
+
+
 def test_delay_counts_half_seconds() -> None:
     engine = room(
         box(1, "wf_trg_says_something", 1, 1, text="go"),

@@ -33,6 +33,12 @@ NEW_VARIABLE_ID = 900_000
 LONG = (
     "long"  # A 64-bit value in two options: the high word just before the given position, then the low word.
 )
+VARIABLE_SCOPES = {
+    "wf_var_user": "user",
+    "wf_var_furni": "furni",
+    "wf_var_room": "global",
+    "wf_var_context": "context",
+}
 OPTION_FIELDS: dict[str, list[tuple[str, int, Any]]] = {
     "wf_trg_says_something": [
         ("owner_only", 0, bool),
@@ -93,6 +99,13 @@ OPTION_FIELDS: dict[str, list[tuple[str, int, Any]]] = {
     "wf_var_room": [("availability", 0, {1: "active", 10: "persistent", 11: "shared"})],
     "wf_var_context": [("has_value", 0, bool)],
 }
+
+
+# Where each box says its value comes from another variable. The next positions after a value are shared:
+# position 5 is that variable's target and position 6 says it is read on the same holder.
+REFERENCE_FLAG = {"wf_act_give_var": 4, "wf_act_change_var_val": 2, "wf_cnd_var_val_match": 2}
+REFERENCE_TARGET, REFERENCE_SAME_HOLDER = 5, 6
+TARGET_USER, TARGET_GLOBAL = 1, -10
 
 
 def _read_long(options: list[Any], position: int) -> int | None:
@@ -203,6 +216,13 @@ def friendly_settings(classname: str, box: dict[str, Any], names: dict[str, str]
             )
             if value is not None:
                 settings[name] = value
+    if classname in REFERENCE_FLAG and isinstance(options, list):
+        ids = box.get("variableIds")
+        flag = REFERENCE_FLAG[classname]
+        if flag < len(options) and options[flag] == 1 and isinstance(ids, list) and len(ids) > 1:
+            reference = names.get(str(ids[1]))
+            if reference:
+                settings["from_variable"] = reference
     return settings
 
 
@@ -374,6 +394,30 @@ def _default(classname: str, name: str) -> Any:
     return next((field["default"] for field in fields if field["name"] == name), None)
 
 
+def _write_reference(
+    box: dict[str, Any],
+    classname: str,
+    name: str,
+    scopes: dict[str, str],
+    variables: dict[str, Any],
+    used: list[int],
+    warnings: list[str],
+) -> None:
+    """Our simulator always reads the variable on the same holder, so that is what the box is told to do."""
+    if name and scopes.get(name) not in ("global", "user"):
+        warnings.append(
+            f"{classname}: only user and global variables can be a value source in a G-Presets file."
+        )
+        return
+    ids: list[Any] = box["variableIds"] if isinstance(box.get("variableIds"), list) else []
+    first = ids[0] if ids else "0"
+    box["variableIds"] = [first, _variable_id(name, variables, used) if name else "0", *ids[2:]]
+    _write_option(box, REFERENCE_FLAG[classname], 1 if name else 0)
+    is_user = scopes.get(name) == "user"
+    _write_option(box, REFERENCE_TARGET, TARGET_USER if is_user else TARGET_GLOBAL)
+    _write_option(box, REFERENCE_SAME_HOLDER, 1 if is_user else 0)
+
+
 def _apply_settings(
     item: dict[str, Any],
     box: dict[str, Any],
@@ -381,6 +425,7 @@ def _apply_settings(
     variables: dict[str, Any],
     used: list[int],
     warnings: list[str],
+    scopes: dict[str, str],
 ) -> None:
     """Writes back only the settings that differ from what the box already said."""
     settings: dict[str, Any] = item["wired"] if isinstance(item.get("wired"), dict) else {}
@@ -397,7 +442,9 @@ def _apply_settings(
             if number is not None:
                 _write_option(box, mapped[name][0], number)
                 continue
-        if name == "delay":
+        if name == "from_variable" and classname in REFERENCE_FLAG:
+            _write_reference(box, classname, str(value).strip(), scopes, variables, used, warnings)
+        elif name == "delay":
             box["delay"] = value
         elif name in ("furni", "antenna"):
             box["items"] = value
@@ -426,6 +473,11 @@ def export_gpresets(document: dict[str, Any]) -> tuple[dict[str, Any], list[str]
         extras["variables_map"] if isinstance(extras.get("variables_map"), dict) else {}
     )
     used = [0]
+    scopes = {
+        str(i["wired"].get("variable", "")).strip(): VARIABLE_SCOPES[i["classname"]]
+        for i in items
+        if i["classname"] in VARIABLE_SCOPES and isinstance(i.get("wired"), dict)
+    }
     rows: dict[str, list[tuple[int, Any]]] = {key: [] for key in saved.get("sections", [])}
     next_order = 1_000_000
     for item in items:
@@ -448,7 +500,7 @@ def export_gpresets(document: dict[str, Any]) -> tuple[dict[str, Any], list[str]
             if classname.startswith("wf_var_") and "variable" not in (item.get("wired") or {}):
                 warnings.append(f"{classname} at {item['x']}, {item['y']} has no variable name.")
         box["wiredId"] = item["id"]
-        _apply_settings(item, box, base, variables, used, warnings)
+        _apply_settings(item, box, base, variables, used, warnings, scopes)
         rows.setdefault(str(section), []).append((order, box))
     for orphan in orphans:
         rows.setdefault(orphan["section"], []).append((orphan["order"], copy.deepcopy(orphan["box"])))

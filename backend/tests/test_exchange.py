@@ -450,6 +450,61 @@ def test_every_operation_survives_import_and_export(code: int, name: str) -> Non
     assert exchange.export_gpresets(document)[0]["wired"]["effects"][0]["options"][1] == 0
 
 
+@pytest.mark.parametrize(
+    ("classname", "section", "options", "flag"),
+    [
+        ("wf_act_give_var", "effects", [1, 0, 3, 0, 1, 1, 1], 4),
+        ("wf_act_change_var_val", "effects", [1, 1, 1, 0, 0, 1, 1], 2),
+        ("wf_cnd_var_val_match", "conditions", [1, 2, 1, 0, 0, 1, 1], 2),
+    ],
+)
+def test_a_value_source_is_read_and_comes_back_exactly(
+    classname: str, section: str, options: list[int], flag: int
+) -> None:
+    file = boxed(classname, section, {"options": options, "variableIds": ["1", "2"]})
+    file["wired"]["variables_map"] = {"a": "1", "b": "2"}
+    document, _ = exchange.import_gpresets(json.loads(json.dumps(file)))
+    assert document["furni"][0]["wired"]["from_variable"] == "b"
+    assert exchange.export_gpresets(document)[0] == file
+
+    document["furni"][0]["wired"]["from_variable"] = ""
+    out = exchange.export_gpresets(document)[0]["wired"][section][0]
+    assert out["options"][flag] == 0
+    assert out["variableIds"] == ["1", "0"]
+
+
+def _with_source(scope_box: str) -> dict[str, Any]:
+    return {
+        "furni": [
+            {"id": 1, "classname": scope_box, "x": 0, "y": 0, "wired": {"variable": "b"}},
+            {
+                "id": 2,
+                "classname": "wf_act_give_var",
+                "x": 1,
+                "y": 1,
+                "wired": {"variable": "a", "from_variable": "b"},
+            },
+        ]
+    }
+
+
+@pytest.mark.parametrize(
+    ("scope_box", "target", "same_holder"), [("wf_var_user", 1, 1), ("wf_var_room", -10, 0)]
+)
+def test_a_new_value_source_writes_its_target(scope_box: str, target: int, same_holder: int) -> None:
+    out, warnings = exchange.export_gpresets(_with_source(scope_box))
+    box = out["wired"]["effects"][0]
+    assert box["options"][4:7] == [1, target, same_holder]
+    assert box["variableIds"][1] == out["wired"]["variables_map"]["b"]
+    assert warnings == []
+
+
+def test_a_value_source_that_cannot_be_written_is_reported() -> None:
+    out, warnings = exchange.export_gpresets(_with_source("wf_var_furni"))
+    assert out["wired"]["effects"][0]["options"][4] == 0
+    assert any("value source" in warning for warning in warnings)
+
+
 def test_edited_settings_write_their_numbers() -> None:
     file = boxed("wf_trg_says_something", "triggers", {"options": [0, 1, 1]})
     document, _ = exchange.import_gpresets(file)
