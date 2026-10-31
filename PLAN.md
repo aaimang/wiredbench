@@ -228,6 +228,15 @@ No box is `verified in-game`, because nothing has been compared with a real room
 Not simulated yet, so logged as stubs: game boxes, bots, teams, chests, movement add-ons, Variable FX and
 the rest of the catalogue outside Wave 1. Walking still runs in the browser, which reports each step.
 
+### Exchange status
+
+Import keeps each furni's and box's original data, and export changes only what was edited, so an untouched
+file comes back identical. All three sample files pass this. Settings are read only where samples support
+the meaning: `items`, `delay`, `config` and variable names. Option numbers stay unread, so boxes that are new
+in Wiredbench use values seen in real files, or empty options and a warning. The product describes the file
+format and links to neither G-Earth nor G-Presets, because of Fansite Policy 1.5. Guide and tutorials are still
+to come, and no exported file has been imported into a real room yet.
+
 ### Debugging additions
 
 - Fidelity badge per WIRED: `verified in-game`, `documented` or `assumed`.

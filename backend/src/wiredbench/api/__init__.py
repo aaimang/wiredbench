@@ -1,6 +1,6 @@
 """API routers. The app includes exactly this list, and the security tests walk the same list."""
 
-from wiredbench.api import assets, auth, catalog, engine, mock, system, view, workspace
+from wiredbench.api import assets, auth, catalog, engine, exchange, mock, system, view, workspace
 
 ROUTERS = (
     system.router,
@@ -12,4 +12,5 @@ ROUTERS = (
     mock.router,
     mock.keys_router,
     view.router,
+    exchange.router,
 )
