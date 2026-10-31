@@ -69,6 +69,8 @@ export interface Scene {
   lookup: InfoLookup;
   revisionOf: (classname: string) => number | null;
   selected: Hit | null;
+  /** Furni a WIRED box has picked, shown while that box is open. */
+  picked: Set<number>;
   ghost: { classname: string; x: number; y: number; z: number; rot: number; valid: boolean } | null;
   hover: [number, number] | null;
   avatarPose: (avatar: PlacedAvatar) => AvatarPose;
@@ -77,6 +79,7 @@ export interface Scene {
 const AVATAR_ANCHOR = { x: 32, y: 96 };
 const AVATAR_SIZE = { w: 64, h: 110 };
 const SELECTED_TINT = 0xfff0a0;
+const PICKED_TINT = 0xb28ad8;
 /** How far a pose sits below the top of its furni, in height units. Matched by eye to real furni. */
 const POSE_DROP: Record<string, number> = { sit: 0.5, lay: 0.5 };
 
@@ -323,7 +326,8 @@ export class RoomRenderer {
 
   private drawFurni(scene: Scene, item: PlacedFurni): void {
     const selected = scene.selected?.kind === "furni" && scene.selected.id === item.id;
-    const bounds = this.addFurniSprites(scene, item, selected ? SELECTED_TINT : null, 1, depth);
+    const tint = selected ? SELECTED_TINT : scene.picked.has(item.id) ? PICKED_TINT : null;
+    const bounds = this.addFurniSprites(scene, item, tint, 1, depth);
     if (bounds) {
       const [fx, fy] = this.front(scene, item);
       this.hits.push({

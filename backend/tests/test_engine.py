@@ -574,3 +574,33 @@ def test_a_state_the_furni_lacks_returns_to_its_first() -> None:
     document = state_room()
     document["furni"][0]["state"] = 9
     assert uses(Engine(document), 1) == [0]
+
+
+def says_engine(**settings: Any) -> Engine:
+    return Engine(
+        {
+            "furni": [
+                box(1, "wf_trg_says_something", 1, 1, text="hello there", **settings),
+                box(2, "wf_act_log", 1, 1, 1, text="ran"),
+            ],
+            "avatars": [{"id": 9, "name": "A", "x": 2, "y": 2}],
+        }
+    )
+
+
+@pytest.mark.parametrize(
+    ("settings", "said", "runs"),
+    [
+        ({}, "oh hello there you", True),
+        ({"match": "contains"}, "shello therefore", True),
+        ({"match": "exact"}, "oh hello there you", True),
+        ({"match": "exact"}, "shello therefore", False),
+        ({"match": "all"}, "oh hello there you", False),
+        ({"match": "all"}, "Hello There", True),
+        ({"exact": True}, "oh hello there you", False),
+    ],
+)
+def test_keyword_types(settings: dict[str, Any], said: str, runs: bool) -> None:
+    engine = says_engine(**settings)
+    engine.apply_input({"type": "say", "user": 9, "text": said})
+    assert bool(logs(engine)) is runs

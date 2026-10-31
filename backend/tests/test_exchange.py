@@ -321,3 +321,27 @@ def test_real_files_come_back_exactly() -> None:
     for path in files:
         original = json.loads(path.read_text(encoding="utf-8"))
         assert round_trip(original) == original, path.name
+
+
+def test_settings_that_cannot_be_written_are_reported() -> None:
+    document = {
+        "furni": [
+            {
+                "id": 1,
+                "classname": "wf_trg_says_something",
+                "x": 1,
+                "y": 1,
+                "wired": {"text": "hi", "match": "all"},
+            },
+            {
+                "id": 2,
+                "classname": "wf_trg_says_something",
+                "x": 2,
+                "y": 1,
+                "wired": {"text": "hi", "match": "contains"},
+            },
+        ]
+    }
+    out, warnings = exchange.export_gpresets(document)
+    assert out["wired"]["triggers"][0]["config"] == "hi"
+    assert warnings == ["wf_trg_says_something: the setting match cannot go into a G-Presets file yet."]

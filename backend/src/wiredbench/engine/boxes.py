@@ -64,6 +64,11 @@ ANTENNA = {"name": "antenna", "kind": "furni", "label": "Antenna", "default": []
 SECONDS = {"name": "seconds", "kind": "number", "label": "Seconds", "default": 10, "min": 0}
 
 
+def _saved(field: dict[str, Any]) -> dict[str, Any]:
+    """A real option that the engine does not act on yet. It is kept, and the form says so."""
+    return {**field, "saved_only": True}
+
+
 def _box(kind: str, fidelity: str, *fields: dict[str, Any]) -> dict[str, Any]:
     return {"kind": kind, "fidelity": fidelity, "fields": list(fields)}
 
@@ -82,8 +87,26 @@ BOXES: dict[str, dict[str, Any]] = {
     "wf_trg_says_something": _box(
         "trigger",
         DOCUMENTED,
-        {"name": "text", "kind": "text", "label": "Keyword", "default": ""},
-        {"name": "exact", "kind": "bool", "label": "Whole message must match", "default": False},
+        {"name": "text", "kind": "text", "label": "What is said", "default": ""},
+        {
+            "name": "match",
+            "kind": "select",
+            "label": "Choose type",
+            "options": ["contains", "exact", "all"],
+            "labels": {"contains": "Contains keyword", "exact": "Exact match", "all": "Match all text"},
+            "default": "contains",
+        },
+        _saved(
+            {"name": "hide_message", "kind": "bool", "label": "Hide the triggerer's message", "default": True}
+        ),
+        _saved(
+            {
+                "name": "owner_only",
+                "kind": "bool",
+                "label": "Only the room owner can trigger",
+                "default": False,
+            }
+        ),
     ),
     "wf_trg_enter_room": _box("trigger", DOCUMENTED),
     "wf_trg_leave_room": _box("trigger", ASSUMED),
@@ -175,6 +198,27 @@ BOXES: dict[str, dict[str, Any]] = {
         ASSUMED,
         {"name": "placeholder", "kind": "text", "label": "Placeholder name", "default": ""},
         VARIABLE,
+        _saved(
+            {
+                "name": "display",
+                "kind": "select",
+                "label": "Variable display type",
+                "options": ["numeric", "textual"],
+                "labels": {"numeric": "Numeric", "textual": "Textual, with a Text Connector"},
+                "default": "numeric",
+            }
+        ),
+        _saved(
+            {
+                "name": "placeholder_type",
+                "kind": "select",
+                "label": "Placeholder type",
+                "options": ["single", "multiple"],
+                "labels": {"single": "Single", "multiple": "Multiple"},
+                "default": "single",
+            }
+        ),
+        _saved({"name": "delimiter", "kind": "text", "label": "Delimiter, for Multiple", "default": ""}),
     ),
     "wf_xtra_var_text_connector": _box(
         "addon",
@@ -218,7 +262,25 @@ BOXES: dict[str, dict[str, Any]] = {
     "wf_act_neg_log": _effect(ASSUMED, {"name": "text", "kind": "text", "label": "Log line", "default": ""}),
     "wf_act_reset_timers": _effect(DOCUMENTED),
     "wf_act_teleport_to": _effect(DOCUMENTED, FURNI, USER_SOURCE),
-    "wf_act_user_to_furni": _effect(ASSUMED, FURNI, USER_SOURCE),
+    "wf_act_user_to_furni": _effect(
+        ASSUMED,
+        _saved(
+            {
+                "name": "walking",
+                "kind": "select",
+                "label": "If the user was walking",
+                "options": ["closer", "keep", "stop"],
+                "labels": {
+                    "closer": "Keep walking if moved closer to target",
+                    "keep": "Keep walking",
+                    "stop": "Stop walking",
+                },
+                "default": "closer",
+            }
+        ),
+        FURNI,
+        USER_SOURCE,
+    ),
     "wf_act_move_rotate": _effect(
         DOCUMENTED,
         FURNI,

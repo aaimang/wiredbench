@@ -244,6 +244,22 @@ tried in a real room, and other option values remain unproven.
 The guide lists every box from the catalogue and the engine. Example rooms are added as editable rooms, rather
 than the read-only ones first planned, because duplicating a read-only room added a step and no protection.
 
+### Box options from the real client
+
+Forms follow the options in screenshots of the real client, in Wiredbench's own styling (Fansite Policy 1.6).
+Each box needs its own evidence, so this is being done as screenshots arrive. So far: User Says Keyword, Move
+User to Furni and Variable placeholder. Options the engine does not act on are marked as saved only. The
+meaning of each `options` number is still unknown, so export warns about settings it cannot write. Screenshots
+were also seen for Furni Is Used's furni source, the Projectile add-on (cut off) and the box menu, which are not
+built. "Exact match" as whole words and "Match all text" as the whole message are assumptions.
+
+Screenshots of the client's Wired Creator Tools show more that is not built. Variables have properties: type
+(created by user or internal), target, availability, has value, can write to, can create or delete, and can
+intercept. Rooms also have read-only internal variables, such as `@id`, `@class_id`, `@height`, `@state`,
+`@position.x`, `@rotation` and `@altitude` on furni, `@index`, `@level`, `@is_owner` and `@direction` on users, and
+context ones such as `@selector_furni_count`. A variable can have no value, like `is_admin_dev`. The inspection
+tab shows a furni's or user's variables with values, including `@height` 65 for a 0.65 height box.
+
 ### Debugging additions
 
 - Fidelity badge per WIRED: `verified in-game`, `documented` or `assumed`.

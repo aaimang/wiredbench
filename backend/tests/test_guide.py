@@ -58,10 +58,12 @@ def test_tutorials_are_listed_and_can_be_added(api: Api) -> None:
 
 
 def test_switch_rooms_export_with_known_values() -> None:
-    for slug in ("switch-flip", "signal-relay"):
-        document = TUTORIALS[slug]["build"]("sandbox")
-        document["avatars"] = []
-        assert exchange.export_gpresets(document)[1] == [], slug
+    document = TUTORIALS["switch-flip"]["build"]("sandbox")
+    document["avatars"] = []
+    assert exchange.export_gpresets(document)[1] == []
+    relay = TUTORIALS["signal-relay"]["build"]("sandbox")
+    relay["avatars"] = []
+    assert [w for w in exchange.export_gpresets(relay)[1] if "user_source" not in w] == []
 
 
 def state_of(engine: Engine, furni_id: int) -> int:

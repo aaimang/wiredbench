@@ -42,6 +42,10 @@ def _int(value: Any, default: int = 0) -> int:
     return default
 
 
+def _has_words(words: list[str], wanted: list[str]) -> bool:
+    return any(words[start : start + len(wanted)] == wanted for start in range(len(words)))
+
+
 def _clamp(value: int) -> int:
     return max(INT64_MIN, min(INT64_MAX, value))
 
@@ -296,7 +300,13 @@ class Engine:
         for stack, box in self._triggers("wf_trg_says_something"):
             keyword = str(box.get("text", "")).strip().lower()
             said = text.strip().lower()
-            if keyword and (said == keyword if box.get("exact") else keyword in said):
+            # Assumed: "exact" means whole words and "all" the whole message. Older rooms saved exact=True.
+            match = "all" if box.get("exact") is True else box.get("match", "contains")
+            if not keyword:
+                continue
+            words = said.split()
+            found = {"all": said == keyword, "exact": _has_words(words, keyword.split())}
+            if found.get(str(match), keyword in said):
                 self._start(stack, Context(trigger=box, user=user_id))
 
     def _click(self, user_id: int, furni_id: int) -> None:

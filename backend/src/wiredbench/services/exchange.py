@@ -249,12 +249,18 @@ def _variable_id(name: str, variables: dict[str, Any], used: list[int]) -> str:
     return str(variables[name])
 
 
+def _default(classname: str, name: str) -> Any:
+    fields = BOXES.get(classname, {}).get("fields", [])
+    return next((field["default"] for field in fields if field["name"] == name), None)
+
+
 def _apply_settings(
     item: dict[str, Any],
     box: dict[str, Any],
     base: dict[str, Any],
     variables: dict[str, Any],
     used: list[int],
+    warnings: list[str],
 ) -> None:
     """Writes back only the settings that differ from what the box already said."""
     settings: dict[str, Any] = item["wired"] if isinstance(item.get("wired"), dict) else {}
@@ -274,6 +280,8 @@ def _apply_settings(
         elif name == "variable" and value:
             ids: list[Any] = box["variableIds"] if isinstance(box.get("variableIds"), list) else []
             box["variableIds"] = [_variable_id(str(value), variables, used), *ids[1:]]
+        elif name != "variable" and value != _default(classname, name):
+            warnings.append(f"{classname}: the setting {name} cannot go into a G-Presets file yet.")
 
 
 def export_gpresets(document: dict[str, Any]) -> tuple[dict[str, Any], list[str]]:
@@ -308,7 +316,7 @@ def export_gpresets(document: dict[str, Any]) -> tuple[dict[str, Any], list[str]
             if classname.startswith("wf_var_") and "variable" not in (item.get("wired") or {}):
                 warnings.append(f"{classname} at {item['x']}, {item['y']} has no variable name.")
         box["wiredId"] = item["id"]
-        _apply_settings(item, box, base, variables, used)
+        _apply_settings(item, box, base, variables, used, warnings)
         if not stored and box["items"] and box["furniSources"] == [200]:
             box["furniSources"] = [100]  # Real boxes with picks use 100, and 200 goes with a selector.
         rows.setdefault(str(section), []).append((order, box))
