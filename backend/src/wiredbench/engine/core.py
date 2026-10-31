@@ -619,7 +619,7 @@ class Engine:
         if holding is None:
             return False
         target = _int(box.get("value", 0))
-        match box.get("compare", "="):
+        match box.get("compare", ">"):  # The real box's default.
             case "=":
                 return holding.value == target
             case "!=":

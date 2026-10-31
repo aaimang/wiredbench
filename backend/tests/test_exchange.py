@@ -326,13 +326,19 @@ def test_real_files_come_back_exactly() -> None:
 def test_settings_that_cannot_be_written_are_reported() -> None:
     document = {
         "furni": [
-            {"id": 1, "classname": "wf_act_change_var_val", "x": 1, "y": 1, "wired": {"operation": "add"}},
-            {"id": 2, "classname": "wf_act_change_var_val", "x": 2, "y": 1, "wired": {"operation": "set"}},
+            {
+                "id": 1,
+                "classname": "wf_act_change_var_val",
+                "x": 1,
+                "y": 1,
+                "wired": {"from_field": "creation"},
+            },
+            {"id": 2, "classname": "wf_act_change_var_val", "x": 2, "y": 1, "wired": {"from_field": "value"}},
         ]
     }
     warnings = exchange.export_gpresets(document)[1]
     assert (
-        warnings.count("wf_act_change_var_val: the setting operation cannot go into a G-Presets file yet.")
+        warnings.count("wf_act_change_var_val: the setting from_field cannot go into a G-Presets file yet.")
         == 1
     )
 
@@ -380,8 +386,20 @@ def boxed(classname: str, section: str, box: dict[str, Any]) -> dict[str, Any]:
         ("wf_var_context", "variables", [1], {"has_value": True}),
         ("wf_act_toggle_state", "effects", [1], {"toggle_type": "previous"}),
         ("wf_act_give_var", "effects", [1, 0, 7777, 0, 0, -10, 0], {"value": 7777}),
-        ("wf_act_change_var_val", "effects", [1, 3, 0, 0, 77777, -10, 0], {"value": 77777}),
-        ("wf_cnd_var_val_match", "conditions", [-10, 3, 0, 0, 7777, -10, 0], {"value": 7777}),
+        ("wf_act_give_var", "effects", [1, -1, -5, 0, 0, -10, 0], {"value": -5}),
+        ("wf_act_give_var", "effects", [1, 1, 0, 0, 0, -10, 0], {"value": 2**32}),
+        (
+            "wf_act_change_var_val",
+            "effects",
+            [1, 3, 0, 0, 77777, -10, 0],
+            {"operation": "multiply", "value": 77777},
+        ),
+        (
+            "wf_cnd_var_val_match",
+            "conditions",
+            [-10, 3, 0, 0, 7777, -10, 0],
+            {"compare": "<=", "value": 7777},
+        ),
         ("wf_xtra_filter_users_by_var", "addons", [777, 1, 0, 1], {"amount": 777, "lowest": True}),
     ],
 )
@@ -400,6 +418,18 @@ def test_a_millisecond_delay_survives_import_and_export() -> None:
     document, _ = exchange.import_gpresets(json.loads(json.dumps(file)))
     assert document["furni"][0]["wired"]["delay"] == -650
     assert exchange.export_gpresets(document)[0] == file
+
+
+@pytest.mark.parametrize(
+    ("value", "words"), [(-5, [-1, -5]), (7, [0, 7]), (2**32 + 1, [1, 1]), (2**31, [0, -(2**31)])]
+)
+def test_edited_values_write_both_words(value: int, words: list[int]) -> None:
+    file = boxed("wf_act_give_var", "effects", {"options": [1, 0, 3, 0, 0, -10, 0]})
+    document, _ = exchange.import_gpresets(file)
+    document["furni"][0]["wired"]["value"] = value
+    out, _ = exchange.export_gpresets(document)
+    assert out["wired"]["effects"][0]["options"] == [1, *words, 0, 0, -10, 0]
+    assert exchange.import_gpresets(out)[0]["furni"][0]["wired"]["value"] == value
 
 
 def test_edited_settings_write_their_numbers() -> None:

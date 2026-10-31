@@ -29,6 +29,9 @@ MIN_ROOM = 12
 NEW_VARIABLE_ID = 900_000
 # Where each setting sits in a box's options list: (setting, position, how the number reads).
 # A scale turns the number into seconds, a tuple lists names by number, and bool is 0 or 1.
+LONG = (
+    "long"  # A 64-bit value in two options: the high word just before the given position, then the low word.
+)
 OPTION_FIELDS: dict[str, list[tuple[str, int, Any]]] = {
     "wf_trg_says_something": [
         ("owner_only", 0, bool),
@@ -49,9 +52,15 @@ OPTION_FIELDS: dict[str, list[tuple[str, int, Any]]] = {
     "wf_xtra_filter_furni": [("amount", 0, int)],
     "wf_xtra_filter_users_by_var": [("amount", 0, int), ("lowest", 1, bool)],
     "wf_act_toggle_state": [("toggle_type", 0, ("next", "previous"))],
-    "wf_act_give_var": [("value", 2, int)],
-    "wf_act_change_var_val": [("value", 4, int)],
-    "wf_cnd_var_val_match": [("value", 4, int)],
+    "wf_act_give_var": [("value", 2, LONG)],
+    "wf_act_change_var_val": [
+        ("operation", 1, ("set", "add", "subtract", "multiply", "divide")),
+        ("value", 4, LONG),
+    ],
+    "wf_cnd_var_val_match": [
+        ("compare", 1, {0: "<", 1: "=", 2: ">", 3: "<=", 4: "!=", 5: ">="}),
+        ("value", 4, LONG),
+    ],
     "wf_xtra_text_output_variable": [
         ("placeholder_type", 0, ("single", "multiple")),
         ("display", 2, ("numeric", "textual")),
@@ -64,6 +73,23 @@ OPTION_FIELDS: dict[str, list[tuple[str, int, Any]]] = {
     "wf_var_room": [("availability", 0, {1: "active", 10: "persistent", 11: "shared"})],
     "wf_var_context": [("has_value", 0, bool)],
 }
+
+
+def _read_long(options: list[Any], position: int) -> int | None:
+    high, low = options[position - 1], options[position]
+    if not all(isinstance(word, int) and not isinstance(word, bool) for word in (high, low)):
+        return None
+    return int((high << 32) | (low & 0xFFFFFFFF))
+
+
+def _low_word(value: int) -> int:
+    low = value & 0xFFFFFFFF
+    return low - 2**32 if low >= 2**31 else low
+
+
+def _write_long(box: dict[str, Any], position: int, value: int) -> None:
+    _write_option(box, position, _low_word(value))
+    _write_option(box, position - 1, value >> 32)
 
 
 def _option_to_setting(raw: Any, reader: Any) -> Any:
@@ -81,6 +107,8 @@ def _option_to_setting(raw: Any, reader: Any) -> Any:
 
 
 def _setting_to_option(value: Any, reader: Any) -> int | None:
+    if reader == LONG:
+        return _low_word(int(value)) if isinstance(value, int | float) else None
     if reader is bool:
         return 1 if value else 0
     if reader is int:
@@ -146,7 +174,13 @@ def friendly_settings(classname: str, box: dict[str, Any], names: dict[str, str]
     options = box.get("options")
     if isinstance(options, list):
         for name, position, reader in OPTION_FIELDS.get(classname, []):
-            value = _option_to_setting(options[position], reader) if position < len(options) else None
+            if position >= len(options):
+                continue
+            value = (
+                _read_long(options, position)
+                if reader == LONG
+                else _option_to_setting(options[position], reader)
+            )
             if value is not None:
                 settings[name] = value
     return settings
@@ -334,6 +368,9 @@ def _apply_settings(
     mapped = {name: (position, reader) for name, position, reader in OPTION_FIELDS.get(classname, [])}
     for name, value in settings.items():
         if base.get(name) == value:
+            continue
+        if name in mapped and mapped[name][1] == LONG and isinstance(value, int | float):
+            _write_long(box, mapped[name][0], int(value))
             continue
         if name in mapped:
             number = _setting_to_option(value, mapped[name][1])

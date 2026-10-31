@@ -145,7 +145,9 @@ BOXES: dict[str, dict[str, Any]] = {
     # Conditions
     "wf_cnd_has_var": _box("condition", DOCUMENTED, VARIABLE, USER_SOURCE),
     "wf_cnd_neg_has_var": _box("condition", DOCUMENTED, VARIABLE, USER_SOURCE),
-    "wf_cnd_var_val_match": _box("condition", ASSUMED, VARIABLE, COMPARE, VALUE, USER_SOURCE),
+    "wf_cnd_var_val_match": _box(
+        "condition", ASSUMED, VARIABLE, {**COMPARE, "default": ">"}, VALUE, USER_SOURCE
+    ),
     "wf_cnd_trggrer_on_frn": _box("condition", DOCUMENTED, FURNI, USER_SOURCE),
     "wf_cnd_not_trggrer_on": _box("condition", DOCUMENTED, FURNI, USER_SOURCE),
     "wf_cnd_furnis_hv_avtrs": _box("condition", DOCUMENTED, FURNI),
