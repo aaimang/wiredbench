@@ -50,7 +50,6 @@ class WbSettings extends HTMLElement {
           this.passwordSection(),
           this.activity(audit),
           h("p", { class: "muted" }, T.version(settings.version)),
-          h("p", { class: "muted" }, t.notAffiliated),
         ),
       );
     } catch (error) {
@@ -171,6 +170,7 @@ class WbSettings extends HTMLElement {
       h("h2", {}, T.password),
       field("current_password", T.currentPassword, current),
       field("new_password", T.newPassword, next),
+      h("p", { class: "muted" }, T.passwordSafety),
       h("button", { class: "btn", type: "submit" }, T.changePassword),
     );
     form.addEventListener("submit", (event) => {

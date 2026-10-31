@@ -9,7 +9,7 @@ to your machine and never redistributes Habbo's assets.
 > been compared with a real room, so behaviour may differ from the game, and import and export are not
 > built. See [PLAN.md](PLAN.md).
 
-Not affiliated with or endorsed by Sulake. Habbo is a trademark of Sulake.
+Wiredbench is not affiliated with, endorsed, sponsored, or specifically approved by Sulake Oy or its Affiliates. Wiredbench may use the trademarks and other intellectual property of Habbo, which is permitted under Habbo Fan Site Policy.
 
 ## What works today
 
