@@ -279,12 +279,26 @@ also covers the 10-second worst-case loss when a user leaves without standing up
 | 1. Foundation (built) | Repo, CI, admin login, folders, furnidata sync, update button, cache | All WIRED browsable behind login; update shows a correct diff |
 | 2. Room (built) | Renderer, asset cache, placement, avatars, pathfinding, editor layout | An avatar walks and sits in a saved room |
 | 3. Engine (built) | Wave 1, stubs, inspector, debugger | Time tracking tutorial passes |
-| 4. Control | Mock API, dashboard, view-as, settings | Official wrappers work against the mock |
+| 4. Control (built, real-room comparison open) | Mock API, dashboard, view-as, settings | Official wrappers work against the mock |
 | 5. Exchange | Import, export, guide, tutorials | A preset imports into a real room and behaves the same |
 | 6. Depth | Wave 2, stack checker | Every box has an honest badge |
 | 7. Launch | Security pass, landing page, Docker docs, `v1.0.0` | All release gates pass |
 
 Real-room traces need a room on the sandbox hotel with the Web API add-on and its keys.
+
+### Control status after Phase 4
+
+- **Mock API:** the room ID is the sandbox ID, and a room must be running. Keys belong to the room, so they
+  are managed on the dashboard rather than in Settings. All 19 WIRED operations in the official spec are
+  routed. `wired-api-python` 0.1.4 passes `scripts/wrapper_check.py`, apart from its known batch bug.
+- **Seen live (2026-10-31):** an unknown target kind gives `invalid_target` before the room is looked at, an
+  unknown scope gives an empty 404, a non-numeric entity gives `not-found` before any key check, and a room
+  with the add-on but apparently no saved keys gives `key_missing` for every key. The last meaning is inferred.
+- **Still assumed:** invalid-value codes, the mass deletion refusal, read-only batch, `429`, and that an API
+  write fires Variable Changed.
+- **View as:** a flag on the login session, enforced in the guard with an allow list of routes. It tests what
+  a visitor can reach, but it is not a separate account. Walking jumps to the tile rather than animating.
+- **Dashboard:** counts cover running rooms only and reset with the run. Work is boxes visited.
 
 ## 8. CI/CD
 
@@ -321,8 +335,7 @@ The README lists every current variable, generated from the code. Still to come:
 
 | Variable | Purpose |
 |---|---|
-| `WB_TICK_MS` | Engine tick length (Phase 3) |
-| `WB_LIVE_CHECK_*` | Optional keys for the sandbox API comparison (Phase 4) |
+| `WB_LIVE_CHECK_*` | Keys for `scripts/live_check.py`. Read by that script only, never by the app. |
 
 There is no signing key: sessions are random tokens stored hashed in the database, so nothing is signed.
 

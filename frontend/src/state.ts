@@ -1,8 +1,9 @@
 import type { Settings } from "./api";
 
-export const state: { settings: Settings | null; username: string } = {
+export const state: { settings: Settings | null; username: string; viewAs: boolean } = {
   settings: null,
   username: "",
+  viewAs: false,
 };
 
 const THEME_KEY = "wb-theme";

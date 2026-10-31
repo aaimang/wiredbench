@@ -14,6 +14,7 @@ from wiredbench.engine.core import MAX_ADVANCE_MS
 from wiredbench.engine.sessions import Run, run_command, state
 from wiredbench.engine.tutorials import time_tracking
 from wiredbench.errors import ApiError
+from wiredbench.models import Sandbox
 from wiredbench.services import preferences
 from wiredbench.services import workspace as ws
 
@@ -70,7 +71,8 @@ def start_run(
     sandbox = ws.live_sandbox(db, sandbox_id)
     document = sandbox.document if isinstance(sandbox.document, dict) else {}
     seed = body.seed if body.seed is not None else secrets.randbelow(2**31)
-    run = services.runs.start(sandbox_id, document, seed)
+    tick_ms = preferences.load(db, services.settings).tick_ms
+    run = services.runs.start(sandbox_id, document, seed, tick_ms)
     audit(db, request, "run_start", sandbox.name)
     db.commit()
     return state(run, 0)
@@ -131,6 +133,20 @@ def command(
 @router.delete("/sandboxes/{sandbox_id}/run", status_code=204)
 def stop_run(sandbox_id: int, services: Services = Depends(get_services)) -> None:
     services.runs.stop(sandbox_id)
+
+
+@router.get("/dashboard")
+def dashboard(services: Services = Depends(get_services), db: Session = Depends(get_db)) -> dict[str, Any]:
+    rooms = []
+    for sandbox_id, run in services.runs.running():
+        sandbox = db.get(Sandbox, sandbox_id)
+        if sandbox is None or sandbox.deleted_at is not None:
+            continue
+        with run.lock:
+            rooms.append(
+                {"id": sandbox_id, "name": sandbox.name, "paused": run.paused, **run.engine.dashboard()}
+            )
+    return {"rooms": rooms}
 
 
 @router.post("/tutorials/time-tracking", status_code=201)

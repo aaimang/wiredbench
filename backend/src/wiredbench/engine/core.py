@@ -22,6 +22,8 @@ INT64_MIN, INT64_MAX = -(2**63), 2**63 - 1
 MAX_ACTIONS_PER_ADVANCE = 20_000
 MAX_ADVANCE_MS = 10 * 60 * 1000
 TRACE_LIMIT = 4000
+PROBLEMS_KEPT = 20
+DASHBOARD_ROWS = 50
 DEFAULT_LIMIT = (100, 1)  # Runs per stack per seconds. Assumed: the real default is not public.
 MOVES = {"x+": (1, 0), "x-": (-1, 0), "y+": (0, 1), "y-": (0, -1)}
 PLACEHOLDER = re.compile(r"\$\(([\w.-]{1,40})\)")
@@ -123,9 +125,14 @@ class Context:
 
 class Engine:
     def __init__(
-        self, document: dict[str, Any], heights: dict[str, float] | None = None, seed: int = 1
+        self,
+        document: dict[str, Any],
+        heights: dict[str, float] | None = None,
+        seed: int = 1,
+        tick_ms: int = TICK_MS,
     ) -> None:
         self.seed = seed
+        self.tick_ms = tick_ms
         self.random = random.Random(seed)  # noqa: S311 - Replays need a seed; this is not for security.
         self.now_ms = 0
         self.heights = heights or {}
@@ -146,6 +153,10 @@ class Engine:
         self.limit_hits = 0
         self.actions_this_advance = 0
         self.messages: list[dict[str, Any]] = []
+        self.box_runs: dict[int, int] = defaultdict(int)
+        self.stack_work: dict[str, int] = defaultdict(int)
+        self.log_counts: dict[str, int] = defaultdict(int)
+        self.problems: deque[dict[str, Any]] = deque(maxlen=PROBLEMS_KEPT)
         self._load(document)
 
     # --- Loading ---
@@ -214,6 +225,9 @@ class Engine:
     # --- Trace ---
 
     def _log(self, kind: str, message: str, **details: Any) -> None:
+        self.log_counts[kind] += 1
+        if kind in ("error", "limit", "stub"):
+            self.problems.append({"at_ms": self.now_ms, "kind": kind, "message": message})
         if not self.trace_on and kind in ("run", "effect", "condition"):
             return
         if len(self.trace) >= TRACE_LIMIT:
@@ -242,7 +256,22 @@ class Engine:
             self._fire("wf_trg_enter_room", user=_int(user))
         elif kind == "leave":
             self._leave(_int(user))
+        elif kind in ("debug_set", "api_set"):
+            self._store(str(entry["variable"]), str(entry["key"]), _int(entry["value"]))
+            if kind == "api_set":  # Assumed: an API write fires Variable Changed like an effect does.
+                holder = str(entry["key"]).partition(":")
+                self._changed(str(entry["variable"]), int(holder[2]) if holder[0] == "user" else None)
+        elif kind == "api_delete":
+            self.variables[str(entry["variable"])].pop(str(entry["key"]), None)
         self._drain()
+
+    def _store(self, name: str, key: str, value: int) -> None:
+        holding = self.variables[name].get(key)
+        if holding:
+            holding.value = value
+            holding.updated_ms = self.now_ms
+        else:
+            self.variables[name][key] = Holding(value, self.now_ms, self.now_ms)
 
     def _furni_on_tile(self, x: int, y: int) -> list[int]:
         return [i for i, f in self.furni.items() if f["x"] == x and f["y"] == y]
@@ -382,6 +411,9 @@ class Engine:
         if not self._limit_ok(stack):
             return
         self.metrics[f"stack:{stack.key}"] += 1
+        self.stack_work[stack.key] += len(stack.boxes)
+        if context.trigger:
+            self.box_runs[context.trigger.id] += 1
         label = self._name(context.trigger.classname) if context.trigger else "called"
         self._log("run", f"Stack {stack.key} runs, from {label}", stack=stack.key, user=context.user)
         self._flag_stubs(stack)
@@ -391,7 +423,7 @@ class Engine:
         effects = stack.of("effect")
         chosen = self._choose_effects(stack, effects)
         for box in chosen:
-            delay = max(0, min(_int(box.get("delay", 0)), 600)) * TICK_MS
+            delay = max(0, min(_int(box.get("delay", 0)), 600)) * self.tick_ms
             self._push(self.now_ms + delay, "effect", {"box": box, "context": context})
 
     def _flag_stubs(self, stack: Stack) -> None:
@@ -632,6 +664,7 @@ class Engine:
 
     def _run_effect(self, box: Box, ctx: Context) -> None:
         self.metrics[f"box:{box.classname}"] += 1
+        self.box_runs[box.id] += 1
         handler = getattr(self, f"_do_{box.classname.removeprefix('wf_act_')}", None)
         if handler is None:
             self._log("stub", f"{self._name(box.classname)} is not simulated yet", box=box.id)
@@ -814,6 +847,35 @@ class Engine:
                 )
         return rows
 
+    def dashboard(self) -> dict[str, Any]:
+        """Counts for the dashboard. Work is boxes visited, so it is simulated cost and not hotel time."""
+        boxes: list[dict[str, Any]] = [
+            {
+                "id": furni_id,
+                "classname": self.furni[furni_id]["classname"],
+                "x": self.furni[furni_id]["x"],
+                "y": self.furni[furni_id]["y"],
+                "runs": runs,
+            }
+            for furni_id, runs in self.box_runs.items()
+            if furni_id in self.furni
+        ]
+        stacks: list[dict[str, Any]] = [
+            {"stack": stack.key, "runs": self.metrics[f"stack:{stack.key}"], "work": work}
+            for stack in self.stacks
+            if (work := self.stack_work.get(stack.key, 0))
+        ]
+        return {
+            "now_ms": self.now_ms,
+            "boxes": sorted(boxes, key=lambda b: (-b["runs"], b["id"]))[:DASHBOARD_ROWS],
+            "stacks": sorted(stacks, key=lambda s: (-s["work"], s["stack"]))[:DASHBOARD_ROWS],
+            "signals": self.metrics["signals"],
+            "errors": self.log_counts["error"],
+            "stubs": self.log_counts["stub"],
+            "limit_hits": self.limit_hits,
+            "problems": list(reversed(self.problems)),
+        }
+
     def snapshot(self) -> dict[str, Any]:
         return {
             "now_ms": self.now_ms,
@@ -834,9 +896,10 @@ def replay(
     inputs: list[dict[str, Any]],
     until_ms: int,
     heights: dict[str, float] | None = None,
+    tick_ms: int = TICK_MS,
 ) -> Engine:
     """Rebuilds a run from its inputs. The result matches the original run exactly."""
-    engine = Engine(document, heights, seed)
+    engine = Engine(document, heights, seed, tick_ms)
     for entry in inputs:
         when = entry["at_ms"]
         if when > engine.now_ms:

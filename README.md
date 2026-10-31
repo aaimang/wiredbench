@@ -5,9 +5,9 @@ Build, run and debug Habbo WIRED stacks in a local sandbox, then export them to 
 Wiredbench runs on your own computer with one admin login. It downloads Habbo's public furni list
 to your machine and never redistributes Habbo's assets.
 
-> **Status: early development.** You can build a room, configure WIRED and run it. The engine has not
-> been compared with a real room, so behaviour may differ from the game, and import and export are not
-> built. See [PLAN.md](PLAN.md).
+> **Status: early development.** You can build a room, configure WIRED, run it and reach it through a
+> local copy of Habbo's Web API. Neither the engine nor the mock has been fully compared with a real
+> room, so behaviour may differ from the game, and import and export are not built. See [PLAN.md](PLAN.md).
 
 Wiredbench is not affiliated with, endorsed, sponsored, or specifically approved by Sulake Oy or its Affiliates. Wiredbench may use the trademarks and other intellectual property of Habbo, which is permitted under Habbo Fan Site Policy.
 
@@ -24,10 +24,16 @@ Wiredbench is not affiliated with, endorsed, sponsored, or specifically approved
   signals. Each box says whether its behaviour is documented or assumed, and others are logged as not
   simulated yet.
 - **Debugger:** live trace and variables, pause and step, debug commands, and a time tracking example room.
+- **Mock Web API:** a running room answers Habbo's WIRED Web API at `/api/public/rooms/<sandbox ID>`, using
+  its own read and write keys, which you generate on the dashboard and which are stored hashed.
+- **Dashboard:** runs per box, busiest stacks, signals, errors and limit hits for running rooms. These are
+  simulated counts, not hotel performance.
+- **View as user:** walk and chat in a room as a visitor. WIRED settings, the trace and variables never
+  leave the server, boxes with no catalogue offer are hidden, and every other route is refused.
 - **Workspace:** nested folders of sandboxes, with rename, move, duplicate, version history and a
   30-day trash.
-- **Settings:** default hotel, theme, automatic update checks, cache limit, password change and an
-  activity log.
+- **Settings:** default hotel, theme, automatic update checks, cache limit, engine tick, mock API rate
+  limit, log retention, password change and an activity log.
 
 ## Start with Docker
 
@@ -102,6 +108,23 @@ npm --prefix frontend run build && npm --prefix frontend run e2e
 
 The first browser test run needs `npx playwright install chromium` in `frontend/`.
 
+### Checking the mock API
+
+Run the official Python wrapper against the mock:
+
+```bash
+uv run --with wired-api-python==0.1.4 python scripts/wrapper_check.py
+```
+
+To record how a real room answers, put `WB_LIVE_CHECK_ROOM_ID`, `WB_LIVE_CHECK_READ_KEY` and
+`WB_LIVE_CHECK_WRITE_KEY` in a gitignored `.env`, plus `WB_LIVE_CHECK_HOTEL` if the room is not on
+`sandbox` (`com` is the other choice). The script only reads unless you add `--write`, which needs a room
+variable named `wb_live_check`. It prints status codes and response shapes, never keys, names or values.
+
+```bash
+uv run python scripts/live_check.py --env-file .env
+```
+
 ### How changes land
 
 1. After the initial commit, each feature or fix gets its own worktree and branch.
@@ -132,6 +155,9 @@ from the code, and CI fails if it is out of date.
 | `WB_RATE_LIMIT_LOGIN` | `5` | Failed logins allowed per address per 15 minutes. |
 | `WB_RATE_LIMIT_WRITES` | `240` | Write requests allowed per address per minute. |
 | `WB_RATE_LIMIT_READS` | `3000` | Read requests allowed per address per minute. |
+| `WB_RATE_LIMIT_MOCK` | `600` | Mock Web API requests allowed per address per minute. |
+| `WB_TICK_MS` | `500` | Initial WIRED engine tick length, in milliseconds. |
+| `WB_AUDIT_DAYS` | `90` | Initial number of days to keep the activity log. |
 | `WB_SYNC_COOLDOWN_SECONDS` | `30` | Minimum wait between manual checks per hotel. |
 | `WB_MAX_GAMEDATA_MB` | `64` | Largest gamedata download accepted, in MB. |
 | `WB_STATIC_DIR` |  | Built frontend folder. Defaults to `frontend/dist`. |
@@ -151,6 +177,8 @@ running server.
 | POST | `/api/auth/logout` | Admin |
 | GET | `/api/auth/me` | Admin |
 | POST | `/api/auth/password` | Admin |
+| DELETE | `/api/auth/view-as` | Admin |
+| POST | `/api/auth/view-as` | Admin |
 | GET | `/api/avatars/{hotel}/image` | Admin |
 | GET | `/api/avatars/{hotel}/lookup` | Admin |
 | GET | `/api/cache` | Admin |
@@ -164,16 +192,39 @@ running server.
 | POST | `/api/catalog/rollback` | Admin |
 | GET | `/api/catalog/status` | Admin |
 | POST | `/api/catalog/sync` | Admin |
+| GET | `/api/dashboard` | Admin |
 | GET | `/api/engine/boxes` | Admin |
 | POST | `/api/folders` | Admin |
 | DELETE | `/api/folders/{folder_id}` | Admin |
 | PATCH | `/api/folders/{folder_id}` | Admin |
 | GET | `/api/furni/{revision}/{classname}/atlas` | Admin |
 | GET | `/api/furni/{revision}/{classname}/manifest` | Admin |
+| GET | `/api/public/rooms/{room_id}/variables` | Public |
+| POST | `/api/public/rooms/{room_id}/variables/bulk-delete` | Public |
+| GET | `/api/public/rooms/{room_id}/variables/global/{name}` | Public |
+| PATCH | `/api/public/rooms/{room_id}/variables/global/{name}` | Public |
+| POST | `/api/public/rooms/{room_id}/variables/{scope}/{name}/batch` | Public |
+| GET | `/api/public/rooms/{room_id}/variables/{scope}/{name}/{kind}` | Public |
+| GET | `/api/public/rooms/{room_id}/variables/{scope}/{name}/{kind}/count` | Public |
+| DELETE | `/api/public/rooms/{room_id}/variables/{scope}/{name}/{kind}/{entity}` | Public |
+| GET | `/api/public/rooms/{room_id}/variables/{scope}/{name}/{kind}/{entity}` | Public |
+| PATCH | `/api/public/rooms/{room_id}/variables/{scope}/{name}/{kind}/{entity}` | Public |
+| PUT | `/api/public/rooms/{room_id}/variables/{scope}/{name}/{kind}/{entity}` | Public |
+| GET | `/api/public/rooms/{room_id}/variables_profile/furni/{kind}/{entity}` | Public |
+| PATCH | `/api/public/rooms/{room_id}/variables_profile/furni/{kind}/{entity}` | Public |
+| GET | `/api/public/rooms/{room_id}/variables_profile/global` | Public |
+| PATCH | `/api/public/rooms/{room_id}/variables_profile/global` | Public |
+| GET | `/api/public/rooms/{room_id}/variables_profile/user/users` | Public |
+| DELETE | `/api/public/rooms/{room_id}/variables_profile/user/{kind}/{entity}` | Public |
+| GET | `/api/public/rooms/{room_id}/variables_profile/user/{kind}/{entity}` | Public |
+| PATCH | `/api/public/rooms/{room_id}/variables_profile/user/{kind}/{entity}` | Public |
 | POST | `/api/sandboxes` | Admin |
 | DELETE | `/api/sandboxes/{sandbox_id}` | Admin |
 | GET | `/api/sandboxes/{sandbox_id}` | Admin |
 | PATCH | `/api/sandboxes/{sandbox_id}` | Admin |
+| DELETE | `/api/sandboxes/{sandbox_id}/api-keys` | Admin |
+| GET | `/api/sandboxes/{sandbox_id}/api-keys` | Admin |
+| POST | `/api/sandboxes/{sandbox_id}/api-keys` | Admin |
 | PUT | `/api/sandboxes/{sandbox_id}/document` | Admin |
 | POST | `/api/sandboxes/{sandbox_id}/duplicate` | Admin |
 | DELETE | `/api/sandboxes/{sandbox_id}/run` | Admin |
@@ -190,6 +241,11 @@ running server.
 | DELETE | `/api/trash/{kind}/{item_id}` | Admin |
 | POST | `/api/trash/{kind}/{item_id}/restore` | Admin |
 | POST | `/api/tutorials/time-tracking` | Admin |
+| GET | `/api/view/sandboxes` | Admin |
+| GET | `/api/view/sandboxes/{sandbox_id}` | Admin |
+| POST | `/api/view/sandboxes/{sandbox_id}/run` | Admin |
+| POST | `/api/view/sandboxes/{sandbox_id}/run/advance` | Admin |
+| POST | `/api/view/sandboxes/{sandbox_id}/run/input` | Admin |
 | GET | `/api/workspace/tree` | Admin |
 | GET | `/healthz` | Public |
 <!-- /generated:api -->

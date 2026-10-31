@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
-from wiredbench.api.deps import Services, audit, client_ip, current_user, get_db, get_services, public
+from wiredbench.api.deps import Services, audit, client_ip, current_user, get_db, get_services, public, viewer
 from wiredbench.errors import ApiError
 from wiredbench.models import AdminUser, AuthSession, utcnow
 from wiredbench.security import (
@@ -35,7 +35,12 @@ class PasswordChange(BaseModel):
 
 
 def _me(user: AdminUser, session: AuthSession) -> dict[str, Any]:
-    return {"username": user.username, "csrf_token": session.csrf_token, "expires_at": session.expires_at}
+    return {
+        "username": user.username,
+        "csrf_token": session.csrf_token,
+        "expires_at": session.expires_at,
+        "view_as": session.view_as,
+    }
 
 
 @router.post("/login")
@@ -92,6 +97,7 @@ def login(
 
 
 @router.post("/logout", status_code=204)
+@viewer
 def logout(request: Request, response: Response, db: Session = Depends(get_db)) -> None:
     db.execute(delete(AuthSession).where(AuthSession.token_hash == request.state.session.token_hash))
     audit(db, request, "logout")
@@ -100,8 +106,30 @@ def logout(request: Request, response: Response, db: Session = Depends(get_db)) 
 
 
 @router.get("/me")
+@viewer
 def me(request: Request, user: AdminUser = Depends(current_user)) -> dict[str, Any]:
     return _me(user, request.state.session)
+
+
+def _set_view_as(request: Request, db: Session, on: bool) -> dict[str, Any]:
+    session = db.get(AuthSession, request.state.session.token_hash)
+    if session is None:
+        raise ApiError(401, "not_logged_in", "Log in to continue.")
+    session.view_as = on
+    audit(db, request, "view_as_start" if on else "view_as_stop")
+    db.commit()
+    return _me(request.state.user, session)
+
+
+@router.post("/view-as")
+def start_view_as(request: Request, db: Session = Depends(get_db)) -> dict[str, Any]:
+    return _set_view_as(request, db, True)
+
+
+@router.delete("/view-as")
+@viewer
+def stop_view_as(request: Request, db: Session = Depends(get_db)) -> dict[str, Any]:
+    return _set_view_as(request, db, False)
 
 
 @router.post("/password", status_code=204)

@@ -1177,6 +1177,166 @@ ins {
   font-size: 13px;
 }
 
+/* Dashboard */
+
+wb-dashboard,
+wb-room-view {
+  display: block;
+  height: 100%;
+  overflow: auto;
+}
+
+.dashboard-page {
+  display: grid;
+  gap: 18px;
+  padding: 18px 16px 32px;
+}
+
+.dashboard-room {
+  display: grid;
+  gap: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.dashboard-room h2 {
+  margin: 0;
+}
+
+.dashboard-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  margin: 0;
+}
+
+.dashboard-counts div {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.dashboard-counts dd {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.dashboard-counts dt {
+  order: 1;
+}
+
+.dashboard-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: 18px;
+  align-items: start;
+}
+
+.dashboard-columns h3 {
+  margin: 0 0 6px;
+}
+
+.dashboard-problems {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dashboard-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+}
+
+.key-value {
+  display: block;
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+.dashboard-actions label {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.dashboard-actions input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.view-list a,
+.view-head a {
+  color: var(--ink);
+}
+
+.view-head h1 {
+  margin: 0;
+}
+
+/* View as a normal user */
+
+.view-page {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.view-banner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  align-items: center;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--line-strong);
+  background: var(--wire-effect);
+  color: #1a1a14;
+}
+
+.view-banner span {
+  flex: 1 1 24ch;
+}
+
+.view-list {
+  display: grid;
+  gap: 8px;
+  max-width: 58ch;
+  padding: 18px 16px 32px;
+}
+
+.view-room {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  height: 100%;
+}
+
+.view-head,
+.view-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  padding: 8px 16px;
+}
+
+.view-foot .run-form {
+  flex: 1 1 24ch;
+}
+
+.view-foot input {
+  flex: 1;
+  min-width: 0;
+}
+
+.view-canvas {
+  min-height: 0;
+  overflow: hidden;
+}
+
 /* Toasts */
 
 #toasts {

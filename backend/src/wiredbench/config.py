@@ -50,6 +50,13 @@ class Settings(BaseSettings):
     rate_limit_login: int = Field(5, ge=1, description="Failed logins allowed per address per 15 minutes.")
     rate_limit_writes: int = Field(240, ge=1, description="Write requests allowed per address per minute.")
     rate_limit_reads: int = Field(3000, ge=1, description="Read requests allowed per address per minute.")
+    rate_limit_mock: int = Field(
+        600, ge=1, description="Mock Web API requests allowed per address per minute."
+    )
+    tick_ms: int = Field(
+        500, ge=50, le=5000, description="Initial WIRED engine tick length, in milliseconds."
+    )
+    audit_days: int = Field(90, ge=1, le=3650, description="Initial number of days to keep the activity log.")
     sync_cooldown_seconds: int = Field(30, ge=0, description="Minimum wait between manual checks per hotel.")
     max_gamedata_mb: int = Field(64, ge=1, description="Largest gamedata download accepted, in MB.")
     static_dir: Path | None = Field(None, description="Built frontend folder. Defaults to `frontend/dist`.")

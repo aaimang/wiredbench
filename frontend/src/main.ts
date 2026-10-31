@@ -4,12 +4,23 @@ import "./styles.css";
 import "./catalogue";
 import "./workspace";
 import "./settings";
-import { Boxes, FolderTree, LogOut, Settings as SettingsIcon } from "lucide";
+import "./dashboard";
+import {
+  Boxes,
+  DoorOpen,
+  Eye,
+  FolderTree,
+  Gauge,
+  LogOut,
+  Settings as SettingsIcon,
+  Undo2,
+} from "lucide";
 import {
   ApiFailure,
   get,
   type Me,
   post,
+  request,
   type Settings,
   setCsrfToken,
   setSignedOutHandler,
@@ -23,6 +34,7 @@ const root = document.getElementById("app") as HTMLElement;
 const PAGES: Record<string, { tag: string; label: string; node: Parameters<typeof icon>[0] }> = {
   "/catalogue": { tag: "wb-catalogue", label: t.nav.catalogue, node: Boxes },
   "/workspace": { tag: "wb-workspace", label: t.nav.workspace, node: FolderTree },
+  "/dashboard": { tag: "wb-dashboard", label: t.nav.dashboard, node: Gauge },
   "/settings": { tag: "wb-settings", label: t.nav.settings, node: SettingsIcon },
 };
 
@@ -57,6 +69,12 @@ async function route(): Promise<void> {
     return;
   }
   const path = location.pathname;
+  if (state.viewAs) {
+    await import("./room/view"); // Separate chunk, like the editor.
+    if (!/^\/view(\/\d+)?$/.test(path)) history.replaceState(null, "", "/view");
+    showViewShell();
+    return;
+  }
   if (/^\/sandbox\/\d+$/.test(path)) {
     await import("./room/editor"); // Separate chunk, so other pages do not load the renderer.
     showShell("/workspace", "wb-editor");
@@ -131,6 +149,7 @@ function showLogin(): void {
 async function enter(me: Me): Promise<void> {
   setCsrfToken(me.csrf_token);
   state.username = me.username;
+  state.viewAs = me.view_as;
   state.settings = await get<Settings>("/api/settings");
   applyTheme(state.settings.theme);
 }
@@ -154,16 +173,17 @@ function showShell(path: string, tag: string): void {
       h("span", {}, page.label),
     ),
   );
-  const logout = h(
+  const viewAs = h(
     "button",
-    { class: "nav-link nav-logout", "aria-label": t.nav.logout },
-    icon(LogOut, 18),
-    h("span", {}, t.nav.logout),
+    { class: "nav-link", "aria-label": t.nav.viewAs, "data-testid": "view-as" },
+    icon(Eye, 18),
+    h("span", {}, t.nav.viewAs),
   );
-  logout.addEventListener("click", () => {
-    void act(logout, async () => {
-      await post("/api/auth/logout");
-      signedOut();
+  viewAs.addEventListener("click", () => {
+    void act(viewAs, async () => {
+      const me = await post<Me>("/api/auth/view-as");
+      state.viewAs = me.view_as;
+      navigate("/view");
     });
   });
   replace(
@@ -179,8 +199,9 @@ function showShell(path: string, tag: string): void {
         h(
           "div",
           { class: "rail-foot" },
+          viewAs,
           h("span", { class: "muted rail-user" }, state.username),
-          logout,
+          logoutButton(),
         ),
       ),
       h("main", { class: "page" }, document.createElement(tag)),
@@ -189,8 +210,79 @@ function showShell(path: string, tag: string): void {
   );
 }
 
+function logoutButton(): HTMLElement {
+  const logout = h(
+    "button",
+    { class: "nav-link nav-logout", "aria-label": t.nav.logout },
+    icon(LogOut, 18),
+    h("span", {}, t.nav.logout),
+  );
+  logout.addEventListener("click", () => {
+    void act(logout, async () => {
+      await post("/api/auth/logout");
+      signedOut();
+    });
+  });
+  return logout;
+}
+
+/** The whole app while viewing as a normal user: no admin pages, and always a way back. */
+function showViewShell(): void {
+  const stop = h("button", { class: "btn btn-small" }, icon(Undo2, 14), t.viewAs.stop);
+  stop.addEventListener("click", () => {
+    void act(stop, async () => {
+      const me = await request<Me>("DELETE", "/api/auth/view-as");
+      state.viewAs = me.view_as;
+      navigate("/workspace");
+    });
+  });
+  const rooms = h(
+    "a",
+    {
+      href: "/view",
+      class: "nav-link",
+      "aria-label": t.nav.rooms,
+      "aria-current": "page",
+      onclick: ((event: MouseEvent) => {
+        event.preventDefault();
+        navigate("/view");
+      }) as EventListener,
+    },
+    icon(DoorOpen, 18),
+    h("span", {}, t.nav.rooms),
+  );
+  replace(
+    root,
+    h(
+      "div",
+      { class: "shell" },
+      h(
+        "header",
+        { class: "rail" },
+        h("div", { class: "rail-brand" }, logo(), h("span", {}, t.appName)),
+        h("nav", { class: "rail-nav", "aria-label": "Main" }, rooms),
+        h("div", { class: "rail-foot" }, logoutButton()),
+      ),
+      h(
+        "main",
+        { class: "page view-page" },
+        h(
+          "div",
+          { class: "view-banner", role: "status", "data-testid": "view-banner" },
+          icon(Eye, 16),
+          h("span", {}, t.viewAs.banner),
+          stop,
+        ),
+        document.createElement("wb-room-view"),
+      ),
+      h("footer", { class: "muted site-notice", "data-testid": "site-notice" }, t.notAffiliated),
+    ),
+  );
+}
+
 function signedOut(): void {
   state.username = "";
+  state.viewAs = false;
   state.settings = null;
   setCsrfToken("");
   showLogin();

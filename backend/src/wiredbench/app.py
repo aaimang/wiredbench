@@ -22,6 +22,7 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 from wiredbench import __version__
 from wiredbench.api import ROUTERS
 from wiredbench.api.deps import Services, guard, public
+from wiredbench.api.mock import MockError
 from wiredbench.config import Settings
 from wiredbench.db import make_engine, make_session_factory, migrate
 from wiredbench.engine.sessions import RunRegistry
@@ -38,7 +39,6 @@ from wiredbench.services.upstream import Upstream
 log = logging.getLogger("wiredbench")
 
 MAX_BODY_BYTES = 2 * 2**20
-AUDIT_DAYS = 90
 SECURITY_HEADERS = {
     "Content-Security-Policy": (
         "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; "
@@ -102,9 +102,9 @@ def maintenance(services: Services, startup: bool = False) -> None:
     """Hourly housekeeping: empties old trash and runs the automatic update check if one is due."""
     with services.sessions() as db:
         ws.purge_expired(db)
-        db.execute(delete(AuditEvent).where(AuditEvent.at < utcnow() - timedelta(days=AUDIT_DAYS)))
-        db.commit()
         prefs = preferences.load(db, services.settings)
+        db.execute(delete(AuditEvent).where(AuditEvent.at < utcnow() - timedelta(days=prefs.audit_days)))
+        db.commit()
     if prefs.gamedata_check == "off" or (prefs.gamedata_check == "startup" and not startup):
         return
     hotels = set(services.catalog.hotels_in_use()) | {prefs.default_hotel}
@@ -133,6 +133,7 @@ def create_app(settings: Settings | None = None, transport: httpx.BaseTransport 
     sessions = make_session_factory(engine)
     with sessions() as db:
         ensure_admin(db, settings)
+        mock_rate = preferences.load(db, settings).rate_limit_mock
     upstream = Upstream(transport)
     services = Services(
         settings=settings,
@@ -144,6 +145,7 @@ def create_app(settings: Settings | None = None, transport: httpx.BaseTransport 
         login_user_limiter=RateLimiter(settings.rate_limit_login * 4, 15 * 60),
         write_limiter=RateLimiter(settings.rate_limit_writes, 60),
         read_limiter=RateLimiter(settings.rate_limit_reads, 60),
+        mock_limiter=RateLimiter(mock_rate, 60),
         runs=RunRegistry(),
     )
 
@@ -197,6 +199,11 @@ def create_app(settings: Settings | None = None, transport: httpx.BaseTransport 
     async def api_error(_request: Request, exc: ApiError) -> JSONResponse:
         headers = {"Retry-After": str(exc.retry_after)} if exc.retry_after else None
         return JSONResponse({"error": exc.code, "message": exc.message}, exc.status, headers=headers)
+
+    @app.exception_handler(MockError)
+    async def mock_error(_request: Request, exc: MockError) -> Response:
+        # The live API answers an unknown scope with an empty 404 rather than its JSON error.
+        return JSONResponse({"error": exc.code}, exc.status) if exc.code else Response(status_code=exc.status)
 
     @app.exception_handler(RequestValidationError)
     async def invalid(_request: Request, exc: RequestValidationError) -> JSONResponse:

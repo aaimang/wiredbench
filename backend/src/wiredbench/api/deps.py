@@ -31,6 +31,12 @@ def public[F: Callable[..., Any]](endpoint: F) -> F:
     return endpoint
 
 
+def viewer[F: Callable[..., Any]](endpoint: F) -> F:
+    """Marks a route as open to a view-as session. Everything else refuses one."""
+    endpoint.__wb_viewer__ = True  # type: ignore[attr-defined]
+    return endpoint
+
+
 @dataclass
 class Services:
     settings: Settings
@@ -41,6 +47,7 @@ class Services:
     login_user_limiter: RateLimiter
     write_limiter: RateLimiter
     read_limiter: RateLimiter
+    mock_limiter: RateLimiter
     runs: RunRegistry
 
 
@@ -62,7 +69,10 @@ def guard(
     request: Request, services: Services = Depends(get_services), db: Session = Depends(get_db)
 ) -> None:
     unsafe = request.method not in SAFE_METHODS
-    limiter = services.write_limiter if unsafe else services.read_limiter
+    if request.url.path.startswith("/api/public/"):
+        limiter = services.mock_limiter
+    else:
+        limiter = services.write_limiter if unsafe else services.read_limiter
     if retry := limiter.hit(client_ip(request)):
         raise ApiError(429, "rate_limited", "Too many requests. Try again shortly.", retry)
 
@@ -83,6 +93,8 @@ def guard(
         raise ApiError(401, "not_logged_in", "Log in to continue.")
     if unsafe and not secrets.compare_digest(request.headers.get("x-csrf-token", ""), session.csrf_token):
         raise ApiError(403, "bad_csrf", "This page is out of date. Reload and try again.")
+    if session.view_as and not getattr(endpoint, "__wb_viewer__", False):
+        raise ApiError(403, "view_as", "This is not available while viewing as a normal user.")
     request.state.session = session
     request.state.user = user
     db.commit()  # Returns the connection to the pool, because a page of icons can wait on Habbo for a while.
