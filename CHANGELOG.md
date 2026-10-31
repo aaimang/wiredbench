@@ -12,6 +12,7 @@
 
 * make the live check safer and test batches properly ([#24](https://github.com/aaimang/wiredbench/issues/24)) ([578e7f0](https://github.com/aaimang/wiredbench/commit/578e7f0288185418338d229e7d93ff5113c41906))
 * match the mock API's errors to a real room ([#22](https://github.com/aaimang/wiredbench/issues/22)) ([98b2638](https://github.com/aaimang/wiredbench/commit/98b26383b7eb8856e578169548f87f2b31784e84))
+* send ETag on successful mock API writes, as a real room does ([#25](https://github.com/aaimang/wiredbench/issues/25)) ([05ce82e](https://github.com/aaimang/wiredbench/commit/05ce82ec38449735852203891a57812f32fdce00))
 
 ## [0.6.0](https://github.com/aaimang/wiredbench/compare/v0.5.0...v0.6.0) (2026-10-31)
 
