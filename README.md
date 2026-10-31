@@ -5,9 +5,9 @@ Build, run and debug Habbo WIRED stacks in a local sandbox, then export them to 
 Wiredbench runs on your own computer with one admin login. It downloads Habbo's public furni list
 to your machine and never redistributes Habbo's assets.
 
-> **Status: early development.** You can build a room and walk around it. WIRED boxes can be placed
-> but do not run yet, because the WIRED engine and import and export are not built. See
-> [PLAN.md](PLAN.md).
+> **Status: early development.** You can build a room, configure WIRED and run it. The engine has not
+> been compared with a real room, so behaviour may differ from the game, and import and export are not
+> built. See [PLAN.md](PLAN.md).
 
 Not affiliated with or endorsed by Sulake. Habbo is a trademark of Sulake.
 
@@ -20,6 +20,10 @@ Not affiliated with or endorsed by Sulake. Habbo is a trademark of Sulake.
 - **Room editor:** place, stack, move and rotate floor furni using real Habbo art, with colour
   variants, furni states, undo and redo, and saving by itself.
 - **Avatars:** add any Habbo by name and hotel, then click to walk, sit and lie down in Play mode.
+- **WIRED engine:** run a room with core triggers, conditions, selectors, effects, add-ons, variables and
+  signals. Each box says whether its behaviour is documented or assumed, and others are logged as not
+  simulated yet.
+- **Debugger:** live trace and variables, pause and step, debug commands, and a time tracking example room.
 - **Workspace:** nested folders of sandboxes, with rename, move, duplicate, version history and a
   30-day trash.
 - **Settings:** default hotel, theme, automatic update checks, cache limit, password change and an
@@ -160,6 +164,7 @@ running server.
 | POST | `/api/catalog/rollback` | Admin |
 | GET | `/api/catalog/status` | Admin |
 | POST | `/api/catalog/sync` | Admin |
+| GET | `/api/engine/boxes` | Admin |
 | POST | `/api/folders` | Admin |
 | DELETE | `/api/folders/{folder_id}` | Admin |
 | PATCH | `/api/folders/{folder_id}` | Admin |
@@ -171,6 +176,12 @@ running server.
 | PATCH | `/api/sandboxes/{sandbox_id}` | Admin |
 | PUT | `/api/sandboxes/{sandbox_id}/document` | Admin |
 | POST | `/api/sandboxes/{sandbox_id}/duplicate` | Admin |
+| DELETE | `/api/sandboxes/{sandbox_id}/run` | Admin |
+| GET | `/api/sandboxes/{sandbox_id}/run` | Admin |
+| POST | `/api/sandboxes/{sandbox_id}/run` | Admin |
+| POST | `/api/sandboxes/{sandbox_id}/run/advance` | Admin |
+| POST | `/api/sandboxes/{sandbox_id}/run/command` | Admin |
+| POST | `/api/sandboxes/{sandbox_id}/run/input` | Admin |
 | GET | `/api/sandboxes/{sandbox_id}/versions` | Admin |
 | POST | `/api/sandboxes/{sandbox_id}/versions/{revision}/restore` | Admin |
 | GET | `/api/settings` | Admin |
@@ -178,6 +189,7 @@ running server.
 | GET | `/api/trash` | Admin |
 | DELETE | `/api/trash/{kind}/{item_id}` | Admin |
 | POST | `/api/trash/{kind}/{item_id}/restore` | Admin |
+| POST | `/api/tutorials/time-tracking` | Admin |
 | GET | `/api/workspace/tree` | Admin |
 | GET | `/healthz` | Public |
 <!-- /generated:api -->

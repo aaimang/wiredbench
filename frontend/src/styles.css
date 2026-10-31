@@ -1380,6 +1380,163 @@ wb-editor {
   justify-self: start;
 }
 
+/* Running a room */
+
+.run-panel {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  height: 42%;
+  min-height: 200px;
+  padding: 8px 10px;
+  border-top: 2px solid var(--wire-trigger);
+  background: var(--panel);
+}
+
+.run-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.run-clock {
+  font-family: var(--mono);
+  font-size: 14px;
+}
+
+.run-controls {
+  display: flex;
+  gap: 4px;
+}
+
+.run-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  flex: 1;
+  gap: 10px;
+  min-height: 0;
+}
+
+.run-trace {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+}
+
+.trace-line {
+  display: flex;
+  gap: 8px;
+  padding: 1px 0 1px 6px;
+  border-left: 3px solid var(--line);
+  font-size: 13px;
+}
+
+.trace-time {
+  flex: none;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.trace-text {
+  overflow-wrap: anywhere;
+}
+
+.trace-run {
+  border-color: var(--wire-trigger);
+}
+
+.trace-effect {
+  border-color: var(--wire-effect);
+}
+
+.trace-condition {
+  border-color: var(--wire-condition);
+}
+
+.trace-signal {
+  border-color: var(--wire-variable);
+}
+
+.trace-stub {
+  border-color: var(--wire-utility);
+  color: var(--muted);
+}
+
+.trace-error,
+.trace-limit {
+  border-color: var(--danger);
+  color: var(--danger);
+  font-weight: 550;
+}
+
+.trace-answer {
+  border-color: var(--ink);
+  white-space: pre-wrap;
+}
+
+.run-vars {
+  overflow: auto;
+}
+
+.run-vars th {
+  padding-right: 8px;
+  font-size: 13px;
+  text-align: left;
+}
+
+.run-vars td {
+  padding: 2px 8px 2px 0;
+  font-size: 13px;
+}
+
+.run-form {
+  display: flex;
+  gap: 4px;
+}
+
+.box-settings {
+  display: grid;
+  justify-items: stretch;
+  gap: 2px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.box-settings h3 {
+  margin: 0 0 6px;
+  font-size: 14px;
+}
+
+.box-settings .field {
+  margin-bottom: 8px;
+}
+
+.box-settings select {
+  width: 100%;
+}
+
+.box-settings input[type="checkbox"] {
+  width: auto;
+  justify-self: start;
+  min-height: 0;
+}
+
+.fidelity-assumed {
+  border-style: dashed;
+}
+
+.editor-inspector .badge {
+  align-self: flex-start;
+}
+
 /* Narrower screens */
 
 @media (max-width: 1080px) {

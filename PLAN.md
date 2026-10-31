@@ -4,9 +4,9 @@ Wiredbench (working name) is a self-hosted browser sandbox for building, running
 debugging Habbo WIRED. It targets Habbo Classic by exporting setups to real rooms through
 G-Presets.
 
-- **Status:** Phase 1 released as `v0.2.0`. Phase 2 (room) built. Phase 0 results are in
+- **Status:** Phases 1 and 2 merged. Phase 3 (engine) built. Phase 0 results are in
   [spikes/RESULTS.md](spikes/RESULTS.md).
-- **Revision:** 2026-10-31, updated with Phase 2 results.
+- **Revision:** 2026-10-31, updated with Phase 3 results.
 
 ## 1. Decisions
 
@@ -206,6 +206,28 @@ Commands use a fixed grammar and never run as code.
 - Exports never contain API keys.
 - Golden test files come from the `g-presets_presets` folder, which already round-trips losslessly.
 
+### Engine status after Phase 3
+
+The engine runs on the server with a virtual clock and a seeded random source, and any run can be replayed
+from its inputs. The browser polls it once a second over REST rather than using a WebSocket, which keeps
+the permission and rate limit rules in one place.
+
+No box is `verified in-game`, because nothing has been compared with a real room. The main assumptions:
+
+- A tick is 500 ms, inferred from delay values in real presets.
+- Execute In Order runs from the top of the stack down. Without it, the order is shuffled by the seed, so
+  a stack that relies on order by accident shows up in testing.
+- A signal carries one user, so sending to several users sends several signals. The article's per-user
+  conditions need this.
+- Stacks may run 100 times per second by default. The real limit is not public.
+- Box settings are this project's own friendly fields under `wired`. Mapping them to G-Presets' raw
+  `options` arrays is Phase 5 work, because the meaning of most option numbers is not documented.
+- The time tracking example follows the article's text. Its screenshots hold exact settings that could not
+  be read.
+
+Not simulated yet, so logged as stubs: game boxes, bots, teams, chests, movement add-ons, Variable FX and
+the rest of the catalogue outside Wave 1. Walking still runs in the browser, which reports each step.
+
 ### Debugging additions
 
 - Fidelity badge per WIRED: `verified in-game`, `documented` or `assumed`.
@@ -256,7 +278,7 @@ also covers the 10-second worst-case loss when a user leaves without standing up
 | 0. Spikes (done, real-room checks open) | Convert SWF to sprites; check avatar frames; round-trip real G-Presets files; test a mock against the official spec | Results in `spikes/RESULTS.md` |
 | 1. Foundation (built) | Repo, CI, admin login, folders, furnidata sync, update button, cache | All WIRED browsable behind login; update shows a correct diff |
 | 2. Room (built) | Renderer, asset cache, placement, avatars, pathfinding, editor layout | An avatar walks and sits in a saved room |
-| 3. Engine | Wave 1, stubs, inspector, debugger | Time tracking tutorial passes |
+| 3. Engine (built) | Wave 1, stubs, inspector, debugger | Time tracking tutorial passes |
 | 4. Control | Mock API, dashboard, view-as, settings | Official wrappers work against the mock |
 | 5. Exchange | Import, export, guide, tutorials | A preset imports into a real room and behaves the same |
 | 6. Depth | Wave 2, stack checker | Every box has an honest badge |

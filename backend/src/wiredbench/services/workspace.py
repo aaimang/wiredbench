@@ -57,7 +57,7 @@ def _require_free(
         raise ApiError(409, "name_taken", f"Something in this folder is already called “{name}”.")
 
 
-def _free_name(db: Session, name: str, folder_id: int | None, kind: str, suffix: str) -> str:
+def free_name(db: Session, name: str, folder_id: int | None, kind: str, suffix: str) -> str:
     candidate, count = name, 1
     while _name_taken(db, candidate, folder_id, kind):
         label = suffix if count == 1 else f"{suffix} {count}"
@@ -224,7 +224,7 @@ def versions(db: Session, sandbox_id: int) -> list[dict[str, Any]]:
 
 def duplicate_sandbox(db: Session, sandbox_id: int) -> Sandbox:
     source = live_sandbox(db, sandbox_id)
-    name = _free_name(db, source.name, source.folder_id, "sandbox", "copy")
+    name = free_name(db, source.name, source.folder_id, "sandbox", "copy")
     copy = Sandbox(
         name=name,
         folder_id=source.folder_id,
@@ -275,12 +275,12 @@ def restore(db: Session, kind: str, item_id: int) -> None:
         parent = db.get(Folder, item.parent_id) if item.parent_id else None
         if parent is not None and parent.deleted_at is not None:
             item.parent_id = None
-        item.name = _free_name(db, item.name, item.parent_id, "folder", "restored")
+        item.name = free_name(db, item.name, item.parent_id, "folder", "restored")
     else:
         parent = db.get(Folder, item.folder_id) if item.folder_id else None
         if parent is not None and parent.deleted_at is not None:
             item.folder_id = None
-        item.name = _free_name(db, item.name, item.folder_id, "sandbox", "restored")
+        item.name = free_name(db, item.name, item.folder_id, "sandbox", "restored")
     rows = [
         *db.scalars(select(Folder).where(Folder.trash_batch == batch)),
         *db.scalars(select(Sandbox).where(Sandbox.trash_batch == batch)),

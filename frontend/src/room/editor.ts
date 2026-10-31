@@ -9,10 +9,12 @@ import {
   Footprints,
   Grid2x2,
   Hammer,
+  Play,
   Redo2,
   RotateCw,
   Save,
   Search,
+  Square,
   Trash2,
   Undo2,
   UserPlus,
@@ -44,6 +46,13 @@ import {
   UNKNOWN_FURNI,
 } from "./model";
 import { type AvatarPose, avatarUrl, type Hit, RoomRenderer, type Scene } from "./renderer";
+import {
+  type BoxCatalogue,
+  type BoxField,
+  loadBoxCatalogue,
+  RunPanel,
+  type RunState,
+} from "./run-panel";
 
 const T = t.editor;
 const DEMO_FIGURE = "hd-180-1.ch-210-66.lg-270-82.sh-290-91.hr-100-61";
@@ -76,6 +85,10 @@ class WbEditor extends HTMLElement {
   private items = new Map<string, CatalogItem | null>();
   private history = new History();
   private mode: "build" | "play" = "build";
+  private boxes: BoxCatalogue = {};
+  private run: RunPanel | null = null;
+  private savedRoom: RoomDocument | null = null;
+  private picking: { field: BoxField; item: PlacedFurni; chosen: number[] } | null = null;
   private selected: Hit | null = null;
   private placing: { classname: string; rot: number } | null = null;
   private hover: [number, number] | null = null;
@@ -93,6 +106,7 @@ class WbEditor extends HTMLElement {
   private paletteList = h("div", { class: "palette-list", "data-testid": "palette-list" });
   private canvasHost = h("div", { class: "editor-canvas" });
   private selectionBar = h("div", { class: "selection-bar" });
+  private stage = h("div", { class: "editor-stage" });
   private inspector = h("aside", { class: "editor-inspector", "data-testid": "inspector" });
   private statusLine = h("span", { class: "muted status-line", "data-testid": "save-status" });
   private walkStatus = h("p", { class: "muted", role: "status", "data-testid": "walk-status" });
@@ -123,17 +137,13 @@ class WbEditor extends HTMLElement {
       );
       return;
     }
+    this.stage.append(this.canvasHost, this.selectionBar);
     replace(
       this,
       this.toolbar,
-      h(
-        "div",
-        { class: "editor-body" },
-        this.palette,
-        h("div", { class: "editor-stage" }, this.canvasHost, this.selectionBar),
-        this.inspector,
-      ),
+      h("div", { class: "editor-body" }, this.palette, this.stage, this.inspector),
     );
+    this.boxes = await loadBoxCatalogue().catch(() => ({}));
     this.buildPalette();
     this.renderPanels();
     window.addEventListener("keydown", this.onKey);
@@ -144,6 +154,7 @@ class WbEditor extends HTMLElement {
   disconnectedCallback(): void {
     window.removeEventListener("keydown", this.onKey);
     window.removeEventListener("beforeunload", this.onLeave);
+    this.endRun();
     if (this.dirty) void this.save();
     this.renderer?.destroy();
     this.renderer = null;
@@ -281,6 +292,7 @@ class WbEditor extends HTMLElement {
         avatar.x = next[0];
         avatar.y = next[1];
         avatar.z = stand.z;
+        void this.run?.input({ type: "move", user: avatar.id, x: next[0], y: next[1] });
         walker.from = [next[0], next[1], stand.z];
         const [after] = walker.path;
         if (after) {
@@ -335,6 +347,13 @@ class WbEditor extends HTMLElement {
         this.needsDraw = true;
       }
     });
+    canvas.addEventListener("dblclick", (event) => {
+      const at = position(event as unknown as PointerEvent);
+      const hit = this.renderer?.hitAt(at.x, at.y);
+      if (this.run && hit?.kind === "furni") {
+        void this.run.input({ type: "use", user: this.runUser(), furni: hit.id });
+      }
+    });
     canvas.addEventListener("pointerleave", () => {
       down = null;
       this.hover = null;
@@ -352,6 +371,11 @@ class WbEditor extends HTMLElement {
     if (!renderer) return;
     const tile = renderer.tileAt(at.x, at.y);
     const inside = fitsInRoom(this.room, [tile]);
+    if (this.picking) {
+      const picked = renderer.hitAt(at.x, at.y);
+      if (picked?.kind === "furni") this.togglePick(picked.id);
+      return;
+    }
     if (this.placing) {
       if (inside) this.placeAt(tile);
       return;
@@ -366,6 +390,9 @@ class WbEditor extends HTMLElement {
       return;
     }
     const clicked = hit ? this.room.furni.find((f) => f.id === hit.id) : null;
+    if (clicked && this.run) {
+      void this.run.input({ type: "click", user: this.runUser(), furni: clicked.id });
+    }
     const goal: [number, number] | null = clicked ? [clicked.x, clicked.y] : inside ? tile : null;
     if (goal) this.walkTo(goal);
   }
@@ -386,6 +413,10 @@ class WbEditor extends HTMLElement {
   }
 
   private markDirty(): void {
+    if (this.run) {
+      this.needsDraw = true; // A run works on a copy, so nothing here is saved.
+      return;
+    }
     this.dirty = true;
     this.needsDraw = true;
     this.renderSaveStatus();
@@ -617,7 +648,7 @@ class WbEditor extends HTMLElement {
       return this.saving.then(() => (this.dirty ? this.save() : undefined));
     }
     const sandbox = this.sandbox;
-    if (!sandbox || !this.dirty) return Promise.resolve();
+    if (!sandbox || !this.dirty || this.run) return Promise.resolve();
     const sent = JSON.stringify(this.room);
     this.saving = request<SandboxData>("PUT", `/api/sandboxes/${sandbox.id}/document`, {
       document: this.room,
@@ -757,6 +788,7 @@ class WbEditor extends HTMLElement {
         modeButton("build", T.build, Hammer),
         modeButton("play", T.play, Footprints),
       ),
+      this.runButton(),
       this.toolButton(T.undo, Undo2, () => this.undoRedo(false), !this.history.canUndo),
       this.toolButton(T.redo, Redo2, () => this.undoRedo(true), !this.history.canRedo),
       this.toolButton(T.roomSize, Grid2x2, () => this.editRoomSize()),
@@ -766,6 +798,197 @@ class WbEditor extends HTMLElement {
       saveButton,
     );
     this.renderSaveStatus();
+  }
+
+  private runButton(): HTMLElement {
+    const button = h(
+      "button",
+      { class: "btn btn-primary", "data-testid": "run-button" },
+      icon(this.run ? Square : Play),
+      this.run ? t.run.stop : t.run.run,
+    );
+    button.addEventListener("click", () => {
+      void act(button, () => (this.run ? Promise.resolve(this.endRun()) : this.startRun()));
+    });
+    return button;
+  }
+
+  private runUser(): number | null {
+    return this.selectedAvatar()?.id ?? this.room.avatars[0]?.id ?? null;
+  }
+
+  private async startRun(): Promise<void> {
+    const sandbox = this.sandbox;
+    if (!sandbox) return;
+    await this.save();
+    if (this.saveError) throw new Error(this.saveError);
+    this.savedRoom = JSON.parse(JSON.stringify(this.room));
+    this.placing = null;
+    this.mode = "play";
+    this.selected = null;
+    const panel = new RunPanel(
+      `/api/sandboxes/${sandbox.id}/run`,
+      (state) => this.applyRun(state),
+      () => {
+        this.endRun();
+        this.renderPanels();
+      },
+      () => this.runUser(),
+    );
+    this.run = panel;
+    this.stage.append(panel.element);
+    try {
+      await panel.start();
+    } catch (error) {
+      this.endRun();
+      throw error;
+    }
+    this.renderPanels();
+  }
+
+  private endRun(): void {
+    if (!this.run) return;
+    this.run.stop();
+    this.run.element.remove();
+    this.run = null;
+    this.walkers.clear();
+    if (this.savedRoom) this.room = this.savedRoom;
+    this.savedRoom = null;
+    this.selected = null;
+    this.mode = "build";
+    this.needsDraw = true;
+  }
+
+  /** Shows what the engine did. Walking avatars are left alone, because the browser moves them. */
+  private applyRun(state: RunState): void {
+    for (const item of state.furni) {
+      const placed = this.room.furni.find((f) => f.id === item.id);
+      if (placed) Object.assign(placed, item);
+    }
+    this.room.avatars = this.room.avatars.filter((a) => state.users.some((u) => u.id === a.id));
+    for (const user of state.users) {
+      const avatar = this.room.avatars.find((a) => a.id === user.id);
+      if (avatar && !this.walkers.has(user.id) && (avatar.x !== user.x || avatar.y !== user.y)) {
+        const stand = standAt(this.room, this.lookup, user.x, user.y);
+        Object.assign(avatar, { x: user.x, y: user.y, z: stand.z, pose: stand.pose });
+      }
+    }
+    this.needsDraw = true;
+  }
+
+  private togglePick(id: number): void {
+    const picking = this.picking;
+    if (!picking) return;
+    picking.chosen = picking.chosen.includes(id)
+      ? picking.chosen.filter((value) => value !== id)
+      : [...picking.chosen, id];
+    this.renderInspector();
+  }
+
+  /** The settings form for a WIRED box, built from what the engine says the box takes. */
+  private boxSettings(item: PlacedFurni): HTMLElement[] {
+    if (!item.classname.startsWith("wf_")) return [];
+    const spec = this.boxes[item.classname];
+    if (!spec) {
+      return [
+        h("span", { class: "badge badge-hidden", "data-testid": "fidelity" }, t.run.stub),
+        h("p", { class: "muted" }, t.run.stubHelp),
+      ];
+    }
+    const settings = (item.wired ?? {}) as Record<string, unknown>;
+    const form = h("form", { class: "box-settings", "data-testid": "box-settings" });
+    const controls = spec.fields.map((field) => this.fieldControl(field, item, settings));
+    form.append(
+      h("h3", {}, t.run.settings),
+      ...controls,
+      h("button", { class: "btn", type: "submit" }, t.run.saveSettings),
+    );
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      this.saveBoxSettings(form, spec.fields, item, settings);
+    });
+    const help = t.run.fidelityHelp[spec.fidelity] ?? "";
+    return [
+      h(
+        "span",
+        { class: `badge fidelity-${spec.fidelity}`, title: help, "data-testid": "fidelity" },
+        t.run.fidelity[spec.fidelity] ?? spec.fidelity,
+      ),
+      h("p", { class: "muted" }, help),
+      ...(spec.fields.length ? [form] : []),
+    ];
+  }
+
+  private fieldControl(
+    field: BoxField,
+    item: PlacedFurni,
+    settings: Record<string, unknown>,
+  ): HTMLElement {
+    const value = settings[field.name] ?? field.default;
+    const id = `box-${field.name}`;
+    let control: HTMLElement;
+    if (field.kind === "furni") {
+      const picking = this.picking;
+      const active = picking?.field.name === field.name && picking.item.id === item.id;
+      const chosen = active ? picking.chosen : ((value as number[]) ?? []);
+      const button = h(
+        "button",
+        { class: "btn btn-small", type: "button", "data-field": field.name },
+        active ? t.run.picking(chosen.length) : t.run.pick(chosen.length),
+      );
+      button.addEventListener("click", () => {
+        if (active && picking) {
+          item.wired = { ...settings, [field.name]: picking.chosen };
+          this.picking = null;
+          this.change(() => {});
+        } else {
+          this.picking = { field, item, chosen: [...chosen] };
+          this.renderInspector();
+        }
+      });
+      control = button;
+    } else if (field.kind === "bool") {
+      control = h("input", { id, name: field.name, type: "checkbox", checked: value === true });
+    } else if (field.kind === "select") {
+      control = h(
+        "select",
+        { id, name: field.name },
+        ...(field.options ?? []).map((option) =>
+          h("option", { value: option, selected: option === value }, option),
+        ),
+      );
+    } else if (field.kind === "textarea") {
+      control = h("textarea", { id, name: field.name, rows: 3 }, String(value ?? ""));
+    } else {
+      control = h("input", {
+        id,
+        name: field.name,
+        type: field.kind === "number" ? "number" : "text",
+        value: String(value ?? ""),
+        min: field.min,
+        max: field.max,
+      });
+    }
+    return h("div", { class: "field" }, h("label", { for: id }, field.label), control);
+  }
+
+  private saveBoxSettings(
+    form: HTMLFormElement,
+    fields: BoxField[],
+    item: PlacedFurni,
+    settings: Record<string, unknown>,
+  ): void {
+    const values = new FormData(form);
+    const next: Record<string, unknown> = { ...settings };
+    for (const field of fields) {
+      if (field.kind === "furni") continue;
+      if (field.kind === "bool") next[field.name] = values.get(field.name) !== null;
+      else if (field.kind === "number") next[field.name] = Number(values.get(field.name) ?? 0);
+      else next[field.name] = String(values.get(field.name) ?? "");
+    }
+    this.change(() => {
+      item.wired = next;
+    });
   }
 
   private isEmpty(): boolean {
@@ -1048,6 +1271,8 @@ class WbEditor extends HTMLElement {
         position("Z", "z", "0.01", false),
       ),
       this.stateButtons(item),
+      h("p", { class: "muted" }, t.run.idLabel(item.id)),
+      ...this.boxSettings(item),
     ];
   }
 
