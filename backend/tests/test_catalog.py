@@ -293,8 +293,7 @@ def test_hotels_are_separate(api: Api, habbo: FakeHabbo) -> None:
     apply_update(api, "com")
     assert api.get("/api/catalog/items", params={"hotel": "com", "scope": "all"}).json()["total"] == 1
     assert "chair" in classnames(api)
-    assert any("www.habbo.com/" in str(r.url) for r in habbo.requests)
-    assert any("sandbox.habbo.com/" in str(r.url) for r in habbo.requests)
+    assert {"www.habbo.com", "sandbox.habbo.com"} <= {r.url.host for r in habbo.requests}
 
 
 def test_icons_are_cached_and_limited_to_the_catalogue(
