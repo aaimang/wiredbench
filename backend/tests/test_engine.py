@@ -593,14 +593,52 @@ def says_engine(**settings: Any) -> Engine:
     [
         ({}, "oh hello there you", True),
         ({"match": "contains"}, "shello therefore", True),
-        ({"match": "exact"}, "oh hello there you", True),
-        ({"match": "exact"}, "shello therefore", False),
-        ({"match": "all"}, "oh hello there you", False),
-        ({"match": "all"}, "Hello There", True),
+        ({"match": "exact"}, "oh hello there you", False),
+        ({"match": "exact"}, "Hello There", True),
+        ({"match": "all"}, "something else entirely", True),
         ({"exact": True}, "oh hello there you", False),
+        ({"exact": True}, "hello there", True),
     ],
 )
 def test_keyword_types(settings: dict[str, Any], said: str, runs: bool) -> None:
     engine = says_engine(**settings)
     engine.apply_input({"type": "say", "user": 9, "text": said})
     assert bool(logs(engine)) is runs
+
+
+def test_periods_and_limit_windows_can_be_half_seconds() -> None:
+    engine = Engine(
+        {
+            "furni": [
+                box(1, "wf_trg_periodically", 1, 1, seconds=2.5),
+                box(2, "wf_act_log", 1, 1, 1, text="ran"),
+            ]
+        }
+    )
+    engine.advance(2000)
+    assert logs(engine) == []
+    engine.advance(500)
+    assert logs(engine) == ["ran"]
+
+
+def test_random_rotation_turns_furni_and_replays() -> None:
+    def run(seed: int) -> list[int]:
+        engine = Engine(
+            {
+                "furni": [
+                    {"id": 1, "classname": "chair", "x": 3, "y": 3},
+                    box(2, "wf_trg_periodically", 1, 1, seconds=1),
+                    box(3, "wf_act_move_rotate", 1, 1, 1, furni=[1], rotation="random"),
+                ]
+            },
+            seed=seed,
+        )
+        seen = []
+        for _ in range(8):
+            engine.advance(1000)
+            seen.append(engine.furni[1]["rot"])
+        return seen
+
+    assert run(4) == run(4)
+    assert len(set(run(4))) > 1
+    assert set(run(4)) <= {0, 2, 4, 6}

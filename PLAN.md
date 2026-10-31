@@ -251,7 +251,7 @@ Each box needs its own evidence, so this is being done as screenshots arrive. So
 User to Furni and Variable placeholder. Options the engine does not act on are marked as saved only. The
 meaning of each `options` number is still unknown, so export warns about settings it cannot write. Screenshots
 were also seen for Furni Is Used's furni source, the Projectile add-on (cut off) and the box menu, which are not
-built. "Exact match" as whole words and "Match all text" as the whole message are assumptions.
+built.
 
 Screenshots of the client's Wired Creator Tools show more that is not built. Variables have properties: type
 (created by user or internal), target, availability, has value, can write to, can create or delete, and can
@@ -259,6 +259,14 @@ intercept. Rooms also have read-only internal variables, such as `@id`, `@class_
 `@position.x`, `@rotation` and `@altitude` on furni, `@index`, `@level`, `@is_owner` and `@direction` on users, and
 context ones such as `@selector_furni_count`. A variable can have no value, like `is_admin_dev`. The inspection
 tab shows a furni's or user's variables with values, including `@height` 65 for a 0.65 height box.
+
+### Reference for box options
+
+`nitrodevco/nitro-next` is read only as a source of facts about option order and meaning, chosen on 2026-10-31.
+It has no licence and says it is ported from Habbo's client, so no code is copied, it is not a dependency, and the
+product does not link to it. `OPTION_FIELDS` in `services/exchange.py` is this project's own table. Each entry
+is unverified until tried in a real room, though variable boxes and the filter also match real preset files.
+Not mapped yet: variable effects and conditions, movement directions, and most boxes outside the engine.
 
 ### Debugging additions
 

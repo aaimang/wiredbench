@@ -1140,6 +1140,7 @@ class WbEditor extends HTMLElement {
         value: String(value ?? ""),
         min: field.min,
         max: field.max,
+        step: field.step,
       });
     }
     return h(
