@@ -63,6 +63,7 @@ const SECONDS_PER_STEP = 0.5;
 const WALK_FRAMES_PER_SECOND = 8;
 const AUTOSAVE_MS = 1500;
 const PALETTE_SIZE = 60;
+const MAX_PICKS = 20;
 const ARROW_STEPS: Record<string, [number, number]> = {
   arrowup: [0, -1],
   arrowdown: [0, 1],
@@ -208,6 +209,7 @@ class WbEditor extends HTMLElement {
       lookup: this.lookup,
       revisionOf: (classname) => this.items.get(classname)?.revision ?? null,
       selected: this.selected,
+      picked: this.pickedFurni(),
       ghost: this.ghost(),
       hover: this.mode === "play" ? this.hover : null,
       avatarPose: (avatar) => this.avatarPose(avatar),
@@ -983,10 +985,71 @@ class WbEditor extends HTMLElement {
   private togglePick(id: number): void {
     const picking = this.picking;
     if (!picking) return;
+    if (!picking.chosen.includes(id) && picking.chosen.length >= MAX_PICKS) {
+      toast(t.run.pickLimit(MAX_PICKS), "error");
+      return;
+    }
     picking.chosen = picking.chosen.includes(id)
       ? picking.chosen.filter((value) => value !== id)
       : [...picking.chosen, id];
+    this.needsDraw = true;
     this.renderInspector();
+  }
+
+  /** What the open box has picked: the picks being made, or else all it has saved. */
+  private pickedFurni(): Set<number> {
+    if (this.picking) return new Set(this.picking.chosen);
+    const item = this.selectedFurni();
+    const fields = item ? (this.boxes[item.classname]?.fields ?? []) : [];
+    const saved = (item?.wired ?? {}) as Record<string, unknown>;
+    const picks = fields
+      .filter((field) => field.kind === "furni")
+      .flatMap((field) => (saved[field.name] as number[] | undefined) ?? []);
+    return new Set(picks);
+  }
+
+  private pickedList(
+    field: BoxField,
+    item: PlacedFurni,
+    settings: Record<string, unknown>,
+    chosen: number[],
+  ): HTMLElement {
+    if (!chosen.length) return h("p", { class: "muted" }, t.run.pickedEmpty);
+    const remove = (id: number) => {
+      if (this.picking?.field.name === field.name && this.picking.item.id === item.id) {
+        this.togglePick(id);
+        return;
+      }
+      this.change(() => {
+        item.wired = { ...settings, [field.name]: chosen.filter((value) => value !== id) };
+      });
+      this.needsDraw = true;
+    };
+    return h(
+      "ul",
+      { class: "picked-list", "data-testid": `picked-${field.name}` },
+      ...chosen.map((id) => {
+        const furni = this.room.furni.find((f) => f.id === id);
+        const name = furni ? this.items.get(furni.classname)?.name || furni.classname : "";
+        const label = furni ? t.run.pickedRow(name, furni.x, furni.y) : t.run.pickedMissing(id);
+        return h(
+          "li",
+          {},
+          h("span", {}, label),
+          h(
+            "button",
+            {
+              class: "btn btn-quiet btn-icon",
+              type: "button",
+              "aria-label": t.run.removePick(name || String(id)),
+              title: t.run.removePick(name || String(id)),
+              onclick: () => remove(id),
+            },
+            icon(X, 14),
+          ),
+        );
+      }),
+    );
   }
 
   /** The settings form for a WIRED box, built from what the engine says the box takes. */
@@ -1044,13 +1107,15 @@ class WbEditor extends HTMLElement {
         if (active && picking) {
           item.wired = { ...settings, [field.name]: picking.chosen };
           this.picking = null;
+          this.needsDraw = true;
           this.change(() => {});
         } else {
           this.picking = { field, item, chosen: [...chosen] };
+          this.needsDraw = true;
           this.renderInspector();
         }
       });
-      control = button;
+      control = h("div", {}, button, this.pickedList(field, item, settings, chosen));
     } else if (field.kind === "bool") {
       control = h("input", { id, name: field.name, type: "checkbox", checked: value === true });
     } else if (field.kind === "select") {
@@ -1058,7 +1123,11 @@ class WbEditor extends HTMLElement {
         "select",
         { id, name: field.name },
         ...(field.options ?? []).map((option) =>
-          h("option", { value: option, selected: option === value }, option),
+          h(
+            "option",
+            { value: option, selected: option === value },
+            field.labels?.[option] ?? option,
+          ),
         ),
       );
     } else if (field.kind === "textarea") {
@@ -1073,7 +1142,13 @@ class WbEditor extends HTMLElement {
         max: field.max,
       });
     }
-    return h("div", { class: "field" }, h("label", { for: id }, field.label), control);
+    return h(
+      "div",
+      { class: "field" },
+      h("label", { for: id }, field.label),
+      control,
+      field.saved_only && h("p", { class: "muted" }, t.run.savedOnly),
+    );
   }
 
   private saveBoxSettings(

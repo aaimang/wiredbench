@@ -354,6 +354,12 @@ export const t = {
     saveSettings: "Save settings",
     pick: (count: number) => `Pick in room (${count})`,
     picking: (count: number) => `Done picking (${count} chosen)`,
+    pickedEmpty: "Nothing picked yet.",
+    pickedRow: (name: string, x: number, y: number) => `${name} at ${x}, ${y}`,
+    pickedMissing: (id: number) => `Furni ${id}, no longer in the room`,
+    removePick: (name: string) => `Remove ${name} from the picks`,
+    pickLimit: (count: number) => `A box can pick up to ${count} furni.`,
+    savedOnly: "Saved, not simulated yet.",
     pickingHint: "Click furni in the room to add or remove it, then press Done.",
     fidelity: {
       documented: "Documented",

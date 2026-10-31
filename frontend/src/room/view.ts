@@ -137,6 +137,7 @@ class WbRoomView extends HTMLElement {
           if (revision !== undefined) void renderer.loadFurni(name, revision);
         }
         this.bindPointer(renderer.app.canvas);
+        this.draw(); // Clicks need tile positions, which exist once the room has been drawn.
       }
       this.apply(await post<ViewState>(this.query(this.url)));
       this.timer = setInterval(() => void this.tick(), TICK_MS);
@@ -258,6 +259,7 @@ class WbRoomView extends HTMLElement {
       lookup: this.lookup,
       revisionOf: (classname) => this.items[classname]?.revision ?? null,
       selected: null,
+      picked: new Set(),
       ghost: null,
       hover: null,
       avatarPose: (avatar) => {

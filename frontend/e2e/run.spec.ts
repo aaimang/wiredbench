@@ -148,3 +148,45 @@ test("the guide lists boxes, filters them and adds an example room", async ({ pa
   await expect(page.getByTestId("room-canvas")).toBeVisible();
   await expect(page).toHaveURL(/\/sandbox\/\d+$/);
 });
+
+test("a box lists and highlights its picks", async ({ page }) => {
+  await login(page);
+  await page.getByRole("link", { name: "Guide" }).click();
+  await page
+    .getByTestId("tutorial-switch-flip")
+    .getByRole("button", { name: "Add and open" })
+    .click();
+  await expect(page.getByTestId("room-canvas")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Run", exact: true })).toBeEnabled();
+  const click = async (x: number, y: number) => {
+    const point = await page.evaluate(
+      ([tx, ty]) =>
+        (
+          document.querySelector("wb-editor") as unknown as {
+            tileOnPage(a: number, b: number): { x: number; y: number };
+          }
+        ).tileOnPage(tx as number, ty as number),
+      [x, y],
+    );
+    await page.mouse.click(point.x, point.y);
+  };
+  await click(4, 2);
+  const inspector = page.getByTestId("inspector");
+  const picks = inspector.getByTestId("picked-furni");
+  await expect(picks.getByRole("listitem")).toHaveCount(1);
+  await expect(picks).toContainText("at ");
+
+  await inspector.getByRole("button", { name: /Pick in room/ }).click();
+  await click(6, 4);
+  await expect(picks.getByRole("listitem")).toHaveCount(2);
+  await expect(picks).toContainText("at 6, 4");
+  await picks
+    .getByRole("button", { name: /Remove .* from the picks/ })
+    .first()
+    .click();
+  await expect(picks.getByRole("listitem")).toHaveCount(1);
+  await inspector.getByRole("button", { name: /Done picking/ }).click();
+  await expect(picks).toContainText("at 6, 4");
+  await picks.getByRole("button", { name: /Remove .* from the picks/ }).click();
+  await expect(inspector).toContainText("Nothing picked yet.");
+});

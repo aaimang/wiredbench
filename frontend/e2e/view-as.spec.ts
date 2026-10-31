@@ -56,7 +56,9 @@ test("dashboard, mock API keys and view as user work from the browser", async ({
   await expect(page.getByTestId("view-banner")).toBeVisible();
   await expect(page.getByRole("link", { name: "Workspace" })).toHaveCount(0);
   await expect(page.getByTestId("site-notice")).toContainText("Habbo Fan Site Policy");
+  const entered = page.waitForResponse((res) => res.url().includes("/run"));
   await page.locator(`a[href="/view/${room}"]`).click();
+  await entered;
   await expect(page.getByTestId("view-say")).toBeVisible();
   const walked = page.waitForResponse((res) => res.url().endsWith("/run/input"));
   const canvas = page.getByTestId("room-canvas");
