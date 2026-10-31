@@ -12,7 +12,7 @@ from wiredbench.api.deps import Services, audit, get_db, get_services
 from wiredbench.config import Hotel
 from wiredbench.errors import ApiError
 from wiredbench.models import Sandbox
-from wiredbench.services import preferences
+from wiredbench.services import preferences, room
 from wiredbench.services import workspace as ws
 
 router = APIRouter(prefix="/api", tags=["workspace"])
@@ -141,6 +141,7 @@ def save_document(
 ) -> dict[str, Any]:
     if len(json.dumps(body.document)) > MAX_DOCUMENT_BYTES:
         raise ApiError(413, "document_too_large", "This sandbox is too large to save.")
+    room.validate(body.document)
     sandbox: Sandbox = ws.live_sandbox(db, sandbox_id)
     saved = ws.save_document(
         db, sandbox_id, body.document, body.base_revision, services.catalog.current_sha(sandbox.hotel)

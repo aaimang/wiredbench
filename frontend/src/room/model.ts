@@ -1,0 +1,316 @@
+/** The room as data, with no drawing or network code, so its rules can be tested directly. */
+
+export const MAX_STEP_UP = 1.5;
+const MAX_LAY_HEIGHT = 0.9;
+
+export interface PlacedFurni {
+  id: number;
+  classname: string;
+  x: number;
+  y: number;
+  z: number;
+  rot: number;
+  state: number;
+  [key: string]: unknown;
+}
+
+export interface PlacedAvatar {
+  id: number;
+  name: string;
+  hotel: string;
+  figure: string;
+  x: number;
+  y: number;
+  z: number;
+  dir: number;
+  pose: "std" | "sit" | "lay";
+  [key: string]: unknown;
+}
+
+export interface RoomDocument {
+  schema: number;
+  room: { width: number; height: number };
+  furni: PlacedFurni[];
+  avatars: PlacedAvatar[];
+  [key: string]: unknown;
+}
+
+/** What the room needs to know about a kind of furni, from furnidata. */
+export interface FurniInfo {
+  xdim: number;
+  ydim: number;
+  height: number;
+  canStand: boolean;
+  canSit: boolean;
+  canLay: boolean;
+}
+
+export type InfoLookup = (classname: string) => FurniInfo;
+
+/** Used for furni that is missing from the catalogue, so a saved room still opens. */
+export const UNKNOWN_FURNI: FurniInfo = {
+  xdim: 1,
+  ydim: 1,
+  height: 1,
+  canStand: false,
+  canSit: false,
+  canLay: false,
+};
+
+export function emptyRoom(): RoomDocument {
+  return { schema: 1, room: { width: 12, height: 12 }, furni: [], avatars: [] };
+}
+
+/** Fills in anything a saved document lacks. Unknown fields stay, so nothing is lost on saving. */
+export function normaliseRoom(document: Record<string, unknown>): RoomDocument {
+  const base = emptyRoom();
+  return {
+    ...document,
+    schema: base.schema,
+    room: (document.room as RoomDocument["room"] | undefined) ?? base.room,
+    furni: (document.furni as PlacedFurni[] | undefined) ?? [],
+    avatars: (document.avatars as PlacedAvatar[] | undefined) ?? [],
+  };
+}
+
+export function nextId(room: RoomDocument): number {
+  return Math.max(0, ...room.furni.map((f) => f.id), ...room.avatars.map((a) => a.id)) + 1;
+}
+
+/** Width along x and depth along y. Turning a quarter turn swaps them. */
+export function footprintSize(info: FurniInfo, rot: number): [number, number] {
+  return rot === 2 || rot === 6 ? [info.ydim, info.xdim] : [info.xdim, info.ydim];
+}
+
+export function footprint(
+  item: { x: number; y: number },
+  info: FurniInfo,
+  rot: number,
+): [number, number][] {
+  const [width, depth] = footprintSize(info, rot);
+  const tiles: [number, number][] = [];
+  for (let dx = 0; dx < width; dx++) {
+    for (let dy = 0; dy < depth; dy++) tiles.push([item.x + dx, item.y + dy]);
+  }
+  return tiles;
+}
+
+export function fitsInRoom(room: RoomDocument, tiles: [number, number][]): boolean {
+  return tiles.every(([x, y]) => x >= 0 && y >= 0 && x < room.room.width && y < room.room.height);
+}
+
+export function furniAt(
+  room: RoomDocument,
+  lookup: InfoLookup,
+  x: number,
+  y: number,
+  ignoreId?: number,
+): PlacedFurni[] {
+  return room.furni
+    .filter(
+      (item) =>
+        item.id !== ignoreId &&
+        footprint(item, lookup(item.classname), item.rot).some(([fx, fy]) => fx === x && fy === y),
+    )
+    .sort((a, b) => a.z - b.z);
+}
+
+/** The height something placed here would rest at: on top of the tallest thing on any of its tiles. */
+export function stackHeight(
+  room: RoomDocument,
+  lookup: InfoLookup,
+  tiles: [number, number][],
+  ignoreId?: number,
+): number {
+  let top = 0;
+  for (const [x, y] of tiles) {
+    for (const item of furniAt(room, lookup, x, y, ignoreId)) {
+      top = Math.max(top, item.z + lookup(item.classname).height);
+    }
+  }
+  return Math.round(top * 100) / 100;
+}
+
+export interface Stand {
+  walkable: boolean;
+  z: number;
+  pose: "std" | "sit" | "lay";
+  dir?: number;
+}
+
+/** What standing on a tile means, decided by the top furni there. */
+export function standAt(room: RoomDocument, lookup: InfoLookup, x: number, y: number): Stand {
+  const top = furniAt(room, lookup, x, y).at(-1);
+  if (!top) return { walkable: true, z: 0, pose: "std" };
+  const info = lookup(top.classname);
+  // Sit and lay heights are the furni's own height, like a stand. A real seat's sit height may differ.
+  const z = top.z + info.height;
+  if (info.canSit) return { walkable: true, z, pose: "sit", dir: top.rot };
+  // Bed heights in furnidata are for stacking and sit well above the mattress.
+  if (info.canLay) {
+    return {
+      walkable: true,
+      z: top.z + Math.min(info.height, MAX_LAY_HEIGHT),
+      pose: "lay",
+      dir: top.rot,
+    };
+  }
+  if (info.canStand) return { walkable: true, z, pose: "std" };
+  return { walkable: false, z, pose: "std" };
+}
+
+/**
+ * The tile that decides an avatar's draw order. On large furni it is that furni's front tile, or the
+ * furni, which draws from its own front tile, would cover an avatar sitting or standing on it.
+ */
+export function drawTile(
+  room: RoomDocument,
+  lookup: InfoLookup,
+  x: number,
+  y: number,
+): [number, number] {
+  const top = furniAt(room, lookup, x, y).at(-1);
+  if (!top) return [x, y];
+  const [width, depth] = footprintSize(lookup(top.classname), top.rot);
+  return [Math.max(x, top.x + width - 1), Math.max(y, top.y + depth - 1)];
+}
+
+/** Direction numbers: 0 is -y, then clockwise on screen, so 2 is +x and 4 is +y. */
+export function directionBetween(from: [number, number], to: [number, number]): number {
+  const dx = Math.sign(to[0] - from[0]);
+  const dy = Math.sign(to[1] - from[1]);
+  const table: Record<string, number> = {
+    "0,-1": 0,
+    "1,-1": 1,
+    "1,0": 2,
+    "1,1": 3,
+    "0,1": 4,
+    "-1,1": 5,
+    "-1,0": 6,
+    "-1,-1": 7,
+  };
+  return table[`${dx},${dy}`] ?? 2;
+}
+
+export function nextDirection(directions: number[], current: number): number {
+  if (directions.length === 0) return current;
+  const index = directions.indexOf(current);
+  return directions[(index + 1) % directions.length] ?? current;
+}
+
+/** Tiles in the Habbo walking style: eight directions, without cutting across blocked corners. */
+export function findPath(
+  room: RoomDocument,
+  lookup: InfoLookup,
+  start: [number, number],
+  goal: [number, number],
+  occupied: Set<string> = new Set(),
+): [number, number][] | null {
+  const key = (x: number, y: number) => `${x},${y}`;
+  const { width, height } = room.room;
+  const inRoom = (x: number, y: number) => x >= 0 && y >= 0 && x < width && y < height;
+  if (!inRoom(...goal) || !standAt(room, lookup, ...goal).walkable) return null;
+  if (occupied.has(key(...goal))) return null;
+
+  const stands = new Map<string, Stand>();
+  const stand = (x: number, y: number) => {
+    const k = key(x, y);
+    let value = stands.get(k);
+    if (!value) {
+      value = standAt(room, lookup, x, y);
+      stands.set(k, value);
+    }
+    return value;
+  };
+  const isGoal = (x: number, y: number) => x === goal[0] && y === goal[1];
+  const passable = (x: number, y: number, fromZ: number) => {
+    if (!inRoom(x, y) || occupied.has(key(x, y))) return false;
+    const here = stand(x, y);
+    if (!here.walkable || here.z - fromZ > MAX_STEP_UP) return false;
+    // Seats and beds can be sat on but not walked across.
+    return here.pose === "std" || isGoal(x, y);
+  };
+
+  const heuristic = (x: number, y: number) =>
+    Math.max(Math.abs(x - goal[0]), Math.abs(y - goal[1]));
+  const costs = new Map([[key(...start), 0]]);
+  const cameFrom = new Map<string, [number, number]>();
+  const open: { x: number; y: number; score: number }[] = [
+    { x: start[0], y: start[1], score: heuristic(...start) },
+  ];
+
+  while (open.length > 0) {
+    let best = 0;
+    for (let i = 1; i < open.length; i++) {
+      if ((open[i]?.score ?? 0) < (open[best]?.score ?? 0)) best = i;
+    }
+    const current = open.splice(best, 1)[0] as { x: number; y: number };
+    if (isGoal(current.x, current.y)) {
+      const path: [number, number][] = [];
+      let step: [number, number] | undefined = [current.x, current.y];
+      while (step && !(step[0] === start[0] && step[1] === start[1])) {
+        path.unshift(step);
+        step = cameFrom.get(key(...step));
+      }
+      return path;
+    }
+    const fromZ = stand(current.x, current.y).z;
+    const cost = costs.get(key(current.x, current.y)) ?? 0;
+    for (const dx of [-1, 0, 1]) {
+      for (const dy of [-1, 0, 1]) {
+        if (dx === 0 && dy === 0) continue;
+        const x = current.x + dx;
+        const y = current.y + dy;
+        if (!passable(x, y, fromZ)) continue;
+        if (dx !== 0 && dy !== 0) {
+          // A diagonal step needs both tiles beside it clear.
+          if (!passable(current.x + dx, current.y, fromZ)) continue;
+          if (!passable(current.x, current.y + dy, fromZ)) continue;
+        }
+        // Slightly above 1 so straight lines win over zigzags of the same length.
+        const next = cost + (dx !== 0 && dy !== 0 ? 1.001 : 1);
+        if (next < (costs.get(key(x, y)) ?? Number.POSITIVE_INFINITY)) {
+          costs.set(key(x, y), next);
+          cameFrom.set(key(x, y), [current.x, current.y]);
+          open.push({ x, y, score: next + heuristic(x, y) });
+        }
+      }
+    }
+  }
+  return null;
+}
+
+/** Undo and redo over whole-room snapshots. */
+export class History {
+  private past: string[] = [];
+  private future: string[] = [];
+  private static readonly LIMIT = 200;
+
+  record(room: RoomDocument): void {
+    this.past.push(JSON.stringify(room));
+    if (this.past.length > History.LIMIT) this.past.shift();
+    this.future = [];
+  }
+
+  get canUndo(): boolean {
+    return this.past.length > 0;
+  }
+
+  get canRedo(): boolean {
+    return this.future.length > 0;
+  }
+
+  undo(current: RoomDocument): RoomDocument | null {
+    const previous = this.past.pop();
+    if (previous === undefined) return null;
+    this.future.push(JSON.stringify(current));
+    return JSON.parse(previous);
+  }
+
+  redo(current: RoomDocument): RoomDocument | null {
+    const next = this.future.pop();
+    if (next === undefined) return null;
+    this.past.push(JSON.stringify(current));
+    return JSON.parse(next);
+  }
+}

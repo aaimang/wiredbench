@@ -4,8 +4,9 @@ Wiredbench (working name) is a self-hosted browser sandbox for building, running
 debugging Habbo WIRED. It targets Habbo Classic by exporting setups to real rooms through
 G-Presets.
 
-- **Status:** Phase 1 (foundation) built. Phase 0 results are in [spikes/RESULTS.md](spikes/RESULTS.md).
-- **Revision:** 2026-10-31, updated with Phase 1 results.
+- **Status:** Phase 1 released as `v0.2.0`. Phase 2 (room) built. Phase 0 results are in
+  [spikes/RESULTS.md](spikes/RESULTS.md).
+- **Revision:** 2026-10-31, updated with Phase 2 results.
 
 ## 1. Decisions
 
@@ -151,6 +152,21 @@ These are interaction ideas from the WiredSnippets editor. No art or code is reu
 Improvements on the sample: labelled status badges rather than dim icons alone, a live trace
 and variables during Run, and our own warm visual style.
 
+Built in Phase 2: the left panel (avatars and furni search), toolbar, inspector, selection bar and
+placement ghost. Build and Play modes replace Run and Stop until the engine exists. The rest of this
+list arrives with the features it belongs to: Library, Import and Export in Phase 5, and the config
+dialog and console in Phase 3.
+
+Known limits from testing with real art, which later phases should revisit:
+
+- Walking runs in the browser for now. It moves to the server with the engine in Phase 3, where the
+  path rules can be checked against real-room traces.
+- Sit and lay heights, the footprint rotation rule and draw order for large furni were matched by eye
+  or from memory of how the game behaves, not measured in a real room.
+- A bed lets you lie on any of its tiles, while the game uses its head tile.
+- Furni show the first frame of each state, without animation playback.
+- Wall furni and room walls are not drawn. Large rooms need panning, because there is no zoom yet.
+
 ### Inspector and commands
 
 Commands use a fixed grammar and never run as code.
@@ -239,7 +255,7 @@ also covers the 10-second worst-case loss when a user leaves without standing up
 |---|---|---|
 | 0. Spikes (done, real-room checks open) | Convert SWF to sprites; check avatar frames; round-trip real G-Presets files; test a mock against the official spec | Results in `spikes/RESULTS.md` |
 | 1. Foundation (built) | Repo, CI, admin login, folders, furnidata sync, update button, cache | All WIRED browsable behind login; update shows a correct diff |
-| 2. Room | Renderer, asset cache, placement, avatars, pathfinding, editor layout | An avatar walks and sits in a saved room |
+| 2. Room (built) | Renderer, asset cache, placement, avatars, pathfinding, editor layout | An avatar walks and sits in a saved room |
 | 3. Engine | Wave 1, stubs, inspector, debugger | Time tracking tutorial passes |
 | 4. Control | Mock API, dashboard, view-as, settings | Official wrappers work against the mock |
 | 5. Exchange | Import, export, guide, tutorials | A preset imports into a real room and behaves the same |

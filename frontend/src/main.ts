@@ -57,6 +57,11 @@ async function route(): Promise<void> {
     return;
   }
   const path = location.pathname;
+  if (/^\/sandbox\/\d+$/.test(path)) {
+    await import("./room/editor"); // Separate chunk, so other pages do not load the renderer.
+    showShell("/workspace", "wb-editor");
+    return;
+  }
   const page = PAGES[path];
   if (!page) {
     navigate("/catalogue");
