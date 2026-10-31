@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.7.0](https://github.com/aaimang/wiredbench/compare/v0.6.0...v0.7.0) (2026-10-31)
+
+
+### Features
+
+* add a stack checker to the room editor ([#21](https://github.com/aaimang/wiredbench/issues/21)) ([ce55167](https://github.com/aaimang/wiredbench/commit/ce5516724b45b44aacd85db49c236b41d350c104))
+
+
+### Bug Fixes
+
+* make the live check safer and test batches properly ([#24](https://github.com/aaimang/wiredbench/issues/24)) ([578e7f0](https://github.com/aaimang/wiredbench/commit/578e7f0288185418338d229e7d93ff5113c41906))
+* match the mock API's errors to a real room ([#22](https://github.com/aaimang/wiredbench/issues/22)) ([98b2638](https://github.com/aaimang/wiredbench/commit/98b26383b7eb8856e578169548f87f2b31784e84))
+
 ## [0.6.0](https://github.com/aaimang/wiredbench/compare/v0.5.0...v0.6.0) (2026-10-31)
 
 
