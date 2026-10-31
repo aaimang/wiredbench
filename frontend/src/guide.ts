@@ -18,6 +18,7 @@ interface GuideRow {
   evidence: string;
   room_checked_on: string | null;
   options_mapped: boolean;
+  default_numbers: number[] | null;
 }
 
 interface Coverage {
@@ -183,6 +184,9 @@ class WbGuide extends HTMLElement {
       h("code", {}, row.classname),
       h("p", {}, row.purpose || T.noPurpose),
       row.example && h("p", { class: "muted" }, T.example(row.example)),
+      row.default_numbers?.length
+        ? h("p", { class: "muted" }, T.defaults(`[${row.default_numbers.join(", ")}]`))
+        : null,
       h(
         "p",
         { class: "chips" },

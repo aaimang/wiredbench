@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from wiredbench.api.deps import Services, audit, get_db, get_services
 from wiredbench.config import Hotel
-from wiredbench.engine import coverage
+from wiredbench.engine import box_facts, coverage
 from wiredbench.engine.boxes import BOXES, catalogue
 from wiredbench.engine.checker import check_room
 from wiredbench.engine.core import MAX_ADVANCE_MS
@@ -202,7 +202,7 @@ def guide(
     tracked = {row["classname"]: row for row in coverage.rows()}
     checked = coverage.room_checked()
     for classname in sorted(listed | dict.fromkeys(BOXES, {})):
-        item, spec = listed.get(classname, {}), BOXES.get(classname)
+        item, spec, fact = listed.get(classname, {}), BOXES.get(classname), box_facts.of(classname)
         purpose, example = GUIDE.get(classname, (item.get("description") or "", ""))
         evidence = tracked.get(classname)
         if classname in checked and spec:
@@ -213,7 +213,8 @@ def guide(
             {
                 "classname": classname,
                 "name": item.get("name") or classname,
-                "type": item.get("wired_type") or (spec["kind"] if spec else "utility"),
+                "type": item.get("wired_type")
+                or (spec["kind"] if spec else (fact or {}).get("section", "utility")),
                 "purpose": purpose,
                 "example": example,
                 "status": status,
@@ -223,6 +224,7 @@ def guide(
                 "evidence": evidence["evidence"] if evidence else "new",
                 "room_checked_on": evidence["room_checked_on"] if evidence else None,
                 "options_mapped": bool(evidence and evidence["options_mapped"]),
+                "default_numbers": fact["numbers"] if fact else None,
             }
         )
     return {"hotel": chosen, "rows": rows, "coverage": coverage.summary()}

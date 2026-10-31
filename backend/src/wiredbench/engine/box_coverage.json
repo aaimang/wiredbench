@@ -1,127 +1,208 @@
 {
  "boxes": {
   "wf_act_adjust_clock": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_act_bot_clothes": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_act_bot_follow_avatar": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_act_bot_give_handitem": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_act_bot_move": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_act_bot_talk": {
    "preset": true,
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_act_bot_talk_to_avatar": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
-  "wf_act_bot_teleport": {},
-  "wf_act_call_stacks": {},
-  "wf_act_cancel_transaction": {},
+  "wf_act_bot_teleport": {
+   "dump": true
+  },
+  "wf_act_call_stacks": {
+   "dump": true
+  },
+  "wf_act_cancel_transaction": {
+   "dump": true
+  },
   "wf_act_change_var_val": {
-   "preset": true
+   "preset": true,
+   "dump": true
   },
-  "wf_act_chase": {},
+  "wf_act_chase": {
+   "dump": true
+  },
   "wf_act_click_conf": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_act_control_clock": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
-  "wf_act_flee": {},
+  "wf_act_flee": {
+   "dump": true
+  },
   "wf_act_freeze": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
-  "wf_act_furni_to_furni": {},
-  "wf_act_furni_to_user": {},
-  "wf_act_give_currency": {},
-  "wf_act_give_furni": {},
+  "wf_act_furni_to_furni": {
+   "dump": true
+  },
+  "wf_act_furni_to_user": {
+   "dump": true
+  },
+  "wf_act_give_currency": {
+   "dump": true
+  },
+  "wf_act_give_furni": {
+   "dump": true
+  },
   "wf_act_give_reward": {
    "reference": true
   },
   "wf_act_give_score": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
-  "wf_act_give_score_tm": {},
+  "wf_act_give_score_tm": {
+   "dump": true
+  },
   "wf_act_give_var": {
-   "preset": true
+   "preset": true,
+   "dump": true
   },
-  "wf_act_init_transaction": {},
+  "wf_act_init_transaction": {
+   "dump": true
+  },
   "wf_act_join_team": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_act_kick_user": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
-  "wf_act_leave_team": {},
+  "wf_act_leave_team": {
+   "dump": true
+  },
   "wf_act_log": {
-   "preset": true
+   "preset": true,
+   "dump": true
   },
   "wf_act_match_to_sshot": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
-  "wf_act_move_furni_as_group": {},
+  "wf_act_move_furni_as_group": {
+   "dump": true
+  },
   "wf_act_move_furni_to": {
    "reference": true
   },
   "wf_act_move_rotate": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
-  "wf_act_move_rotate_user": {},
-  "wf_act_move_to_dir": {},
+  "wf_act_move_rotate_user": {
+   "dump": true
+  },
+  "wf_act_move_to_dir": {
+   "dump": true
+  },
   "wf_act_mute_triggerer": {
    "reference": true
   },
-  "wf_act_neg_call_stacks": {},
-  "wf_act_neg_log": {},
-  "wf_act_neg_send_signal": {},
-  "wf_act_place_furni": {},
-  "wf_act_progress_ach": {},
-  "wf_act_rel_mov": {},
-  "wf_act_remove_furni": {},
-  "wf_act_remove_var": {
-   "preset": true
+  "wf_act_neg_call_stacks": {
+   "dump": true
   },
-  "wf_act_reset_timers": {},
+  "wf_act_neg_log": {
+   "dump": true
+  },
+  "wf_act_neg_send_signal": {
+   "dump": true
+  },
+  "wf_act_place_furni": {
+   "dump": true
+  },
+  "wf_act_progress_ach": {},
+  "wf_act_rel_mov": {
+   "dump": true
+  },
+  "wf_act_remove_furni": {
+   "dump": true
+  },
+  "wf_act_remove_var": {
+   "preset": true,
+   "dump": true
+  },
+  "wf_act_reset_timers": {
+   "dump": true
+  },
   "wf_act_send_dataframe": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_act_send_message": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_act_send_signal": {
    "preset": true,
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_act_set_altitude": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_act_set_highlight": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_act_set_visibility": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_act_show_message": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
-  "wf_act_teleport_to": {},
-  "wf_act_teleport_to_room": {},
+  "wf_act_teleport_to": {
+   "dump": true
+  },
+  "wf_act_teleport_to_room": {
+   "dump": true
+  },
   "wf_act_toggle_state": {
    "preset": true,
    "reference": true,
-   "room": "2026-10-31"
+   "room": "2026-10-31",
+   "dump": true
   },
-  "wf_act_toggle_to_rnd": {},
-  "wf_act_unfreeze": {},
-  "wf_act_user_to_furni": {},
+  "wf_act_toggle_to_rnd": {
+   "dump": true
+  },
+  "wf_act_unfreeze": {
+   "dump": true
+  },
+  "wf_act_user_to_furni": {
+   "dump": true
+  },
   "wf_antenna1": {},
   "wf_antenna2": {},
   "wf_arrowplate": {},
@@ -139,71 +220,105 @@
   "wf_button_x": {},
   "wf_button_yellow": {},
   "wf_cnd_actor_dir": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_cnd_actor_in_group": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_cnd_actor_in_team": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
-  "wf_cnd_chest_has_item_type": {},
-  "wf_cnd_chest_has_items": {},
+  "wf_cnd_chest_has_item_type": {
+   "dump": true
+  },
+  "wf_cnd_chest_has_items": {
+   "dump": true
+  },
   "wf_cnd_counter_time_matches": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_cnd_date_rng_active": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_cnd_furnis_hv_avtrs": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_cnd_has_altitude": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_cnd_has_furni_on": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_cnd_has_handitem": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_cnd_has_var": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_cnd_match_date": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_cnd_match_snapshot": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_cnd_match_time": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_cnd_neg_has_var": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_cnd_not_furni_on": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_cnd_not_has_handitem": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_cnd_not_hv_avtrs": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_cnd_not_in_group": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
-  "wf_cnd_not_in_team": {},
-  "wf_cnd_not_match_snap": {},
-  "wf_cnd_not_stuff_is": {},
-  "wf_cnd_not_trggrer_on": {},
+  "wf_cnd_not_in_team": {
+   "dump": true
+  },
+  "wf_cnd_not_match_snap": {
+   "dump": true
+  },
+  "wf_cnd_not_stuff_is": {
+   "dump": true
+  },
+  "wf_cnd_not_trggrer_on": {
+   "dump": true
+  },
   "wf_cnd_not_triggerer_match": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
-  "wf_cnd_not_user_count": {},
+  "wf_cnd_not_user_count": {
+   "dump": true
+  },
   "wf_cnd_not_user_performs_action": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_cnd_not_wearing_b": {
    "reference": true
@@ -213,45 +328,58 @@
   },
   "wf_cnd_slc_quantity": {
    "preset": true,
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_cnd_stuff_is": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_cnd_team_has_rank": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_cnd_team_has_score": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_cnd_time_less_than": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_cnd_time_more_than": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_cnd_trggrer_on_frn": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_cnd_triggerer_match": {
    "preset": true,
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_cnd_user_count_in": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_cnd_user_performs_action": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_cnd_valid_moves": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_cnd_var_age_match": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_cnd_var_val_match": {
    "preset": true,
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_cnd_wearing_badge": {
    "reference": true
@@ -261,9 +389,15 @@
   },
   "wf_colortile": {},
   "wf_colorwheel": {},
-  "wf_contract_payment": {},
-  "wf_contract_reward": {},
-  "wf_contract_trade": {},
+  "wf_contract_payment": {
+   "note": "No reply when read from a real room. The cause is unconfirmed."
+  },
+  "wf_contract_reward": {
+   "note": "No reply when read from a real room. The cause is unconfirmed."
+  },
+  "wf_contract_trade": {
+   "note": "No reply when read from a real room. The cause is unconfirmed."
+  },
   "wf_firegate": {},
   "wf_floor_switch1": {
    "room": "2026-10-31"
@@ -290,35 +424,70 @@
   "wf_ringplate": {},
   "wf_room_linker": {},
   "wf_screenseparator": {},
-  "wf_slc_furni_altitude": {},
+  "wf_slc_furni_altitude": {
+   "dump": true
+  },
   "wf_slc_furni_area": {
-   "preset": true
+   "preset": true,
+   "dump": true
   },
-  "wf_slc_furni_bytype": {},
+  "wf_slc_furni_bytype": {
+   "dump": true
+  },
   "wf_slc_furni_neighborhood": {
-   "preset": true
+   "preset": true,
+   "dump": true
   },
-  "wf_slc_furni_onfurni": {},
-  "wf_slc_furni_picks": {},
-  "wf_slc_furni_signal": {},
+  "wf_slc_furni_onfurni": {
+   "dump": true
+  },
+  "wf_slc_furni_picks": {
+   "dump": true
+  },
+  "wf_slc_furni_signal": {
+   "dump": true
+  },
   "wf_slc_furni_with_var": {
-   "preset": true
+   "preset": true,
+   "dump": true
   },
-  "wf_slc_remote": {},
-  "wf_slc_users_area": {},
-  "wf_slc_users_byaction": {},
+  "wf_slc_remote": {
+   "dump": true
+  },
+  "wf_slc_users_area": {
+   "dump": true
+  },
+  "wf_slc_users_byaction": {
+   "dump": true
+  },
   "wf_slc_users_byname": {
-   "preset": true
+   "preset": true,
+   "dump": true
   },
-  "wf_slc_users_bytype": {},
-  "wf_slc_users_group": {},
-  "wf_slc_users_handitem": {},
-  "wf_slc_users_neighborhood": {},
-  "wf_slc_users_onfurni": {},
-  "wf_slc_users_signal": {},
-  "wf_slc_users_team": {},
+  "wf_slc_users_bytype": {
+   "dump": true
+  },
+  "wf_slc_users_group": {
+   "dump": true
+  },
+  "wf_slc_users_handitem": {
+   "dump": true
+  },
+  "wf_slc_users_neighborhood": {
+   "dump": true
+  },
+  "wf_slc_users_onfurni": {
+   "dump": true
+  },
+  "wf_slc_users_signal": {
+   "dump": true
+  },
+  "wf_slc_users_team": {
+   "dump": true
+  },
   "wf_slc_users_with_var": {
-   "preset": true
+   "preset": true,
+   "dump": true
   },
   "wf_slider": {},
   "wf_storage_coins1": {},
@@ -354,84 +523,140 @@
   "wf_token7": {},
   "wf_token8": {},
   "wf_token9": {},
-  "wf_trg_at_given_time": {},
+  "wf_trg_at_given_time": {
+   "dump": true
+  },
   "wf_trg_at_time_long": {},
-  "wf_trg_bot_reached_avtr": {},
-  "wf_trg_bot_reached_stf": {},
+  "wf_trg_bot_reached_avtr": {
+   "dump": true
+  },
+  "wf_trg_bot_reached_stf": {
+   "dump": true
+  },
   "wf_trg_click_furni": {
-   "preset": true
+   "preset": true,
+   "dump": true
   },
-  "wf_trg_click_tile": {},
-  "wf_trg_click_user": {},
-  "wf_trg_clock_counter": {},
-  "wf_trg_collision": {},
-  "wf_trg_enter_room": {},
-  "wf_trg_game_ends": {},
-  "wf_trg_game_starts": {},
-  "wf_trg_leave_room": {},
-  "wf_trg_period_long": {},
+  "wf_trg_click_tile": {
+   "dump": true
+  },
+  "wf_trg_click_user": {
+   "dump": true
+  },
+  "wf_trg_clock_counter": {
+   "dump": true
+  },
+  "wf_trg_collision": {
+   "dump": true
+  },
+  "wf_trg_enter_room": {
+   "dump": true
+  },
+  "wf_trg_game_ends": {
+   "dump": true
+  },
+  "wf_trg_game_starts": {
+   "dump": true
+  },
+  "wf_trg_leave_room": {
+   "dump": true
+  },
+  "wf_trg_period_long": {
+   "dump": true
+  },
   "wf_trg_period_short": {
-   "preset": true
+   "preset": true,
+   "dump": true
   },
-  "wf_trg_periodically": {},
+  "wf_trg_periodically": {
+   "dump": true
+  },
   "wf_trg_receive_dataframe": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_trg_receive_message": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_trg_recv_signal": {
-   "preset": true
+   "preset": true,
+   "dump": true
   },
   "wf_trg_room_initializes": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_trg_says_something": {
-   "preset": true
+   "preset": true,
+   "dump": true
   },
-  "wf_trg_score_achieved": {},
+  "wf_trg_score_achieved": {
+   "dump": true
+  },
   "wf_trg_state_changed": {
    "preset": true,
-   "room": "2026-10-31"
+   "room": "2026-10-31",
+   "dump": true
   },
-  "wf_trg_stuff_state": {},
-  "wf_trg_transaction_complete": {},
-  "wf_trg_transaction_fail": {},
-  "wf_trg_user_performs_action": {},
+  "wf_trg_stuff_state": {
+   "dump": true
+  },
+  "wf_trg_transaction_complete": {
+   "dump": true
+  },
+  "wf_trg_transaction_fail": {
+   "dump": true
+  },
+  "wf_trg_user_performs_action": {
+   "dump": true
+  },
   "wf_trg_var_changed": {
-   "preset": true
+   "preset": true,
+   "dump": true
   },
-  "wf_trg_walks_off_furni": {},
-  "wf_trg_walks_on_furni": {},
+  "wf_trg_walks_off_furni": {
+   "dump": true
+  },
+  "wf_trg_walks_on_furni": {
+   "dump": true
+  },
   "wf_upcounter1": {},
   "wf_upcounter2": {},
   "wf_var_context": {
    "preset": true,
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_var_dailytask": {},
   "wf_var_echo": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_var_furni": {
    "preset": true,
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_var_pointer": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_var_quest": {},
   "wf_var_quest_chain": {},
   "wf_var_reference": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_var_room": {
    "preset": true,
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_var_user": {
    "preset": true,
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_vu": {},
   "wf_wire1": {},
@@ -440,95 +665,143 @@
   "wf_wire4": {},
   "wf_xtra_achievement_enabler": {},
   "wf_xtra_anim_time": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
-  "wf_xtra_custom_contract": {},
+  "wf_xtra_custom_contract": {
+   "dump": true
+  },
   "wf_xtra_exec_in_order": {
    "preset": true,
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_xtra_execution_limit": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_xtra_filter_furni": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_xtra_filter_furni_by_var": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_xtra_filter_users": {
    "preset": true,
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_xtra_filter_users_by_var": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_xtra_link_speaker": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_xtra_mov_carry_users": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_xtra_mov_curve": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_xtra_mov_no_animation": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_xtra_mov_physics": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_xtra_or_eval": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_xtra_random": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
-  "wf_xtra_rotate_to_dir": {},
-  "wf_xtra_scan_chest_furni_by_type": {},
+  "wf_xtra_rotate_to_dir": {
+   "dump": true
+  },
+  "wf_xtra_scan_chest_furni_by_type": {
+   "dump": true
+  },
   "wf_xtra_text_input_variable": {
    "preset": true,
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_xtra_text_output_furni_name": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_xtra_text_output_username": {
    "preset": true,
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_xtra_text_output_variable": {
    "preset": true,
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_xtra_unseen": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_xtra_var_import": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
-  "wf_xtra_var_leaderboard": {},
+  "wf_xtra_var_leaderboard": {
+   "dump": true
+  },
   "wf_xtra_var_lvlup_system": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_xtra_var_share": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_xtra_var_text_connector": {
    "preset": true,
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_xtra_var_time_util": {
-   "reference": true
+   "reference": true,
+   "dump": true
   },
   "wf_xtra_var_web_api": {},
-  "wf_xtra_varfx_boss": {},
-  "wf_xtra_varfx_hp": {},
-  "wf_xtra_varfx_levelling": {},
-  "wf_xtra_varfx_number": {},
-  "wf_xtra_varfx_prog": {},
-  "wf_xtra_varfx_status": {}
+  "wf_xtra_varfx_boss": {
+   "dump": true
+  },
+  "wf_xtra_varfx_hp": {
+   "dump": true
+  },
+  "wf_xtra_varfx_levelling": {
+   "dump": true
+  },
+  "wf_xtra_varfx_number": {
+   "dump": true
+  },
+  "wf_xtra_varfx_prog": {
+   "dump": true
+  },
+  "wf_xtra_varfx_status": {
+   "dump": true
+  }
  },
  "furnidata_checked_on": "2026-10-31",
- "reference_commit": "3fc9c06f533c"
+ "reference_commit": "3fc9c06f533c",
+ "dump_capture": {
+  "date": "2026-10-31",
+  "build": "MAC63-202610271046-110342586"
+ }
 }

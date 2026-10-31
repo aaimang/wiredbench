@@ -10,6 +10,7 @@ import copy
 from collections import Counter
 from typing import Any
 
+from wiredbench.engine import box_facts
 from wiredbench.engine.boxes import BOXES
 from wiredbench.errors import ApiError
 from wiredbench.services.room import MAX_ROOM_SIZE, MAX_Z
@@ -26,26 +27,6 @@ SECTIONS = {
 }
 MIN_ROOM = 12
 NEW_VARIABLE_ID = 900_000
-# Values seen in real preset files. A new box of any other type is exported with empty options and a warning.
-KNOWN_BOXES: dict[str, dict[str, Any]] = {
-    "wf_trg_click_furni": {"options": [], "furniSources": [100]},
-    "wf_trg_state_changed": {"options": [], "furniSources": [100]},
-    "wf_trg_recv_signal": {"options": [], "furniSources": [100]},
-    "wf_trg_says_something": {"options": [0, 1, 1]},
-    "wf_act_toggle_state": {"options": [0], "furniSources": [200]},
-    "wf_act_send_signal": {"options": [0, 0], "furniSources": [100, 200], "userSources": [200]},
-    "wf_act_log": {"options": [2]},
-    "wf_act_give_var": {"options": [1, 0, 0, 0], "furniSources": [100], "userSources": [200]},
-    "wf_act_remove_var": {"options": [1], "furniSources": [100], "userSources": [200]},
-    "wf_xtra_exec_in_order": {"options": []},
-    "wf_xtra_text_output_username": {"options": [0], "userSources": [0]},
-    "wf_var_room": {"options": [1]},
-    "wf_var_context": {"options": [1]},
-    "wf_var_furni": {"options": [1, 10]},
-    "wf_var_user": {"options": [10, 1]},
-}
-
-
 # Where each setting sits in a box's options list: (setting, position, how the number reads).
 # A scale turns the number into seconds, a tuple lists names by number, and bool is 0 or 1.
 OPTION_FIELDS: dict[str, list[tuple[str, int, Any]]] = {
@@ -74,10 +55,8 @@ OPTION_FIELDS: dict[str, list[tuple[str, int, Any]]] = {
         ("availability", 0, {0: "active", 10: "persistent", 11: "shared"}),
         ("has_value", 1, bool),
     ],
-    "wf_var_furni": [
-        ("has_value", 0, bool),
-        ("availability", 1, {0: "active", 10: "persistent", 11: "shared"}),
-    ],
+    "wf_var_furni": [("has_value", 0, bool), ("availability", 1, {1: "active", 10: "persistent"})],
+    "wf_var_room": [("availability", 0, {1: "active", 10: "persistent", 11: "shared"})],
     "wf_var_context": [("has_value", 0, bool)],
 }
 
@@ -298,21 +277,29 @@ def _export_furni(item: dict[str, Any]) -> dict[str, Any]:
 
 
 def _new_box(classname: str, warnings: list[str]) -> dict[str, Any]:
-    known = KNOWN_BOXES.get(classname)
-    if known is None and classname not in OPTION_FIELDS:
-        warnings.append(f"{classname} is new here, and its options are unknown. Check it after importing.")
+    """Starts from a real box's defaults where one has been seen."""
+    fact = box_facts.of(classname)
+    if fact is None:
+        warnings.append(
+            f"{classname} has not been seen in a real room, so its options are unknown. Check it after importing."
+        )
+        fact = {}
     box: dict[str, Any] = {
         "secondItems": [],
-        "furniSources": [],
-        "userSources": [],
-        "variableIds": [],
-        "options": [],
+        "furniSources": list(fact.get("default_furni_sources", [])),
+        "userSources": list(fact.get("default_user_sources", [])),
+        "variableIds": ["0"] * fact.get("variable_slots", 0),
+        "options": list(fact.get("numbers", [])),
         "config": "",
         "items": [],
     }
-    box.update(copy.deepcopy(known or {}))
-    if classname.startswith("wf_act_"):
+    if fact.get("has_delay", classname.startswith("wf_act_")):
         box["delay"] = 0
+    if "quantifier" in fact:
+        box["quantifier"] = fact["quantifier"]
+    if "filter" in fact:
+        box["filter"] = fact["filter"]
+        box["inverse"] = fact.get("invert", False)
     return box
 
 
@@ -387,22 +374,19 @@ def export_gpresets(document: dict[str, Any]) -> tuple[dict[str, Any], list[str]
         )
         if section is None and stored is None:
             continue
+        # A file can list a box as furni with no settings. Only an edit here makes it more than that.
+        if stored is None and "gpreset" in item and not item.get("wired"):
+            continue
         if stored:
             box, base = copy.deepcopy(stored["box"]), friendly_settings(classname, stored["box"], names)
             section, order = stored["section"], stored["order"]
         else:
             box, base = _new_box(classname, warnings), {}
-            for name, position, reader in OPTION_FIELDS.get(classname, []):
-                number = _setting_to_option(_default(classname, name), reader)
-                if number is not None:
-                    _write_option(box, position, number)
             order, next_order = next_order, next_order + 1
             if classname.startswith("wf_var_") and "variable" not in (item.get("wired") or {}):
                 warnings.append(f"{classname} at {item['x']}, {item['y']} has no variable name.")
         box["wiredId"] = item["id"]
         _apply_settings(item, box, base, variables, used, warnings)
-        if not stored and box["items"] and box["furniSources"] == [200]:
-            box["furniSources"] = [100]  # Real boxes with picks use 100, and 200 goes with a selector.
         rows.setdefault(str(section), []).append((order, box))
     for orphan in orphans:
         rows.setdefault(orphan["section"], []).append((orphan["order"], copy.deepcopy(orphan["box"])))

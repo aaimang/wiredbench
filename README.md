@@ -36,6 +36,7 @@ Wiredbench is not affiliated with, endorsed, sponsored, or specifically approved
 - **Guide:** every WIRED box with its official name, purpose, an example and how far its simulation can be
   trusted, plus example rooms you can add to your workspace.
 - **Coverage:** [docs/box-coverage.md](docs/box-coverage.md) shows how far each box's options have been checked.
+  [docs/box-fields.md](docs/box-fields.md) lists each box's real default options and which are still unnamed.
 - **Stack check:** finds stacks that cannot work as built, such as no trigger, missing picks or an undefined
   variable, and leads you to the box.
 - **Workspace:** nested folders of sandboxes, with rename, move, duplicate, version history and a

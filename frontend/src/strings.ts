@@ -60,10 +60,12 @@ export const t = {
       unknown: "No evidence yet",
       from_reference: "Reference only, unverified",
       real_preset: "Seen in a real preset",
+      real_dump: "Settings seen in a real room",
       real_room: "Checked in a real room",
     } as Record<string, string>,
     roomDate: (date: string) => `Checked in a real room on ${date}`,
     optionsMapped: "Options mapped",
+    defaults: (numbers: string) => `Real default options: ${numbers}`,
   },
 
   dashboard: {

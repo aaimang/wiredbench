@@ -30,7 +30,8 @@ def unusual(field: dict[str, Any], reader: Any) -> Any:
             return round(
                 UNUSUAL_NUMBER * reader, 3
             )  # Units of half seconds and the like must land on a whole number.
-        return min(field.get("max", field["default"] + 3), field["default"] + 3)
+        higher = field["default"] + 3
+        return higher if higher <= field.get("max", higher) else field["default"] - 3
     return field["default"]
 
 
