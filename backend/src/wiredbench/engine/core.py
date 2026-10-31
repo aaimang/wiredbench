@@ -229,7 +229,8 @@ class Engine:
             self.definitions.setdefault(name, {"scope": "user", "time": True})["time"] = True
 
     def _schedule_period(self, stack: Stack, box: Box) -> None:
-        seconds = max(0.5, _float(box.get("seconds", 10), 10.0))
+        shortest = 0.05 if box.classname == "wf_trg_period_short" else 0.5
+        seconds = max(shortest, _float(box.get("seconds", 10), 10.0))
         stack.next_period_ms[box.id] = self.now_ms + int(seconds * 1000)
 
     # --- Trace ---
@@ -881,6 +882,14 @@ class Engine:
                 )
         return rows
 
+    def view_defined(self) -> list[dict[str, str]]:
+        """Variables a box defines that nothing holds yet. A real room lists these by definition too."""
+        return [
+            {"variable": name, "scope": definition["scope"]}
+            for name, definition in sorted(self.definitions.items())
+            if not self.variables.get(name)
+        ]
+
     def dashboard(self) -> dict[str, Any]:
         """Counts for the dashboard. Work is boxes visited, so it is simulated cost and not hotel time."""
         boxes: list[dict[str, Any]] = [
@@ -919,6 +928,7 @@ class Engine:
             ),
             "users": sorted(self.users.values(), key=lambda u: u["id"]),
             "variables": self.view_variables(),
+            "defined_variables": self.view_defined(),
             "limit_hits": self.limit_hits,
             "metrics": dict(sorted(self.metrics.items())),
         }

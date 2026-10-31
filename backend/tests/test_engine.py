@@ -195,6 +195,33 @@ def test_conditions_block_and_or_eval_relaxes() -> None:
     assert logs(engine) == ["ran"]
 
 
+def test_short_period_runs_at_its_own_speed_and_stops_at_a_minimum() -> None:
+    for seconds, runs in ((0.35, 8), (0, 60)):
+        engine = room(
+            box(1, "wf_trg_period_short", 1, 1, seconds=seconds),
+            box(2, "wf_act_log", 1, 1, 1, text="x"),
+        )
+        engine.advance(3000)
+        assert len(logs(engine)) == runs
+
+
+def test_defined_variables_are_listed_until_something_holds_them() -> None:
+    engine = room(
+        box(1, "wf_var_room", 1, 1, variable="round"),
+        box(2, "wf_var_user", 2, 2, variable="score"),
+        box(3, "wf_var_context", 3, 3, variable="temp"),
+    )
+    assert engine.view_defined() == [
+        {"variable": "round", "scope": "global"},
+        {"variable": "score", "scope": "user"},
+        {"variable": "temp", "scope": "context"},
+    ]
+    assert engine.view_variables() == []
+    engine.apply_input({"type": "api_set", "variable": "round", "key": "global", "value": 5})
+    assert [row["variable"] for row in engine.view_defined()] == ["score", "temp"]
+    assert engine.snapshot()["defined_variables"] == engine.view_defined()
+
+
 def test_delay_counts_half_seconds() -> None:
     engine = room(
         box(1, "wf_trg_says_something", 1, 1, text="go"),

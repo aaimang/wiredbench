@@ -228,3 +228,17 @@ test("the stack checker lists problems and leads to the box", async ({ page }) =
   await list.getByRole("button").first().click();
   await expect(page.getByTestId("box-problems")).toContainText("It has no furni picked.");
 });
+
+test("the run panel lists a variable before anything holds it", async ({ page }) => {
+  await login(page);
+  await page.getByRole("link", { name: "Guide" }).click();
+  await page
+    .getByTestId("tutorial-score-counter")
+    .getByRole("button", { name: "Add and open" })
+    .click();
+  await expect(page.getByTestId("room-canvas")).toBeVisible();
+  await page.getByRole("button", { name: "Run", exact: true }).click();
+  const row = page.locator(".run-vars tr", { hasText: "score" });
+  await expect(row).toContainText("Nobody yet");
+  await page.screenshot({ path: process.env.WB_SHOT ?? "test-results/defined-variable.png" });
+});
