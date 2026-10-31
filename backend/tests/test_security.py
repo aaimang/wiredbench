@@ -20,6 +20,7 @@ from wiredbench.security import RateLimiter, same_origin
 
 PUBLIC = {("POST", "/api/auth/login"), ("GET", "/healthz"), ("GET", "/{path:path}")}
 UNSAFE = {"POST", "PUT", "PATCH", "DELETE"}
+MOCK = "/api/public/rooms/"  # These use the mock API's own keys. test_mock_api.py covers them.
 
 
 def fill(path: str) -> str:
@@ -54,12 +55,14 @@ def test_only_expected_routes_are_public(client: TestClient) -> None:
         for method in route.methods
         if method != "HEAD"
     }
-    assert found == PUBLIC
+    mock_routes = {route for route in found if route[1].startswith(MOCK)}
+    assert found - mock_routes == PUBLIC
+    assert len(mock_routes) >= 18
 
 
 def test_outsiders_get_401_on_every_private_route(client: TestClient) -> None:
     for method, path in all_routes(client):
-        if (method, path) in PUBLIC:
+        if (method, path) in PUBLIC or path.startswith(MOCK):
             continue
         res = client.request(method, fill(path), json={})
         assert res.status_code == 401, f"{method} {path} gave {res.status_code}"
@@ -68,11 +71,28 @@ def test_outsiders_get_401_on_every_private_route(client: TestClient) -> None:
 
 def test_writes_without_csrf_get_403_on_every_route(api: Api) -> None:
     for method, path in all_routes(api.client):
-        if method not in UNSAFE or (method, path) in PUBLIC:
+        if method not in UNSAFE or (method, path) in PUBLIC or path.startswith(MOCK):
             continue
         res = api.client.request(method, fill(path), json={})
         assert res.status_code == 403, f"{method} {path} gave {res.status_code}"
         assert res.json()["error"] == "bad_csrf"
+
+
+def test_mock_routes_give_outsiders_nothing(api: Api, client: TestClient) -> None:
+    room = api.post("/api/tutorials/time-tracking", json={}).json()["id"]
+    api.post(f"/api/sandboxes/{room}/run", json={"seed": 1})
+    api.post(f"/api/sandboxes/{room}/api-keys", json={})
+    outsider = TestClient(client.app, base_url="http://testserver")
+    checked = 0
+    for method, path in all_routes(client):
+        if path.startswith(MOCK):
+            checked += 1
+            url = fill(
+                path.replace("{scope}", "user").replace("{kind}", "users").replace("{room_id}", str(room))
+            )
+            res = outsider.request(method, url, json={"value": 1, "requests": [], "variables": {}})
+            assert res.status_code in (400, 403, 404), f"{method} {path} gave {res.status_code}"
+    assert checked >= 18
 
 
 def test_wrong_csrf_token_is_refused(api: Api) -> None:

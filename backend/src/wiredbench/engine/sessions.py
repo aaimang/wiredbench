@@ -8,7 +8,7 @@ from collections import OrderedDict
 from dataclasses import dataclass
 from typing import Any
 
-from wiredbench.engine.core import INT64_MAX, INT64_MIN, TICK_MS, Engine, Holding
+from wiredbench.engine.core import INT64_MAX, INT64_MIN, TICK_MS, Engine
 
 MAX_RUNNING = 8
 NAME = r"[\w.-]{1,64}"
@@ -42,8 +42,8 @@ class RunRegistry:
         self._runs: OrderedDict[int, Run] = OrderedDict()
         self._lock = threading.Lock()
 
-    def start(self, sandbox_id: int, document: dict[str, Any], seed: int) -> Run:
-        run = Run(Engine(document, seed=seed), threading.Lock())
+    def start(self, sandbox_id: int, document: dict[str, Any], seed: int, tick_ms: int = TICK_MS) -> Run:
+        run = Run(Engine(document, seed=seed, tick_ms=tick_ms), threading.Lock())
         with self._lock:
             self._runs[sandbox_id] = run
             self._runs.move_to_end(sandbox_id)
@@ -57,6 +57,10 @@ class RunRegistry:
             if run:
                 self._runs.move_to_end(sandbox_id)
             return run
+
+    def running(self) -> list[tuple[int, Run]]:
+        with self._lock:
+            return list(self._runs.items())
 
     def stop(self, sandbox_id: int) -> None:
         with self._lock:
@@ -105,7 +109,7 @@ def _execute(run: Run, engine: Engine, name: str, args: tuple[str, ...]) -> str:
             return "Running."
         case "step":
             run.paused = True
-            engine.advance(TICK_MS)
+            engine.advance(engine.tick_ms)
             return f"Stepped to {engine.now_ms / 1000:.1f} s."
         case "as":
             user = _user_id(engine, args[0])
@@ -131,15 +135,7 @@ def _set(engine: Engine, scope: str, target: str, name: str, raw: str) -> str:
         key = f"furni:{target}"
     else:
         key = "global"
-    holding = engine.variables[name].get(key)
-    if holding:
-        holding.value = value
-        holding.updated_ms = engine.now_ms
-    else:
-        engine.variables[name][key] = Holding(value, engine.now_ms, engine.now_ms)
-    engine.inputs.append(
-        {"at_ms": engine.now_ms, "type": "debug_set", "variable": name, "key": key, "value": value}
-    )
+    engine.apply_input({"type": "debug_set", "variable": name, "key": key, "value": value})
     return f"{name} = {value}"
 
 

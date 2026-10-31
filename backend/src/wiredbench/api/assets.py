@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse
 
-from wiredbench.api.deps import Services, get_services
+from wiredbench.api.deps import Services, get_services, viewer
 from wiredbench.config import Hotel
 from wiredbench.errors import ApiError, not_found
 from wiredbench.services.assets import FIGURE, HABBO_NAME
@@ -33,6 +33,7 @@ async def _furni(revision: int, classname: str, services: Services) -> tuple[str
 
 
 @router.get("/furni/{revision}/{classname}/manifest")
+@viewer
 async def furni_manifest(
     revision: int, classname: str, services: Services = Depends(get_services)
 ) -> FileResponse:
@@ -41,6 +42,7 @@ async def furni_manifest(
 
 
 @router.get("/furni/{revision}/{classname}/atlas")
+@viewer
 async def furni_atlas(
     revision: int, classname: str, services: Services = Depends(get_services)
 ) -> FileResponse:
@@ -49,6 +51,7 @@ async def furni_atlas(
 
 
 @router.get("/avatars/{hotel}/lookup")
+@viewer
 async def avatar_lookup(
     hotel: Hotel, name: str = Query(max_length=32), services: Services = Depends(get_services)
 ) -> dict[str, str]:
@@ -64,6 +67,7 @@ async def avatar_lookup(
 
 
 @router.get("/avatars/{hotel}/image")
+@viewer
 async def avatar_image(
     hotel: Hotel,
     figure: str = Query(max_length=400),

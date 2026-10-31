@@ -61,6 +61,7 @@ class AuthSession(Base):
     csrf_token: Mapped[str] = mapped_column(String(64))
     created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
     expires_at: Mapped[datetime] = mapped_column(UTCDateTime, index=True)
+    view_as: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
 class AuditEvent(Base):
@@ -111,6 +112,18 @@ class Sandbox(Base):
     deleted_at: Mapped[datetime | None] = mapped_column(UTCDateTime, index=True)
     trash_batch: Mapped[str | None] = mapped_column(String(32))
     trash_root: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+class MockApiKey(Base):
+    """A sandbox's keys for the mock Web API. Only hashes are stored, so a key is shown once."""
+
+    __tablename__ = "mock_api_key"
+
+    sandbox_id: Mapped[int] = mapped_column(ForeignKey("sandbox.id", ondelete="CASCADE"), primary_key=True)
+    read_hash: Mapped[str] = mapped_column(String(64))
+    write_hash: Mapped[str] = mapped_column(String(64))
+    allow_mass_deletion: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime, default=utcnow)
 
 
 class SandboxVersion(Base):

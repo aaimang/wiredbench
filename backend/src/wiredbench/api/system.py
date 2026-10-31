@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from wiredbench import __version__
-from wiredbench.api.deps import Services, audit, get_db, get_services, public
+from wiredbench.api.deps import Services, audit, get_db, get_services, public, viewer
 from wiredbench.config import HOTELS, Hotel
 from wiredbench.models import AuditEvent
 from wiredbench.services import preferences
@@ -22,6 +22,9 @@ class PreferencesUpdate(BaseModel):
     cache_max_mb: int | None = Field(None, ge=16, le=102_400)
     session_hours: int | None = Field(None, ge=1, le=720)
     theme: Literal["system", "light", "dark"] | None = None
+    tick_ms: int | None = Field(None, ge=50, le=5000)
+    rate_limit_mock: int | None = Field(None, ge=1, le=1_000_000)
+    audit_days: int | None = Field(None, ge=1, le=3650)
 
 
 @router.api_route("/healthz", methods=["GET", "HEAD"])
@@ -31,6 +34,7 @@ def healthz() -> dict[str, str]:
 
 
 @router.get("/api/settings")
+@viewer
 def get_settings(services: Services = Depends(get_services), db: Session = Depends(get_db)) -> dict[str, Any]:
     return {
         **preferences.load(db, services.settings).model_dump(),
@@ -52,6 +56,7 @@ def update_settings(
     audit(db, request, "settings_update", ", ".join(sorted(body.model_fields_set)))
     db.commit()
     services.assets.enforce_limit(updated.cache_max_mb * 2**20)
+    services.mock_limiter.limit = updated.rate_limit_mock
     return {**updated.model_dump(), "hotels": list(HOTELS), "version": __version__}
 
 

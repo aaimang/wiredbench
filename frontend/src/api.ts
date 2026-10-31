@@ -68,6 +68,7 @@ export const del = (path: string) => request<void>("DELETE", path);
 export interface Me {
   username: string;
   csrf_token: string;
+  view_as: boolean;
 }
 
 export interface CatalogVersion {
@@ -177,6 +178,9 @@ export interface Settings {
   cache_max_mb: number;
   session_hours: number;
   theme: string;
+  tick_ms: number;
+  rate_limit_mock: number;
+  audit_days: number;
   hotels: string[];
   version: string;
 }

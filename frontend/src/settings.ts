@@ -104,6 +104,43 @@ class WbSettings extends HTMLElement {
           value: settings.cache_max_mb,
         }),
       ),
+      field(
+        "tick_ms",
+        T.tickMs,
+        h("input", {
+          id: "tick_ms",
+          name: "tick_ms",
+          type: "number",
+          min: 50,
+          max: 5000,
+          value: settings.tick_ms,
+        }),
+        T.tickHelp,
+      ),
+      field(
+        "rate_limit_mock",
+        T.mockRate,
+        h("input", {
+          id: "rate_limit_mock",
+          name: "rate_limit_mock",
+          type: "number",
+          min: 1,
+          max: 1000000,
+          value: settings.rate_limit_mock,
+        }),
+      ),
+      field(
+        "audit_days",
+        T.auditDays,
+        h("input", {
+          id: "audit_days",
+          name: "audit_days",
+          type: "number",
+          min: 1,
+          max: 3650,
+          value: settings.audit_days,
+        }),
+      ),
       h("button", { class: "btn btn-primary", type: "submit" }, T.save),
     );
     form.addEventListener("submit", (event) => {
@@ -115,6 +152,9 @@ class WbSettings extends HTMLElement {
           ...values,
           session_hours: Number(values.session_hours),
           cache_max_mb: Number(values.cache_max_mb),
+          tick_ms: Number(values.tick_ms),
+          rate_limit_mock: Number(values.rate_limit_mock),
+          audit_days: Number(values.audit_days),
         });
         state.settings = saved;
         applyTheme(saved.theme);
