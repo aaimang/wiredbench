@@ -5,9 +5,9 @@ Build, run and debug Habbo WIRED stacks in a local sandbox, then export them to 
 Wiredbench runs on your own computer with one admin login. It downloads Habbo's public furni list
 to your machine and never redistributes Habbo's assets.
 
-> **Status: early development.** The foundation works: login, the WIRED catalogue, furnidata
-> updates, folders and settings. The room editor, the WIRED engine and import and export are not
-> built yet. See [PLAN.md](PLAN.md).
+> **Status: early development.** You can build a room and walk around it. WIRED boxes can be placed
+> but do not run yet, because the WIRED engine and import and export are not built. See
+> [PLAN.md](PLAN.md).
 
 Not affiliated with or endorsed by Sulake. Habbo is a trademark of Sulake.
 
@@ -17,6 +17,9 @@ Not affiliated with or endorsed by Sulake. Habbo is a trademark of Sulake.
   with icons. Boxes with no catalogue offer, such as test and prototype boxes, are labelled.
 - **Update furnidata:** check Habbo for a new version, review exactly what is new, changed or
   removed, then apply it or keep what you have. Earlier versions can be restored.
+- **Room editor:** place, stack, move and rotate floor furni using real Habbo art, with colour
+  variants, furni states, undo and redo, and saving by itself.
+- **Avatars:** add any Habbo by name and hotel, then click to walk, sit and lie down in Play mode.
 - **Workspace:** nested folders of sandboxes, with rename, move, duplicate, version history and a
   30-day trash.
 - **Settings:** default hotel, theme, automatic update checks, cache limit, password change and an
@@ -144,6 +147,8 @@ running server.
 | POST | `/api/auth/logout` | Admin |
 | GET | `/api/auth/me` | Admin |
 | POST | `/api/auth/password` | Admin |
+| GET | `/api/avatars/{hotel}/image` | Admin |
+| GET | `/api/avatars/{hotel}/lookup` | Admin |
 | GET | `/api/cache` | Admin |
 | POST | `/api/cache/clear` | Admin |
 | POST | `/api/catalog/apply` | Admin |
@@ -158,6 +163,8 @@ running server.
 | POST | `/api/folders` | Admin |
 | DELETE | `/api/folders/{folder_id}` | Admin |
 | PATCH | `/api/folders/{folder_id}` | Admin |
+| GET | `/api/furni/{revision}/{classname}/atlas` | Admin |
+| GET | `/api/furni/{revision}/{classname}/manifest` | Admin |
 | POST | `/api/sandboxes` | Admin |
 | DELETE | `/api/sandboxes/{sandbox_id}` | Admin |
 | GET | `/api/sandboxes/{sandbox_id}` | Admin |

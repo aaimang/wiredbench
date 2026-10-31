@@ -427,7 +427,11 @@ class WbWorkspace extends HTMLElement {
           { class: "muted" },
           `${hotelLabel(sandbox.hotel)}, ${T.revision(sandbox.revision)}, ${T.updated(timeAgo(sandbox.updated_at))}`,
         ),
-        h("p", { class: "note" }, T.editorSoon),
+        h(
+          "a",
+          { class: "btn btn-primary sandbox-open", href: `/sandbox/${sandbox.id}` },
+          T.openRoom,
+        ),
         h("h2", {}, T.history),
         history,
       ),

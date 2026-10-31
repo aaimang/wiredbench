@@ -48,6 +48,9 @@ class FakeHabbo:
         self.status: int | None = None
         self.icons: dict[str, bytes] = {}
         self.fail = False
+        self.files: dict[str, bytes] = {}
+        self.avatar = PNG
+        self.profiles: dict[str, dict[str, str]] = {}
         self.status_headers: dict[str, str] = {}
 
     def set(self, document: dict[str, Any] | bytes, etag: str) -> None:
@@ -57,11 +60,15 @@ class FakeHabbo:
         self.requests.append(request)
         if self.fail:
             raise httpx.ConnectError("down")
+        name = request.url.path.rsplit("/", 1)[1]
         if request.url.host == "images.habbo.com":
-            name = request.url.path.rsplit("/", 1)[1]
-            return (
-                httpx.Response(200, content=self.icons[name]) if name in self.icons else httpx.Response(404)
-            )
+            found = self.icons.get(name) or self.files.get(name)
+            return httpx.Response(200, content=found) if found else httpx.Response(404)
+        if request.url.path.endswith("/avatarimage"):
+            return httpx.Response(200, content=self.avatar)
+        if request.url.path.endswith("/api/public/users"):
+            profile = self.profiles.get(request.url.params["name"])
+            return httpx.Response(200, json=profile) if profile else httpx.Response(404)
         if self.status:
             return httpx.Response(self.status, headers=self.status_headers)
         raw = self.document if isinstance(self.document, bytes) else json.dumps(self.document).encode()

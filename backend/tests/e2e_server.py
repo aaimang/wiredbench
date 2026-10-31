@@ -10,6 +10,7 @@ from pathlib import Path
 import httpx
 import uvicorn
 
+from swf_builder import furni_swf
 from wiredbench.app import create_app
 from wiredbench.config import Settings
 
@@ -24,6 +25,10 @@ PNG = bytes.fromhex(
 
 def habbo(request: httpx.Request) -> httpx.Response:
     if request.url.host == "images.habbo.com":
+        if request.url.path.endswith(".swf"):
+            return httpx.Response(200, content=furni_swf(request.url.path.rsplit("/", 1)[1][:-4]))
+        return httpx.Response(200, content=PNG)
+    if request.url.path.endswith("/avatarimage"):
         return httpx.Response(200, content=PNG)
     if not FURNIDATA.exists():
         return httpx.Response(503)
