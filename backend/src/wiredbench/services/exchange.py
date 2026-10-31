@@ -12,6 +12,7 @@ from typing import Any
 
 from wiredbench.engine import box_facts
 from wiredbench.engine.boxes import BOXES
+from wiredbench.engine.operations import OPERATION_CODES
 from wiredbench.errors import ApiError
 from wiredbench.services.room import MAX_ROOM_SIZE, MAX_Z
 
@@ -54,7 +55,7 @@ OPTION_FIELDS: dict[str, list[tuple[str, int, Any]]] = {
     "wf_act_toggle_state": [("toggle_type", 0, ("next", "previous"))],
     "wf_act_give_var": [("value", 2, LONG)],
     "wf_act_change_var_val": [
-        ("operation", 1, ("set", "add", "subtract", "multiply", "divide")),
+        ("operation", 1, OPERATION_CODES),
         ("value", 4, LONG),
     ],
     "wf_cnd_var_val_match": [

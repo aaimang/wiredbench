@@ -14,6 +14,7 @@ from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from typing import Any
 
+from wiredbench.engine import operations
 from wiredbench.engine.boxes import BOXES
 
 TICK_MS = 500  # Assumed from delay values in real presets, which are small whole numbers.
@@ -730,18 +731,7 @@ class Engine:
                     self._log("error", f"{reference} is not set for user {user}", box=box.id)
                     continue
                 amount = self._read(source, str(box.get("from_field", "value")))
-            operation = box.get("operation", "set")
-            value = holding.value
-            if operation == "set":
-                value = amount
-            elif operation == "add":
-                value += amount
-            elif operation == "subtract":
-                value -= amount
-            elif operation == "multiply":
-                value *= amount
-            elif operation == "divide":
-                value = int(value / amount) if amount else value
+            value = operations.apply(str(box.get("operation", "set")), holding.value, amount, self.random)
             holding.value = _clamp(value)
             holding.updated_ms = self.now_ms
             self._changed(name, user)
