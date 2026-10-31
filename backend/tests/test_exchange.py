@@ -378,6 +378,11 @@ def boxed(classname: str, section: str, box: dict[str, Any]) -> dict[str, Any]:
         ("wf_var_user", "variables", [10, 1], {"availability": "persistent", "has_value": True}),
         ("wf_var_furni", "variables", [1, 10], {"availability": "persistent", "has_value": True}),
         ("wf_var_context", "variables", [1], {"has_value": True}),
+        ("wf_act_toggle_state", "effects", [1], {"toggle_type": "previous"}),
+        ("wf_act_give_var", "effects", [1, 0, 7777, 0, 0, -10, 0], {"value": 7777}),
+        ("wf_act_change_var_val", "effects", [1, 3, 0, 0, 77777, -10, 0], {"value": 77777}),
+        ("wf_cnd_var_val_match", "conditions", [-10, 3, 0, 0, 7777, -10, 0], {"value": 7777}),
+        ("wf_xtra_filter_users_by_var", "addons", [777, 1, 0, 1], {"amount": 777, "lowest": True}),
     ],
 )
 def test_option_numbers_read_as_settings(
@@ -388,6 +393,13 @@ def test_option_numbers_read_as_settings(
     settings = document["furni"][0]["wired"]
     assert {key: settings[key] for key in expected} == expected
     assert exchange.export_gpresets(document)[0] == file, "untouched settings must not change the numbers"
+
+
+def test_a_millisecond_delay_survives_import_and_export() -> None:
+    file = boxed("wf_act_toggle_state", "effects", {"options": [0], "delay": -650})
+    document, _ = exchange.import_gpresets(json.loads(json.dumps(file)))
+    assert document["furni"][0]["wired"]["delay"] == -650
+    assert exchange.export_gpresets(document)[0] == file
 
 
 def test_edited_settings_write_their_numbers() -> None:

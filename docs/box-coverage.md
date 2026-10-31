@@ -12,7 +12,7 @@ read at commit `3fc9c06f533c`, for facts only.
 - Seen in a real room dump: 182
 - Checked in a real room: 3
 - Have a form: 72
-- Option numbers mapped: 18
+- Option numbers mapped: 23
 
 | Box | Evidence | Form | Options | Room check |
 |---|---|---|---|---|
@@ -26,7 +26,7 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_act_bot_teleport` | Seen in a real room dump |  |  |  |
 | `wf_act_call_stacks` | Seen in a real room dump | Yes |  |  |
 | `wf_act_cancel_transaction` | Seen in a real room dump |  |  |  |
-| `wf_act_change_var_val` | Seen in a real room dump | Yes |  |  |
+| `wf_act_change_var_val` | Seen in a real room dump | Yes | Yes |  |
 | `wf_act_chase` | Seen in a real room dump |  |  |  |
 | `wf_act_click_conf` | Seen in a real room dump |  |  |  |
 | `wf_act_control_clock` | Seen in a real room dump |  |  |  |
@@ -39,7 +39,7 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_act_give_reward` | Reference only |  |  |  |
 | `wf_act_give_score` | Seen in a real room dump |  |  |  |
 | `wf_act_give_score_tm` | Seen in a real room dump |  |  |  |
-| `wf_act_give_var` | Seen in a real room dump | Yes |  |  |
+| `wf_act_give_var` | Seen in a real room dump | Yes | Yes |  |
 | `wf_act_init_transaction` | Seen in a real room dump |  |  |  |
 | `wf_act_join_team` | Seen in a real room dump |  |  |  |
 | `wf_act_kick_user` | Seen in a real room dump |  |  |  |
@@ -70,7 +70,7 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_act_show_message` | Seen in a real room dump | Yes |  |  |
 | `wf_act_teleport_to` | Seen in a real room dump | Yes |  |  |
 | `wf_act_teleport_to_room` | Seen in a real room dump |  |  |  |
-| `wf_act_toggle_state` | Checked in a real room | Yes |  | 2026-10-31 |
+| `wf_act_toggle_state` | Checked in a real room | Yes | Yes | 2026-10-31 |
 | `wf_act_toggle_to_rnd` | Seen in a real room dump | Yes |  |  |
 | `wf_act_unfreeze` | Seen in a real room dump |  |  |  |
 | `wf_act_user_to_furni` | Seen in a real room dump | Yes | Yes |  |
@@ -131,7 +131,7 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_cnd_user_performs_action` | Seen in a real room dump |  |  |  |
 | `wf_cnd_valid_moves` | Seen in a real room dump |  |  |  |
 | `wf_cnd_var_age_match` | Seen in a real room dump |  |  |  |
-| `wf_cnd_var_val_match` | Seen in a real room dump | Yes |  |  |
+| `wf_cnd_var_val_match` | Seen in a real room dump | Yes | Yes |  |
 | `wf_cnd_wearing_badge` | Reference only |  |  |  |
 | `wf_cnd_wearing_effect` | Reference only |  |  |  |
 | `wf_colortile` | No evidence yet |  |  |  |
@@ -272,7 +272,7 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_xtra_filter_furni` | Seen in a real room dump | Yes | Yes |  |
 | `wf_xtra_filter_furni_by_var` | Seen in a real room dump |  |  |  |
 | `wf_xtra_filter_users` | Seen in a real room dump | Yes | Yes |  |
-| `wf_xtra_filter_users_by_var` | Seen in a real room dump | Yes |  |  |
+| `wf_xtra_filter_users_by_var` | Seen in a real room dump | Yes | Yes |  |
 | `wf_xtra_link_speaker` | Seen in a real room dump |  |  |  |
 | `wf_xtra_mov_carry_users` | Seen in a real room dump |  |  |  |
 | `wf_xtra_mov_curve` | Seen in a real room dump |  |  |  |

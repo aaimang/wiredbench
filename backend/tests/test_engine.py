@@ -207,6 +207,19 @@ def test_delay_counts_half_seconds() -> None:
     assert logs(engine) == ["later"]
 
 
+@pytest.mark.parametrize(("delay", "wait"), [(-650, 650), (-50, 50), (-90000, 60000), (900, 300000)])
+def test_negative_delays_are_milliseconds_and_all_delays_are_capped(delay: int, wait: int) -> None:
+    engine = room(
+        box(1, "wf_trg_says_something", 1, 1, text="go"),
+        box(2, "wf_act_log", 1, 1, 1, text="later", delay=delay),
+    )
+    say(engine, "go")
+    engine.advance(wait - 1)
+    assert logs(engine) == []
+    engine.advance(1)
+    assert logs(engine) == ["later"]
+
+
 def test_execute_in_order_runs_top_down_and_default_order_varies() -> None:
     boxes = [box(i, "wf_act_log", 1, 1, i, text=str(i)) for i in range(2, 8)]
     trigger = box(1, "wf_trg_says_something", 1, 1, text="go")
