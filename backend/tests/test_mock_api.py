@@ -253,8 +253,10 @@ def test_furni_and_global_profiles(room: Room) -> None:
 def test_batch_keeps_the_live_format(room: Room) -> None:
     both = {**room.read, **room.write}
     path = "/variables/user/troll/batch"
-    error(room.send("POST", path, {"requests": []}), 403, "wired.variables.key_missing")
-    error(room.send("POST", path, {"requests": []}, headers=both), 400, "wired.variables.invalid_target")
+    one = [{"method": "GET", "path": "users/1"}]
+    error(room.send("POST", path, {"requests": one}), 403, "wired.variables.key_missing")
+    for headers in (room.read, room.write, both):
+        error(room.send("POST", path, {"requests": []}, headers=headers), 400, "wired.variables.batch_empty")
     too_many = [{"method": "GET", "path": "users/1"}] * 51
     assert room.send("POST", path, {"requests": too_many}, headers=both).status_code == 400
     operations = [

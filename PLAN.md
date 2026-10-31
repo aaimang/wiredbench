@@ -281,7 +281,7 @@ Nothing rechecks the reference automatically yet.
 
 36 read and write requests were compared with a `habbo.com` room, and the mock was changed to match. A successful
 write has still not been compared, because the room's API did not list the scratch variable. Still assumed: the
-mass deletion refusal, read-only batch, `429`, and the effect of API writes on triggers.
+mass deletion refusal, a read-only batch that is not empty, `429`, and the effect of API writes on triggers.
 
 ### Debugging additions
 
