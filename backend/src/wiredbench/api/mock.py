@@ -292,6 +292,8 @@ def batch(
 ) -> dict[str, Any]:
     if scope not in ("user", "furni"):  # Live: there is no batch route for global variables.
         raise MockError(404)
+    if _object(body).get("requests") == []:  # Live: reported before any key check.
+        raise MockError(400, "wired.variables.batch_empty")
     # Live: a write key alone is refused as missing. A read key alone is ASSUMED to match.
     if not (request.headers.get("x-wired-read-key") and request.headers.get("x-wired-write-key")):
         raise MockError(403, "wired.variables.key_missing")

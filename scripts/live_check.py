@@ -4,6 +4,10 @@
 Reads WB_LIVE_CHECK_ROOM_ID, WB_LIVE_CHECK_READ_KEY, WB_LIVE_CHECK_WRITE_KEY and optionally
 WB_LIVE_CHECK_HOTEL (default sandbox) from the environment or --env-file. Reads only, unless --write
 is given. Prints status codes and response shapes: never keys, values, names or the room ID.
+
+--write only changes a permanent global variable named wb_live_check, and puts its value back. Reload the room
+after adding it, or the API may not list it. Exits 0 when every step ran, and 1 when the room refused the key,
+limited the requests, could not be reached, or the value could not be put back.
 """
 
 from __future__ import annotations
@@ -12,13 +16,22 @@ import argparse
 import json
 import os
 import sys
+import time
 from pathlib import Path
 from typing import Any
 
 import httpx
 
-HOSTS = {"sandbox": "sandbox.habbo.com", "com": "www.habbo.com"}
-SCRATCH = "wb_live_check"  # A global variable the room must define for --write. It is removed again.
+from wiredbench.config import HOTELS
+
+SCRATCH = "wb_live_check"  # The global variable --write may change. Its value is put back afterwards.
+PAUSE_SECONDS = 0.2  # Habbo publishes no limits, so requests stay gentle.
+RESTORE_TRIES = 3
+RESTORE_WAIT_SECONDS = 5
+
+
+class RateLimited(Exception):
+    """The room answered 429, so nothing more should be sent."""
 
 
 def load_env(path: Path | None) -> None:
@@ -26,8 +39,9 @@ def load_env(path: Path | None) -> None:
         return
     for line in path.read_text().splitlines():
         name, separator, value = line.partition("=")
-        if separator and name.strip().startswith("WB_LIVE_CHECK_"):
-            os.environ.setdefault(name.strip(), value.strip().strip("'\""))
+        name = name.strip().removeprefix("export ").strip()
+        if separator and name.startswith("WB_LIVE_CHECK_"):
+            os.environ.setdefault(name, value.strip().strip("'\""))
 
 
 def shape(value: Any) -> Any:
@@ -66,8 +80,10 @@ KNOWN = {
 
 
 class Check:
-    def __init__(self, client: httpx.Client, room: str, read: str, write: str) -> None:
-        self.client, self.room, self.read, self.write = client, room, read, write
+    def __init__(
+        self, client: httpx.Client, room: str, read: str, write: str, pause: float = PAUSE_SECONDS
+    ) -> None:
+        self.client, self.room, self.read, self.write, self.pause = client, room, read, write, pause
         self.lines: list[dict[str, Any]] = []
 
     def call(self, label: str, method: str, path: str, keys: str = "read", **kwargs: Any) -> httpx.Response:
@@ -78,6 +94,8 @@ class Check:
             headers["X-Wired-Write-Key"] = self.write
         if keys == "bad":
             headers["X-Wired-Read-Key"] = "0" * 32
+        if self.pause:
+            time.sleep(self.pause)
         response = self.client.request(
             method, f"/api/public/rooms/{self.room}{path}", headers=headers, **kwargs
         )
@@ -95,10 +113,13 @@ class Check:
                 "shape": body,
             }
         )
+        if response.status_code == 429:
+            raise RateLimited
         return response
 
 
-def read_checks(check: Check) -> None:
+def read_checks(check: Check) -> dict[str, Any] | None:
+    """Returns the room's variable names, or None if it would not list them."""
     definitions = check.call("definitions", "GET", "/variables")
     check.call("no key", "GET", "/variables", keys="")
     check.call("wrong key", "GET", "/variables", keys="bad")
@@ -117,7 +138,7 @@ def read_checks(check: Check) -> None:
     )
     check.call("bad scope", "GET", "/variables/nothing/x/users")
     if definitions.status_code != 200:
-        return
+        return None
     data = definitions.json()
     for scope, plural, kind in (("user", "users", "users"), ("furni", "furni", "furni")):
         names = data.get(plural) or []
@@ -131,12 +152,43 @@ def read_checks(check: Check) -> None:
         check.call(f"{scope} bad order", "GET", f"/variables/{scope}/{name}/{kind}", params={"order_by": "x"})
     if data.get("global"):
         check.call("global value", "GET", f"/variables/global/{data['global'][0]}")
+    return data
 
 
-def write_checks(check: Check) -> None:
-    """Only touches SCRATCH, and only the assumed behaviours. Needs a global variable named SCRATCH."""
-    path = f"/variables/global/{SCRATCH}"
-    before = check.call("scratch before", "GET", path)
+def batch_checks(check: Check, definitions: dict[str, Any]) -> None:
+    """Empty batches change nothing. Batches exist for user and furni variables, so one of those is needed."""
+    for scope, plural in (("user", "users"), ("furni", "furni")):
+        names = definitions.get(plural) or []
+        if names:
+            path = f"/variables/{scope}/{names[0]}/batch"
+            check.call("batch read key only", "POST", path, keys="read", json={"requests": []})
+            check.call("batch write key only", "POST", path, keys="write", json={"requests": []})
+            check.call("batch empty", "POST", path, keys="read write", json={"requests": []})
+            return
+    print("Skipped batch checks: the room lists no user or furni variable.", file=sys.stderr)
+
+
+def restore(check: Check, path: str, value: str, wait: float = RESTORE_WAIT_SECONDS) -> bool:
+    """Puts the value back and reads it again. It tries harder than other requests, even after a limit."""
+    for attempt in range(RESTORE_TRIES):
+        if attempt and wait:
+            time.sleep(wait)
+        try:
+            check.call("restore", "PATCH", path, keys="write", json={"value": value})
+            confirmed = check.call("restore confirmed", "GET", path)
+            if confirmed.status_code == 200 and confirmed.json().get("value") == value:
+                return True
+        except (RateLimited, httpx.HTTPError):
+            continue
+    return False
+
+
+def write_checks(check: Check, definitions: dict[str, Any], wait: float = RESTORE_WAIT_SECONDS) -> bool:
+    """Returns False if the variable's value could not be put back. Only SCRATCH can change."""
+    batch_checks(check, definitions)
+    check.call(
+        "bulk delete of nothing", "POST", "/variables/bulk-delete", keys="write", json={"variables": []}
+    )
     check.call(
         "undefined global write",
         "PATCH",
@@ -144,23 +196,47 @@ def write_checks(check: Check) -> None:
         keys="write",
         json={"value": 1},
     )
-    for label, value in (
-        ("write number", 1),
-        ("write text", "abc"),
-        ("write decimal", 1.5),
-        ("write bool", True),
-        ("write null", None),
-        ("write too big", str(2**63)),
-    ):
-        check.call(label, "PATCH", path, keys="write", json={"value": value})
-    check.call("write no body", "PATCH", path, keys="write")
-    check.call("batch read key only", "POST", f"{path}/batch", keys="read", json={"requests": []})
-    check.call("batch empty", "POST", f"{path}/batch", keys="read write", json={"requests": []})
-    check.call(
-        "bulk delete of nothing", "POST", "/variables/bulk-delete", keys="write", json={"variables": []}
-    )
-    if before.status_code == 200:
-        check.call("restore", "PATCH", path, keys="write", json={"value": before.json()["value"]})
+    if SCRATCH not in (definitions.get("global") or []):
+        print(
+            f"Skipped value writes: the API does not list {SCRATCH}. Make it a permanent global variable "
+            "with a value, press Ready, and reload the room.",
+            file=sys.stderr,
+        )
+        return True
+    path = f"/variables/global/{SCRATCH}"
+    before = check.call("scratch before", "GET", path)
+    if before.status_code != 200:
+        print(f"Skipped value writes: {SCRATCH} has no value to put back afterwards.", file=sys.stderr)
+        return True
+    original = before.json()["value"]
+    try:
+        for label, value in (
+            ("write number", 1),
+            ("write text", "abc"),
+            ("write decimal", 1.5),
+            ("write bool", True),
+            ("write null", None),
+            ("write too big", str(2**63)),
+        ):
+            check.call(label, "PATCH", path, keys="write", json={"value": value})
+        check.call("write no body", "PATCH", path, keys="write")
+    finally:
+        restored = restore(check, path, original, wait)
+        if not restored:
+            print(
+                f"WARNING: {SCRATCH} may not have its old value back. Check it in the room.", file=sys.stderr
+            )
+    return restored
+
+
+def run(check: Check, write: bool) -> int:
+    definitions = read_checks(check)
+    if definitions is None:
+        print("The room would not list its variables, so the key or room ID needs checking.", file=sys.stderr)
+        return 1
+    if write and not write_checks(check, definitions):
+        return 1
+    return 0
 
 
 def main() -> int:
@@ -177,27 +253,33 @@ def main() -> int:
         print(f"Missing {missing.args[0]}", file=sys.stderr)
         return 2
     write = os.environ.get("WB_LIVE_CHECK_WRITE_KEY", "")
+    if args.write and not write:
+        print("--write needs WB_LIVE_CHECK_WRITE_KEY", file=sys.stderr)
+        return 2
     hotel = os.environ.get("WB_LIVE_CHECK_HOTEL", "sandbox")
-    if hotel not in HOSTS:
-        print(f"WB_LIVE_CHECK_HOTEL must be one of {sorted(HOSTS)}", file=sys.stderr)
+    if hotel not in HOTELS:
+        print(f"WB_LIVE_CHECK_HOTEL must be one of {sorted(HOTELS)}", file=sys.stderr)
         return 2
     headers = {"User-Agent": "wiredbench-live-check"}
     with httpx.Client(
-        base_url=f"https://{HOSTS[hotel]}", headers=headers, timeout=20, follow_redirects=False
+        base_url=f"https://{HOTELS[hotel]}", headers=headers, timeout=20, follow_redirects=False
     ) as client:
         check = Check(client, room, read, write)
-        read_checks(check)
-        if args.write:
-            if not write:
-                print("--write needs WB_LIVE_CHECK_WRITE_KEY", file=sys.stderr)
-                return 2
-            write_checks(check)
+        try:
+            code = run(check, args.write)
+        except RateLimited:
+            print("Stopped: the room is limiting requests. Try again later.", file=sys.stderr)
+            code = 1
+        except httpx.HTTPError as error:
+            # Only the type: the message holds the address, which contains the room ID and variable names.
+            print(f"Stopped: could not reach the room ({type(error).__name__}).", file=sys.stderr)
+            code = 1
     text = json.dumps(check.lines, indent=1)
     if args.out:
         args.out.write_text(text)
     for line in check.lines:
         print(f"{line['status']} {line['check']}: {line['error'] or ''} {json.dumps(line['shape'])[:140]}")
-    return 0
+    return code
 
 
 if __name__ == "__main__":
