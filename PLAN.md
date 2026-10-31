@@ -279,9 +279,10 @@ Nothing rechecks the reference automatically yet.
 
 ### Mock comparison with a real room (2026-10-31)
 
-36 read and write requests were compared with a `habbo.com` room, and the mock was changed to match. A successful
-write has still not been compared, because the room's API did not list the scratch variable. Still assumed: the
-mass deletion refusal, a read-only batch that is not empty, `429`, and the effect of API writes on triggers.
+39 read and write requests were compared with a `habbo.com` room, including a successful write to a global variable
+and restoring it, and the mock was changed to match. Still assumed: the mass deletion refusal, a batch with real
+operations and one key, `429`, writes to user and furni variables, PUT, DELETE, and the effect of API writes on
+triggers.
 
 ### Debugging additions
 

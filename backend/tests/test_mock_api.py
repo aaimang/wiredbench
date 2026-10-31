@@ -192,6 +192,14 @@ def test_errors_carry_an_etag_like_a_real_room(room: Room) -> None:
     assert write.headers["etag"].startswith('W/"')
 
 
+def test_successful_writes_carry_an_etag_like_a_real_room(room: Room) -> None:
+    res = room.send("PATCH", "/variables/global/clock", {"value": 3})
+    assert res.status_code == 200
+    assert res.headers["etag"].startswith('W/"')
+    assert res.json()["value"] == "3"
+    assert room.send("PUT", "/variables/user/troll/users/44", {"value": 1}).headers["etag"]
+
+
 def test_value_errors_match_a_real_room(room: Room) -> None:
     path = "/variables/global/clock"
     for bad in ("abc", 1.5, True, str(2**63)):

@@ -271,14 +271,16 @@ def get_global(request: Request, name: str, room: Room = Depends(get_room)) -> R
 @public
 def patch_global(
     request: Request, name: str, body: Any = Depends(json_body), room: Room = Depends(get_room)
-) -> dict[str, str]:
+) -> Response:
     room.need_write(request)
     value = parse_value(
         _object(body).get("value")
     )  # Live: a bad value is reported before a missing variable.
     with room.run.lock:
         _defined(room.engine, "global", name)
-        return _variable(_set(room.engine, name, "global", value))
+        return reply(
+            request, _variable(_set(room.engine, name, "global", value))
+        )  # Live: it carries an ETag.
 
 
 @router.post("/variables/{scope}/{name}/batch")
@@ -411,13 +413,15 @@ def put_value(
     entity: str,
     body: Any = Depends(json_body),
     room: Room = Depends(get_room),
-) -> dict[str, str]:
+) -> Response:
     check_entity(entity)
     room.need_write(request)
     value = parse_value(_object(body).get("value"))
     with room.run.lock:
         _defined(room.engine, scope, name)
-        return _variable(_set(room.engine, name, holder(kind, entity), value))
+        return reply(
+            request, _variable(_set(room.engine, name, holder(kind, entity), value))
+        )  # ASSUMED ETag.
 
 
 @router.patch("/variables/{scope}/{name}/{kind}/{entity}", dependencies=[Depends(target)])
@@ -429,14 +433,14 @@ def patch_value(
     entity: str,
     body: Any = Depends(json_body),
     room: Room = Depends(get_room),
-) -> dict[str, str]:
+) -> Response:
     check_entity(entity)
     room.need_write(request)
     value = parse_value(_object(body).get("value"))
     with room.run.lock:
         key = holder(kind, entity)
         _holding(room.engine, name, key)
-        return _variable(_set(room.engine, name, key, value))
+        return reply(request, _variable(_set(room.engine, name, key, value)))  # ASSUMED ETag.
 
 
 @router.delete("/variables/{scope}/{name}/{kind}/{entity}", status_code=204, dependencies=[Depends(target)])
