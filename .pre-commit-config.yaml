@@ -1,0 +1,51 @@
+# Install with: uv run pre-commit install
+# These are for fast feedback. Hooks can be skipped, so CI is the real gate.
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks
+  - repo: local
+    hooks:
+      - id: ruff-format
+        name: ruff format
+        entry: uv run ruff format
+        language: system
+        types: [python]
+        exclude: ^spikes/
+      - id: ruff-check
+        name: ruff check
+        entry: uv run ruff check --fix
+        language: system
+        types: [python]
+        exclude: ^spikes/
+      - id: mypy
+        name: mypy
+        entry: uv run mypy
+        language: system
+        pass_filenames: false
+        files: ^backend/src/.*\.py$
+      - id: pytest
+        name: backend tests
+        entry: uv run pytest -x
+        language: system
+        pass_filenames: false
+        files: ^(backend/|pyproject\.toml|uv\.lock)
+      - id: docs
+        name: generated README sections
+        entry: uv run python scripts/gen_docs.py --check
+        language: system
+        pass_filenames: false
+        files: ^(backend/src/|README\.md|scripts/)
+      - id: frontend-check
+        name: frontend types and lint
+        entry: npm --prefix frontend run check
+        language: system
+        pass_filenames: false
+        files: ^frontend/
+      - id: frontend-test
+        name: frontend tests
+        entry: npm --prefix frontend test
+        language: system
+        pass_filenames: false
+        files: ^frontend/

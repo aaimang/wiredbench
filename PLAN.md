@@ -4,8 +4,8 @@ Wiredbench (working name) is a self-hosted browser sandbox for building, running
 debugging Habbo WIRED. It targets Habbo Classic by exporting setups to real rooms through
 G-Presets.
 
-- **Status:** Phase 0 spikes run; see [spikes/RESULTS.md](spikes/RESULTS.md). Product not built yet.
-- **Revision:** 2026-10-31, updated with Phase 0 results.
+- **Status:** Phase 1 (foundation) built. Phase 0 results are in [spikes/RESULTS.md](spikes/RESULTS.md).
+- **Revision:** 2026-10-31, updated with Phase 1 results.
 
 ## 1. Decisions
 
@@ -27,7 +27,7 @@ G-Presets.
 | Furnidata has 284 `wf_*` classnames, the same on production and sandbox | It is the master catalogue. |
 | Furni `id`, `offerid` and `bcofferid` differ per hotel; 3 names and 7 descriptions differ | Always key by classname. Keep names per hotel. |
 | 29 `wf_*` boxes have no catalogue offer and `bc` false | Label them "not in catalogue". This is a candidate signal, not proof of staff-only. |
-| Furnidata returns an `ETag` and answers `304` to `If-None-Match` on both hotels (tested 2026-10-31) | Update checks can be cheap. |
+| `furnidata_json/1` always answers `307` to `furnidata_json/{hash}`, and only that URL returns an `ETag` and `304` (tested on 5 hotels, 2026-10-31) | Each redirect hop is followed by hand and checked against the host list. Tests mirror this. |
 | Furnidata sends `max-age=604800` | A plain HTTP cache could hide updates for 7 days, so the button always revalidates. |
 | Sulek's public API covers releases and packets, not furni | Classnames come from furnidata; Sulek is the packet name reference. |
 | Habbo Classic is an Electron and JavaScript client using PixiJS, according to community reverse-engineering | Its look can be matched in a browser, but emulating it would be fragile. |
@@ -65,8 +65,8 @@ Playwright.
 
 ### Update button
 
-An **Update furnidata** button on the Catalogue page, also reachable from Settings. A badge
-appears when an automatic check finds a new version.
+An **Update furnidata** button on the Catalogue page. It turns into **Review update** when an
+automatic check finds a new version.
 
 1. Send a conditional GET with the stored `ETag` for the selected hotel.
 2. On `304`, show "Up to date, checked just now".
@@ -74,7 +74,7 @@ appears when an automatic check finds a new version.
 4. Show the differences: new, changed and removed items, with WIRED listed first.
 5. The admin applies the update, or dismisses it and stays on the current version.
 
-A **Force refresh** option repeats the download without the `ETag`. Automatic checks are a
+A **Force refresh** option, under Versions, repeats the download without the `ETag`. Automatic checks are a
 setting (off, on startup, daily). They only check and notify; applying stays manual.
 
 ### Cache layers
@@ -82,7 +82,7 @@ setting (off, on startup, daily). They only check and notify; applying stays man
 | Layer | Stored in | Refresh rule |
 |---|---|---|
 | Raw gamedata | `/data/cache/gamedata/{hotel}/{sha256}.json.gz` plus `ETag` and fetch time | Update button or automatic check |
-| Normalised catalogue | SQLite `catalog_version`, `catalog_item`, full-text search | Built once per raw version |
+| Normalised catalogue | SQLite `catalog_version`, `catalog_item`, indexed search by substring | Built once per raw version |
 | Furni assets | `/data/cache/furni/{revision}/{classname}/` with SWF, sprite atlas and icon | Downloaded on first use; kept per revision because the path is versioned |
 | Avatars | `/data/cache/avatars/{hotel}/{hash}.png` | Time limit set in Settings |
 | Browser | `ETag` on catalogue API; hashed asset URLs marked immutable | Follows the server version |
@@ -119,8 +119,10 @@ downloaded, not the whole hotel.
 | POST | `/api/catalog/sync` | Check a hotel for an update |
 | GET | `/api/catalog/diff/{from}/{to}` | Differences between versions |
 | POST | `/api/catalog/apply` | Make a downloaded version current |
+| POST | `/api/catalog/dismiss` | Keep the current version |
 | POST | `/api/catalog/rollback` | Return to an earlier version |
 | GET | `/api/catalog/items` | Search and filter |
+| GET | `/api/catalog/icons/{revision}/{classname}` | Cached furni icon |
 
 ## 5. Features
 
@@ -204,7 +206,9 @@ Commands use a fixed grammar and never run as code.
 | Not in catalogue | The 29 candidates below | Placeable with raw config and logging stub, real behaviour once documented |
 
 Every box has a `release_stage`: `live`, `sandbox_only`, `not_in_catalogue`, `staff`,
-`in_development` or `removed`. Use `staff` only with evidence.
+`in_development` or `removed`. Use `staff` only with evidence. Phase 1 assigns only `live` and
+`not_in_catalogue`, which marks the 29 candidates below on real data. `sandbox_only` is not assigned yet,
+because the WIRED list is the same on both hotels today.
 
 Candidates (`offerid` <= 0 and `bc` false), grouped by my reading of the names:
 
@@ -234,7 +238,7 @@ also covers the 10-second worst-case loss when a user leaves without standing up
 | Phase | Work | Done when |
 |---|---|---|
 | 0. Spikes (done, real-room checks open) | Convert SWF to sprites; check avatar frames; round-trip real G-Presets files; test a mock against the official spec | Results in `spikes/RESULTS.md` |
-| 1. Foundation | Repo, CI, admin login, folders, furnidata sync, update button, cache | All WIRED browsable behind login; update shows a correct diff |
+| 1. Foundation (built) | Repo, CI, admin login, folders, furnidata sync, update button, cache | All WIRED browsable behind login; update shows a correct diff |
 | 2. Room | Renderer, asset cache, placement, avatars, pathfinding, editor layout | An avatar walks and sits in a saved room |
 | 3. Engine | Wave 1, stubs, inspector, debugger | Time tracking tutorial passes |
 | 4. Control | Mock API, dashboard, view-as, settings | Official wrappers work against the mock |
@@ -257,11 +261,14 @@ Real-room traces need a room on the sandbox hotel with the Web API add-on and it
 5. **Release:** `release-please` proposes the SemVer bump and notes. Merging its PR creates the
    tag, a GitHub release titled with the bare tag (like `v1.2.0`), and a container image with
    its SBOM.
-6. **Nightly:** furnidata changes, the sandbox API comparison and a ZAP scan.
+6. **Nightly:** furnidata can still be fetched and parsed. The sandbox API comparison joins in Phase 4
+   and the ZAP scan in Phase 7.
 
 The README is not regenerated on every build, because that adds a commit each time and can
-retrigger CI. Generated sections (coverage, environment variables, API table) must be current
-for a PR to pass, and build details go in the Actions summary.
+retrigger CI. Generated sections (environment variables, API table) must be current for a PR to
+pass, and coverage and build details go in the Actions summary.
+
+Actions are pinned to commit hashes and base images to digests, because tags can be moved.
 
 Commits carry no Claude co-author footer.
 
@@ -272,22 +279,22 @@ non-root with a read-only filesystem and dropped capabilities.
 
 | Variable | Purpose |
 |---|---|
-| `WB_ADMIN_USERNAME` | Admin login |
-| `WB_ADMIN_PASSWORD_FILE` | File holding the initial password |
-| `WB_SECRET_KEY_FILE` | File holding the session signing key |
-| `WB_PUBLIC_URL` | Public address, used for cookies and origin checks |
-| `WB_DEFAULT_HOTEL` | Default hotel |
-| `WB_TICK_MS` | Engine tick length |
-| `WB_CACHE_MAX_MB` | Asset cache limit |
-| `WB_RATE_LIMIT_*` | Rate limits |
-| `WB_LIVE_CHECK_*` | Optional keys for the sandbox API comparison |
+The README lists every current variable, generated from the code. Still to come:
+
+| Variable | Purpose |
+|---|---|
+| `WB_TICK_MS` | Engine tick length (Phase 3) |
+| `WB_LIVE_CHECK_*` | Optional keys for the sandbox API comparison (Phase 4) |
+
+There is no signing key: sessions are random tokens stored hashed in the database, so nothing is signed.
 
 ## 9. Security
 
-- **Login:** Argon2id passwords, `HttpOnly` and `SameSite=Strict` cookies, CSRF tokens, login
-  throttling and optional TOTP.
+- **Login:** Argon2id passwords, `HttpOnly` and `SameSite=Strict` cookies, CSRF tokens and login
+  throttling. Optional TOTP is planned for Phase 7.
 - **Permissions:** every route is denied by default. CI lists all routes and checks that
-  outsiders get `401` and view-as sessions get `403` on writes and config.
+  outsiders get `401` and writes without a CSRF token get `403`. View-as sessions join these checks in
+  Phase 4.
 - **Mock API keys:** separate read and write keys per sandbox, stored hashed. Real Habbo keys
   stay in environment variables or CI secrets.
 - **SQL injection:** parameterised queries only, enforced with Ruff and Semgrep.
@@ -302,8 +309,11 @@ non-root with a read-only filesystem and dropped capabilities.
 
 ## 10. UI and sharing
 
-- **Look:** warm bone background, near-black ink and terracotta accent, with a warm charcoal dark
-  mode and no blue. Dense, tool-like panels and Lucide icons.
+- **Look:** an electrician's bench. Putty surfaces and dark ink, with an olive-charcoal dark mode and
+  no blue. Each WIRED type has one wire colour used everywhere, and each catalogue group is drawn as an
+  unbroken wire with a tick to every row. Dense, tool-like panels, Hanken Grotesk and Lucide icons. This
+  replaces the earlier bone and terracotta idea, which reads as a common AI default.
+- **Sharing:** the favicon and page description exist. The share banner and landing page are Phase 7.
 - **Favicon:** original isometric tile with a small spark connector, using no Sulake assets.
 - **Share banner:** a 1200×630 Open Graph image with a short summary, from original art.
 - **SEO:** canonical URL, JSON-LD and a sitemap on the landing page. The app itself is `noindex`.
@@ -325,7 +335,8 @@ non-root with a read-only filesystem and dropped capabilities.
 - **Preset import:** `config` strings or `options` may embed IDs, and writing a file that imports into
   a real room is unproven.
 - **Automated downloads:** the Habbo Swagger page blocks scripts with HTTP 463 while gamedata
-  currently allows them. This could change, so sync failures must be clear and non-destructive.
+  currently allows them. This could change, so sync failures are clear and non-destructive, and the
+  nightly check reports it.
 
 ## 12. Sources
 

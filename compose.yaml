@@ -1,0 +1,25 @@
+services:
+  wiredbench:
+    build: .
+    image: wiredbench:local
+    restart: unless-stopped
+    # Only this computer can connect. See "Other computers" in the README before changing it.
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      WB_PUBLIC_URL: ${WB_PUBLIC_URL:-http://127.0.0.1:8000}
+      WB_ADMIN_USERNAME: ${WB_ADMIN_USERNAME:-admin}
+      WB_DEFAULT_HOTEL: ${WB_DEFAULT_HOTEL:-sandbox}
+      WB_CACHE_MAX_MB: ${WB_CACHE_MAX_MB:-512}
+    volumes:
+      - wiredbench-data:/data
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  wiredbench-data:
