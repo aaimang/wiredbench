@@ -11,8 +11,8 @@ read at commit `3fc9c06f533c`, for facts only.
 - Seen in a real preset: 0
 - Seen in a real room dump: 182
 - Checked in a real room: 3
-- Have a form: 72
-- Option numbers mapped: 23
+- Have a form: 73
+- Option numbers mapped: 24
 
 | Box | Evidence | Form | Options | Room check |
 |---|---|---|---|---|
@@ -130,7 +130,7 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_cnd_user_count_in` | Seen in a real room dump | Yes | Yes |  |
 | `wf_cnd_user_performs_action` | Seen in a real room dump |  |  |  |
 | `wf_cnd_valid_moves` | Seen in a real room dump |  |  |  |
-| `wf_cnd_var_age_match` | Seen in a real room dump |  |  |  |
+| `wf_cnd_var_age_match` | Seen in a real room dump | Yes | Yes |  |
 | `wf_cnd_var_val_match` | Seen in a real room dump | Yes | Yes |  |
 | `wf_cnd_wearing_badge` | Reference only |  |  |  |
 | `wf_cnd_wearing_effect` | Reference only |  |  |  |

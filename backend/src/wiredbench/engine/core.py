@@ -15,7 +15,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from wiredbench.engine import operations
-from wiredbench.engine.boxes import BOXES
+from wiredbench.engine.boxes import BOXES, TIME_UNITS
 
 TICK_MS = 500  # Assumed from delay values in real presets, which are small whole numbers.
 MAX_DELAY_MS = 60_000  # The largest millisecond delay seen in a real room.
@@ -584,6 +584,8 @@ class Engine:
         picks = _ids(box.get("furni", []))
         name = str(box.get("variable", ""))
         match box.classname:
+            case "wf_cnd_var_age_match":
+                return bool(users) and all(self._age_matches(box, self._holding(name, u, ctx)) for u in users)
             case "wf_cnd_has_var":
                 return bool(users) and all(self._holding(name, u, ctx) is not None for u in users)
             case "wf_cnd_neg_has_var":
@@ -619,6 +621,20 @@ class Engine:
             case "wf_cnd_time_more_than":
                 return self.now_ms - self.timer_start_ms > _int(box.get("seconds", 0)) * 1000
         return True
+
+    def _age_matches(self, box: Box, holding: Holding | None) -> bool:
+        if holding is None:
+            return False
+        since = holding.updated_ms if box.get("age_of") == "update" else holding.created_ms
+        age = self.now_ms - since
+        limit = _int(box.get("duration", 0)) * TIME_UNITS.get(str(box.get("unit", "seconds")), 1000)
+        match box.get("compare", "less"):
+            case "equal":
+                return age == limit
+            case "more":
+                return age > limit
+            case _:
+                return age < limit
 
     def _compare(self, box: Box, holding: Holding | None) -> bool:
         if holding is None:

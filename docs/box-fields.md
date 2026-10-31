@@ -8,7 +8,7 @@ it, and a named position is still unverified until a box is changed and read aga
 
 No reply from: `wf_contract_payment`, `wf_contract_reward`, `wf_contract_trade`. The cause is unconfirmed.
 
-Named positions: 35. Unnamed positions: 547.
+Named positions: 39. Unnamed positions: 543.
 
 | Box | Section | Default numbers | Named positions | Unnamed positions |
 |---|---|---|---|---|
@@ -104,7 +104,7 @@ Named positions: 35. Unnamed positions: 547.
 | `wf_cnd_user_count_in` | condition | `[1, 50]` | 0: min, 1: max |  |
 | `wf_cnd_user_performs_action` | condition | `[0]` |  | 0 |
 | `wf_cnd_valid_moves` | condition | `[]` |  |  |
-| `wf_cnd_var_age_match` | condition | `[1, 0, 0, 0, 0, 1, 0, -10]` |  | 0, 1, 2, 3, 4, 5, 6, 7 |
+| `wf_cnd_var_age_match` | condition | `[1, 0, 0, 0, 0, 1, 0, -10]` | 1: compare, 2: age_of, 4: duration, 5: unit | 0, 3, 6, 7 |
 | `wf_cnd_var_val_match` | condition | `[1, 2, 0, 0, 0, -10, 0]` | 1: compare, 4: value | 0, 2, 3, 5, 6 |
 | `wf_slc_furni_altitude` | selector | `[0, 0]` |  | 0, 1 |
 | `wf_slc_furni_area` | selector | `[0, 0, 0, 0]` |  | 0, 1, 2, 3 |
