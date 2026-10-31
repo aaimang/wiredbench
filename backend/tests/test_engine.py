@@ -195,6 +195,23 @@ def test_conditions_block_and_or_eval_relaxes() -> None:
     assert logs(engine) == ["ran"]
 
 
+def test_variable_value_condition_defaults_to_greater_than() -> None:
+    engine = room(
+        box(1, "wf_var_room", 5, 5, variable="round"),
+        box(2, "wf_trg_says_something", 1, 1, text="go"),
+        box(3, "wf_cnd_var_val_match", 1, 1, 1, variable="round", value=5),
+        box(4, "wf_act_log", 1, 1, 2, text="ran"),
+    )
+    engine.apply_input({"type": "api_set", "variable": "round", "key": "global", "value": 5})
+    say(engine, "go")
+    engine.advance(1)
+    assert logs(engine) == []
+    engine.apply_input({"type": "api_set", "variable": "round", "key": "global", "value": 6})
+    say(engine, "go")
+    engine.advance(1)
+    assert logs(engine) == ["ran"]
+
+
 def test_short_period_runs_at_its_own_speed_and_stops_at_a_minimum() -> None:
     for seconds, runs in ((0.35, 8), (0, 60)):
         engine = room(
