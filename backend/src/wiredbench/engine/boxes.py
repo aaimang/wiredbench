@@ -48,6 +48,8 @@ FURNI_SOURCE = {
     "options": ["default", "picks", "trigger", "signal", "selector"],
     "default": "default",
 }
+# The variable's kind decides which of these a box uses.
+HOLDERS = [USER_SOURCE, FURNI, FURNI_SOURCE]
 OVERWRITE = {"name": "overwrite", "kind": "bool", "label": "Overwrite if it already exists", "default": False}
 VALUE = {"name": "value", "kind": "number", "label": "Value", "default": 0}
 REFERENCE: list[dict[str, Any]] = [
@@ -185,12 +187,12 @@ BOXES: dict[str, dict[str, Any]] = {
             "labels": {"creation": "When it was given", "update": "When it last changed"},
             "default": "creation",
         },
-        USER_SOURCE,
+        *HOLDERS,
     ),
-    "wf_cnd_has_var": _box("condition", DOCUMENTED, VARIABLE, USER_SOURCE),
-    "wf_cnd_neg_has_var": _box("condition", DOCUMENTED, VARIABLE, USER_SOURCE),
+    "wf_cnd_has_var": _box("condition", DOCUMENTED, VARIABLE, *HOLDERS),
+    "wf_cnd_neg_has_var": _box("condition", DOCUMENTED, VARIABLE, *HOLDERS),
     "wf_cnd_var_val_match": _box(
-        "condition", ASSUMED, VARIABLE, {**COMPARE, "default": ">"}, VALUE, REFERENCE[0], USER_SOURCE
+        "condition", ASSUMED, VARIABLE, {**COMPARE, "default": ">"}, VALUE, REFERENCE[0], *HOLDERS
     ),
     "wf_cnd_trggrer_on_frn": _box("condition", DOCUMENTED, FURNI, USER_SOURCE),
     "wf_cnd_not_trggrer_on": _box("condition", DOCUMENTED, FURNI, USER_SOURCE),
@@ -317,8 +319,8 @@ BOXES: dict[str, dict[str, Any]] = {
     "wf_var_room": _box("variable", DOCUMENTED, VARIABLE, _availability("active", "persistent", "shared")),
     "wf_var_context": _box("variable", ASSUMED, VARIABLE, HAS_VALUE),
     # Effects
-    "wf_act_give_var": _effect(ASSUMED, VARIABLE, VALUE, REFERENCE[0], OVERWRITE, USER_SOURCE),
-    "wf_act_remove_var": _effect(DOCUMENTED, VARIABLE, USER_SOURCE),
+    "wf_act_give_var": _effect(ASSUMED, VARIABLE, VALUE, REFERENCE[0], OVERWRITE, *HOLDERS),
+    "wf_act_remove_var": _effect(DOCUMENTED, VARIABLE, *HOLDERS),
     "wf_act_change_var_val": _effect(
         ASSUMED,
         VARIABLE,
@@ -332,7 +334,7 @@ BOXES: dict[str, dict[str, Any]] = {
         },
         VALUE,
         *REFERENCE,
-        USER_SOURCE,
+        *HOLDERS,
     ),
     "wf_act_send_signal": _effect(DOCUMENTED, ANTENNA, USER_SOURCE),
     "wf_act_neg_send_signal": _effect(ASSUMED, ANTENNA, USER_SOURCE),
