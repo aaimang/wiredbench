@@ -182,14 +182,44 @@ def test_etag_revalidation(room: Room) -> None:
     assert second.status_code == 304
 
 
-def test_read_errors_carry_an_etag_like_a_real_room(room: Room) -> None:
+def test_errors_carry_an_etag_like_a_real_room(room: Room) -> None:
     res = room.get("/variables/global/nope")
     error(res, 404, "wired.variables.not_found")
     assert res.headers["etag"].startswith('W/"')
     assert "etag" not in room.get("/variables/nothing/x/users").headers, "the empty 404 has none"
     write = room.send("PATCH", "/variables/global/nope", {"value": 1})
     assert write.status_code == 404
-    assert "etag" not in write.headers
+    assert write.headers["etag"].startswith('W/"')
+
+
+def test_value_errors_match_a_real_room(room: Room) -> None:
+    path = "/variables/global/clock"
+    for bad in ("abc", 1.5, True, str(2**63)):
+        error(room.send("PATCH", path, {"value": bad}), 400, "request-failed-non-200")
+    error(room.send("PATCH", path, {"value": None}), 400, "wired.variables.invalid_value")
+    error(room.send("PATCH", path, {}), 400, "wired.variables.invalid_value")
+    # A bad value is reported first, and a good one then finds the variable missing.
+    missing = "/variables/global/nope"
+    error(room.send("PATCH", missing, {"value": "abc"}), 400, "request-failed-non-200")
+    error(room.send("PATCH", missing, {"value": 1}), 404, "wired.variables.not_found")
+
+
+def test_bad_order_is_refused_like_a_real_room(room: Room) -> None:
+    res = room.get("/variables/user/troll/users", params={"order_by": "nonsense"})
+    error(res, 400, "wired.variables.invalid_target")
+
+
+def test_empty_bulk_delete_is_refused_first_like_a_real_room(room: Room) -> None:
+    res = room.send("POST", "/variables/bulk-delete", {"variables": []})
+    error(res, 400, "wired.variables.bulk_delete_empty")
+
+
+def test_global_variables_have_no_batch_route_like_a_real_room(room: Room) -> None:
+    both = {**room.read, **room.write}
+    for headers in (room.read, both):
+        res = room.send("POST", "/variables/global/clock/batch", {"requests": []}, headers=headers)
+        assert res.status_code == 404
+        assert res.content == b""
 
 
 def test_delete_and_profiles(room: Room) -> None:

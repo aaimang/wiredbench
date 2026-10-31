@@ -59,7 +59,11 @@ def _invalid_target() -> MockError:
 
 
 def _invalid_value() -> MockError:
-    return MockError(400, "wired.variables.invalid_value")  # ASSUMED code
+    return MockError(400, "wired.variables.invalid_value")  # Live for a missing value.
+
+
+def _unusable_value() -> MockError:
+    return MockError(400, "request-failed-non-200")  # Live for text, decimals, booleans and out of range.
 
 
 def _generic() -> MockError:
@@ -117,14 +121,16 @@ def _object(body: Any) -> dict[str, Any]:
 
 def parse_value(raw: Any) -> int:
     # Live: text and JSON numbers are both accepted, and responses are always text.
-    if isinstance(raw, bool) or not isinstance(raw, str | int):
+    if raw is None:
         raise _invalid_value()
+    if isinstance(raw, bool) or not isinstance(raw, str | int):
+        raise _unusable_value()
     try:
         value = int(raw)
     except ValueError:
-        raise _invalid_value() from None
+        raise _unusable_value() from None
     if not INT64_MIN <= value <= INT64_MAX:
-        raise _invalid_value()
+        raise _unusable_value()
     return value
 
 
@@ -152,11 +158,9 @@ def reply(request: Request, body: Any) -> Response:
 
 
 def error_reply(request: Request, exc: MockError) -> Response:
-    # Live: GET errors carry an ETag too. Writes have not been compared, so they stay without one.
+    # Live: errors carry an ETag too, on writes as well as reads.
     response = reply(request, {"error": exc.code})
     response.status_code = exc.status
-    if request.method != "GET":
-        del response.headers["etag"]
     return response
 
 
@@ -241,11 +245,13 @@ def list_definitions(request: Request, room: Room = Depends(get_room)) -> Respon
 @public
 def bulk_delete(request: Request, body: Any = Depends(json_body), room: Room = Depends(get_room)) -> Response:
     room.need_write(request)
-    if room.keys is None or not room.keys.allow_mass_deletion:
-        raise MockError(403, "wired.variables.key_invalid")  # ASSUMED: the refusal has not been seen live.
     names = _object(body).get("variables")
     if not isinstance(names, list) or not all(isinstance(name, str) for name in names):
         raise _invalid_target()  # ASSUMED code
+    if not names:  # Live, even with mass deletion off.
+        raise MockError(400, "wired.variables.bulk_delete_empty")
+    if room.keys is None or not room.keys.allow_mass_deletion:
+        raise MockError(403, "wired.variables.key_invalid")  # ASSUMED: the refusal has not been seen live.
     with room.run.lock:
         for name in names:
             for key in list(room.engine.variables.get(name, {})):
@@ -267,9 +273,12 @@ def patch_global(
     request: Request, name: str, body: Any = Depends(json_body), room: Room = Depends(get_room)
 ) -> dict[str, str]:
     room.need_write(request)
+    value = parse_value(
+        _object(body).get("value")
+    )  # Live: a bad value is reported before a missing variable.
     with room.run.lock:
         _defined(room.engine, "global", name)
-        return _variable(_set(room.engine, name, "global", parse_value(_object(body).get("value"))))
+        return _variable(_set(room.engine, name, "global", value))
 
 
 @router.post("/variables/{scope}/{name}/batch")
@@ -281,6 +290,8 @@ def batch(
     body: Any = Depends(json_body),
     room: Room = Depends(get_room),
 ) -> dict[str, Any]:
+    if scope not in ("user", "furni"):  # Live: there is no batch route for global variables.
+        raise MockError(404)
     # Live: a write key alone is refused as missing. A read key alone is ASSUMED to match.
     if not (request.headers.get("x-wired-read-key") and request.headers.get("x-wired-write-key")):
         raise MockError(403, "wired.variables.key_missing")
@@ -351,7 +362,9 @@ def list_holders(
     if page < 1 or size < 1:
         raise _invalid_target()
     size = min(size, MAX_PAGE_SIZE)
-    order_by = query.get("order_by") if query.get("order_by") in ORDERS else "value"
+    order_by = query.get("order_by", "value")
+    if order_by not in ORDERS:  # Live.
+        raise _invalid_target()
     prefix = holder(kind, "0").partition(":")[0] + ":"
     with room.run.lock:
         engine = room.engine
@@ -399,9 +412,9 @@ def put_value(
 ) -> dict[str, str]:
     check_entity(entity)
     room.need_write(request)
+    value = parse_value(_object(body).get("value"))
     with room.run.lock:
         _defined(room.engine, scope, name)
-        value = parse_value(_object(body).get("value"))
         return _variable(_set(room.engine, name, holder(kind, entity), value))
 
 
@@ -417,10 +430,11 @@ def patch_value(
 ) -> dict[str, str]:
     check_entity(entity)
     room.need_write(request)
+    value = parse_value(_object(body).get("value"))
     with room.run.lock:
         key = holder(kind, entity)
         _holding(room.engine, name, key)
-        return _variable(_set(room.engine, name, key, parse_value(_object(body).get("value"))))
+        return _variable(_set(room.engine, name, key, value))
 
 
 @router.delete("/variables/{scope}/{name}/{kind}/{entity}", status_code=204, dependencies=[Depends(target)])

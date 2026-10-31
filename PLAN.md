@@ -277,6 +277,12 @@ with unusual values and a checklist for a real room. Habbo's Web API only covers
 options. Reference evidence only appears where its files name a classname, so some boxes it does cover show none.
 Nothing rechecks the reference automatically yet.
 
+### Mock comparison with a real room (2026-10-31)
+
+36 read and write requests were compared with a `habbo.com` room, and the mock was changed to match. A successful
+write has still not been compared, because the room's API did not list the scratch variable. Still assumed: the
+mass deletion refusal, read-only batch, `429`, and the effect of API writes on triggers.
+
 ### Debugging additions
 
 - Fidelity badge per WIRED: `verified in-game`, `documented` or `assumed`.
