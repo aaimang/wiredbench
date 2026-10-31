@@ -337,3 +337,9 @@ def test_every_wired_operation_in_the_spec_is_routed() -> None:
         if not any(m == method and rx.match(re.sub(r"\{[^}]+\}", "1", path)) for m, rx in routed)
     ]
     assert missing == []
+
+
+def test_a_global_nothing_has_set_reads_zero_like_a_real_room(room: Room) -> None:
+    assert room.get("/variables/global/clock").json()["value"] == "0"
+    assert room.get("/variables_profile/global").json()["variables"]["clock"]["value"] == "0"
+    error(room.get("/variables/global/nope"), 404, "wired.variables.not_found")

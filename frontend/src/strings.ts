@@ -369,7 +369,6 @@ export const t = {
     holder: "Holder",
     nobodyYet: "Nobody yet",
     duringRun: "Only while a stack runs",
-    notSetYet: "0 (not set yet)",
     value: "Value",
     commandPlaceholder: "Say something, or type a command such as :vars global",
     pickUserToSpeak: "Add an avatar first.",

@@ -226,6 +226,9 @@ class Engine:
         }
         if box.classname in scope and (name := str(box.get("variable", "")).strip()):
             self.definitions[name] = {"scope": scope[box.classname], "time": False}
+            if box.classname == "wf_var_room":
+                # Live: a global nothing has set already reads 0, in the box and from the API.
+                self.variables[name]["global"] = Holding(0, self.now_ms, self.now_ms)
         elif box.classname == "wf_xtra_var_time_util" and (name := str(box.get("variable", "")).strip()):
             self.definitions.setdefault(name, {"scope": "user", "time": True})["time"] = True
 
