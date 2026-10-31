@@ -284,6 +284,15 @@ and restoring it, and the mock was changed to match. Still assumed: the mass del
 operations and one key, `429`, writes to user and furni variables, PUT, DELETE, and the effect of API writes on
 triggers.
 
+### Real box dump
+
+Unedited boxes read from a real room on 2026-10-31 give `box_facts.json`, with no room data, and
+`docs/box-fields.md` lists what is still unnamed. New boxes now start from these defaults instead of values copied
+from presets. This corrected the defaults of 12 mapped boxes, added furni and room availability numbers, and showed
+that `wf_act_move_rotate` has a third number the reference does not name. CI fails if a mapped default stops
+matching. A dump shows configuration only, so behaviour stays marked as it was, and boxes can only reach "checked
+in a real room" by a change being made and read back.
+
 ### Debugging additions
 
 - Fidelity badge per WIRED: `verified in-game`, `documented` or `assumed`.

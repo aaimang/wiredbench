@@ -1,6 +1,7 @@
 """How far each WIRED box's options have been checked, and with what evidence.
 
-Evidence climbs one way: nothing, then a reference, then a real preset file, then a real room. A form or an
+Evidence climbs one way: nothing, a reference, a real preset file, a dump of real boxes, then a room check. A dump
+shows a box's real settings and defaults, but not what its numbers mean or what it does when it runs. A form or an
 option mapping says what Wiredbench can do with a box, not whether that matches Habbo, so they are shown apart.
 """
 
@@ -14,7 +15,7 @@ from typing import Any
 from wiredbench.engine.boxes import BOXES
 from wiredbench.services.exchange import OPTION_FIELDS
 
-LEVELS = ("unknown", "from_reference", "real_preset", "real_room")
+LEVELS = ("unknown", "from_reference", "real_preset", "real_dump", "real_room")
 
 
 def load() -> dict[str, Any]:
@@ -26,6 +27,8 @@ def load() -> dict[str, Any]:
 def level(entry: dict[str, Any]) -> str:
     if entry.get("room"):
         return "real_room"
+    if entry.get("dump"):
+        return "real_dump"
     if entry.get("preset"):
         return "real_preset"
     return "from_reference" if entry.get("reference") else "unknown"

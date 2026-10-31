@@ -37,7 +37,7 @@ def test_every_box_wiredbench_knows_is_tracked() -> None:
 
 def test_room_checks_have_dates_and_nothing_else_is_claimed() -> None:
     for name, entry in coverage.load()["boxes"].items():
-        assert set(entry) <= {"reference", "preset", "room", "note"}, name
+        assert set(entry) <= {"reference", "preset", "dump", "room", "note"}, name
         if "room" in entry:
             assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", entry["room"]), name
     assert coverage.room_checked() == {"wf_trg_state_changed", "wf_act_toggle_state", "wf_floor_switch1"}
@@ -47,7 +47,8 @@ def test_evidence_order() -> None:
     assert coverage.level({}) == "unknown"
     assert coverage.level({"reference": True}) == "from_reference"
     assert coverage.level({"reference": True, "preset": True}) == "real_preset"
-    assert coverage.level({"preset": True, "room": "2026-10-31"}) == "real_room"
+    assert coverage.level({"preset": True, "dump": True}) == "real_dump"
+    assert coverage.level({"dump": True, "room": "2026-10-31"}) == "real_room"
 
 
 def test_summary_adds_up() -> None:

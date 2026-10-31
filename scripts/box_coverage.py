@@ -45,6 +45,7 @@ def main() -> None:
     parser.add_argument("--presets", type=Path)
     parser.add_argument("--reference", type=Path)
     parser.add_argument("--reference-commit")
+    parser.add_argument("--facts", type=Path, help="box_facts.json, to record boxes seen in a dump.")
     parser.add_argument("--room", action="append", default=[])
     parser.add_argument("--date")
     args = parser.parse_args()
@@ -65,6 +66,11 @@ def main() -> None:
         for name in reference_names(args.reference) & set(boxes):
             boxes[name]["reference"] = True
         data["reference_commit"] = args.reference_commit
+    if args.facts:
+        facts = json.loads(args.facts.read_text(encoding="utf-8"))
+        for name in facts["boxes"]:
+            boxes.setdefault(name, {})["dump"] = True
+        data["dump_capture"] = {key: facts["capture"][key] for key in ("date", "build")}
     for name in args.room:
         boxes.setdefault(name, {})["room"] = args.date
     data["boxes"] = dict(sorted(boxes.items()))

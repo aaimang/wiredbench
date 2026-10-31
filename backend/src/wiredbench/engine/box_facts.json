@@ -1,0 +1,5267 @@
+{
+ "capture": {
+  "date": "2026-10-31",
+  "build": "MAC63-202610271046-110342586",
+  "boxes_unedited": true
+ },
+ "no_reply": [
+  "wf_contract_payment",
+  "wf_contract_reward",
+  "wf_contract_trade"
+ ],
+ "boxes": {
+  "wf_act_adjust_clock": {
+   "section": "effect",
+   "type_id": 14555,
+   "code": 38,
+   "numbers": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [],
+   "has_delay": true,
+   "variable_slots": 0
+  },
+  "wf_act_bot_clothes": {
+   "section": "effect",
+   "type_id": 7848,
+   "code": 26,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [],
+   "default_user_sources": [
+    100
+   ],
+   "has_delay": true,
+   "variable_slots": 0
+  },
+  "wf_act_bot_follow_avatar": {
+   "section": "effect",
+   "type_id": 7851,
+   "code": 25,
+   "numbers": [
+    1
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ],
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [],
+   "default_user_sources": [
+    100,
+    0
+   ],
+   "has_delay": true,
+   "variable_slots": 0
+  },
+  "wf_act_bot_give_handitem": {
+   "section": "effect",
+   "type_id": 7852,
+   "code": 24,
+   "numbers": [
+    2
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ],
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [],
+   "default_user_sources": [
+    100,
+    0
+   ],
+   "has_delay": true,
+   "variable_slots": 0
+  },
+  "wf_act_bot_move": {
+   "section": "effect",
+   "type_id": 7853,
+   "code": 22,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [
+    100
+   ],
+   "has_delay": true,
+   "variable_slots": 0
+  },
+  "wf_act_bot_talk": {
+   "section": "effect",
+   "type_id": 7857,
+   "code": 23,
+   "numbers": [
+    0,
+    -1,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [],
+   "default_user_sources": [
+    100
+   ],
+   "has_delay": true,
+   "variable_slots": 0,
+   "context_unread": true
+  },
+  "wf_act_bot_talk_to_avatar": {
+   "section": "effect",
+   "type_id": 7855,
+   "code": 27,
+   "numbers": [
+    0,
+    -1,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ],
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [],
+   "default_user_sources": [
+    100,
+    0
+   ],
+   "has_delay": true,
+   "variable_slots": 0,
+   "context_unread": true
+  },
+  "wf_act_bot_teleport": {
+   "section": "effect",
+   "type_id": 7849,
+   "code": 21,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [
+    100
+   ],
+   "has_delay": true,
+   "variable_slots": 0
+  },
+  "wf_act_call_stacks": {
+   "section": "effect",
+   "type_id": 4834,
+   "code": 18,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [],
+   "has_delay": true,
+   "variable_slots": 0
+  },
+  "wf_act_cancel_transaction": {
+   "section": "effect",
+   "type_id": 18477,
+   "code": 48,
+   "numbers": [
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [
+    0
+   ],
+   "has_delay": true,
+   "variable_slots": 0
+  },
+  "wf_act_change_var_val": {
+   "section": "effect",
+   "type_id": 15344,
+   "code": 41,
+   "numbers": [
+    1,
+    0,
+    0,
+    0,
+    0,
+    -10,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": true,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ],
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ],
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [
+    0,
+    200
+   ],
+   "default_user_sources": [
+    0,
+    200
+   ],
+   "has_delay": true,
+   "variable_slots": 2
+  },
+  "wf_act_chase": {
+   "section": "effect",
+   "type_id": 5055,
+   "code": 11,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [],
+   "has_delay": true,
+   "variable_slots": 0
+  },
+  "wf_act_click_conf": {
+   "section": "effect",
+   "type_id": 18673,
+   "code": 54,
+   "numbers": [
+    0,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [],
+   "default_user_sources": [
+    0
+   ],
+   "has_delay": true,
+   "variable_slots": 0
+  },
+  "wf_act_control_clock": {
+   "section": "effect",
+   "type_id": 13390,
+   "code": 28,
+   "numbers": [
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [],
+   "has_delay": true,
+   "variable_slots": 0
+  },
+  "wf_act_flee": {
+   "section": "effect",
+   "type_id": 5061,
+   "code": 12,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [],
+   "has_delay": true,
+   "variable_slots": 0
+  },
+  "wf_act_freeze": {
+   "section": "effect",
+   "type_id": 14126,
+   "code": 31,
+   "numbers": [
+    0,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [],
+   "default_user_sources": [
+    0
+   ],
+   "has_delay": true,
+   "variable_slots": 0
+  },
+  "wf_act_furni_to_furni": {
+   "section": "effect",
+   "type_id": 14328,
+   "code": 34,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": true,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ],
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [],
+   "default_furni_sources": [
+    0,
+    100
+   ],
+   "default_user_sources": [],
+   "has_delay": true,
+   "variable_slots": 0
+  },
+  "wf_act_furni_to_user": {
+   "section": "effect",
+   "type_id": 14340,
+   "code": 35,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [
+    0
+   ],
+   "has_delay": true,
+   "variable_slots": 0
+  },
+  "wf_act_give_currency": {
+   "section": "effect",
+   "type_id": 18478,
+   "code": 45,
+   "numbers": [
+    0,
+    1,
+    0,
+    -20,
+    1,
+    11
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": true,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ],
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ],
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [
+    100,
+    200
+   ],
+   "default_user_sources": [
+    0,
+    200
+   ],
+   "has_delay": true,
+   "variable_slots": 1
+  },
+  "wf_act_give_furni": {
+   "section": "effect",
+   "type_id": 18479,
+   "code": 46,
+   "numbers": [
+    0,
+    1,
+    0,
+    -20,
+    1,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": true,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ],
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ],
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [
+    100,
+    200
+   ],
+   "default_user_sources": [
+    0,
+    200
+   ],
+   "has_delay": true,
+   "variable_slots": 1
+  },
+  "wf_act_give_score": {
+   "section": "effect",
+   "type_id": 3697,
+   "code": 6,
+   "numbers": [
+    5,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [],
+   "default_user_sources": [
+    0
+   ],
+   "has_delay": true,
+   "variable_slots": 0
+  },
+  "wf_act_give_score_tm": {
+   "section": "effect",
+   "type_id": 5043,
+   "code": 14,
+   "numbers": [
+    5,
+    0,
+    1
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": true,
+   "variable_slots": 0
+  },
+  "wf_act_give_var": {
+   "section": "effect",
+   "type_id": 15352,
+   "code": 39,
+   "numbers": [
+    1,
+    0,
+    0,
+    0,
+    0,
+    -10,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": true,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ],
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ],
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [
+    0,
+    200
+   ],
+   "default_user_sources": [
+    0,
+    200
+   ],
+   "has_delay": true,
+   "variable_slots": 2
+  },
+  "wf_act_init_transaction": {
+   "section": "effect",
+   "type_id": 18480,
+   "code": 47,
+   "numbers": [
+    0,
+    10,
+    0,
+    -20,
+    0,
+    300
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": true,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ],
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ],
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ],
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [
+    100,
+    101,
+    200
+   ],
+   "default_user_sources": [
+    0,
+    200
+   ],
+   "has_delay": true,
+   "variable_slots": 3
+  },
+  "wf_act_join_team": {
+   "section": "effect",
+   "type_id": 5062,
+   "code": 9,
+   "numbers": [
+    1,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [],
+   "default_user_sources": [
+    0
+   ],
+   "has_delay": true,
+   "variable_slots": 0
+  },
+  "wf_act_kick_user": {
+   "section": "effect",
+   "type_id": 4947,
+   "code": 19,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [],
+   "default_user_sources": [
+    0
+   ],
+   "has_delay": true,
+   "variable_slots": 0
+  },
+  "wf_act_leave_team": {
+   "section": "effect",
+   "type_id": 5049,
+   "code": 10,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [],
+   "default_user_sources": [
+    0
+   ],
+   "has_delay": true,
+   "variable_slots": 0
+  },
+  "wf_act_log": {
+   "section": "effect",
+   "type_id": 17599,
+   "code": 49,
+   "numbers": [
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": true,
+   "variable_slots": 0
+  },
+  "wf_act_match_to_sshot": {
+   "section": "effect",
+   "type_id": 3700,
+   "code": 3,
+   "numbers": [
+    0,
+    0,
+    0,
+    0,
+    1
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": true,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [],
+   "has_delay": true,
+   "variable_slots": 0
+  },
+  "wf_act_move_furni_as_group": {
+   "section": "effect",
+   "type_id": 18783,
+   "code": 57,
+   "numbers": [
+    1,
+    0,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": true,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ],
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [
+    100,
+    0
+   ],
+   "default_user_sources": [
+    0
+   ],
+   "has_delay": true,
+   "variable_slots": 0
+  },
+  "wf_act_move_rotate": {
+   "section": "effect",
+   "type_id": 3663,
+   "code": 4,
+   "numbers": [
+    0,
+    0,
+    1
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": true,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [],
+   "has_delay": true,
+   "variable_slots": 0
+  },
+  "wf_act_move_rotate_user": {
+   "section": "effect",
+   "type_id": 15353,
+   "code": 42,
+   "numbers": [
+    -1,
+    -1
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [],
+   "default_user_sources": [
+    0
+   ],
+   "has_delay": true,
+   "variable_slots": 0
+  },
+  "wf_act_move_to_dir": {
+   "section": "effect",
+   "type_id": 5048,
+   "code": 13,
+   "numbers": [
+    0,
+    0,
+    1
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [],
+   "has_delay": true,
+   "variable_slots": 0
+  },
+  "wf_act_neg_call_stacks": {
+   "section": "effect",
+   "type_id": 14557,
+   "code": 36,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [],
+   "has_delay": true,
+   "variable_slots": 0
+  },
+  "wf_act_neg_log": {
+   "section": "effect",
+   "type_id": 17598,
+   "code": 50,
+   "numbers": [
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": true,
+   "variable_slots": 0
+  },
+  "wf_act_neg_send_signal": {
+   "section": "effect",
+   "type_id": 14556,
+   "code": 37,
+   "numbers": [
+    0,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ],
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [
+    100,
+    200
+   ],
+   "default_user_sources": [
+    200
+   ],
+   "has_delay": true,
+   "variable_slots": 0
+  },
+  "wf_act_place_furni": {
+   "section": "effect",
+   "type_id": 18784,
+   "code": 55,
+   "numbers": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    -20
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": true,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     101,
+     110,
+     200,
+     201
+    ],
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ],
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ],
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [
+    110,
+    0,
+    200
+   ],
+   "default_user_sources": [
+    0,
+    200
+   ],
+   "has_delay": true,
+   "variable_slots": 2
+  },
+  "wf_act_rel_mov": {
+   "section": "effect",
+   "type_id": 14127,
+   "code": 33,
+   "numbers": [
+    0,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": true,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [],
+   "has_delay": true,
+   "variable_slots": 0
+  },
+  "wf_act_remove_furni": {
+   "section": "effect",
+   "type_id": 18785,
+   "code": 56,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [],
+   "default_furni_sources": [
+    200
+   ],
+   "default_user_sources": [],
+   "has_delay": true,
+   "variable_slots": 0
+  },
+  "wf_act_remove_var": {
+   "section": "effect",
+   "type_id": 15354,
+   "code": 40,
+   "numbers": [
+    1
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": true,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [
+    0
+   ],
+   "has_delay": true,
+   "variable_slots": 1
+  },
+  "wf_act_reset_timers": {
+   "section": "effect",
+   "type_id": 3691,
+   "code": 1,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": true,
+   "variable_slots": 0
+  },
+  "wf_act_send_dataframe": {
+   "section": "effect",
+   "type_id": 19394,
+   "code": 64,
+   "numbers": [
+    0,
+    0,
+    0,
+    -20,
+    0,
+    0,
+    -20,
+    0,
+    0,
+    -20,
+    0,
+    0,
+    -20,
+    0,
+    0,
+    -20,
+    0,
+    0,
+    -20,
+    0,
+    0,
+    -20,
+    0,
+    0,
+    -20,
+    0,
+    0,
+    -20,
+    0,
+    0,
+    -20,
+    0,
+    0,
+    -20,
+    0,
+    0,
+    -20
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": true,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ],
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ],
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ],
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ],
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ],
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ],
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ],
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ],
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ],
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ],
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ],
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ],
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ],
+    [
+     0,
+     200,
+     201
+    ],
+    [
+     0,
+     200,
+     201
+    ],
+    [
+     0,
+     200,
+     201
+    ],
+    [
+     0,
+     200,
+     201
+    ],
+    [
+     0,
+     200,
+     201
+    ],
+    [
+     0,
+     200,
+     201
+    ],
+    [
+     0,
+     200,
+     201
+    ],
+    [
+     0,
+     200,
+     201
+    ],
+    [
+     0,
+     200,
+     201
+    ],
+    [
+     0,
+     200,
+     201
+    ],
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [
+    100,
+    200,
+    200,
+    200,
+    200,
+    200,
+    200,
+    200,
+    200,
+    200,
+    200,
+    200,
+    200
+   ],
+   "default_user_sources": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "has_delay": true,
+   "variable_slots": 12,
+   "context_unread": true
+  },
+  "wf_act_send_message": {
+   "section": "effect",
+   "type_id": 19395,
+   "code": 63,
+   "numbers": [
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [],
+   "has_delay": true,
+   "variable_slots": 0,
+   "context_unread": true
+  },
+  "wf_act_send_signal": {
+   "section": "effect",
+   "type_id": 14085,
+   "code": 30,
+   "numbers": [
+    0,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ],
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [
+    100,
+    200
+   ],
+   "default_user_sources": [
+    200
+   ],
+   "has_delay": true,
+   "variable_slots": 0
+  },
+  "wf_act_set_altitude": {
+   "section": "effect",
+   "type_id": 14092,
+   "code": 29,
+   "numbers": [
+    0,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": true,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [],
+   "has_delay": true,
+   "variable_slots": 0
+  },
+  "wf_act_set_highlight": {
+   "section": "effect",
+   "type_id": 19396,
+   "code": 62,
+   "numbers": [
+    0,
+    0,
+    100,
+    16771584,
+    0,
+    4,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": true,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ],
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [
+    0,
+    0
+   ],
+   "has_delay": true,
+   "variable_slots": 0
+  },
+  "wf_act_set_visibility": {
+   "section": "effect",
+   "type_id": 19397,
+   "code": 61,
+   "numbers": [
+    0,
+    100,
+    0,
+    4,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": true,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ],
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [
+    0,
+    0
+   ],
+   "has_delay": true,
+   "variable_slots": 0
+  },
+  "wf_act_show_message": {
+   "section": "effect",
+   "type_id": 3681,
+   "code": 7,
+   "numbers": [
+    0,
+    202,
+    -1
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [],
+   "default_user_sources": [
+    0
+   ],
+   "has_delay": true,
+   "variable_slots": 0,
+   "context_unread": true
+  },
+  "wf_act_teleport_to": {
+   "section": "effect",
+   "type_id": 3674,
+   "code": 8,
+   "numbers": [
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [
+    0
+   ],
+   "has_delay": true,
+   "variable_slots": 0
+  },
+  "wf_act_teleport_to_room": {
+   "section": "effect",
+   "type_id": 16743,
+   "code": 44,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [
+    0
+   ],
+   "has_delay": true,
+   "variable_slots": 0
+  },
+  "wf_act_toggle_state": {
+   "section": "effect",
+   "type_id": 3685,
+   "code": 0,
+   "numbers": [
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": true,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [],
+   "has_delay": true,
+   "variable_slots": 0
+  },
+  "wf_act_toggle_to_rnd": {
+   "section": "effect",
+   "type_id": 5451,
+   "code": 15,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": true,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [],
+   "has_delay": true,
+   "variable_slots": 0
+  },
+  "wf_act_unfreeze": {
+   "section": "effect",
+   "type_id": 14130,
+   "code": 32,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [],
+   "default_user_sources": [
+    0
+   ],
+   "has_delay": true,
+   "variable_slots": 0
+  },
+  "wf_act_user_to_furni": {
+   "section": "effect",
+   "type_id": 15355,
+   "code": 43,
+   "numbers": [
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [
+    0
+   ],
+   "has_delay": true,
+   "variable_slots": 0
+  },
+  "wf_cnd_actor_dir": {
+   "section": "condition",
+   "type_id": 14129,
+   "code": 37,
+   "numbers": [
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [],
+   "default_user_sources": [
+    0
+   ],
+   "has_delay": false,
+   "variable_slots": 0,
+   "quantifier": 0,
+   "invert": false
+  },
+  "wf_cnd_actor_in_group": {
+   "section": "condition",
+   "type_id": 4281,
+   "code": 10,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [],
+   "default_user_sources": [
+    0
+   ],
+   "has_delay": false,
+   "variable_slots": 0,
+   "quantifier": 0,
+   "invert": false
+  },
+  "wf_cnd_actor_in_team": {
+   "section": "condition",
+   "type_id": 5056,
+   "code": 6,
+   "numbers": [
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [],
+   "default_user_sources": [
+    0
+   ],
+   "has_delay": false,
+   "variable_slots": 0,
+   "quantifier": 0,
+   "invert": false
+  },
+  "wf_cnd_chest_has_item_type": {
+   "section": "condition",
+   "type_id": 18481,
+   "code": 46,
+   "numbers": [
+    0,
+    0,
+    -20,
+    2
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": true,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ],
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ],
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [
+    100,
+    101,
+    0
+   ],
+   "default_user_sources": [
+    0
+   ],
+   "has_delay": false,
+   "variable_slots": 1,
+   "quantifier": 0,
+   "invert": false
+  },
+  "wf_cnd_chest_has_items": {
+   "section": "condition",
+   "type_id": 18482,
+   "code": 45,
+   "numbers": [
+    0,
+    0,
+    -20,
+    2
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": true,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ],
+    [
+     0,
+     100,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [
+    100,
+    200
+   ],
+   "default_user_sources": [
+    200
+   ],
+   "has_delay": false,
+   "variable_slots": 1,
+   "quantifier": 0,
+   "invert": false
+  },
+  "wf_cnd_counter_time_matches": {
+   "section": "condition",
+   "type_id": 13810,
+   "code": 35,
+   "numbers": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0,
+   "quantifier": 0,
+   "invert": false
+  },
+  "wf_cnd_date_rng_active": {
+   "section": "condition",
+   "type_id": 5861,
+   "code": 24,
+   "numbers": [
+    0,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0,
+   "quantifier": 0,
+   "invert": false
+  },
+  "wf_cnd_furnis_hv_avtrs": {
+   "section": "condition",
+   "type_id": 3692,
+   "code": 1,
+   "numbers": [
+    1
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0,
+   "quantifier": 0,
+   "invert": false
+  },
+  "wf_cnd_has_altitude": {
+   "section": "condition",
+   "type_id": 14093,
+   "code": 36,
+   "numbers": [
+    0,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": true,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0,
+   "quantifier": 0,
+   "invert": false
+  },
+  "wf_cnd_has_furni_on": {
+   "section": "condition",
+   "type_id": 3857,
+   "code": 7,
+   "numbers": [
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0,
+   "quantifier": 0,
+   "invert": false
+  },
+  "wf_cnd_has_handitem": {
+   "section": "condition",
+   "type_id": 7854,
+   "code": 25,
+   "numbers": [
+    2
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [],
+   "default_user_sources": [
+    0
+   ],
+   "has_delay": false,
+   "variable_slots": 0,
+   "quantifier": 0,
+   "invert": false
+  },
+  "wf_cnd_has_var": {
+   "section": "condition",
+   "type_id": 15361,
+   "code": 40,
+   "numbers": [
+    1
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": true,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [
+    0
+   ],
+   "has_delay": false,
+   "variable_slots": 1,
+   "quantifier": 0,
+   "invert": false
+  },
+  "wf_cnd_match_date": {
+   "section": "condition",
+   "type_id": 13803,
+   "code": 29,
+   "numbers": [
+    0,
+    0,
+    127,
+    1,
+    1,
+    4095,
+    0,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0,
+   "quantifier": 0,
+   "invert": false
+  },
+  "wf_cnd_match_snapshot": {
+   "section": "condition",
+   "type_id": 3695,
+   "code": 0,
+   "numbers": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": true,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0,
+   "quantifier": 0,
+   "invert": false
+  },
+  "wf_cnd_match_time": {
+   "section": "condition",
+   "type_id": 13804,
+   "code": 28,
+   "numbers": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0,
+   "quantifier": 0,
+   "invert": false
+  },
+  "wf_cnd_neg_has_var": {
+   "section": "condition",
+   "type_id": 15358,
+   "code": 41,
+   "numbers": [
+    1
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": true,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [
+    0
+   ],
+   "has_delay": false,
+   "variable_slots": 1,
+   "quantifier": 0,
+   "invert": true
+  },
+  "wf_cnd_not_furni_on": {
+   "section": "condition",
+   "type_id": 5440,
+   "code": 18,
+   "numbers": [
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0,
+   "quantifier": 0,
+   "invert": false
+  },
+  "wf_cnd_not_has_handitem": {
+   "section": "condition",
+   "type_id": 13806,
+   "code": 30,
+   "numbers": [
+    2
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [],
+   "default_user_sources": [
+    0
+   ],
+   "has_delay": false,
+   "variable_slots": 0,
+   "quantifier": 0,
+   "invert": true
+  },
+  "wf_cnd_not_hv_avtrs": {
+   "section": "condition",
+   "type_id": 5441,
+   "code": 14,
+   "numbers": [
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0,
+   "quantifier": 0,
+   "invert": true
+  },
+  "wf_cnd_not_in_group": {
+   "section": "condition",
+   "type_id": 5448,
+   "code": 21,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [],
+   "default_user_sources": [
+    0
+   ],
+   "has_delay": false,
+   "variable_slots": 0,
+   "quantifier": 0,
+   "invert": true
+  },
+  "wf_cnd_not_in_team": {
+   "section": "condition",
+   "type_id": 5439,
+   "code": 17,
+   "numbers": [
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [],
+   "default_user_sources": [
+    0
+   ],
+   "has_delay": false,
+   "variable_slots": 0,
+   "quantifier": 0,
+   "invert": true
+  },
+  "wf_cnd_not_match_snap": {
+   "section": "condition",
+   "type_id": 5452,
+   "code": 13,
+   "numbers": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": true,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0,
+   "quantifier": 0,
+   "invert": true
+  },
+  "wf_cnd_not_stuff_is": {
+   "section": "condition",
+   "type_id": 5449,
+   "code": 19,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": true,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ],
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [],
+   "default_furni_sources": [
+    0,
+    100
+   ],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0,
+   "quantifier": 0,
+   "invert": true
+  },
+  "wf_cnd_not_trggrer_on": {
+   "section": "condition",
+   "type_id": 5438,
+   "code": 15,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [
+    0
+   ],
+   "has_delay": false,
+   "variable_slots": 0,
+   "quantifier": 0,
+   "invert": true
+  },
+  "wf_cnd_not_triggerer_match": {
+   "section": "condition",
+   "type_id": 13808,
+   "code": 27,
+   "numbers": [
+    1
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ],
+    [
+     0,
+     101,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [],
+   "default_user_sources": [
+    0,
+    101
+   ],
+   "has_delay": false,
+   "variable_slots": 0,
+   "quantifier": 0,
+   "invert": true
+  },
+  "wf_cnd_not_user_count": {
+   "section": "condition",
+   "type_id": 5443,
+   "code": 16,
+   "numbers": [
+    1,
+    50
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0,
+   "quantifier": 0,
+   "invert": true
+  },
+  "wf_cnd_not_user_performs_action": {
+   "section": "condition",
+   "type_id": 13802,
+   "code": 33,
+   "numbers": [
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [],
+   "default_user_sources": [
+    0
+   ],
+   "has_delay": false,
+   "variable_slots": 0,
+   "quantifier": 0,
+   "invert": true
+  },
+  "wf_cnd_slc_quantity": {
+   "section": "condition",
+   "type_id": 14335,
+   "code": 38,
+   "numbers": [
+    0,
+    5,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [
+    200
+   ],
+   "default_user_sources": [
+    200
+   ],
+   "has_delay": false,
+   "variable_slots": 0,
+   "quantifier": 0,
+   "invert": false
+  },
+  "wf_cnd_stuff_is": {
+   "section": "condition",
+   "type_id": 5447,
+   "code": 8,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": true,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ],
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [],
+   "default_furni_sources": [
+    0,
+    100
+   ],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0,
+   "quantifier": 0,
+   "invert": false
+  },
+  "wf_cnd_team_has_rank": {
+   "section": "condition",
+   "type_id": 13811,
+   "code": 31,
+   "numbers": [
+    0,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [],
+   "default_user_sources": [
+    0
+   ],
+   "has_delay": false,
+   "variable_slots": 0,
+   "quantifier": 0,
+   "invert": false
+  },
+  "wf_cnd_team_has_score": {
+   "section": "condition",
+   "type_id": 13812,
+   "code": 34,
+   "numbers": [
+    0,
+    0,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [],
+   "default_user_sources": [
+    0
+   ],
+   "has_delay": false,
+   "variable_slots": 0,
+   "quantifier": 0,
+   "invert": false
+  },
+  "wf_cnd_time_less_than": {
+   "section": "condition",
+   "type_id": 3682,
+   "code": 4,
+   "numbers": [
+    20
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0,
+   "quantifier": 0,
+   "invert": false
+  },
+  "wf_cnd_time_more_than": {
+   "section": "condition",
+   "type_id": 3665,
+   "code": 3,
+   "numbers": [
+    20
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0,
+   "quantifier": 0,
+   "invert": false
+  },
+  "wf_cnd_trggrer_on_frn": {
+   "section": "condition",
+   "type_id": 3694,
+   "code": 2,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [
+    0
+   ],
+   "has_delay": false,
+   "variable_slots": 0,
+   "quantifier": 0,
+   "invert": false
+  },
+  "wf_cnd_triggerer_match": {
+   "section": "condition",
+   "type_id": 13805,
+   "code": 26,
+   "numbers": [
+    1
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ],
+    [
+     0,
+     101,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [],
+   "default_user_sources": [
+    0,
+    101
+   ],
+   "has_delay": false,
+   "variable_slots": 0,
+   "quantifier": 0,
+   "invert": false
+  },
+  "wf_cnd_user_count_in": {
+   "section": "condition",
+   "type_id": 5445,
+   "code": 5,
+   "numbers": [
+    1,
+    50
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0,
+   "quantifier": 0,
+   "invert": false
+  },
+  "wf_cnd_user_performs_action": {
+   "section": "condition",
+   "type_id": 13809,
+   "code": 32,
+   "numbers": [
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [],
+   "default_user_sources": [
+    0
+   ],
+   "has_delay": false,
+   "variable_slots": 0,
+   "quantifier": 0,
+   "invert": false
+  },
+  "wf_cnd_valid_moves": {
+   "section": "condition",
+   "type_id": 14553,
+   "code": 39,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0,
+   "quantifier": 0,
+   "invert": false
+  },
+  "wf_cnd_var_age_match": {
+   "section": "condition",
+   "type_id": 15349,
+   "code": 43,
+   "numbers": [
+    1,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    -10
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": true,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ],
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ],
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [
+    0,
+    200
+   ],
+   "default_user_sources": [
+    0,
+    200
+   ],
+   "has_delay": false,
+   "variable_slots": 2,
+   "quantifier": 0,
+   "invert": false
+  },
+  "wf_cnd_var_val_match": {
+   "section": "condition",
+   "type_id": 15342,
+   "code": 42,
+   "numbers": [
+    1,
+    2,
+    0,
+    0,
+    0,
+    -10,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": true,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ],
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ],
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [
+    0,
+    200
+   ],
+   "default_user_sources": [
+    0,
+    200
+   ],
+   "has_delay": false,
+   "variable_slots": 2,
+   "quantifier": 0,
+   "invert": false
+  },
+  "wf_slc_furni_altitude": {
+   "section": "selector",
+   "type_id": 14330,
+   "code": 16,
+   "numbers": [
+    0,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0,
+   "filter": false,
+   "invert": false
+  },
+  "wf_slc_furni_area": {
+   "section": "selector",
+   "type_id": 14333,
+   "code": 7,
+   "numbers": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0,
+   "filter": false,
+   "invert": false
+  },
+  "wf_slc_furni_bytype": {
+   "section": "selector",
+   "type_id": 14334,
+   "code": 0,
+   "numbers": [
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": true,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     201
+    ]
+   ],
+   "allowed_user_sources": [],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0,
+   "filter": false,
+   "invert": false
+  },
+  "wf_slc_furni_neighborhood": {
+   "section": "selector",
+   "type_id": 14342,
+   "code": 6,
+   "numbers": [
+    1,
+    0,
+    0,
+    33554431,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     201
+    ]
+   ],
+   "allowed_user_sources": [
+    [
+     0,
+     201
+    ]
+   ],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [
+    0
+   ],
+   "has_delay": false,
+   "variable_slots": 0,
+   "filter": false,
+   "invert": false
+  },
+  "wf_slc_furni_onfurni": {
+   "section": "selector",
+   "type_id": 14329,
+   "code": 4,
+   "numbers": [
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     201
+    ]
+   ],
+   "allowed_user_sources": [],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0,
+   "filter": false,
+   "invert": false
+  },
+  "wf_slc_furni_picks": {
+   "section": "selector",
+   "type_id": 14337,
+   "code": 1,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": true,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0,
+   "filter": false,
+   "invert": false
+  },
+  "wf_slc_furni_signal": {
+   "section": "selector",
+   "type_id": 14326,
+   "code": 5,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0,
+   "filter": false,
+   "invert": false
+  },
+  "wf_slc_furni_with_var": {
+   "section": "selector",
+   "type_id": 15339,
+   "code": 17,
+   "numbers": [
+    2,
+    0,
+    0,
+    0,
+    -10,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": true,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     201
+    ]
+   ],
+   "allowed_user_sources": [
+    [
+     0,
+     201
+    ]
+   ],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [
+    0
+   ],
+   "has_delay": false,
+   "variable_slots": 2,
+   "filter": false,
+   "invert": false
+  },
+  "wf_slc_remote": {
+   "section": "selector",
+   "type_id": 15357,
+   "code": 19,
+   "numbers": [
+    0,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     201
+    ]
+   ],
+   "allowed_user_sources": [],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0,
+   "filter": false,
+   "invert": false
+  },
+  "wf_slc_users_area": {
+   "section": "selector",
+   "type_id": 14325,
+   "code": 13,
+   "numbers": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0,
+   "filter": false,
+   "invert": false
+  },
+  "wf_slc_users_byaction": {
+   "section": "selector",
+   "type_id": 14339,
+   "code": 9,
+   "numbers": [
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0,
+   "filter": false,
+   "invert": false
+  },
+  "wf_slc_users_byname": {
+   "section": "selector",
+   "type_id": 14327,
+   "code": 11,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0,
+   "filter": false,
+   "invert": false
+  },
+  "wf_slc_users_bytype": {
+   "section": "selector",
+   "type_id": 14343,
+   "code": 2,
+   "numbers": [
+    1
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0,
+   "filter": false,
+   "invert": false
+  },
+  "wf_slc_users_group": {
+   "section": "selector",
+   "type_id": 14331,
+   "code": 15,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0,
+   "filter": false,
+   "invert": false
+  },
+  "wf_slc_users_handitem": {
+   "section": "selector",
+   "type_id": 14336,
+   "code": 14,
+   "numbers": [
+    2
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0,
+   "filter": false,
+   "invert": false
+  },
+  "wf_slc_users_neighborhood": {
+   "section": "selector",
+   "type_id": 14346,
+   "code": 12,
+   "numbers": [
+    1,
+    0,
+    0,
+    33554431,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     201
+    ]
+   ],
+   "allowed_user_sources": [
+    [
+     0,
+     201
+    ]
+   ],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [
+    0
+   ],
+   "has_delay": false,
+   "variable_slots": 0,
+   "filter": false,
+   "invert": false
+  },
+  "wf_slc_users_onfurni": {
+   "section": "selector",
+   "type_id": 14341,
+   "code": 8,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     201
+    ]
+   ],
+   "allowed_user_sources": [],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0,
+   "filter": false,
+   "invert": false
+  },
+  "wf_slc_users_signal": {
+   "section": "selector",
+   "type_id": 14338,
+   "code": 10,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0,
+   "filter": false,
+   "invert": false
+  },
+  "wf_slc_users_team": {
+   "section": "selector",
+   "type_id": 14345,
+   "code": 3,
+   "numbers": [
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0,
+   "filter": false,
+   "invert": false
+  },
+  "wf_slc_users_with_var": {
+   "section": "selector",
+   "type_id": 15360,
+   "code": 18,
+   "numbers": [
+    2,
+    0,
+    0,
+    0,
+    -10,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": true,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     201
+    ]
+   ],
+   "allowed_user_sources": [
+    [
+     0,
+     201
+    ]
+   ],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [
+    0
+   ],
+   "has_delay": false,
+   "variable_slots": 2,
+   "filter": false,
+   "invert": false
+  },
+  "wf_trg_at_given_time": {
+   "section": "trigger",
+   "type_id": 3679,
+   "code": 3,
+   "numbers": [
+    1
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_trg_bot_reached_avtr": {
+   "section": "trigger",
+   "type_id": 7856,
+   "code": 14,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [
+    [
+     100,
+     200
+    ]
+   ],
+   "default_furni_sources": [],
+   "default_user_sources": [
+    100
+   ],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_trg_bot_reached_stf": {
+   "section": "trigger",
+   "type_id": 7850,
+   "code": 13,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     100,
+     200
+    ]
+   ],
+   "allowed_user_sources": [
+    [
+     100,
+     200
+    ]
+   ],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [
+    100
+   ],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_trg_click_furni": {
+   "section": "trigger",
+   "type_id": 14089,
+   "code": 18,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": true,
+   "allowed_furni_sources": [
+    [
+     100,
+     200
+    ]
+   ],
+   "allowed_user_sources": [],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_trg_click_tile": {
+   "section": "trigger",
+   "type_id": 14554,
+   "code": 21,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     100,
+     200
+    ]
+   ],
+   "allowed_user_sources": [],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_trg_click_user": {
+   "section": "trigger",
+   "type_id": 16878,
+   "code": 24,
+   "numbers": [
+    1,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_trg_clock_counter": {
+   "section": "trigger",
+   "type_id": 13385,
+   "code": 15,
+   "numbers": [
+    0,
+    0,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     100,
+     200
+    ]
+   ],
+   "allowed_user_sources": [],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_trg_collision": {
+   "section": "trigger",
+   "type_id": 5050,
+   "code": 11,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_trg_enter_room": {
+   "section": "trigger",
+   "type_id": 3683,
+   "code": 7,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_trg_game_ends": {
+   "section": "trigger",
+   "type_id": 3680,
+   "code": 9,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_trg_game_starts": {
+   "section": "trigger",
+   "type_id": 3702,
+   "code": 8,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_trg_leave_room": {
+   "section": "trigger",
+   "type_id": 15343,
+   "code": 23,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_trg_period_long": {
+   "section": "trigger",
+   "type_id": 5042,
+   "code": 12,
+   "numbers": [
+    10
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_trg_period_short": {
+   "section": "trigger",
+   "type_id": 14128,
+   "code": 19,
+   "numbers": [
+    4
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_trg_periodically": {
+   "section": "trigger",
+   "type_id": 3671,
+   "code": 6,
+   "numbers": [
+    1
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_trg_receive_dataframe": {
+   "section": "trigger",
+   "type_id": 19400,
+   "code": 30,
+   "numbers": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     100,
+     200
+    ]
+   ],
+   "allowed_user_sources": [],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 12
+  },
+  "wf_trg_receive_message": {
+   "section": "trigger",
+   "type_id": 19401,
+   "code": 29,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     100,
+     200
+    ]
+   ],
+   "allowed_user_sources": [],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_trg_recv_signal": {
+   "section": "trigger",
+   "type_id": 14090,
+   "code": 17,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     100,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_trg_room_initializes": {
+   "section": "trigger",
+   "type_id": 19402,
+   "code": 28,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_trg_says_something": {
+   "section": "trigger",
+   "type_id": 3675,
+   "code": 0,
+   "numbers": [
+    0,
+    0,
+    1
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_trg_score_achieved": {
+   "section": "trigger",
+   "type_id": 3673,
+   "code": 10,
+   "numbers": [
+    100,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_trg_state_changed": {
+   "section": "trigger",
+   "type_id": 3668,
+   "code": 4,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": true,
+   "allowed_furni_sources": [
+    [
+     100,
+     200
+    ]
+   ],
+   "allowed_user_sources": [],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_trg_stuff_state": {
+   "section": "trigger",
+   "type_id": 14091,
+   "code": 20,
+   "numbers": [
+    1
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": true,
+   "allowed_furni_sources": [
+    [
+     100,
+     200
+    ]
+   ],
+   "allowed_user_sources": [],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_trg_transaction_complete": {
+   "section": "trigger",
+   "type_id": 18491,
+   "code": 25,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     100,
+     200
+    ]
+   ],
+   "allowed_user_sources": [],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_trg_transaction_fail": {
+   "section": "trigger",
+   "type_id": 18492,
+   "code": 26,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     100,
+     200
+    ]
+   ],
+   "allowed_user_sources": [],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_trg_user_performs_action": {
+   "section": "trigger",
+   "type_id": 13807,
+   "code": 16,
+   "numbers": [
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_trg_var_changed": {
+   "section": "trigger",
+   "type_id": 15340,
+   "code": 22,
+   "numbers": [
+    1,
+    1,
+    0,
+    7,
+    -1,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 1
+  },
+  "wf_trg_walks_off_furni": {
+   "section": "trigger",
+   "type_id": 3678,
+   "code": 2,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     100,
+     200
+    ]
+   ],
+   "allowed_user_sources": [],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_trg_walks_on_furni": {
+   "section": "trigger",
+   "type_id": 3703,
+   "code": 1,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     100,
+     200
+    ]
+   ],
+   "allowed_user_sources": [],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_var_context": {
+   "section": "variable",
+   "type_id": 15346,
+   "code": 3,
+   "numbers": [
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_var_echo": {
+   "section": "variable",
+   "type_id": 16910,
+   "code": 7,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 1
+  },
+  "wf_var_furni": {
+   "section": "variable",
+   "type_id": 15351,
+   "code": 0,
+   "numbers": [
+    0,
+    1
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_var_pointer": {
+   "section": "variable",
+   "type_id": 19404,
+   "code": 9,
+   "numbers": [
+    1
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 1
+  },
+  "wf_var_reference": {
+   "section": "variable",
+   "type_id": 15362,
+   "code": 4,
+   "numbers": [
+    1
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 1
+  },
+  "wf_var_room": {
+   "section": "variable",
+   "type_id": 15364,
+   "code": 2,
+   "numbers": [
+    1
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_var_user": {
+   "section": "variable",
+   "type_id": 15347,
+   "code": 1,
+   "numbers": [
+    0,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_xtra_anim_time": {
+   "section": "addon",
+   "type_id": 14131,
+   "code": 9,
+   "numbers": [
+    500
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_xtra_custom_contract": {
+   "section": "addon",
+   "type_id": 18493,
+   "code": 20,
+   "numbers": [
+    0,
+    0,
+    0,
+    1,
+    -20,
+    0,
+    0,
+    0,
+    1,
+    -20
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": true,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ],
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ],
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ],
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ],
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [
+    0,
+    0,
+    200,
+    200
+   ],
+   "default_user_sources": [
+    200,
+    200
+   ],
+   "has_delay": false,
+   "variable_slots": 2
+  },
+  "wf_xtra_exec_in_order": {
+   "section": "addon",
+   "type_id": 15363,
+   "code": 17,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_xtra_execution_limit": {
+   "section": "addon",
+   "type_id": 14098,
+   "code": 5,
+   "numbers": [
+    100,
+    1
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_xtra_filter_furni": {
+   "section": "addon",
+   "type_id": 14344,
+   "code": 10,
+   "numbers": [
+    10,
+    0,
+    1
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     201
+    ]
+   ],
+   "allowed_user_sources": [
+    [
+     0,
+     201
+    ]
+   ],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [
+    0
+   ],
+   "has_delay": false,
+   "variable_slots": 1
+  },
+  "wf_xtra_filter_furni_by_var": {
+   "section": "addon",
+   "type_id": 15341,
+   "code": 12,
+   "numbers": [
+    10,
+    0,
+    0,
+    1
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     201
+    ]
+   ],
+   "allowed_user_sources": [
+    [
+     0,
+     201
+    ]
+   ],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [
+    0
+   ],
+   "has_delay": false,
+   "variable_slots": 2
+  },
+  "wf_xtra_filter_users": {
+   "section": "addon",
+   "type_id": 14332,
+   "code": 11,
+   "numbers": [
+    10,
+    0,
+    1
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     201
+    ]
+   ],
+   "allowed_user_sources": [
+    [
+     0,
+     201
+    ]
+   ],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [
+    0
+   ],
+   "has_delay": false,
+   "variable_slots": 1
+  },
+  "wf_xtra_filter_users_by_var": {
+   "section": "addon",
+   "type_id": 15345,
+   "code": 13,
+   "numbers": [
+    10,
+    0,
+    0,
+    1
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     201
+    ]
+   ],
+   "allowed_user_sources": [
+    [
+     0,
+     201
+    ]
+   ],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [
+    0
+   ],
+   "has_delay": false,
+   "variable_slots": 2
+  },
+  "wf_xtra_link_speaker": {
+   "section": "addon",
+   "type_id": 19406,
+   "code": 2003,
+   "numbers": [
+    1,
+    1
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_xtra_mov_carry_users": {
+   "section": "addon",
+   "type_id": 14096,
+   "code": 8,
+   "numbers": [
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201,
+     900
+    ]
+   ],
+   "default_furni_sources": [],
+   "default_user_sources": [
+    900
+   ],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_xtra_mov_curve": {
+   "section": "addon",
+   "type_id": 18674,
+   "code": 22,
+   "numbers": [
+    0,
+    160,
+    -20
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [
+    0
+   ],
+   "has_delay": false,
+   "variable_slots": 1
+  },
+  "wf_xtra_mov_no_animation": {
+   "section": "addon",
+   "type_id": 14088,
+   "code": 6,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_xtra_mov_physics": {
+   "section": "addon",
+   "type_id": 14086,
+   "code": 7,
+   "numbers": [
+    1,
+    0,
+    0,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     101,
+     200,
+     201,
+     900
+    ],
+    [
+     0,
+     100,
+     101,
+     200,
+     201,
+     900
+    ]
+   ],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201,
+     900
+    ]
+   ],
+   "default_furni_sources": [
+    900,
+    900
+   ],
+   "default_user_sources": [
+    900
+   ],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_xtra_or_eval": {
+   "section": "addon",
+   "type_id": 13272,
+   "code": 0,
+   "numbers": [
+    1,
+    0,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_xtra_random": {
+   "section": "addon",
+   "type_id": 3669,
+   "code": 1,
+   "numbers": [
+    0,
+    1
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_xtra_rotate_to_dir": {
+   "section": "addon",
+   "type_id": 18675,
+   "code": 21,
+   "numbers": [
+    1,
+    1,
+    0,
+    0,
+    100,
+    -20,
+    1,
+    1,
+    0,
+    4,
+    0,
+    0,
+    1,
+    1,
+    0,
+    0,
+    1,
+    -20,
+    50
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     200,
+     201,
+     901
+    ],
+    [
+     0,
+     100,
+     200,
+     201
+    ],
+    [
+     0,
+     100,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ],
+    [
+     0,
+     200,
+     201
+    ],
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [
+    901,
+    0,
+    0
+   ],
+   "default_user_sources": [
+    0,
+    0,
+    0
+   ],
+   "has_delay": false,
+   "variable_slots": 2
+  },
+  "wf_xtra_scan_chest_furni_by_type": {
+   "section": "addon",
+   "type_id": 18494,
+   "code": 18,
+   "numbers": [
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": true,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ],
+    [
+     0,
+     100,
+     101,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [],
+   "default_furni_sources": [
+    0,
+    100
+   ],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 1
+  },
+  "wf_xtra_text_input_variable": {
+   "section": "addon",
+   "type_id": 15359,
+   "code": 16,
+   "numbers": [
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 1
+  },
+  "wf_xtra_text_output_furni_name": {
+   "section": "addon",
+   "type_id": 18495,
+   "code": 19,
+   "numbers": [
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": true,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [],
+   "default_furni_sources": [
+    0
+   ],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_xtra_text_output_username": {
+   "section": "addon",
+   "type_id": 15356,
+   "code": 14,
+   "numbers": [
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [],
+   "default_user_sources": [
+    0
+   ],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_xtra_text_output_variable": {
+   "section": "addon",
+   "type_id": 15350,
+   "code": 15,
+   "numbers": [
+    0,
+    1,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": true,
+   "allowed_furni_sources": [
+    [
+     0,
+     100,
+     200,
+     201
+    ]
+   ],
+   "allowed_user_sources": [
+    [
+     0,
+     200,
+     201
+    ]
+   ],
+   "default_furni_sources": [
+    100
+   ],
+   "default_user_sources": [
+    0
+   ],
+   "has_delay": false,
+   "variable_slots": 1
+  },
+  "wf_xtra_unseen": {
+   "section": "addon",
+   "type_id": 3670,
+   "code": 2,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_xtra_var_import": {
+   "section": "addon",
+   "type_id": 19407,
+   "code": 1004,
+   "numbers": [
+    1,
+    1,
+    1
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_xtra_var_leaderboard": {
+   "section": "addon",
+   "type_id": 19408,
+   "code": 1005,
+   "numbers": [
+    0,
+    2,
+    0,
+    1,
+    -1,
+    -1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    3,
+    0,
+    0,
+    0,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 12,
+   "context_unread": true
+  },
+  "wf_xtra_var_lvlup_system": {
+   "section": "addon",
+   "type_id": 16909,
+   "code": 1001,
+   "numbers": [
+    0,
+    1,
+    100,
+    50,
+    50
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_xtra_var_share": {
+   "section": "addon",
+   "type_id": 19409,
+   "code": 1003,
+   "numbers": [
+    1,
+    1,
+    1
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_xtra_var_text_connector": {
+   "section": "addon",
+   "type_id": 15348,
+   "code": 1000,
+   "numbers": [],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_xtra_var_time_util": {
+   "section": "addon",
+   "type_id": 16908,
+   "code": 1002,
+   "numbers": [
+    0,
+    1
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 0
+  },
+  "wf_xtra_varfx_boss": {
+   "section": "addon",
+   "type_id": 19195,
+   "code": 1204,
+   "numbers": [
+    1,
+    2,
+    0,
+    7,
+    0,
+    3000,
+    0,
+    -1,
+    -1,
+    -1,
+    0,
+    0,
+    0,
+    100,
+    0,
+    0,
+    1,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 3
+  },
+  "wf_xtra_varfx_hp": {
+   "section": "addon",
+   "type_id": 19196,
+   "code": 1200,
+   "numbers": [
+    1,
+    2,
+    0,
+    7,
+    0,
+    3000,
+    0,
+    -1,
+    -1,
+    -1,
+    0,
+    0,
+    0,
+    100,
+    0,
+    0,
+    1,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 3
+  },
+  "wf_xtra_varfx_levelling": {
+   "section": "addon",
+   "type_id": 19197,
+   "code": 1202,
+   "numbers": [
+    1,
+    2,
+    0,
+    7,
+    0,
+    3000,
+    0,
+    -1,
+    -1,
+    -1,
+    0,
+    0,
+    0,
+    100,
+    0,
+    0,
+    1,
+    1,
+    0,
+    0,
+    0,
+    2,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 3
+  },
+  "wf_xtra_varfx_number": {
+   "section": "addon",
+   "type_id": 19198,
+   "code": 1205,
+   "numbers": [
+    1,
+    2,
+    0,
+    7,
+    0,
+    3000,
+    0,
+    -1,
+    -1,
+    -1,
+    0,
+    0,
+    0,
+    100,
+    0,
+    0,
+    1,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 3
+  },
+  "wf_xtra_varfx_prog": {
+   "section": "addon",
+   "type_id": 19199,
+   "code": 1201,
+   "numbers": [
+    1,
+    2,
+    0,
+    7,
+    0,
+    3000,
+    0,
+    -1,
+    -1,
+    -1,
+    0,
+    0,
+    0,
+    100,
+    0,
+    0,
+    1,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 3
+  },
+  "wf_xtra_varfx_status": {
+   "section": "addon",
+   "type_id": 19200,
+   "code": 1203,
+   "numbers": [
+    1,
+    2,
+    0,
+    7,
+    0,
+    3000,
+    0,
+    -1,
+    -1,
+    -1,
+    0,
+    0,
+    0,
+    100,
+    0,
+    0,
+    1,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "furni_limit": 20,
+   "allow_wall_furni": false,
+   "allowed_furni_sources": [],
+   "allowed_user_sources": [],
+   "default_furni_sources": [],
+   "default_user_sources": [],
+   "has_delay": false,
+   "variable_slots": 3
+  }
+ }
+}

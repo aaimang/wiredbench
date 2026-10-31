@@ -426,3 +426,16 @@ def test_unreadable_option_numbers_are_left_alone() -> None:
     document, _ = exchange.import_gpresets(json.loads(json.dumps(file)))
     assert "match" not in document["furni"][0]["wired"]
     assert exchange.export_gpresets(document)[0] == file
+
+
+def test_furni_listed_with_no_box_settings_stay_that_way() -> None:
+    file = {
+        "bindings": [],
+        "furni": [{"id": 1, "className": "wf_act_log", "rotation": 0, "location": {"x": 1, "y": 1, "z": 0}}],
+        "wired": {"effects": [], "triggers": []},
+    }
+    document, _ = exchange.import_gpresets(json.loads(json.dumps(file)))
+    assert exchange.export_gpresets(document)[0] == file
+    document["furni"][0]["wired"] = {"text": "edited"}
+    out = exchange.export_gpresets(document)[0]
+    assert out["wired"]["effects"][0]["config"] == "edited"

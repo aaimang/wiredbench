@@ -59,7 +59,7 @@ COMPARE = {
     "options": ["=", "!=", ">", ">=", "<", "<="],
     "default": "=",
 }
-AMOUNT = {"name": "amount", "kind": "number", "label": "How many", "default": 1, "min": 0}
+AMOUNT = {"name": "amount", "kind": "number", "label": "How many", "default": 10, "min": 0}
 ANTENNA = {"name": "antenna", "kind": "furni", "label": "Antenna", "default": []}
 SECONDS = {"name": "seconds", "kind": "number", "label": "Seconds", "default": 10, "min": 0, "step": 0.5}
 
@@ -77,19 +77,29 @@ def _effect(fidelity: str, *fields: dict[str, Any]) -> dict[str, Any]:
     return _box("effect", fidelity, *fields, DEFAULT_DELAY)
 
 
-AVAILABILITY = _saved(
-    {
-        "name": "availability",
-        "kind": "select",
-        "label": "Availability",
-        "options": ["active", "persistent", "shared"],
-        "labels": {"active": "While in the room", "persistent": "Persistent", "shared": "Shared"},
-        "default": "persistent",
-    }
-)
-HAS_VALUE = _saved({"name": "has_value", "kind": "bool", "label": "Has a number value", "default": True})
+AVAILABILITY_LABELS = {
+    "active": "While in the room (not listed by the Web API)",
+    "persistent": "Persistent",
+    "shared": "Shared",
+}
+
+
+def _availability(*options: str) -> dict[str, Any]:
+    return _saved(
+        {
+            "name": "availability",
+            "kind": "select",
+            "label": "Availability",
+            "options": list(options),
+            "labels": AVAILABILITY_LABELS,
+            "default": "active",
+        }
+    )
+
+
+HAS_VALUE = _saved({"name": "has_value", "kind": "bool", "label": "Has a number value", "default": False})
 LOG_LEVEL = _saved(
-    {"name": "level", "kind": "select", "label": "Log level", "options": ["0", "1", "2", "3"], "default": "2"}
+    {"name": "level", "kind": "select", "label": "Log level", "options": ["0", "1", "2", "3"], "default": "0"}
 )
 
 BOXES: dict[str, dict[str, Any]] = {
@@ -126,9 +136,9 @@ BOXES: dict[str, dict[str, Any]] = {
     "wf_trg_enter_room": _box("trigger", DOCUMENTED),
     "wf_trg_leave_room": _box("trigger", ASSUMED),
     "wf_trg_room_initializes": _box("trigger", ASSUMED),
-    "wf_trg_periodically": _box("trigger", DOCUMENTED, SECONDS),
-    "wf_trg_period_short": _box("trigger", ASSUMED, SECONDS),
-    "wf_trg_period_long": _box("trigger", DOCUMENTED, SECONDS),
+    "wf_trg_periodically": _box("trigger", DOCUMENTED, {**SECONDS, "default": 0.5}),
+    "wf_trg_period_short": _box("trigger", ASSUMED, {**SECONDS, "default": 0.2, "step": 0.05}),
+    "wf_trg_period_long": _box("trigger", DOCUMENTED, {**SECONDS, "default": 50, "step": 5}),
     "wf_trg_at_given_time": _box("trigger", DOCUMENTED, SECONDS),
     "wf_trg_recv_signal": _box("trigger", DOCUMENTED, ANTENNA),
     "wf_trg_var_changed": _box("trigger", ASSUMED, VARIABLE),
@@ -147,13 +157,13 @@ BOXES: dict[str, dict[str, Any]] = {
     "wf_cnd_user_count_in": _box(
         "condition",
         DOCUMENTED,
-        {"name": "min", "kind": "number", "label": "At least", "default": 0, "min": 0},
+        {"name": "min", "kind": "number", "label": "At least", "default": 1, "min": 0},
         {"name": "max", "kind": "number", "label": "At most", "default": 50, "min": 0},
     ),
     "wf_cnd_not_user_count": _box(
         "condition",
         DOCUMENTED,
-        {"name": "min", "kind": "number", "label": "At least", "default": 0, "min": 0},
+        {"name": "min", "kind": "number", "label": "At least", "default": 1, "min": 0},
         {"name": "max", "kind": "number", "label": "At most", "default": 50, "min": 0},
     ),
     "wf_cnd_triggerer_match": _box(
@@ -194,12 +204,12 @@ BOXES: dict[str, dict[str, Any]] = {
     "wf_xtra_execution_limit": _box(
         "addon",
         DOCUMENTED,
-        {"name": "count", "kind": "number", "label": "Runs allowed", "default": 10, "min": 1, "max": 100},
+        {"name": "count", "kind": "number", "label": "Runs allowed", "default": 100, "min": 1, "max": 100},
         {
             "name": "window_seconds",
             "kind": "number",
             "label": "Per this many seconds",
-            "default": 1,
+            "default": 0.5,
             "min": 0.5,
             "max": 10,
             "step": 0.5,
@@ -254,9 +264,11 @@ BOXES: dict[str, dict[str, Any]] = {
     ),
     "wf_xtra_var_time_util": _box("addon", DOCUMENTED, VARIABLE),
     # Variable definitions
-    "wf_var_user": _box("variable", DOCUMENTED, VARIABLE, AVAILABILITY, HAS_VALUE),
-    "wf_var_furni": _box("variable", DOCUMENTED, VARIABLE, HAS_VALUE, AVAILABILITY),
-    "wf_var_room": _box("variable", DOCUMENTED, VARIABLE),
+    "wf_var_user": _box(
+        "variable", DOCUMENTED, VARIABLE, _availability("active", "persistent", "shared"), HAS_VALUE
+    ),
+    "wf_var_furni": _box("variable", DOCUMENTED, VARIABLE, HAS_VALUE, _availability("active", "persistent")),
+    "wf_var_room": _box("variable", DOCUMENTED, VARIABLE, _availability("active", "persistent", "shared")),
     "wf_var_context": _box("variable", ASSUMED, VARIABLE, HAS_VALUE),
     # Effects
     "wf_act_give_var": _effect(ASSUMED, VARIABLE, VALUE, OVERWRITE, USER_SOURCE),

@@ -6,73 +6,74 @@ Habbo can change boxes at any time, so a check only holds for the date beside it
 read at commit `3fc9c06f533c`, for facts only.
 
 - Boxes: 284
-- No evidence yet: 171
-- Reference only: 81
-- Seen in a real preset: 29
+- No evidence yet: 92
+- Reference only: 7
+- Seen in a real preset: 0
+- Seen in a real room dump: 182
 - Checked in a real room: 3
 - Have a form: 72
-- Option numbers mapped: 17
+- Option numbers mapped: 18
 
 | Box | Evidence | Form | Options | Room check |
 |---|---|---|---|---|
-| `wf_act_adjust_clock` | Reference only |  |  |  |
-| `wf_act_bot_clothes` | Reference only |  |  |  |
-| `wf_act_bot_follow_avatar` | Reference only |  |  |  |
-| `wf_act_bot_give_handitem` | Reference only |  |  |  |
-| `wf_act_bot_move` | Reference only |  |  |  |
-| `wf_act_bot_talk` | Seen in a real preset |  |  |  |
-| `wf_act_bot_talk_to_avatar` | Reference only |  |  |  |
-| `wf_act_bot_teleport` | No evidence yet |  |  |  |
-| `wf_act_call_stacks` | No evidence yet | Yes |  |  |
-| `wf_act_cancel_transaction` | No evidence yet |  |  |  |
-| `wf_act_change_var_val` | Seen in a real preset | Yes |  |  |
-| `wf_act_chase` | No evidence yet |  |  |  |
-| `wf_act_click_conf` | Reference only |  |  |  |
-| `wf_act_control_clock` | Reference only |  |  |  |
-| `wf_act_flee` | No evidence yet |  |  |  |
-| `wf_act_freeze` | Reference only |  |  |  |
-| `wf_act_furni_to_furni` | No evidence yet |  |  |  |
-| `wf_act_furni_to_user` | No evidence yet |  |  |  |
-| `wf_act_give_currency` | No evidence yet |  |  |  |
-| `wf_act_give_furni` | No evidence yet |  |  |  |
+| `wf_act_adjust_clock` | Seen in a real room dump |  |  |  |
+| `wf_act_bot_clothes` | Seen in a real room dump |  |  |  |
+| `wf_act_bot_follow_avatar` | Seen in a real room dump |  |  |  |
+| `wf_act_bot_give_handitem` | Seen in a real room dump |  |  |  |
+| `wf_act_bot_move` | Seen in a real room dump |  |  |  |
+| `wf_act_bot_talk` | Seen in a real room dump |  |  |  |
+| `wf_act_bot_talk_to_avatar` | Seen in a real room dump |  |  |  |
+| `wf_act_bot_teleport` | Seen in a real room dump |  |  |  |
+| `wf_act_call_stacks` | Seen in a real room dump | Yes |  |  |
+| `wf_act_cancel_transaction` | Seen in a real room dump |  |  |  |
+| `wf_act_change_var_val` | Seen in a real room dump | Yes |  |  |
+| `wf_act_chase` | Seen in a real room dump |  |  |  |
+| `wf_act_click_conf` | Seen in a real room dump |  |  |  |
+| `wf_act_control_clock` | Seen in a real room dump |  |  |  |
+| `wf_act_flee` | Seen in a real room dump |  |  |  |
+| `wf_act_freeze` | Seen in a real room dump |  |  |  |
+| `wf_act_furni_to_furni` | Seen in a real room dump |  |  |  |
+| `wf_act_furni_to_user` | Seen in a real room dump |  |  |  |
+| `wf_act_give_currency` | Seen in a real room dump |  |  |  |
+| `wf_act_give_furni` | Seen in a real room dump |  |  |  |
 | `wf_act_give_reward` | Reference only |  |  |  |
-| `wf_act_give_score` | Reference only |  |  |  |
-| `wf_act_give_score_tm` | No evidence yet |  |  |  |
-| `wf_act_give_var` | Seen in a real preset | Yes |  |  |
-| `wf_act_init_transaction` | No evidence yet |  |  |  |
-| `wf_act_join_team` | Reference only |  |  |  |
-| `wf_act_kick_user` | Reference only |  |  |  |
-| `wf_act_leave_team` | No evidence yet |  |  |  |
-| `wf_act_log` | Seen in a real preset | Yes | Yes |  |
-| `wf_act_match_to_sshot` | Reference only |  |  |  |
-| `wf_act_move_furni_as_group` | No evidence yet |  |  |  |
+| `wf_act_give_score` | Seen in a real room dump |  |  |  |
+| `wf_act_give_score_tm` | Seen in a real room dump |  |  |  |
+| `wf_act_give_var` | Seen in a real room dump | Yes |  |  |
+| `wf_act_init_transaction` | Seen in a real room dump |  |  |  |
+| `wf_act_join_team` | Seen in a real room dump |  |  |  |
+| `wf_act_kick_user` | Seen in a real room dump |  |  |  |
+| `wf_act_leave_team` | Seen in a real room dump |  |  |  |
+| `wf_act_log` | Seen in a real room dump | Yes | Yes |  |
+| `wf_act_match_to_sshot` | Seen in a real room dump |  |  |  |
+| `wf_act_move_furni_as_group` | Seen in a real room dump |  |  |  |
 | `wf_act_move_furni_to` | Reference only |  |  |  |
-| `wf_act_move_rotate` | Reference only | Yes | Yes |  |
-| `wf_act_move_rotate_user` | No evidence yet |  |  |  |
-| `wf_act_move_to_dir` | No evidence yet |  |  |  |
+| `wf_act_move_rotate` | Seen in a real room dump | Yes | Yes |  |
+| `wf_act_move_rotate_user` | Seen in a real room dump |  |  |  |
+| `wf_act_move_to_dir` | Seen in a real room dump |  |  |  |
 | `wf_act_mute_triggerer` | Reference only |  |  |  |
-| `wf_act_neg_call_stacks` | No evidence yet | Yes |  |  |
-| `wf_act_neg_log` | No evidence yet | Yes |  |  |
-| `wf_act_neg_send_signal` | No evidence yet | Yes |  |  |
-| `wf_act_place_furni` | No evidence yet |  |  |  |
+| `wf_act_neg_call_stacks` | Seen in a real room dump | Yes |  |  |
+| `wf_act_neg_log` | Seen in a real room dump | Yes |  |  |
+| `wf_act_neg_send_signal` | Seen in a real room dump | Yes |  |  |
+| `wf_act_place_furni` | Seen in a real room dump |  |  |  |
 | `wf_act_progress_ach` | No evidence yet |  |  |  |
-| `wf_act_rel_mov` | No evidence yet |  |  |  |
-| `wf_act_remove_furni` | No evidence yet |  |  |  |
-| `wf_act_remove_var` | Seen in a real preset | Yes |  |  |
-| `wf_act_reset_timers` | No evidence yet | Yes |  |  |
-| `wf_act_send_dataframe` | Reference only |  |  |  |
-| `wf_act_send_message` | Reference only |  |  |  |
-| `wf_act_send_signal` | Seen in a real preset | Yes |  |  |
-| `wf_act_set_altitude` | Reference only |  |  |  |
-| `wf_act_set_highlight` | Reference only |  |  |  |
-| `wf_act_set_visibility` | Reference only |  |  |  |
-| `wf_act_show_message` | Reference only | Yes |  |  |
-| `wf_act_teleport_to` | No evidence yet | Yes |  |  |
-| `wf_act_teleport_to_room` | No evidence yet |  |  |  |
+| `wf_act_rel_mov` | Seen in a real room dump |  |  |  |
+| `wf_act_remove_furni` | Seen in a real room dump |  |  |  |
+| `wf_act_remove_var` | Seen in a real room dump | Yes |  |  |
+| `wf_act_reset_timers` | Seen in a real room dump | Yes |  |  |
+| `wf_act_send_dataframe` | Seen in a real room dump |  |  |  |
+| `wf_act_send_message` | Seen in a real room dump |  |  |  |
+| `wf_act_send_signal` | Seen in a real room dump | Yes |  |  |
+| `wf_act_set_altitude` | Seen in a real room dump |  |  |  |
+| `wf_act_set_highlight` | Seen in a real room dump |  |  |  |
+| `wf_act_set_visibility` | Seen in a real room dump |  |  |  |
+| `wf_act_show_message` | Seen in a real room dump | Yes |  |  |
+| `wf_act_teleport_to` | Seen in a real room dump | Yes |  |  |
+| `wf_act_teleport_to_room` | Seen in a real room dump |  |  |  |
 | `wf_act_toggle_state` | Checked in a real room | Yes |  | 2026-10-31 |
-| `wf_act_toggle_to_rnd` | No evidence yet | Yes |  |  |
-| `wf_act_unfreeze` | No evidence yet |  |  |  |
-| `wf_act_user_to_furni` | No evidence yet | Yes | Yes |  |
+| `wf_act_toggle_to_rnd` | Seen in a real room dump | Yes |  |  |
+| `wf_act_unfreeze` | Seen in a real room dump |  |  |  |
+| `wf_act_user_to_furni` | Seen in a real room dump | Yes | Yes |  |
 | `wf_antenna1` | No evidence yet |  |  |  |
 | `wf_antenna2` | No evidence yet |  |  |  |
 | `wf_arrowplate` | No evidence yet |  |  |  |
@@ -89,48 +90,48 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_button_red` | No evidence yet |  |  |  |
 | `wf_button_x` | No evidence yet |  |  |  |
 | `wf_button_yellow` | No evidence yet |  |  |  |
-| `wf_cnd_actor_dir` | Reference only |  |  |  |
-| `wf_cnd_actor_in_group` | Reference only |  |  |  |
-| `wf_cnd_actor_in_team` | Reference only |  |  |  |
-| `wf_cnd_chest_has_item_type` | No evidence yet |  |  |  |
-| `wf_cnd_chest_has_items` | No evidence yet |  |  |  |
-| `wf_cnd_counter_time_matches` | Reference only |  |  |  |
-| `wf_cnd_date_rng_active` | Reference only |  |  |  |
-| `wf_cnd_furnis_hv_avtrs` | Reference only | Yes |  |  |
-| `wf_cnd_has_altitude` | Reference only |  |  |  |
-| `wf_cnd_has_furni_on` | Reference only | Yes |  |  |
-| `wf_cnd_has_handitem` | Reference only |  |  |  |
-| `wf_cnd_has_var` | Reference only | Yes |  |  |
-| `wf_cnd_match_date` | Reference only |  |  |  |
-| `wf_cnd_match_snapshot` | Reference only |  |  |  |
-| `wf_cnd_match_time` | Reference only |  |  |  |
-| `wf_cnd_neg_has_var` | Reference only | Yes |  |  |
-| `wf_cnd_not_furni_on` | Reference only | Yes |  |  |
-| `wf_cnd_not_has_handitem` | Reference only |  |  |  |
-| `wf_cnd_not_hv_avtrs` | Reference only | Yes |  |  |
-| `wf_cnd_not_in_group` | Reference only |  |  |  |
-| `wf_cnd_not_in_team` | No evidence yet |  |  |  |
-| `wf_cnd_not_match_snap` | No evidence yet |  |  |  |
-| `wf_cnd_not_stuff_is` | No evidence yet | Yes |  |  |
-| `wf_cnd_not_trggrer_on` | No evidence yet | Yes |  |  |
-| `wf_cnd_not_triggerer_match` | Reference only | Yes |  |  |
-| `wf_cnd_not_user_count` | No evidence yet | Yes | Yes |  |
-| `wf_cnd_not_user_performs_action` | Reference only |  |  |  |
+| `wf_cnd_actor_dir` | Seen in a real room dump |  |  |  |
+| `wf_cnd_actor_in_group` | Seen in a real room dump |  |  |  |
+| `wf_cnd_actor_in_team` | Seen in a real room dump |  |  |  |
+| `wf_cnd_chest_has_item_type` | Seen in a real room dump |  |  |  |
+| `wf_cnd_chest_has_items` | Seen in a real room dump |  |  |  |
+| `wf_cnd_counter_time_matches` | Seen in a real room dump |  |  |  |
+| `wf_cnd_date_rng_active` | Seen in a real room dump |  |  |  |
+| `wf_cnd_furnis_hv_avtrs` | Seen in a real room dump | Yes |  |  |
+| `wf_cnd_has_altitude` | Seen in a real room dump |  |  |  |
+| `wf_cnd_has_furni_on` | Seen in a real room dump | Yes |  |  |
+| `wf_cnd_has_handitem` | Seen in a real room dump |  |  |  |
+| `wf_cnd_has_var` | Seen in a real room dump | Yes |  |  |
+| `wf_cnd_match_date` | Seen in a real room dump |  |  |  |
+| `wf_cnd_match_snapshot` | Seen in a real room dump |  |  |  |
+| `wf_cnd_match_time` | Seen in a real room dump |  |  |  |
+| `wf_cnd_neg_has_var` | Seen in a real room dump | Yes |  |  |
+| `wf_cnd_not_furni_on` | Seen in a real room dump | Yes |  |  |
+| `wf_cnd_not_has_handitem` | Seen in a real room dump |  |  |  |
+| `wf_cnd_not_hv_avtrs` | Seen in a real room dump | Yes |  |  |
+| `wf_cnd_not_in_group` | Seen in a real room dump |  |  |  |
+| `wf_cnd_not_in_team` | Seen in a real room dump |  |  |  |
+| `wf_cnd_not_match_snap` | Seen in a real room dump |  |  |  |
+| `wf_cnd_not_stuff_is` | Seen in a real room dump | Yes |  |  |
+| `wf_cnd_not_trggrer_on` | Seen in a real room dump | Yes |  |  |
+| `wf_cnd_not_triggerer_match` | Seen in a real room dump | Yes |  |  |
+| `wf_cnd_not_user_count` | Seen in a real room dump | Yes | Yes |  |
+| `wf_cnd_not_user_performs_action` | Seen in a real room dump |  |  |  |
 | `wf_cnd_not_wearing_b` | Reference only |  |  |  |
 | `wf_cnd_not_wearing_fx` | Reference only |  |  |  |
-| `wf_cnd_slc_quantity` | Seen in a real preset |  |  |  |
-| `wf_cnd_stuff_is` | Reference only | Yes |  |  |
-| `wf_cnd_team_has_rank` | Reference only |  |  |  |
-| `wf_cnd_team_has_score` | Reference only |  |  |  |
-| `wf_cnd_time_less_than` | Reference only | Yes |  |  |
-| `wf_cnd_time_more_than` | Reference only | Yes |  |  |
-| `wf_cnd_trggrer_on_frn` | Reference only | Yes |  |  |
-| `wf_cnd_triggerer_match` | Seen in a real preset | Yes |  |  |
-| `wf_cnd_user_count_in` | Reference only | Yes | Yes |  |
-| `wf_cnd_user_performs_action` | Reference only |  |  |  |
-| `wf_cnd_valid_moves` | Reference only |  |  |  |
-| `wf_cnd_var_age_match` | Reference only |  |  |  |
-| `wf_cnd_var_val_match` | Seen in a real preset | Yes |  |  |
+| `wf_cnd_slc_quantity` | Seen in a real room dump |  |  |  |
+| `wf_cnd_stuff_is` | Seen in a real room dump | Yes |  |  |
+| `wf_cnd_team_has_rank` | Seen in a real room dump |  |  |  |
+| `wf_cnd_team_has_score` | Seen in a real room dump |  |  |  |
+| `wf_cnd_time_less_than` | Seen in a real room dump | Yes |  |  |
+| `wf_cnd_time_more_than` | Seen in a real room dump | Yes |  |  |
+| `wf_cnd_trggrer_on_frn` | Seen in a real room dump | Yes |  |  |
+| `wf_cnd_triggerer_match` | Seen in a real room dump | Yes |  |  |
+| `wf_cnd_user_count_in` | Seen in a real room dump | Yes | Yes |  |
+| `wf_cnd_user_performs_action` | Seen in a real room dump |  |  |  |
+| `wf_cnd_valid_moves` | Seen in a real room dump |  |  |  |
+| `wf_cnd_var_age_match` | Seen in a real room dump |  |  |  |
+| `wf_cnd_var_val_match` | Seen in a real room dump | Yes |  |  |
 | `wf_cnd_wearing_badge` | Reference only |  |  |  |
 | `wf_cnd_wearing_effect` | Reference only |  |  |  |
 | `wf_colortile` | No evidence yet |  |  |  |
@@ -162,26 +163,26 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_ringplate` | No evidence yet |  |  |  |
 | `wf_room_linker` | No evidence yet |  |  |  |
 | `wf_screenseparator` | No evidence yet |  |  |  |
-| `wf_slc_furni_altitude` | No evidence yet |  |  |  |
-| `wf_slc_furni_area` | Seen in a real preset |  |  |  |
-| `wf_slc_furni_bytype` | No evidence yet | Yes |  |  |
-| `wf_slc_furni_neighborhood` | Seen in a real preset |  |  |  |
-| `wf_slc_furni_onfurni` | No evidence yet |  |  |  |
-| `wf_slc_furni_picks` | No evidence yet | Yes |  |  |
-| `wf_slc_furni_signal` | No evidence yet | Yes |  |  |
-| `wf_slc_furni_with_var` | Seen in a real preset | Yes |  |  |
-| `wf_slc_remote` | No evidence yet |  |  |  |
-| `wf_slc_users_area` | No evidence yet |  |  |  |
-| `wf_slc_users_byaction` | No evidence yet |  |  |  |
-| `wf_slc_users_byname` | Seen in a real preset | Yes |  |  |
-| `wf_slc_users_bytype` | No evidence yet |  |  |  |
-| `wf_slc_users_group` | No evidence yet |  |  |  |
-| `wf_slc_users_handitem` | No evidence yet |  |  |  |
-| `wf_slc_users_neighborhood` | No evidence yet |  |  |  |
-| `wf_slc_users_onfurni` | No evidence yet | Yes |  |  |
-| `wf_slc_users_signal` | No evidence yet | Yes |  |  |
-| `wf_slc_users_team` | No evidence yet |  |  |  |
-| `wf_slc_users_with_var` | Seen in a real preset | Yes |  |  |
+| `wf_slc_furni_altitude` | Seen in a real room dump |  |  |  |
+| `wf_slc_furni_area` | Seen in a real room dump |  |  |  |
+| `wf_slc_furni_bytype` | Seen in a real room dump | Yes |  |  |
+| `wf_slc_furni_neighborhood` | Seen in a real room dump |  |  |  |
+| `wf_slc_furni_onfurni` | Seen in a real room dump |  |  |  |
+| `wf_slc_furni_picks` | Seen in a real room dump | Yes |  |  |
+| `wf_slc_furni_signal` | Seen in a real room dump | Yes |  |  |
+| `wf_slc_furni_with_var` | Seen in a real room dump | Yes |  |  |
+| `wf_slc_remote` | Seen in a real room dump |  |  |  |
+| `wf_slc_users_area` | Seen in a real room dump |  |  |  |
+| `wf_slc_users_byaction` | Seen in a real room dump |  |  |  |
+| `wf_slc_users_byname` | Seen in a real room dump | Yes |  |  |
+| `wf_slc_users_bytype` | Seen in a real room dump |  |  |  |
+| `wf_slc_users_group` | Seen in a real room dump |  |  |  |
+| `wf_slc_users_handitem` | Seen in a real room dump |  |  |  |
+| `wf_slc_users_neighborhood` | Seen in a real room dump |  |  |  |
+| `wf_slc_users_onfurni` | Seen in a real room dump | Yes |  |  |
+| `wf_slc_users_signal` | Seen in a real room dump | Yes |  |  |
+| `wf_slc_users_team` | Seen in a real room dump |  |  |  |
+| `wf_slc_users_with_var` | Seen in a real room dump | Yes |  |  |
 | `wf_slider` | No evidence yet |  |  |  |
 | `wf_storage_coins1` | No evidence yet |  |  |  |
 | `wf_storage_coins2` | No evidence yet |  |  |  |
@@ -216,86 +217,86 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_token7` | No evidence yet |  |  |  |
 | `wf_token8` | No evidence yet |  |  |  |
 | `wf_token9` | No evidence yet |  |  |  |
-| `wf_trg_at_given_time` | No evidence yet | Yes |  |  |
+| `wf_trg_at_given_time` | Seen in a real room dump | Yes |  |  |
 | `wf_trg_at_time_long` | No evidence yet |  |  |  |
-| `wf_trg_bot_reached_avtr` | No evidence yet |  |  |  |
-| `wf_trg_bot_reached_stf` | No evidence yet |  |  |  |
-| `wf_trg_click_furni` | Seen in a real preset | Yes |  |  |
-| `wf_trg_click_tile` | No evidence yet |  |  |  |
-| `wf_trg_click_user` | No evidence yet |  |  |  |
-| `wf_trg_clock_counter` | No evidence yet |  |  |  |
-| `wf_trg_collision` | No evidence yet |  |  |  |
-| `wf_trg_enter_room` | No evidence yet | Yes |  |  |
-| `wf_trg_game_ends` | No evidence yet |  |  |  |
-| `wf_trg_game_starts` | No evidence yet |  |  |  |
-| `wf_trg_leave_room` | No evidence yet | Yes |  |  |
-| `wf_trg_period_long` | No evidence yet | Yes | Yes |  |
-| `wf_trg_period_short` | Seen in a real preset | Yes | Yes |  |
-| `wf_trg_periodically` | No evidence yet | Yes | Yes |  |
-| `wf_trg_receive_dataframe` | Reference only |  |  |  |
-| `wf_trg_receive_message` | Reference only |  |  |  |
-| `wf_trg_recv_signal` | Seen in a real preset | Yes |  |  |
-| `wf_trg_room_initializes` | Reference only | Yes |  |  |
-| `wf_trg_says_something` | Seen in a real preset | Yes | Yes |  |
-| `wf_trg_score_achieved` | No evidence yet |  |  |  |
+| `wf_trg_bot_reached_avtr` | Seen in a real room dump |  |  |  |
+| `wf_trg_bot_reached_stf` | Seen in a real room dump |  |  |  |
+| `wf_trg_click_furni` | Seen in a real room dump | Yes |  |  |
+| `wf_trg_click_tile` | Seen in a real room dump |  |  |  |
+| `wf_trg_click_user` | Seen in a real room dump |  |  |  |
+| `wf_trg_clock_counter` | Seen in a real room dump |  |  |  |
+| `wf_trg_collision` | Seen in a real room dump |  |  |  |
+| `wf_trg_enter_room` | Seen in a real room dump | Yes |  |  |
+| `wf_trg_game_ends` | Seen in a real room dump |  |  |  |
+| `wf_trg_game_starts` | Seen in a real room dump |  |  |  |
+| `wf_trg_leave_room` | Seen in a real room dump | Yes |  |  |
+| `wf_trg_period_long` | Seen in a real room dump | Yes | Yes |  |
+| `wf_trg_period_short` | Seen in a real room dump | Yes | Yes |  |
+| `wf_trg_periodically` | Seen in a real room dump | Yes | Yes |  |
+| `wf_trg_receive_dataframe` | Seen in a real room dump |  |  |  |
+| `wf_trg_receive_message` | Seen in a real room dump |  |  |  |
+| `wf_trg_recv_signal` | Seen in a real room dump | Yes |  |  |
+| `wf_trg_room_initializes` | Seen in a real room dump | Yes |  |  |
+| `wf_trg_says_something` | Seen in a real room dump | Yes | Yes |  |
+| `wf_trg_score_achieved` | Seen in a real room dump |  |  |  |
 | `wf_trg_state_changed` | Checked in a real room | Yes |  | 2026-10-31 |
-| `wf_trg_stuff_state` | No evidence yet | Yes |  |  |
-| `wf_trg_transaction_complete` | No evidence yet |  |  |  |
-| `wf_trg_transaction_fail` | No evidence yet |  |  |  |
-| `wf_trg_user_performs_action` | No evidence yet |  |  |  |
-| `wf_trg_var_changed` | Seen in a real preset | Yes |  |  |
-| `wf_trg_walks_off_furni` | No evidence yet | Yes |  |  |
-| `wf_trg_walks_on_furni` | No evidence yet | Yes |  |  |
+| `wf_trg_stuff_state` | Seen in a real room dump | Yes |  |  |
+| `wf_trg_transaction_complete` | Seen in a real room dump |  |  |  |
+| `wf_trg_transaction_fail` | Seen in a real room dump |  |  |  |
+| `wf_trg_user_performs_action` | Seen in a real room dump |  |  |  |
+| `wf_trg_var_changed` | Seen in a real room dump | Yes |  |  |
+| `wf_trg_walks_off_furni` | Seen in a real room dump | Yes |  |  |
+| `wf_trg_walks_on_furni` | Seen in a real room dump | Yes |  |  |
 | `wf_upcounter1` | No evidence yet |  |  |  |
 | `wf_upcounter2` | No evidence yet |  |  |  |
-| `wf_var_context` | Seen in a real preset | Yes | Yes |  |
+| `wf_var_context` | Seen in a real room dump | Yes | Yes |  |
 | `wf_var_dailytask` | No evidence yet |  |  |  |
-| `wf_var_echo` | Reference only |  |  |  |
-| `wf_var_furni` | Seen in a real preset | Yes | Yes |  |
-| `wf_var_pointer` | Reference only |  |  |  |
+| `wf_var_echo` | Seen in a real room dump |  |  |  |
+| `wf_var_furni` | Seen in a real room dump | Yes | Yes |  |
+| `wf_var_pointer` | Seen in a real room dump |  |  |  |
 | `wf_var_quest` | No evidence yet |  |  |  |
 | `wf_var_quest_chain` | No evidence yet |  |  |  |
-| `wf_var_reference` | Reference only |  |  |  |
-| `wf_var_room` | Seen in a real preset | Yes |  |  |
-| `wf_var_user` | Seen in a real preset | Yes | Yes |  |
+| `wf_var_reference` | Seen in a real room dump |  |  |  |
+| `wf_var_room` | Seen in a real room dump | Yes | Yes |  |
+| `wf_var_user` | Seen in a real room dump | Yes | Yes |  |
 | `wf_vu` | No evidence yet |  |  |  |
 | `wf_wire1` | No evidence yet |  |  |  |
 | `wf_wire2` | No evidence yet |  |  |  |
 | `wf_wire3` | No evidence yet |  |  |  |
 | `wf_wire4` | No evidence yet |  |  |  |
 | `wf_xtra_achievement_enabler` | No evidence yet |  |  |  |
-| `wf_xtra_anim_time` | Reference only |  |  |  |
-| `wf_xtra_custom_contract` | No evidence yet |  |  |  |
-| `wf_xtra_exec_in_order` | Seen in a real preset | Yes |  |  |
-| `wf_xtra_execution_limit` | Reference only | Yes | Yes |  |
-| `wf_xtra_filter_furni` | Reference only | Yes | Yes |  |
-| `wf_xtra_filter_furni_by_var` | Reference only |  |  |  |
-| `wf_xtra_filter_users` | Seen in a real preset | Yes | Yes |  |
-| `wf_xtra_filter_users_by_var` | Reference only | Yes |  |  |
-| `wf_xtra_link_speaker` | Reference only |  |  |  |
-| `wf_xtra_mov_carry_users` | Reference only |  |  |  |
-| `wf_xtra_mov_curve` | Reference only |  |  |  |
-| `wf_xtra_mov_no_animation` | Reference only |  |  |  |
-| `wf_xtra_mov_physics` | Reference only |  |  |  |
-| `wf_xtra_or_eval` | Reference only | Yes |  |  |
-| `wf_xtra_random` | Reference only | Yes | Yes |  |
-| `wf_xtra_rotate_to_dir` | No evidence yet |  |  |  |
-| `wf_xtra_scan_chest_furni_by_type` | No evidence yet |  |  |  |
-| `wf_xtra_text_input_variable` | Seen in a real preset |  |  |  |
-| `wf_xtra_text_output_furni_name` | Reference only |  |  |  |
-| `wf_xtra_text_output_username` | Seen in a real preset | Yes |  |  |
-| `wf_xtra_text_output_variable` | Seen in a real preset | Yes | Yes |  |
-| `wf_xtra_unseen` | Reference only | Yes |  |  |
-| `wf_xtra_var_import` | Reference only |  |  |  |
-| `wf_xtra_var_leaderboard` | No evidence yet |  |  |  |
-| `wf_xtra_var_lvlup_system` | Reference only |  |  |  |
-| `wf_xtra_var_share` | Reference only |  |  |  |
-| `wf_xtra_var_text_connector` | Seen in a real preset | Yes |  |  |
-| `wf_xtra_var_time_util` | Reference only | Yes |  |  |
+| `wf_xtra_anim_time` | Seen in a real room dump |  |  |  |
+| `wf_xtra_custom_contract` | Seen in a real room dump |  |  |  |
+| `wf_xtra_exec_in_order` | Seen in a real room dump | Yes |  |  |
+| `wf_xtra_execution_limit` | Seen in a real room dump | Yes | Yes |  |
+| `wf_xtra_filter_furni` | Seen in a real room dump | Yes | Yes |  |
+| `wf_xtra_filter_furni_by_var` | Seen in a real room dump |  |  |  |
+| `wf_xtra_filter_users` | Seen in a real room dump | Yes | Yes |  |
+| `wf_xtra_filter_users_by_var` | Seen in a real room dump | Yes |  |  |
+| `wf_xtra_link_speaker` | Seen in a real room dump |  |  |  |
+| `wf_xtra_mov_carry_users` | Seen in a real room dump |  |  |  |
+| `wf_xtra_mov_curve` | Seen in a real room dump |  |  |  |
+| `wf_xtra_mov_no_animation` | Seen in a real room dump |  |  |  |
+| `wf_xtra_mov_physics` | Seen in a real room dump |  |  |  |
+| `wf_xtra_or_eval` | Seen in a real room dump | Yes |  |  |
+| `wf_xtra_random` | Seen in a real room dump | Yes | Yes |  |
+| `wf_xtra_rotate_to_dir` | Seen in a real room dump |  |  |  |
+| `wf_xtra_scan_chest_furni_by_type` | Seen in a real room dump |  |  |  |
+| `wf_xtra_text_input_variable` | Seen in a real room dump |  |  |  |
+| `wf_xtra_text_output_furni_name` | Seen in a real room dump |  |  |  |
+| `wf_xtra_text_output_username` | Seen in a real room dump | Yes |  |  |
+| `wf_xtra_text_output_variable` | Seen in a real room dump | Yes | Yes |  |
+| `wf_xtra_unseen` | Seen in a real room dump | Yes |  |  |
+| `wf_xtra_var_import` | Seen in a real room dump |  |  |  |
+| `wf_xtra_var_leaderboard` | Seen in a real room dump |  |  |  |
+| `wf_xtra_var_lvlup_system` | Seen in a real room dump |  |  |  |
+| `wf_xtra_var_share` | Seen in a real room dump |  |  |  |
+| `wf_xtra_var_text_connector` | Seen in a real room dump | Yes |  |  |
+| `wf_xtra_var_time_util` | Seen in a real room dump | Yes |  |  |
 | `wf_xtra_var_web_api` | No evidence yet |  |  |  |
-| `wf_xtra_varfx_boss` | No evidence yet |  |  |  |
-| `wf_xtra_varfx_hp` | No evidence yet |  |  |  |
-| `wf_xtra_varfx_levelling` | No evidence yet |  |  |  |
-| `wf_xtra_varfx_number` | No evidence yet |  |  |  |
-| `wf_xtra_varfx_prog` | No evidence yet |  |  |  |
-| `wf_xtra_varfx_status` | No evidence yet |  |  |  |
+| `wf_xtra_varfx_boss` | Seen in a real room dump |  |  |  |
+| `wf_xtra_varfx_hp` | Seen in a real room dump |  |  |  |
+| `wf_xtra_varfx_levelling` | Seen in a real room dump |  |  |  |
+| `wf_xtra_varfx_number` | Seen in a real room dump |  |  |  |
+| `wf_xtra_varfx_prog` | Seen in a real room dump |  |  |  |
+| `wf_xtra_varfx_status` | Seen in a real room dump |  |  |  |
