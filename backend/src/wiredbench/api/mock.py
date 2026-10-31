@@ -151,6 +151,15 @@ def reply(request: Request, body: Any) -> Response:
     return Response(payload, media_type="application/json; charset=utf-8", headers=headers)
 
 
+def error_reply(request: Request, exc: MockError) -> Response:
+    # Live: GET errors carry an ETag too. Writes have not been compared, so they stay without one.
+    response = reply(request, {"error": exc.code})
+    response.status_code = exc.status
+    if request.method != "GET":
+        del response.headers["etag"]
+    return response
+
+
 def check_target(scope: str, kind: str) -> None:
     # Live: an unknown scope gets an empty 404, and an unknown kind fails before the room is looked at.
     if scope not in ("user", "furni"):

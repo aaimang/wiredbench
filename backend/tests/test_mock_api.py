@@ -182,6 +182,16 @@ def test_etag_revalidation(room: Room) -> None:
     assert second.status_code == 304
 
 
+def test_read_errors_carry_an_etag_like_a_real_room(room: Room) -> None:
+    res = room.get("/variables/global/nope")
+    error(res, 404, "wired.variables.not_found")
+    assert res.headers["etag"].startswith('W/"')
+    assert "etag" not in room.get("/variables/nothing/x/users").headers, "the empty 404 has none"
+    write = room.send("PATCH", "/variables/global/nope", {"value": 1})
+    assert write.status_code == 404
+    assert "etag" not in write.headers
+
+
 def test_delete_and_profiles(room: Room) -> None:
     room.give(5, f"/variables/user/troll/users/{AVATAR}")
     profile = room.get(f"/variables_profile/user/users/{AVATAR}").json()

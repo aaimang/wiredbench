@@ -22,7 +22,7 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 from wiredbench import __version__
 from wiredbench.api import ROUTERS
 from wiredbench.api.deps import Services, guard, public
-from wiredbench.api.mock import MockError
+from wiredbench.api.mock import MockError, error_reply
 from wiredbench.config import Settings
 from wiredbench.db import make_engine, make_session_factory, migrate
 from wiredbench.engine.sessions import RunRegistry
@@ -201,9 +201,11 @@ def create_app(settings: Settings | None = None, transport: httpx.BaseTransport 
         return JSONResponse({"error": exc.code, "message": exc.message}, exc.status, headers=headers)
 
     @app.exception_handler(MockError)
-    async def mock_error(_request: Request, exc: MockError) -> Response:
+    async def mock_error(request: Request, exc: MockError) -> Response:
         # The live API answers an unknown scope with an empty 404 rather than its JSON error.
-        return JSONResponse({"error": exc.code}, exc.status) if exc.code else Response(status_code=exc.status)
+        if not exc.code:
+            return Response(status_code=exc.status)
+        return error_reply(request, exc)
 
     @app.exception_handler(RequestValidationError)
     async def invalid(_request: Request, exc: RequestValidationError) -> JSONResponse:
