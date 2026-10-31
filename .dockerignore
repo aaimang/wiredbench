@@ -1,0 +1,17 @@
+**
+!pyproject.toml
+!uv.lock
+!README.md
+!LICENSE
+!.python-version
+!backend/src/**
+!frontend/package.json
+!frontend/package-lock.json
+!frontend/index.html
+!frontend/tsconfig.json
+!frontend/vite.config.ts
+!frontend/playwright.config.ts
+!frontend/public/**
+!frontend/src/**
+!frontend/e2e/**
+**/__pycache__
