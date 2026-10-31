@@ -47,6 +47,11 @@ OPTION_FIELDS: dict[str, list[tuple[str, int, Any]]] = {
     "wf_xtra_random": [("skip", 0, int), ("pick", 1, int)],
     "wf_xtra_filter_users": [("amount", 0, int)],
     "wf_xtra_filter_furni": [("amount", 0, int)],
+    "wf_xtra_filter_users_by_var": [("amount", 0, int), ("lowest", 1, bool)],
+    "wf_act_toggle_state": [("toggle_type", 0, ("next", "previous"))],
+    "wf_act_give_var": [("value", 2, int)],
+    "wf_act_change_var_val": [("value", 4, int)],
+    "wf_cnd_var_val_match": [("value", 4, int)],
     "wf_xtra_text_output_variable": [
         ("placeholder_type", 0, ("single", "multiple")),
         ("display", 2, ("numeric", "textual")),

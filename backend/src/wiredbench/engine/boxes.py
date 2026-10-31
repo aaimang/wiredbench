@@ -14,9 +14,9 @@ ASSUMED = "assumed"
 DEFAULT_DELAY = {
     "name": "delay",
     "kind": "number",
-    "label": "Delay (half seconds)",
+    "label": "Delay (half seconds, or negative milliseconds for precise delays)",
     "default": 0,
-    "min": 0,
+    "min": -60000,
     "max": 600,
 }
 FURNI = {"name": "furni", "kind": "furni", "label": "Furni", "default": []}
@@ -291,7 +291,20 @@ BOXES: dict[str, dict[str, Any]] = {
     "wf_act_neg_send_signal": _effect(ASSUMED, ANTENNA, USER_SOURCE),
     "wf_act_call_stacks": _effect(DOCUMENTED, FURNI),
     "wf_act_neg_call_stacks": _effect(ASSUMED, FURNI),
-    "wf_act_toggle_state": _effect(DOCUMENTED, FURNI, FURNI_SOURCE),
+    "wf_act_toggle_state": _effect(
+        DOCUMENTED,
+        FURNI,
+        FURNI_SOURCE,
+        _saved(
+            {
+                "name": "toggle_type",
+                "kind": "select",
+                "label": "Toggle to the",
+                "options": ["next", "previous"],
+                "default": "next",
+            }
+        ),
+    ),
     "wf_act_toggle_to_rnd": _effect(DOCUMENTED, FURNI, FURNI_SOURCE),
     "wf_act_show_message": _effect(
         DOCUMENTED, {"name": "text", "kind": "text", "label": "Message", "default": ""}, USER_SOURCE

@@ -17,6 +17,7 @@ from typing import Any
 from wiredbench.engine.boxes import BOXES
 
 TICK_MS = 500  # Assumed from delay values in real presets, which are small whole numbers.
+MAX_DELAY_MS = 60_000  # The largest millisecond delay seen in a real room.
 EPOCH_SECONDS = 1_700_000_000  # Timestamps look like real ones but are fixed, for replays.
 INT64_MIN, INT64_MAX = -(2**63), 2**63 - 1
 MAX_ACTIONS_PER_ADVANCE = 20_000
@@ -440,8 +441,12 @@ class Engine:
         effects = stack.of("effect")
         chosen = self._choose_effects(stack, effects)
         for box in chosen:
-            delay = max(0, min(_int(box.get("delay", 0)), 600)) * self.tick_ms
-            self._push(self.now_ms + delay, "effect", {"box": box, "context": context})
+            self._push(self.now_ms + self._delay_ms(box), "effect", {"box": box, "context": context})
+
+    def _delay_ms(self, box: Box) -> int:
+        """Positive delays are the box's standard mode, in half seconds. Negative ones are precise, in milliseconds."""
+        delay = _int(box.get("delay", 0))
+        return min(-delay, MAX_DELAY_MS) if delay < 0 else min(delay, 600) * self.tick_ms
 
     def _flag_stubs(self, stack: Stack) -> None:
         for box in stack.boxes:

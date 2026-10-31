@@ -8,7 +8,7 @@ it, and a named position is still unverified until a box is changed and read aga
 
 No reply from: `wf_contract_payment`, `wf_contract_reward`, `wf_contract_trade`. The cause is unconfirmed.
 
-Named positions: 27. Unnamed positions: 555.
+Named positions: 33. Unnamed positions: 549.
 
 | Box | Section | Default numbers | Named positions | Unnamed positions |
 |---|---|---|---|---|
@@ -22,7 +22,7 @@ Named positions: 27. Unnamed positions: 555.
 | `wf_act_bot_teleport` | effect | `[]` |  |  |
 | `wf_act_call_stacks` | effect | `[]` |  |  |
 | `wf_act_cancel_transaction` | effect | `[0]` |  | 0 |
-| `wf_act_change_var_val` | effect | `[1, 0, 0, 0, 0, -10, 0]` |  | 0, 1, 2, 3, 4, 5, 6 |
+| `wf_act_change_var_val` | effect | `[1, 0, 0, 0, 0, -10, 0]` | 4: value | 0, 1, 2, 3, 5, 6 |
 | `wf_act_chase` | effect | `[]` |  |  |
 | `wf_act_click_conf` | effect | `[0, 0]` |  | 0, 1 |
 | `wf_act_control_clock` | effect | `[0]` |  | 0 |
@@ -34,7 +34,7 @@ Named positions: 27. Unnamed positions: 555.
 | `wf_act_give_furni` | effect | `[0, 1, 0, -20, 1, 0]` |  | 0, 1, 2, 3, 4, 5 |
 | `wf_act_give_score` | effect | `[5, 0]` |  | 0, 1 |
 | `wf_act_give_score_tm` | effect | `[5, 0, 1]` |  | 0, 1, 2 |
-| `wf_act_give_var` | effect | `[1, 0, 0, 0, 0, -10, 0]` |  | 0, 1, 2, 3, 4, 5, 6 |
+| `wf_act_give_var` | effect | `[1, 0, 0, 0, 0, -10, 0]` | 2: value | 0, 1, 3, 4, 5, 6 |
 | `wf_act_init_transaction` | effect | `[0, 10, 0, -20, 0, 300]` |  | 0, 1, 2, 3, 4, 5 |
 | `wf_act_join_team` | effect | `[1, 0]` |  | 0, 1 |
 | `wf_act_kick_user` | effect | `[]` |  |  |
@@ -62,7 +62,7 @@ Named positions: 27. Unnamed positions: 555.
 | `wf_act_show_message` | effect | `[0, 202, -1]` |  | 0, 1, 2 |
 | `wf_act_teleport_to` | effect | `[0]` |  | 0 |
 | `wf_act_teleport_to_room` | effect | `[]` |  |  |
-| `wf_act_toggle_state` | effect | `[0]` |  | 0 |
+| `wf_act_toggle_state` | effect | `[0]` | 0: toggle_type |  |
 | `wf_act_toggle_to_rnd` | effect | `[]` |  |  |
 | `wf_act_unfreeze` | effect | `[]` |  |  |
 | `wf_act_user_to_furni` | effect | `[0]` | 0: walking |  |
@@ -105,7 +105,7 @@ Named positions: 27. Unnamed positions: 555.
 | `wf_cnd_user_performs_action` | condition | `[0]` |  | 0 |
 | `wf_cnd_valid_moves` | condition | `[]` |  |  |
 | `wf_cnd_var_age_match` | condition | `[1, 0, 0, 0, 0, 1, 0, -10]` |  | 0, 1, 2, 3, 4, 5, 6, 7 |
-| `wf_cnd_var_val_match` | condition | `[1, 2, 0, 0, 0, -10, 0]` |  | 0, 1, 2, 3, 4, 5, 6 |
+| `wf_cnd_var_val_match` | condition | `[1, 2, 0, 0, 0, -10, 0]` | 4: value | 0, 1, 2, 3, 5, 6 |
 | `wf_slc_furni_altitude` | selector | `[0, 0]` |  | 0, 1 |
 | `wf_slc_furni_area` | selector | `[0, 0, 0, 0]` |  | 0, 1, 2, 3 |
 | `wf_slc_furni_bytype` | selector | `[0]` |  | 0 |
@@ -169,7 +169,7 @@ Named positions: 27. Unnamed positions: 555.
 | `wf_xtra_filter_furni` | addon | `[10, 0, 1]` | 0: amount | 1, 2 |
 | `wf_xtra_filter_furni_by_var` | addon | `[10, 0, 0, 1]` |  | 0, 1, 2, 3 |
 | `wf_xtra_filter_users` | addon | `[10, 0, 1]` | 0: amount | 1, 2 |
-| `wf_xtra_filter_users_by_var` | addon | `[10, 0, 0, 1]` |  | 0, 1, 2, 3 |
+| `wf_xtra_filter_users_by_var` | addon | `[10, 0, 0, 1]` | 0: amount, 1: lowest | 2, 3 |
 | `wf_xtra_link_speaker` | addon | `[1, 1]` |  | 0, 1 |
 | `wf_xtra_mov_carry_users` | addon | `[0]` |  | 0 |
 | `wf_xtra_mov_curve` | addon | `[0, 160, -20]` |  | 0, 1, 2 |
