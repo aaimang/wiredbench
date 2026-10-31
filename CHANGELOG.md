@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.5.0](https://github.com/aaimang/wiredbench/compare/v0.4.0...v0.5.0) (2026-10-31)
+
+
+### Features
+
+* add a WIRED guide and example rooms ([#15](https://github.com/aaimang/wiredbench/issues/15)) ([27df64c](https://github.com/aaimang/wiredbench/commit/27df64c2a50fd11b2f842ec7ed15f24b7d75464a))
+* add an avatar list with select, rename and remove ([#13](https://github.com/aaimang/wiredbench/issues/13)) ([2f3d481](https://github.com/aaimang/wiredbench/commit/2f3d481dfccf1c4386c12bb1d51ab47af3ac968a))
+* add furni card, move mode, click outside and keyboard shortcuts ([#11](https://github.com/aaimang/wiredbench/issues/11)) ([cbf16b2](https://github.com/aaimang/wiredbench/commit/cbf16b292847bf25d3e34592c95220b9113deec8))
+* import and export rooms as Wiredbench and G-Presets files ([#14](https://github.com/aaimang/wiredbench/issues/14)) ([18a26e0](https://github.com/aaimang/wiredbench/commit/18a26e0e17dd37d98d3f244dcf6ae1081a71f146))
+* list and highlight picked furni, and add real box options ([#17](https://github.com/aaimang/wiredbench/issues/17)) ([02babd9](https://github.com/aaimang/wiredbench/commit/02babd928b80fc874a470c729cb6ef1c84d1ed8a))
+
+
+### Bug Fixes
+
+* send ETag on mock API read errors, as a real room does ([#16](https://github.com/aaimang/wiredbench/issues/16)) ([dce9f40](https://github.com/aaimang/wiredbench/commit/dce9f4098e45ba0fca07bc2d9833770688fbdae0))
+
 ## [0.4.0](https://github.com/aaimang/wiredbench/compare/v0.3.1...v0.4.0) (2026-10-31)
 
 
