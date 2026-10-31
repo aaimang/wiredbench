@@ -1512,6 +1512,43 @@ wb-guide {
   overflow-wrap: anywhere;
 }
 
+.check-list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.check-list li {
+  display: grid;
+  gap: 2px;
+  justify-items: start;
+}
+
+.check-row {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  padding: 4px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.check-row:hover {
+  background: var(--line);
+}
+
+.check-error {
+  border-color: var(--wire-trigger);
+  color: var(--wire-trigger);
+}
+
 /* Toasts */
 
 #toasts {

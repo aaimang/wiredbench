@@ -194,3 +194,37 @@ test("a box lists and highlights its picks", async ({ page }) => {
   await picks.getByRole("button", { name: /Remove .* from the picks/ }).click();
   await expect(inspector).toContainText("Nothing picked yet.");
 });
+
+test("the stack checker lists problems and leads to the box", async ({ page }) => {
+  await login(page);
+  await page.getByRole("link", { name: "Guide" }).click();
+  await page
+    .getByTestId("tutorial-switch-flip")
+    .getByRole("button", { name: "Add and open" })
+    .click();
+  await expect(page.getByTestId("room-canvas")).toBeVisible();
+  const check = page.getByRole("button", { name: "Check stacks" });
+  await check.click();
+  await expect(page.getByTestId("check-summary")).toContainText("No problems found");
+
+  // Removing the trigger's picks breaks the stack.
+  const point = await page.evaluate(() =>
+    (
+      document.querySelector("wb-editor") as unknown as {
+        tileOnPage(a: number, b: number): { x: number; y: number };
+      }
+    ).tileOnPage(4, 2),
+  );
+  await page.mouse.click(point.x, point.y);
+  await page
+    .getByTestId("picked-furni")
+    .getByRole("button", { name: /Remove/ })
+    .click();
+  await page.getByRole("button", { name: "Close" }).click();
+  await check.click();
+  await expect(page.getByTestId("check-summary")).toContainText("1 errors");
+  const list = page.getByTestId("check-list");
+  await expect(list).toContainText("It has no furni picked.");
+  await list.getByRole("button").first().click();
+  await expect(page.getByTestId("box-problems")).toContainText("It has no furni picked.");
+});
