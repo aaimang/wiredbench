@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.0](https://github.com/aaimang/wiredbench/compare/v0.5.0...v0.6.0) (2026-10-31)
+
+
+### Features
+
+* read and write real option numbers for the first 17 boxes ([#18](https://github.com/aaimang/wiredbench/issues/18)) ([adbf57e](https://github.com/aaimang/wiredbench/commit/adbf57e88d86e373dc6c51cbe0825b3a838f42c6))
+* track how far each WIRED box's options have been checked ([#20](https://github.com/aaimang/wiredbench/issues/20)) ([ee74a7b](https://github.com/aaimang/wiredbench/commit/ee74a7be34d4ca47cb115b3ad1c5ebb5b85e1707))
+
 ## [0.5.0](https://github.com/aaimang/wiredbench/compare/v0.4.0...v0.5.0) (2026-10-31)
 
 
