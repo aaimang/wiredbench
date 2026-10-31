@@ -10,6 +10,7 @@ from typing import Any
 import pytest
 
 from conftest import Api, apply_update
+from wiredbench.engine.operations import OPERATION_CODES
 from wiredbench.services import exchange, room
 
 SAMPLES = os.environ.get("WB_PRESET_SAMPLES")
@@ -430,6 +431,17 @@ def test_edited_values_write_both_words(value: int, words: list[int]) -> None:
     out, _ = exchange.export_gpresets(document)
     assert out["wired"]["effects"][0]["options"] == [1, *words, 0, 0, -10, 0]
     assert exchange.import_gpresets(out)[0]["furni"][0]["wired"]["value"] == value
+
+
+@pytest.mark.parametrize(("code", "name"), OPERATION_CODES.items())
+def test_every_operation_survives_import_and_export(code: int, name: str) -> None:
+    options = [1, code, 0, 0, 3, -10, 0]
+    file = boxed("wf_act_change_var_val", "effects", {"options": options})
+    document, _ = exchange.import_gpresets(json.loads(json.dumps(file)))
+    assert document["furni"][0]["wired"]["operation"] == name
+    assert exchange.export_gpresets(document)[0] == file
+    document["furni"][0]["wired"]["operation"] = "set"
+    assert exchange.export_gpresets(document)[0]["wired"]["effects"][0]["options"][1] == 0
 
 
 def test_edited_settings_write_their_numbers() -> None:

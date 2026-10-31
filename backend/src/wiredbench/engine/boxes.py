@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from wiredbench.engine.operations import OPERATION_LABELS
+
 DOCUMENTED = "documented"
 ASSUMED = "assumed"
 DEFAULT_DELAY = {
@@ -282,7 +284,8 @@ BOXES: dict[str, dict[str, Any]] = {
             "name": "operation",
             "kind": "select",
             "label": "Operation",
-            "options": ["set", "add", "subtract", "multiply", "divide"],
+            "options": list(OPERATION_LABELS),
+            "labels": OPERATION_LABELS,
             "default": "set",
         },
         VALUE,
