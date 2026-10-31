@@ -250,6 +250,69 @@ def test_a_global_reads_zero_before_anything_sets_it() -> None:
     assert engine.variables["round"]["global"].value == 2
 
 
+@pytest.mark.parametrize(
+    ("settings", "wait", "passes"),
+    [
+        ({"compare": "less", "duration": 2, "unit": "seconds"}, 1000, True),
+        ({"compare": "less", "duration": 2, "unit": "seconds"}, 2000, False),
+        ({"compare": "equal", "duration": 2, "unit": "seconds"}, 2000, True),
+        ({"compare": "more", "duration": 2, "unit": "seconds"}, 2001, True),
+        ({"compare": "more", "duration": 1, "unit": "minutes"}, 59_000, False),
+        ({"compare": "less", "duration": 500, "unit": "milliseconds"}, 499, True),
+    ],
+)
+def test_variable_age(settings: dict[str, Any], wait: int, passes: bool) -> None:
+    engine = room(
+        box(1, "wf_var_user", 5, 5, variable="role"),
+        box(2, "wf_trg_says_something", 1, 1, text="go"),
+        box(3, "wf_cnd_var_age_match", 1, 1, 1, variable="role", **settings),
+        box(4, "wf_act_log", 1, 1, 2, text="ran"),
+    )
+    engine.apply_input({"type": "api_set", "variable": "role", "key": "user:100", "value": 1})
+    engine.advance(wait)
+    say(engine, "go")
+    assert logs(engine) == (["ran"] if passes else [])
+
+
+def test_variable_age_can_measure_from_the_last_change() -> None:
+    def ran(age_of: str) -> list[str]:
+        engine = room(
+            box(1, "wf_var_user", 5, 5, variable="role"),
+            box(2, "wf_trg_says_something", 1, 1, text="go"),
+            box(
+                3,
+                "wf_cnd_var_age_match",
+                1,
+                1,
+                1,
+                variable="role",
+                compare="less",
+                duration=1,
+                age_of=age_of,
+            ),
+            box(4, "wf_act_log", 1, 1, 2, text="ran"),
+        )
+        engine.apply_input({"type": "api_set", "variable": "role", "key": "user:100", "value": 1})
+        engine.advance(5000)
+        engine.apply_input({"type": "api_set", "variable": "role", "key": "user:100", "value": 2})
+        say(engine, "go")
+        return logs(engine)
+
+    assert ran("update") == ["ran"]
+    assert ran("creation") == []
+
+
+def test_variable_age_fails_when_nothing_holds_the_variable() -> None:
+    engine = room(
+        box(1, "wf_var_user", 5, 5, variable="role"),
+        box(2, "wf_trg_says_something", 1, 1, text="go"),
+        box(3, "wf_cnd_var_age_match", 1, 1, 1, variable="role", compare="more"),
+        box(4, "wf_act_log", 1, 1, 2, text="ran"),
+    )
+    say(engine, "go")
+    assert logs(engine) == []
+
+
 def test_delay_counts_half_seconds() -> None:
     engine = room(
         box(1, "wf_trg_says_something", 1, 1, text="go"),

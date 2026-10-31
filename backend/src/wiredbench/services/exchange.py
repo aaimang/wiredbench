@@ -58,6 +58,25 @@ OPTION_FIELDS: dict[str, list[tuple[str, int, Any]]] = {
         ("operation", 1, OPERATION_CODES),
         ("value", 4, LONG),
     ],
+    "wf_cnd_var_age_match": [
+        ("compare", 1, ("less", "equal", "more")),
+        ("age_of", 2, ("creation", "update")),
+        ("duration", 4, LONG),
+        (
+            "unit",
+            5,
+            {
+                0: "milliseconds",
+                1: "seconds",
+                2: "minutes",
+                3: "hours",
+                4: "days",
+                5: "weeks",
+                6: "months",
+                7: "years",
+            },
+        ),
+    ],
     "wf_cnd_var_val_match": [
         ("compare", 1, {0: "<", 1: "=", 2: ">", 3: "<=", 4: "!=", 5: ">="}),
         ("value", 4, LONG),

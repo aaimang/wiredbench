@@ -53,6 +53,10 @@ GUIDE: dict[str, tuple[str, str]] = {
         "Passes if the user does not have a chosen variable.",
         "Give a starter reward only once.",
     ),
+    "wf_cnd_var_age_match": (
+        "Compares how long ago a variable was given or last changed.",
+        "Only pass once a player has held a role for an hour.",
+    ),
     "wf_cnd_var_val_match": ("Compares a variable with a value.", "Only pass when a score is at least 10."),
     "wf_cnd_trggrer_on_frn": (
         "Passes if the user is on a picked furni.",

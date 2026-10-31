@@ -11,6 +11,17 @@ from typing import Any
 
 from wiredbench.engine.operations import OPERATION_LABELS
 
+# Milliseconds in each unit a variable's age can be measured in. A month is 30 days and a year 365.
+TIME_UNITS = {
+    "milliseconds": 1,
+    "seconds": 1000,
+    "minutes": 60_000,
+    "hours": 3_600_000,
+    "days": 86_400_000,
+    "weeks": 604_800_000,
+    "months": 2_592_000_000,
+    "years": 31_536_000_000,
+}
 DOCUMENTED = "documented"
 ASSUMED = "assumed"
 DEFAULT_DELAY = {
@@ -145,6 +156,37 @@ BOXES: dict[str, dict[str, Any]] = {
     "wf_trg_recv_signal": _box("trigger", DOCUMENTED, ANTENNA),
     "wf_trg_var_changed": _box("trigger", ASSUMED, VARIABLE),
     # Conditions
+    "wf_cnd_var_age_match": _box(
+        "condition",
+        ASSUMED,
+        VARIABLE,
+        {
+            "name": "compare",
+            "kind": "select",
+            "label": "Its age is",
+            "options": ["less", "equal", "more"],
+            "labels": {"less": "Less than", "equal": "Exactly", "more": "More than"},
+            "default": "less",
+        },
+        {"name": "duration", "kind": "number", "label": "Amount", "default": 0, "min": 0},
+        {
+            "name": "unit",
+            "kind": "select",
+            "label": "Unit",
+            "options": list(TIME_UNITS),
+            "labels": {unit: unit.capitalize() for unit in TIME_UNITS},
+            "default": "seconds",
+        },
+        {
+            "name": "age_of",
+            "kind": "select",
+            "label": "Measured from",
+            "options": ["creation", "update"],
+            "labels": {"creation": "When it was given", "update": "When it last changed"},
+            "default": "creation",
+        },
+        USER_SOURCE,
+    ),
     "wf_cnd_has_var": _box("condition", DOCUMENTED, VARIABLE, USER_SOURCE),
     "wf_cnd_neg_has_var": _box("condition", DOCUMENTED, VARIABLE, USER_SOURCE),
     "wf_cnd_var_val_match": _box(

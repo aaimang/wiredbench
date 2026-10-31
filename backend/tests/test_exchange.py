@@ -386,6 +386,12 @@ def boxed(classname: str, section: str, box: dict[str, Any]) -> dict[str, Any]:
         ("wf_var_furni", "variables", [1, 10], {"availability": "persistent", "has_value": True}),
         ("wf_var_context", "variables", [1], {"has_value": True}),
         ("wf_act_toggle_state", "effects", [1], {"toggle_type": "previous"}),
+        (
+            "wf_cnd_var_age_match",
+            "conditions",
+            [1, 0, 1, 0, 7777, 2, 0, -10],
+            {"compare": "less", "age_of": "update", "duration": 7777, "unit": "minutes"},
+        ),
         ("wf_act_give_var", "effects", [1, 0, 7777, 0, 0, -10, 0], {"value": 7777}),
         ("wf_act_give_var", "effects", [1, -1, -5, 0, 0, -10, 0], {"value": -5}),
         ("wf_act_give_var", "effects", [1, 1, 0, 0, 0, -10, 0], {"value": 2**32}),
