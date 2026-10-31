@@ -1,5 +1,7 @@
 import {
   Copy,
+  Download,
+  FileOutput,
   Folder as FolderIcon,
   FolderInput,
   FolderPlus,
@@ -7,6 +9,7 @@ import {
   Pencil,
   Plus,
   Trash2,
+  Upload,
 } from "lucide";
 import {
   del,
@@ -29,9 +32,26 @@ import {
 } from "./format";
 import { state } from "./state";
 import { t } from "./strings";
-import { act, confirmDialog, errorMessage, formDialog, toast } from "./ui";
+import { act, confirmDialog, errorMessage, formDialog, openDialog, toast } from "./ui";
 
 const T = t.workspace;
+
+interface ImportReport {
+  furni?: number;
+  boxes?: number;
+  not_placed?: number;
+  not_simulated?: Record<string, number>;
+  warnings: string[];
+}
+
+interface ExportResult {
+  filename: string;
+  file: unknown;
+  report: {
+    shopping_list: { classname: string; name: string; count: number }[];
+    warnings: string[];
+  };
+}
 
 class WbWorkspace extends HTMLElement {
   private tree: Tree = { folders: [], sandboxes: [] };
@@ -142,6 +162,7 @@ class WbWorkspace extends HTMLElement {
           icon(FolderPlus),
           T.newFolder,
         ),
+        this.importButton(),
         h(
           "button",
           { class: "btn btn-primary", onclick: () => this.createSandbox() },
@@ -258,6 +279,8 @@ class WbWorkspace extends HTMLElement {
               await this.reload();
             }),
         ],
+        [T.exportBackup, Download, () => this.exportRoom(sandbox, "native")],
+        [T.exportPreset, FileOutput, () => this.exportRoom(sandbox, "gpresets")],
         ...(readOnly
           ? []
           : ([
@@ -287,6 +310,126 @@ class WbWorkspace extends HTMLElement {
         await this.reload();
       },
     );
+  }
+
+  private importButton(): HTMLElement {
+    const input = h("input", {
+      type: "file",
+      accept: ".json,application/json",
+      hidden: true,
+      "aria-label": T.importFile,
+      "data-testid": "import-file",
+    });
+    input.addEventListener("change", () => {
+      const file = input.files?.[0];
+      input.value = "";
+      if (file) void act(null, () => this.importRoom(file));
+    });
+    const button = h(
+      "button",
+      { class: "btn", onclick: () => input.click() },
+      icon(Upload),
+      T.importRoom,
+    );
+    return h("span", {}, input, button);
+  }
+
+  private async importRoom(file: File): Promise<void> {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(await file.text());
+    } catch {
+      toast(T.notJson, "error");
+      return;
+    }
+    const created = await post<Sandbox & { report: ImportReport }>("/api/import", {
+      file: parsed,
+      name:
+        file.name
+          .replace(/\.json$/i, "")
+          .replace(/\.wiredbench$/i, "")
+          .slice(0, 100) || undefined,
+      folder_id: this.currentFolder ?? undefined,
+    });
+    toast(T.imported(created.name));
+    await this.reload();
+    const report = created.report;
+    const lines = [
+      ...(report.furni === undefined ? [] : [T.importSummary(report.furni, report.boxes ?? 0)]),
+      ...(Object.keys(report.not_simulated ?? {}).length
+        ? [T.importNotSimulated(Object.keys(report.not_simulated ?? {}).length)]
+        : []),
+      ...(report.not_placed ? [T.importNotPlaced(report.not_placed)] : []),
+      ...report.warnings,
+    ];
+    if (lines.length)
+      this.showReport(
+        T.importTitle,
+        lines.map((line) => h("p", {}, line)),
+      );
+  }
+
+  private exportRoom(sandbox: Sandbox, format: "native" | "gpresets"): void {
+    void act(null, async () => {
+      const out = await get<ExportResult>(`/api/sandboxes/${sandbox.id}/export`, { format });
+      const url = URL.createObjectURL(
+        new Blob([JSON.stringify(out.file, null, 2)], { type: "application/json" }),
+      );
+      const link = h("a", { href: url, download: out.filename });
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      if (format === "native") {
+        toast(T.exportTitle(out.filename));
+        return;
+      }
+      const rows = out.report.shopping_list;
+      this.showReport(T.exportTitle(out.filename), [
+        h("p", { class: "muted" }, T.exportUntested),
+        ...(out.report.warnings.length
+          ? [
+              h("h3", {}, T.warnings),
+              h("ul", {}, ...out.report.warnings.map((w) => h("li", {}, w))),
+            ]
+          : []),
+        ...(rows.length
+          ? [
+              h("h3", {}, T.shoppingList),
+              h(
+                "table",
+                { class: "table" },
+                h("thead", {}, h("tr", {}, h("th", {}, T.furniName), h("th", {}, T.amount))),
+                h(
+                  "tbody",
+                  {},
+                  ...rows.map((row) =>
+                    h(
+                      "tr",
+                      {},
+                      h("td", {}, row.name || row.classname),
+                      h("td", {}, String(row.count)),
+                    ),
+                  ),
+                ),
+              ),
+            ]
+          : []),
+      ]);
+    });
+  }
+
+  private showReport(title: string, body: HTMLElement[]): void {
+    const close = h("button", { class: "btn btn-primary", type: "button" }, T.close);
+    const dialog = h(
+      "dialog",
+      { class: "dialog", "data-testid": "exchange-report" },
+      h("h2", {}, title),
+      ...body,
+      close,
+    );
+    close.addEventListener("click", () => dialog.close());
+    dialog.addEventListener("close", () => dialog.remove());
+    this.append(dialog);
+    openDialog(dialog);
   }
 
   private createSandbox(): void {

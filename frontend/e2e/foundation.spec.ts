@@ -218,3 +218,62 @@ test("the phone layout has no sideways page scroll", async ({ page }) => {
     expect(overflow, link).toBeLessThanOrEqual(0);
   }
 });
+
+test("import a G-Presets file, then export it again", async ({ page }) => {
+  const preset = {
+    bindings: [],
+    furni: [
+      {
+        id: 1,
+        className: "wf_floor_switch1",
+        name: "a",
+        rotation: 0,
+        location: { x: 1, y: 1, z: 0 },
+      },
+      {
+        id: 2,
+        className: "wf_trg_state_changed",
+        name: "b",
+        rotation: 0,
+        location: { x: 2, y: 2, z: 0 },
+      },
+    ],
+    wired: {
+      triggers: [
+        { wiredId: 2, options: [], config: "", items: [1], furniSources: [100], unknownField: 7 },
+      ],
+    },
+  };
+  await login(page);
+  await page.getByRole("link", { name: "Workspace" }).click();
+  await page.getByTestId("import-file").setInputFiles({
+    name: "Imported switch.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(JSON.stringify(preset)),
+  });
+  const report = page.getByTestId("exchange-report");
+  await expect(report).toContainText("Furni: 2. WIRED boxes: 1.");
+  await report.getByRole("button", { name: "Close" }).click();
+
+  const row = page
+    .getByTestId("workspace-items")
+    .getByRole("listitem")
+    .filter({ hasText: "Imported switch" });
+  const download = page.waitForEvent("download");
+  await row.getByRole("button", { name: "Export G-Presets file" }).click();
+  const file = await download;
+  expect(file.suggestedFilename()).toBe("Imported-switch.json");
+  const stream = await file.createReadStream();
+  const chunks: Buffer[] = [];
+  for await (const chunk of stream) chunks.push(chunk as Buffer);
+  expect(JSON.parse(Buffer.concat(chunks).toString())).toEqual(preset);
+  await expect(report).toContainText("has not yet been proven in a real room");
+  await report.getByRole("button", { name: "Close" }).click();
+
+  await page.getByTestId("import-file").setInputFiles({
+    name: "broken.json",
+    mimeType: "application/json",
+    buffer: Buffer.from("{not json"),
+  });
+  await expect(page.getByText("This file is not valid JSON.")).toBeVisible();
+});

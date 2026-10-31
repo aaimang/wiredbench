@@ -30,6 +30,9 @@ Wiredbench is not affiliated with, endorsed, sponsored, or specifically approved
   simulated counts, not hotel performance.
 - **View as user:** walk and chat in a room as a visitor. WIRED settings, the trace and variables never
   leave the server, boxes with no catalogue offer are hidden, and every other route is refused.
+- **Import and export:** bring in a G-Presets JSON file, and export it again with unknown fields untouched.
+  Export also makes a furni list and warns about boxes that may be hard to get. Files from new rooms have
+  not yet been proven in a real room. A Wiredbench file backs up a room exactly.
 - **Workspace:** nested folders of sandboxes, with rename, move, duplicate, version history and a
   30-day trash.
 - **Settings:** default hotel, theme, automatic update checks, cache limit, engine tick, mock API rate
@@ -199,6 +202,7 @@ running server.
 | PATCH | `/api/folders/{folder_id}` | Admin |
 | GET | `/api/furni/{revision}/{classname}/atlas` | Admin |
 | GET | `/api/furni/{revision}/{classname}/manifest` | Admin |
+| POST | `/api/import` | Admin |
 | GET | `/api/public/rooms/{room_id}/variables` | Public |
 | POST | `/api/public/rooms/{room_id}/variables/bulk-delete` | Public |
 | GET | `/api/public/rooms/{room_id}/variables/global/{name}` | Public |
@@ -227,6 +231,7 @@ running server.
 | POST | `/api/sandboxes/{sandbox_id}/api-keys` | Admin |
 | PUT | `/api/sandboxes/{sandbox_id}/document` | Admin |
 | POST | `/api/sandboxes/{sandbox_id}/duplicate` | Admin |
+| GET | `/api/sandboxes/{sandbox_id}/export` | Admin |
 | DELETE | `/api/sandboxes/{sandbox_id}/run` | Admin |
 | GET | `/api/sandboxes/{sandbox_id}/run` | Admin |
 | POST | `/api/sandboxes/{sandbox_id}/run` | Admin |
