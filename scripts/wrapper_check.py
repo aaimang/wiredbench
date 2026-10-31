@@ -4,7 +4,6 @@
 uv run --with wired-api-python==0.1.4 python scripts/wrapper_check.py
 """
 
-import secrets
 import socket
 import sys
 import tempfile
@@ -23,11 +22,10 @@ from wiredbench.engine.tutorials import AVATAR
 with socket.socket() as probe:
     probe.bind(("127.0.0.1", 0))
     port = probe.getsockname()[1]
-PASSWORD = secrets.token_urlsafe(24)
 tmp = Path(tempfile.mkdtemp())
-(tmp / "p").write_text(PASSWORD)
 base = f"http://127.0.0.1:{port}"
-app = create_app(Settings(_env_file=None, data_dir=tmp / "d", admin_password_file=tmp / "p", public_url=base))
+settings = Settings(_env_file=None, data_dir=tmp / "d", public_url=base)
+app = create_app(settings)  # Generates the first admin password, which is all this needs.
 server = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=port, log_level="warning"))
 threading.Thread(target=server.run, daemon=True).start()
 while not server.started:
@@ -35,7 +33,8 @@ while not server.started:
 
 admin = httpx.Client(base_url=base)
 admin.headers["X-CSRF-Token"] = admin.post(
-    "/api/auth/login", json={"username": "admin", "password": PASSWORD}
+    "/api/auth/login",
+    json={"username": "admin", "password": settings.initial_password_path.read_text().strip()},
 ).json()["csrf_token"]
 room = admin.post("/api/tutorials/time-tracking", json={}).json()["id"]
 document = admin.get(f"/api/sandboxes/{room}").json()["document"]
