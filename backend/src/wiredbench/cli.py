@@ -31,6 +31,7 @@ def serve() -> None:
 
 def reset_password() -> None:
     settings = Settings()
+    print("Do not use the same password as your Habbo account.")
     password = getpass.getpass("New admin password: ")
     if len(password) < MIN_PASSWORD_LENGTH:
         sys.exit(f"Use at least {MIN_PASSWORD_LENGTH} characters.")

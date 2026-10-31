@@ -366,8 +366,11 @@ There is no signing key: sessions are random tokens stored hashed in the databas
 - **Classic:** whether G-Earth and G-Presets work on the Classic client is untested. The fallback
   is importing through the AIR client, because rooms are stored on the server. Sulek lists the
   newest Classic builds under Sandbox, so production availability needs checking.
-- **Legal:** Sulake's fansite policy was not found, though WiredClub cites one. Read it before
-  launch. The app and site carry a non-affiliation notice.
+- **Legal:** the [Habbo Fansite Policy](https://help.habbo.com/hc/en-us/articles/360011512480-Habbo-Fansite-Policy)
+  is read. Every page shows its required disclaimer, and choosing a password warns against reusing a
+  Habbo one. Keep to it: no money or donations, no links to cheats, hacks or retros (check this before
+  linking G-Earth or G-Presets), and no copying the Habbo client's look. The policy describes websites,
+  so whether it covers a self-hosted tool is unconfirmed. Habbo can revoke permission at any time.
 - **Avatar animation:** `habbo-imaging` covers v1, but not avatar effects, and direction 7 looked
   wrong in testing.
 - **Preset import:** `config` strings or `options` may embed IDs, and writing a file that imports into

@@ -122,7 +122,7 @@ function showLogin(): void {
       "main",
       { class: "login-page" },
       form,
-      h("p", { class: "muted login-note" }, t.notAffiliated),
+      h("p", { class: "muted login-note", "data-testid": "site-notice" }, t.notAffiliated),
     ),
   );
   username.focus();
@@ -184,6 +184,7 @@ function showShell(path: string, tag: string): void {
         ),
       ),
       h("main", { class: "page" }, document.createElement(tag)),
+      h("footer", { class: "muted site-notice", "data-testid": "site-notice" }, t.notAffiliated),
     ),
   );
 }

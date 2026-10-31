@@ -176,6 +176,19 @@ test("folders and sandboxes: create, move, trash, restore", async ({ page }) => 
   await expect(items.getByText("Time tracking", { exact: true })).toBeVisible();
 });
 
+test("every page shows the fan site disclaimer", async ({ page }) => {
+  const notice = page.getByTestId("site-notice");
+  await page.goto("/");
+  await expect(notice).toContainText("not affiliated with, endorsed, sponsored");
+  await login(page);
+  for (const name of ["Catalogue", "Workspace", "Settings"]) {
+    await page.getByRole("link", { name }).click();
+    await expect(notice).toBeVisible();
+    await expect(notice).toContainText("Habbo Fan Site Policy");
+  }
+  await expect(page.getByText("Do not use the same password as your Habbo account.")).toBeVisible();
+});
+
 test("settings save, the session survives reload, and logout ends it", async ({ page }) => {
   await login(page);
   await page.getByRole("link", { name: "Settings" }).click();

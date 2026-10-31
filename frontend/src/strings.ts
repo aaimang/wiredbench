@@ -1,7 +1,8 @@
 /** All interface text lives here, so the app can be translated later. */
 export const t = {
   appName: "Wiredbench",
-  notAffiliated: "Not affiliated with or endorsed by Sulake. Habbo is a trademark of Sulake.",
+  notAffiliated:
+    "Wiredbench is not affiliated with, endorsed, sponsored, or specifically approved by Sulake Oy or its Affiliates. Wiredbench may use the trademarks and other intellectual property of Habbo, which is permitted under Habbo Fan Site Policy.",
 
   nav: { catalogue: "Catalogue", workspace: "Workspace", settings: "Settings", logout: "Log out" },
 
@@ -275,6 +276,7 @@ export const t = {
     password: "Password",
     currentPassword: "Current password",
     newPassword: "New password (at least 12 characters)",
+    passwordSafety: "Do not use the same password as your Habbo account.",
     changePassword: "Change password",
     passwordChanged: "Password changed. Other devices were logged out.",
     activity: "Recent activity",
