@@ -15,6 +15,7 @@ export interface RunState {
   furni: { id: number; x: number; y: number; z: number; rot: number; state: number }[];
   users: { id: number; name: string; x: number; y: number }[];
   variables: { variable: string; holder: string; value: string }[];
+  defined_variables: { variable: string; scope: string }[];
   trace: { at_ms: number; kind: string; message: string }[];
   trace_next: number;
   limit_hits: number;
@@ -195,6 +196,19 @@ export class RunPanel {
           h("td", {}, h("code", {}, row.variable)),
           h("td", {}, this.holderName(state, row.holder)),
           h("td", {}, row.value),
+        ),
+      ),
+      ...state.defined_variables.map((row) =>
+        h(
+          "tr",
+          {},
+          h("td", {}, h("code", {}, row.variable)),
+          h(
+            "td",
+            {},
+            row.scope === "global" ? "global" : row.scope === "context" ? T.duringRun : T.nobodyYet,
+          ),
+          h("td", {}, row.scope === "global" ? T.notSetYet : ""),
         ),
       ),
     );
