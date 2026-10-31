@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/aaimang/wiredbench/compare/v0.3.1...v0.4.0) (2026-10-31)
+
+
+### Features
+
+* add mock Web API, dashboard, view as user and more settings ([#9](https://github.com/aaimang/wiredbench/issues/9)) ([8c95600](https://github.com/aaimang/wiredbench/commit/8c95600cb86a6d8dc06f4e48c23c8aa370018e10))
+
 ## [0.3.1](https://github.com/aaimang/wiredbench/compare/v0.3.0...v0.3.1) (2026-10-31)
 
 
