@@ -40,6 +40,7 @@ class PlacedFurni(_Open):
     z: Height = 0
     rot: Direction = 0
     state: int = Field(0, ge=0, le=9999)
+    wired: dict[str, Any] | None = None
 
 
 class PlacedAvatar(_Open):

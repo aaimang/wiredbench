@@ -19,6 +19,7 @@ import {
   stackHeight,
   standAt,
 } from "./model";
+import { isDebugCommand, runClock } from "./run-panel";
 
 const INFO: Record<string, FurniInfo> = {
   wall: { xdim: 1, ydim: 1, height: 1, canStand: false, canSit: false, canLay: false },
@@ -250,5 +251,20 @@ describe("undo", () => {
     history.undo(b);
     history.record(a);
     expect(history.canRedo).toBe(false);
+  });
+});
+
+describe("run console", () => {
+  it("keeps room keywords as chat", () => {
+    expect(isDebugCommand(":time")).toBe(false);
+    expect(isDebugCommand(":varsity")).toBe(false);
+    expect(isDebugCommand("hello")).toBe(false);
+    expect(isDebugCommand(":vars global")).toBe(true);
+    expect(isDebugCommand(":pause")).toBe(true);
+  });
+
+  it("formats the clock", () => {
+    expect(runClock(65500)).toBe("1:05.5");
+    expect(runClock(0)).toBe("0:00.0");
   });
 });

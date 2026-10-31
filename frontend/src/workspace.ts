@@ -125,6 +125,19 @@ class WbWorkspace extends HTMLElement {
         h("div", { class: "toolbar-spacer" }),
         h(
           "button",
+          {
+            class: "btn btn-quiet",
+            onclick: () =>
+              void act(null, async () => {
+                const added = await post<Sandbox>("/api/tutorials/time-tracking", {});
+                toast(T.created(added.name));
+                await this.reload();
+              }),
+          },
+          T.addExample,
+        ),
+        h(
+          "button",
           { class: "btn", onclick: () => this.createFolder() },
           icon(FolderPlus),
           T.newFolder,

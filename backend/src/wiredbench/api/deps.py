@@ -15,6 +15,7 @@ from fastapi import Depends, Request
 from sqlalchemy.orm import Session
 
 from wiredbench.config import Settings
+from wiredbench.engine.sessions import RunRegistry
 from wiredbench.errors import ApiError
 from wiredbench.models import AdminUser, AuditEvent, AuthSession, utcnow
 from wiredbench.security import SESSION_COOKIE, RateLimiter, hash_token, same_origin
@@ -40,6 +41,7 @@ class Services:
     login_user_limiter: RateLimiter
     write_limiter: RateLimiter
     read_limiter: RateLimiter
+    runs: RunRegistry
 
 
 def get_services(request: Request) -> Services:

@@ -10,6 +10,7 @@ import {
 } from "./api";
 import { debounce, h, icon, replace } from "./dom";
 import { furniSize, groupByType, hotelLabel, iconUrl, TYPE_ORDER, timeAgo } from "./format";
+import { type BoxCatalogue, loadBoxCatalogue } from "./room/run-panel";
 import { state } from "./state";
 import { t } from "./strings";
 import { act, errorMessage, toast } from "./ui";
@@ -58,6 +59,7 @@ class WbCatalogue extends HTMLElement {
   private list = h("div", { class: "furni-list", "data-testid": "furni-list" });
   private detail = h("aside", { class: "detail-panel" });
   private request = 0;
+  private boxes: BoxCatalogue = {};
 
   connectedCallback(): void {
     this.searchInput.addEventListener(
@@ -74,6 +76,11 @@ class WbCatalogue extends HTMLElement {
     );
     this.renderDetail();
     void this.refresh();
+    void loadBoxCatalogue()
+      .then((boxes) => {
+        this.boxes = boxes;
+      })
+      .catch(() => {});
   }
 
   private async refresh(): Promise<void> {
@@ -390,6 +397,11 @@ class WbCatalogue extends HTMLElement {
     }
   }
 
+  private simulation(classname: string): string {
+    const spec = this.boxes[classname];
+    return spec ? (t.run.fidelity[spec.fidelity] ?? spec.fidelity) : t.detail.notSimulated;
+  }
+
   private renderDetail(): void {
     const item = this.selected;
     this.detail.classList.toggle("is-open", item !== null);
@@ -429,7 +441,7 @@ class WbCatalogue extends HTMLElement {
         ...row(t.detail.revision, String(item.revision)),
         ...row(t.detail.category, item.category),
         ...row(t.detail.line, item.furniline),
-        ...row(t.detail.simulation, item.is_wired ? t.detail.notSimulated : ""),
+        ...row(t.detail.simulation, item.is_wired ? this.simulation(item.classname) : ""),
       ),
       item.data &&
         h(

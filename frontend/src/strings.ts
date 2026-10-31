@@ -145,6 +145,7 @@ export const t = {
     history: "Version history",
     restoreVersion: "Restore",
     openRoom: "Open room",
+    addExample: "Add time tracking example",
     confirmPurge: (name: string) => `Delete “${name}” forever? This cannot be undone.`,
     moved: "Moved",
     deleted: (name: string) => `“${name}” moved to trash`,
@@ -215,6 +216,37 @@ export const t = {
     arrived: (name: string, pose: string, x: number, y: number) =>
       `${name} ${pose === "sit" ? "sat down" : pose === "lay" ? "lay down" : "stopped"} at ${x}, ${y}`,
     noWay: (name: string) => `${name} cannot get there.`,
+  },
+
+  run: {
+    run: "Run",
+    stop: "Stop",
+    pause: "Pause",
+    resume: "Resume",
+    step: "Step",
+    send: "Send",
+    variable: "Variable",
+    holder: "Holder",
+    value: "Value",
+    commandPlaceholder: "Say something, or type a command such as :vars global",
+    pickUserToSpeak: "Add an avatar first.",
+    hint: "Click to walk, double-click furni to use it, and type below to speak.",
+    settings: "Settings",
+    saveSettings: "Save settings",
+    pick: (count: number) => `Pick in room (${count})`,
+    picking: (count: number) => `Done picking (${count} chosen)`,
+    pickingHint: "Click furni in the room to add or remove it, then press Done.",
+    fidelity: {
+      documented: "Documented",
+      assumed: "Assumed behaviour",
+    } as Record<string, string>,
+    fidelityHelp: {
+      documented: "A public source describes this box. It has not been compared with a real room.",
+      assumed: "This behaviour is a best guess and may differ from the game.",
+    } as Record<string, string>,
+    stub: "Not simulated yet",
+    stubHelp: "It can be placed, and a run logs when its stack fires, but it does nothing.",
+    idLabel: (id: number) => `Furni ID ${id}`,
   },
 
   settings: {

@@ -24,6 +24,7 @@ from wiredbench.api import ROUTERS
 from wiredbench.api.deps import Services, guard, public
 from wiredbench.config import Settings
 from wiredbench.db import make_engine, make_session_factory, migrate
+from wiredbench.engine.sessions import RunRegistry
 from wiredbench.errors import ApiError, not_found
 from wiredbench.models import AuditEvent, GamedataState, utcnow
 from wiredbench.security import RateLimiter, allowed_hosts
@@ -143,6 +144,7 @@ def create_app(settings: Settings | None = None, transport: httpx.BaseTransport 
         login_user_limiter=RateLimiter(settings.rate_limit_login * 4, 15 * 60),
         write_limiter=RateLimiter(settings.rate_limit_writes, 60),
         read_limiter=RateLimiter(settings.rate_limit_reads, 60),
+        runs=RunRegistry(),
     )
 
     @asynccontextmanager
