@@ -268,6 +268,15 @@ product does not link to it. `OPTION_FIELDS` in `services/exchange.py` is this p
 is unverified until tried in a real room, though variable boxes and the filter also match real preset files.
 Not mapped yet: variable effects and conditions, movement directions, and most boxes outside the engine.
 
+### Coverage tracker
+
+`docs/box-coverage.md` lists every box with its evidence, generated from `box_coverage.json`, and the Guide shows
+the same. CI fails if a box Wiredbench knows is untracked or the document is stale. A catalogue box the tracker
+has never seen shows as new. `scripts/box_coverage.py` adds evidence, and `scripts/proof_preset.py` writes a preset
+with unusual values and a checklist for a real room. Habbo's Web API only covers variables, so it cannot check
+options. Reference evidence only appears where its files name a classname, so some boxes it does cover show none.
+Nothing rechecks the reference automatically yet.
+
 ### Debugging additions
 
 - Fidelity badge per WIRED: `verified in-game`, `documented` or `assumed`.

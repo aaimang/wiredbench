@@ -52,6 +52,18 @@ export const t = {
       not_simulated: "Not simulated yet",
     } as Record<string, string>,
     noOffer: "No catalogue offer",
+    coverage: (room: number, total: number, mapped: number) =>
+      `Checked in a real room: ${room} of ${total} boxes. Options mapped: ${mapped}. A check holds for its date, because Habbo can change a box at any time.`,
+    allEvidence: "All evidence",
+    evidence: {
+      new: "New since the last check",
+      unknown: "No evidence yet",
+      from_reference: "Reference only, unverified",
+      real_preset: "Seen in a real preset",
+      real_room: "Checked in a real room",
+    } as Record<string, string>,
+    roomDate: (date: string) => `Checked in a real room on ${date}`,
+    optionsMapped: "Options mapped",
   },
 
   dashboard: {

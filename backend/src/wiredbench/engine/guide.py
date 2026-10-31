@@ -5,9 +5,6 @@ Examples are ideas for using a box. How far its behaviour can be trusted is the 
 
 from __future__ import annotations
 
-# Worked in a real room: an exported preset imported through G-Presets, and using one switch flipped another.
-REAL_ROOM_CHECKED = {"wf_trg_state_changed", "wf_act_toggle_state"}
-
 GUIDE: dict[str, tuple[str, str]] = {
     "wf_trg_walks_on_furni": (
         "Runs when a user steps onto a picked furni.",
