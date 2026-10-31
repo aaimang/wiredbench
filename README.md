@@ -36,6 +36,8 @@ Wiredbench is not affiliated with, endorsed, sponsored, or specifically approved
 - **Guide:** every WIRED box with its official name, purpose, an example and how far its simulation can be
   trusted, plus example rooms you can add to your workspace.
 - **Coverage:** [docs/box-coverage.md](docs/box-coverage.md) shows how far each box's options have been checked.
+- **Stack check:** finds stacks that cannot work as built, such as no trigger, missing picks or an undefined
+  variable, and leads you to the box.
 - **Workspace:** nested folders of sandboxes, with rename, move, duplicate, version history and a
   30-day trash.
 - **Settings:** default hotel, theme, automatic update checks, cache limit, engine tick, mock API rate
@@ -233,6 +235,7 @@ running server.
 | DELETE | `/api/sandboxes/{sandbox_id}/api-keys` | Admin |
 | GET | `/api/sandboxes/{sandbox_id}/api-keys` | Admin |
 | POST | `/api/sandboxes/{sandbox_id}/api-keys` | Admin |
+| GET | `/api/sandboxes/{sandbox_id}/check` | Admin |
 | PUT | `/api/sandboxes/{sandbox_id}/document` | Admin |
 | POST | `/api/sandboxes/{sandbox_id}/duplicate` | Admin |
 | GET | `/api/sandboxes/{sandbox_id}/export` | Admin |

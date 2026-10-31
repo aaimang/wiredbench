@@ -11,6 +11,7 @@ from wiredbench.api.deps import Services, audit, get_db, get_services
 from wiredbench.config import Hotel
 from wiredbench.engine import coverage
 from wiredbench.engine.boxes import BOXES, catalogue
+from wiredbench.engine.checker import check_room
 from wiredbench.engine.core import MAX_ADVANCE_MS
 from wiredbench.engine.guide import GUIDE
 from wiredbench.engine.sessions import Run, run_command, state
@@ -164,6 +165,13 @@ def dashboard(services: Services = Depends(get_services), db: Session = Depends(
                 {"id": sandbox_id, "name": sandbox.name, "paused": run.paused, **run.engine.dashboard()}
             )
     return {"rooms": rooms}
+
+
+@router.get("/sandboxes/{sandbox_id}/check")
+def check_sandbox(sandbox_id: int, db: Session = Depends(get_db)) -> dict[str, Any]:
+    sandbox = ws.live_sandbox(db, sandbox_id)
+    document = sandbox.document if isinstance(sandbox.document, dict) else {}
+    return {"issues": check_room(document)}
 
 
 @router.get("/tutorials")

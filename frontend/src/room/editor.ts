@@ -5,6 +5,7 @@ import {
   ArrowUpLeft,
   ArrowUpRight,
   Box,
+  ClipboardCheck,
   Eraser,
   Footprints,
   Grid2x2,
@@ -81,6 +82,16 @@ interface SandboxData {
   document: Record<string, unknown>;
 }
 
+interface CheckIssue {
+  severity: string;
+  code: string;
+  box: number;
+  classname: string;
+  x: number;
+  y: number;
+  message: string;
+}
+
 interface Walker {
   avatarId: number;
   path: [number, number][];
@@ -102,6 +113,7 @@ class WbEditor extends HTMLElement {
   private selected: Hit | null = null;
   private placing: { classname: string; rot: number } | null = null;
   private moving: number | null = null;
+  private checked: CheckIssue[] | null = null;
   private hover: [number, number] | null = null;
   private walkers = new Map<number, Walker>();
   private clock = 0;
@@ -497,7 +509,62 @@ class WbEditor extends HTMLElement {
     this.renderPanels();
   }
 
+  private async checkStacks(): Promise<void> {
+    const sandbox = this.sandbox;
+    if (!sandbox) return;
+    await this.save();
+    if (this.saveError) throw new Error(this.saveError);
+    const result = await get<{ issues: CheckIssue[] }>(`/api/sandboxes/${sandbox.id}/check`);
+    this.checked = result.issues;
+    this.select(null);
+    const problems = result.issues.filter((issue) => issue.severity !== "info");
+    if (!problems.length) toast(T.checkClean);
+  }
+
+  private checkResults(): HTMLElement[] {
+    const issues = this.checked;
+    if (!issues) return [];
+    const count = (severity: string) =>
+      issues.filter((issue) => issue.severity === severity).length;
+    return [
+      h("h2", {}, T.checkTitle),
+      h(
+        "p",
+        { "data-testid": "check-summary" },
+        count("error") + count("warning")
+          ? T.checkFound(count("error"), count("warning"))
+          : T.checkClean,
+      ),
+      h(
+        "ul",
+        { class: "check-list", "data-testid": "check-list" },
+        ...issues.map((issue) =>
+          h(
+            "li",
+            {},
+            h(
+              "span",
+              { class: `badge check-${issue.severity}` },
+              T.severity[issue.severity] ?? issue.severity,
+            ),
+            h(
+              "button",
+              {
+                class: "check-row",
+                type: "button",
+                onclick: () => this.select({ kind: "furni", id: issue.box }),
+              },
+              h("code", {}, issue.classname),
+              h("span", {}, T.checkRow(issue.x, issue.y, issue.message)),
+            ),
+          ),
+        ),
+      ),
+    ];
+  }
+
   private markDirty(): void {
+    this.checked = null;
     if (this.run) {
       this.needsDraw = true; // A run works on a copy, so nothing here is saved.
       return;
@@ -898,6 +965,11 @@ class WbEditor extends HTMLElement {
       this.toolButton(T.redo, Redo2, () => this.undoRedo(true), !this.history.canRedo),
       this.toolButton(T.roomSize, Grid2x2, () => this.editRoomSize()),
       this.toolButton(T.clearRoom, Eraser, () => this.clearRoom(), this.isEmpty()),
+      this.toolButton(
+        T.checkStacks,
+        ClipboardCheck,
+        () => void act(null, () => this.checkStacks()),
+      ),
       h("div", { class: "toolbar-spacer" }),
       this.statusLine,
       saveButton,
@@ -1467,10 +1539,24 @@ class WbEditor extends HTMLElement {
     else {
       replace(
         this.inspector,
+        ...this.checkResults(),
         h("p", { class: "muted" }, this.mode === "play" ? T.playHint : T.buildHint),
         this.walkStatus,
       );
     }
+  }
+
+  private boxProblems(item: PlacedFurni): HTMLElement[] {
+    const mine = (this.checked ?? []).filter((issue) => issue.box === item.id);
+    if (!mine.length) return [];
+    return [
+      h(
+        "div",
+        { class: "note", "data-testid": "box-problems" },
+        h("strong", {}, T.boxProblems),
+        h("ul", {}, ...mine.map((issue) => h("li", {}, issue.message))),
+      ),
+    ];
   }
 
   private furniInspector(item: PlacedFurni): HTMLElement[] {
@@ -1497,6 +1583,7 @@ class WbEditor extends HTMLElement {
     ].filter((chip): chip is string => chip !== null);
     return [
       h("h2", {}, info?.name || item.classname),
+      ...this.boxProblems(item),
       ...(info?.description ? [h("p", {}, info.description)] : []),
       ...(info === null ? [h("p", { class: "note" }, T.missingFromCatalogue)] : []),
       h("code", {}, item.classname),

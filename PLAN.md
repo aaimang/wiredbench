@@ -330,7 +330,7 @@ also covers the 10-second worst-case loss when a user leaves without standing up
 | 3. Engine (built) | Wave 1, stubs, inspector, debugger | Time tracking tutorial passes |
 | 4. Control (built, real-room comparison open) | Mock API, dashboard, view-as, settings | Official wrappers work against the mock |
 | 5. Exchange (built, one small setup proven) | Import, export, guide, tutorials | A preset imports into a real room and behaves the same |
-| 6. Depth | Wave 2, stack checker | Every box has an honest badge |
+| 6. Depth (stack checker built) | Wave 2, stack checker | Every box has an honest badge |
 | 7. Launch | Security pass, landing page, Docker docs, `v1.0.0` | All release gates pass |
 
 Real-room traces need a room on the sandbox hotel with the Web API add-on and its keys.
