@@ -102,10 +102,7 @@ def _execute(run: Run, engine: Engine, name: str, args: tuple[str, ...]) -> str:
         case "vars_furni":
             return "\n".join(_rows(engine, f"furni:{args[0]}")) or f"Furni {args[0]} has no variables."
         case "vars_global":
-            unset = [
-                f"{r['variable']} = 0 (not set yet)" for r in engine.view_defined() if r["scope"] == "global"
-            ]
-            return "\n".join([*_rows(engine, "global"), *unset]) or "No global variables are set."
+            return "\n".join(_rows(engine, "global")) or "No global variables are set."
         case "set":
             return _set(engine, *args)
         case "trace":

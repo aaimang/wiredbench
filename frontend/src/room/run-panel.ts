@@ -203,12 +203,8 @@ export class RunPanel {
           "tr",
           {},
           h("td", {}, h("code", {}, row.variable)),
-          h(
-            "td",
-            {},
-            row.scope === "global" ? "global" : row.scope === "context" ? T.duringRun : T.nobodyYet,
-          ),
-          h("td", {}, row.scope === "global" ? T.notSetYet : ""),
+          h("td", {}, row.scope === "context" ? T.duringRun : T.nobodyYet),
+          h("td", {}),
         ),
       ),
     );

@@ -148,7 +148,7 @@ def test_running_a_room_does_not_change_the_saved_document(api: Api) -> None:
     assert api.get(f"/api/sandboxes/{box}").json()["document"] == before
 
 
-def test_vars_global_lists_a_defined_variable_before_it_is_set(api: Api) -> None:
+def test_vars_global_shows_zero_before_a_global_is_set(api: Api) -> None:
     box = tutorial(api)
     document = api.get(f"/api/sandboxes/{box}").json()["document"]
     document["furni"].append(
@@ -162,12 +162,11 @@ def test_vars_global_lists_a_defined_variable_before_it_is_set(api: Api) -> None
         == 200
     )
     state = api.post(run_url(box), json={"seed": 1}).json()
-    assert {"variable": "round", "scope": "global"} in state["defined_variables"]
+    assert {"variable": "round", "scope": "global"} not in state["defined_variables"]
 
     def send(text: str) -> str:
         return api.post(run_url(box, "/command"), json={"text": text}).json()["answer"]
 
-    assert "round = 0 (not set yet)" in send(":vars global")
+    assert "round = 0" in send(":vars global")
     assert send(":set global x round 3") == "round = 3"
     assert "round = 3" in send(":vars global")
-    assert "(not set yet)" not in send(":vars global").split("round")[1]

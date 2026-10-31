@@ -224,19 +224,30 @@ def test_short_period_runs_at_its_own_speed_and_stops_at_a_minimum() -> None:
 
 def test_defined_variables_are_listed_until_something_holds_them() -> None:
     engine = room(
-        box(1, "wf_var_room", 1, 1, variable="round"),
-        box(2, "wf_var_user", 2, 2, variable="score"),
-        box(3, "wf_var_context", 3, 3, variable="temp"),
+        box(1, "wf_var_user", 2, 2, variable="score"),
+        box(2, "wf_var_context", 3, 3, variable="temp"),
     )
     assert engine.view_defined() == [
-        {"variable": "round", "scope": "global"},
         {"variable": "score", "scope": "user"},
         {"variable": "temp", "scope": "context"},
     ]
-    assert engine.view_variables() == []
-    engine.apply_input({"type": "api_set", "variable": "round", "key": "global", "value": 5})
-    assert [row["variable"] for row in engine.view_defined()] == ["score", "temp"]
+    engine.apply_input({"type": "api_set", "variable": "score", "key": "user:1", "value": 5})
+    assert [row["variable"] for row in engine.view_defined()] == ["temp"]
     assert engine.snapshot()["defined_variables"] == engine.view_defined()
+
+
+def test_a_global_reads_zero_before_anything_sets_it() -> None:
+    engine = room(
+        box(1, "wf_var_room", 5, 5, variable="round"),
+        box(2, "wf_trg_says_something", 1, 1, text="go"),
+        box(3, "wf_act_change_var_val", 1, 1, 1, variable="round", operation="add", value=2),
+    )
+    assert [(r["variable"], r["holder"], r["value"]) for r in engine.view_variables()] == [
+        ("round", "global", "0")
+    ]
+    assert engine.view_defined() == []
+    say(engine, "go")
+    assert engine.variables["round"]["global"].value == 2
 
 
 def test_delay_counts_half_seconds() -> None:
