@@ -48,6 +48,20 @@ class Tutorial(BaseModel):
     hotel: Hotel | None = None
 
 
+def furni_states(services: Services, sandbox: Sandbox) -> dict[str, list[int]]:
+    """How many states each furni in a room really has, read from art that is already downloaded."""
+    document = sandbox.document if isinstance(sandbox.document, dict) else {}
+    found: dict[str, list[int]] = {}
+    for classname in {item["classname"] for item in document.get("furni", [])}:
+        try:
+            revision = services.catalog.item(sandbox.hotel, classname)["revision"]
+        except ApiError:
+            continue
+        if states := services.assets.cached_states(revision, classname):
+            found[classname] = states
+    return found
+
+
 def _run(sandbox_id: int, services: Services) -> Run:
     run = services.runs.get(sandbox_id)
     if run is None:
@@ -72,7 +86,7 @@ def start_run(
     document = sandbox.document if isinstance(sandbox.document, dict) else {}
     seed = body.seed if body.seed is not None else secrets.randbelow(2**31)
     tick_ms = preferences.load(db, services.settings).tick_ms
-    run = services.runs.start(sandbox_id, document, seed, tick_ms)
+    run = services.runs.start(sandbox_id, document, seed, tick_ms, furni_states(services, sandbox))
     audit(db, request, "run_start", sandbox.name)
     db.commit()
     return state(run, 0)

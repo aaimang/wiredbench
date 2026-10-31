@@ -144,3 +144,13 @@ def test_settings_change_tick_rate_and_mock_limit(api: Api) -> None:
     url = f"/api/public/rooms/{room}/variables"
     codes = [api.client.get(url).status_code for _ in range(3)]
     assert codes[-1] == 429
+
+
+def test_furni_toggles_default_on_and_can_be_saved(api: Api) -> None:
+    current = api.get("/api/settings").json()
+    assert current["click_outside_cancels"] is True
+    assert current["pickup_shortcut"] is True
+    saved = api.patch("/api/settings", json={"click_outside_cancels": False, "pickup_shortcut": False}).json()
+    assert saved["click_outside_cancels"] is False
+    assert saved["pickup_shortcut"] is False
+    assert api.get("/api/settings").json()["pickup_shortcut"] is False

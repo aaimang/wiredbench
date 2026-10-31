@@ -22,6 +22,8 @@ class Preferences(BaseModel):
     tick_ms: int = Field(ge=50, le=5000)
     rate_limit_mock: int = Field(ge=1, le=1_000_000)
     audit_days: int = Field(ge=1, le=3650)
+    click_outside_cancels: bool = True
+    pickup_shortcut: bool = True
 
 
 def load(db: Session, settings: Settings) -> Preferences:

@@ -181,6 +181,8 @@ export interface Settings {
   tick_ms: number;
   rate_limit_mock: number;
   audit_days: number;
+  click_outside_cancels: boolean;
+  pickup_shortcut: boolean;
   hotels: string[];
   version: string;
 }

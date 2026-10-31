@@ -118,7 +118,7 @@ test("build a room, walk to a chair, sit, and find it all there after a reload",
   await clickTile(page, 1, 1);
   await expect(page.getByTestId("inspector")).toContainText("wf_act_show_message");
   await page.getByRole("button", { name: "Move down right" }).click();
-  await page.getByRole("button", { name: "Rotate" }).click();
+  await page.locator(".selection-bar").getByRole("button", { name: "Rotate" }).click();
   await page.getByTestId("inspector").getByRole("button", { name: "1", exact: true }).click();
   saved = await room(page);
   // The click lands on the lower box, because the upper one is drawn higher up the screen.
@@ -176,4 +176,118 @@ test("the phone layout of the editor has no sideways page scroll", async ({ page
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
   );
   expect(overflow).toBeLessThanOrEqual(0);
+});
+
+test("the furni card, click outside, shortcuts and repeated use", async ({ page }) => {
+  await login(page);
+  await page.getByRole("link", { name: "Workspace" }).click();
+  await page.getByRole("button", { name: "New sandbox" }).click();
+  await page.getByRole("textbox", { name: "Name" }).fill("Shortcut room");
+  await page.getByRole("button", { name: "Create" }).click();
+  await page.getByRole("button", { name: /^Shortcut room/ }).click();
+  await page.getByRole("link", { name: "Open room" }).click();
+  await expect(page.getByTestId("room-canvas")).toBeVisible();
+
+  const outside = async () => {
+    const box = await page.getByTestId("room-canvas").boundingBox();
+    await page.mouse.click((box?.x ?? 0) + 4, (box?.y ?? 0) + 4);
+  };
+  const bar = page.locator(".selection-bar");
+  const first = async () => (await room(page)).furni[0];
+
+  // Placing keeps going until a click outside the room stops it.
+  await page.getByLabel("Search all furni").fill("test_chair");
+  await page.locator('.palette-row[data-classname="test_chair"]').click();
+  await expect(bar).toHaveAttribute("data-placing", "test_chair");
+  await clickTile(page, 5, 2);
+  await expect(bar).toHaveAttribute("data-placing", "test_chair");
+  await outside();
+  await expect(bar).not.toHaveAttribute("data-placing", "test_chair");
+  expect((await room(page)).furni).toHaveLength(1);
+
+  // The card and its actions.
+  await clickTile(page, 5, 2);
+  const card = page.getByTestId("furni-card");
+  await expect(card).toContainText("Test Chair");
+  await card.getByRole("button", { name: "Use" }).click();
+  await expect.poll(async () => (await first())?.state).toBe(1);
+  await card.getByRole("button", { name: "Use" }).click();
+  await expect.poll(async () => (await first())?.state).toBe(0);
+  await card.getByRole("button", { name: "Move" }).click();
+  await expect(card).toBeHidden();
+  await clickTile(page, 7, 2);
+  await expect.poll(async () => (await first())?.x).toBe(7);
+
+  // Shift turns, Ctrl moves, arrows nudge, P and Ctrl+Shift pick up, and undo restores.
+  const startRot = (await first())?.rot;
+  await page.keyboard.down("Shift");
+  await clickTile(page, 7, 2);
+  await page.keyboard.up("Shift");
+  await expect.poll(async () => (await first())?.rot).not.toBe(startRot);
+  await page.keyboard.down("Control");
+  await clickTile(page, 7, 2);
+  await page.keyboard.up("Control");
+  await expect(bar).toContainText("Click a tile to move it");
+  await page.keyboard.press("Escape");
+  await clickTile(page, 7, 2);
+  await page.keyboard.press("ArrowLeft");
+  await expect.poll(async () => (await first())?.x).toBe(6);
+  await page.keyboard.press("p");
+  await expect.poll(async () => (await room(page)).furni.length).toBe(0);
+  await page.keyboard.press("ControlOrMeta+z");
+  await expect.poll(async () => (await room(page)).furni.length).toBe(1);
+  await page.keyboard.down("Control");
+  await page.keyboard.down("Shift");
+  await clickTile(page, 6, 2);
+  await page.keyboard.up("Shift");
+  await page.keyboard.up("Control");
+  await expect.poll(async () => (await room(page)).furni.length).toBe(0);
+  await page.keyboard.press("ControlOrMeta+z");
+
+  // Using furni while running keeps working, which is the bug this replaces.
+  await page.getByRole("button", { name: "Run", exact: true }).click();
+  await expect(page.getByTestId("run-panel")).toBeVisible();
+  const point = await page.evaluate(() =>
+    (document.querySelector("wb-editor") as EditorElement).tileOnPage(6, 2),
+  );
+  const seen: (number | undefined)[] = [];
+  for (let use = 0; use < 4; use += 1) {
+    const answered = page.waitForResponse(
+      async (res) =>
+        res.url().includes("/run/input") && res.request().postData()?.includes('"use"') === true,
+    );
+    await page.mouse.dblclick(point?.x ?? 0, point?.y ?? 0);
+    await answered;
+    await page.waitForTimeout(50);
+    seen.push((await first())?.state);
+  }
+  expect(seen).toEqual([1, 0, 1, 0]);
+  await page.getByRole("button", { name: "Stop" }).first().click();
+
+  // Both options can be turned off.
+  await page.getByRole("link", { name: "Settings" }).click();
+  await page.getByLabel("Clicking outside the room stops placing or moving").uncheck();
+  await page.getByLabel("Ctrl+Shift+click and the P key pick up furni").uncheck();
+  await page.getByRole("button", { name: "Save settings" }).click();
+  await page.getByRole("link", { name: "Workspace" }).click();
+  await page.getByRole("button", { name: /^Shortcut room/ }).click();
+  await page.getByRole("link", { name: "Open room" }).click();
+  await expect(page.getByTestId("room-canvas")).toBeVisible();
+  await page.getByLabel("Search all furni").fill("test_chair");
+  await page.locator('.palette-row[data-classname="test_chair"]').click();
+  await expect(bar).toHaveAttribute("data-placing", "test_chair");
+  await outside();
+  await expect(bar).toHaveAttribute("data-placing", "test_chair");
+  await page.keyboard.press("Escape");
+  await clickTile(page, 6, 2);
+  await expect(page.getByTestId("furni-card")).toBeVisible();
+  await page.keyboard.press("p");
+  expect((await room(page)).furni.length).toBe(1);
+  await expect(page.getByTestId("furni-card")).not.toContainText("Ctrl+Shift");
+
+  // Later tests expect the defaults.
+  await page.getByRole("link", { name: "Settings" }).click();
+  await page.getByLabel("Clicking outside the room stops placing or moving").check();
+  await page.getByLabel("Ctrl+Shift+click and the P key pick up furni").check();
+  await page.getByRole("button", { name: "Save settings" }).click();
 });
