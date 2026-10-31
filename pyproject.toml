@@ -1,6 +1,6 @@
 [project]
 name = "wiredbench"
-version = "0.2.0"
+version = "0.3.0"
 description = "Self-hosted browser sandbox for building, running and debugging Habbo WIRED."
 readme = "README.md"
 license = "MIT"
