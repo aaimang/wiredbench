@@ -30,6 +30,7 @@ export interface BoxField {
   labels?: Record<string, string>;
   saved_only?: boolean;
   min?: number;
+  step?: number;
   max?: number;
 }
 

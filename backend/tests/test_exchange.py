@@ -326,22 +326,103 @@ def test_real_files_come_back_exactly() -> None:
 def test_settings_that_cannot_be_written_are_reported() -> None:
     document = {
         "furni": [
+            {"id": 1, "classname": "wf_act_change_var_val", "x": 1, "y": 1, "wired": {"operation": "add"}},
+            {"id": 2, "classname": "wf_act_change_var_val", "x": 2, "y": 1, "wired": {"operation": "set"}},
+        ]
+    }
+    warnings = exchange.export_gpresets(document)[1]
+    assert (
+        warnings.count("wf_act_change_var_val: the setting operation cannot go into a G-Presets file yet.")
+        == 1
+    )
+
+
+def boxed(classname: str, section: str, box: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "bindings": [],
+        "furni": [
+            {
+                "id": 1,
+                "className": classname,
+                "name": "a",
+                "rotation": 0,
+                "location": {"x": 1, "y": 1, "z": 0},
+            }
+        ],
+        "wired": {section: [{"wiredId": 1, "config": "", **box}]},
+    }
+
+
+@pytest.mark.parametrize(
+    ("classname", "section", "options", "expected"),
+    [
+        (
+            "wf_trg_says_something",
+            "triggers",
+            [0, 1, 1],
+            {"owner_only": False, "match": "exact", "hide_message": True},
+        ),
+        ("wf_trg_periodically", "triggers", [5], {"seconds": 2.5}),
+        ("wf_trg_period_long", "triggers", [12], {"seconds": 60}),
+        ("wf_xtra_execution_limit", "addons", [10, 3], {"count": 10, "window_seconds": 1.5}),
+        ("wf_xtra_filter_users", "addons", [1, 0, 1], {"amount": 1}),
+        ("wf_cnd_user_count_in", "conditions", [2, 8], {"min": 2, "max": 8}),
+        ("wf_act_user_to_furni", "effects", [2], {"walking": "stop"}),
+        ("wf_act_move_rotate", "effects", [0, 3], {"rotation": "random"}),
+        (
+            "wf_xtra_text_output_variable",
+            "addons",
+            [0, -20, 1],
+            {"placeholder_type": "single", "display": "textual"},
+        ),
+        ("wf_var_user", "variables", [10, 1], {"availability": "persistent", "has_value": True}),
+        ("wf_var_furni", "variables", [1, 10], {"availability": "persistent", "has_value": True}),
+        ("wf_var_context", "variables", [1], {"has_value": True}),
+    ],
+)
+def test_option_numbers_read_as_settings(
+    classname: str, section: str, options: list[int], expected: dict[str, Any]
+) -> None:
+    file = boxed(classname, section, {"options": options})
+    document, _ = exchange.import_gpresets(json.loads(json.dumps(file)))
+    settings = document["furni"][0]["wired"]
+    assert {key: settings[key] for key in expected} == expected
+    assert exchange.export_gpresets(document)[0] == file, "untouched settings must not change the numbers"
+
+
+def test_edited_settings_write_their_numbers() -> None:
+    file = boxed("wf_trg_says_something", "triggers", {"options": [0, 1, 1]})
+    document, _ = exchange.import_gpresets(file)
+    document["furni"][0]["wired"].update(match="all", owner_only=True, hide_message=False)
+    out, warnings = exchange.export_gpresets(document)
+    assert out["wired"]["triggers"][0]["options"] == [1, 2, 0]
+    assert warnings == []
+
+
+def test_new_boxes_write_options_from_their_settings() -> None:
+    document = {
+        "furni": [
             {
                 "id": 1,
                 "classname": "wf_trg_says_something",
                 "x": 1,
                 "y": 1,
-                "wired": {"text": "hi", "match": "all"},
+                "wired": {"text": "hi", "match": "exact"},
             },
-            {
-                "id": 2,
-                "classname": "wf_trg_says_something",
-                "x": 2,
-                "y": 1,
-                "wired": {"text": "hi", "match": "contains"},
-            },
+            {"id": 2, "classname": "wf_trg_periodically", "x": 2, "y": 1, "wired": {"seconds": 10}},
+            {"id": 3, "classname": "wf_trg_says_something", "x": 3, "y": 1},
         ]
     }
     out, warnings = exchange.export_gpresets(document)
-    assert out["wired"]["triggers"][0]["config"] == "hi"
-    assert warnings == ["wf_trg_says_something: the setting match cannot go into a G-Presets file yet."]
+    triggers = out["wired"]["triggers"]
+    assert triggers[0]["options"] == [0, 1, 1]
+    assert triggers[1]["options"] == [20]
+    assert triggers[2]["options"] == [0, 0, 1]
+    assert warnings == []
+
+
+def test_unreadable_option_numbers_are_left_alone() -> None:
+    file = boxed("wf_trg_says_something", "triggers", {"options": [0, 9, "x"]})
+    document, _ = exchange.import_gpresets(json.loads(json.dumps(file)))
+    assert "match" not in document["furni"][0]["wired"]
+    assert exchange.export_gpresets(document)[0] == file

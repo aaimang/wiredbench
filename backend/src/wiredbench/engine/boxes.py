@@ -61,7 +61,7 @@ COMPARE = {
 }
 AMOUNT = {"name": "amount", "kind": "number", "label": "How many", "default": 1, "min": 0}
 ANTENNA = {"name": "antenna", "kind": "furni", "label": "Antenna", "default": []}
-SECONDS = {"name": "seconds", "kind": "number", "label": "Seconds", "default": 10, "min": 0}
+SECONDS = {"name": "seconds", "kind": "number", "label": "Seconds", "default": 10, "min": 0, "step": 0.5}
 
 
 def _saved(field: dict[str, Any]) -> dict[str, Any]:
@@ -77,6 +77,21 @@ def _effect(fidelity: str, *fields: dict[str, Any]) -> dict[str, Any]:
     return _box("effect", fidelity, *fields, DEFAULT_DELAY)
 
 
+AVAILABILITY = _saved(
+    {
+        "name": "availability",
+        "kind": "select",
+        "label": "Availability",
+        "options": ["active", "persistent", "shared"],
+        "labels": {"active": "While in the room", "persistent": "Persistent", "shared": "Shared"},
+        "default": "persistent",
+    }
+)
+HAS_VALUE = _saved({"name": "has_value", "kind": "bool", "label": "Has a number value", "default": True})
+LOG_LEVEL = _saved(
+    {"name": "level", "kind": "select", "label": "Log level", "options": ["0", "1", "2", "3"], "default": "2"}
+)
+
 BOXES: dict[str, dict[str, Any]] = {
     # Triggers
     "wf_trg_walks_on_furni": _box("trigger", DOCUMENTED, FURNI),
@@ -87,7 +102,7 @@ BOXES: dict[str, dict[str, Any]] = {
     "wf_trg_says_something": _box(
         "trigger",
         DOCUMENTED,
-        {"name": "text", "kind": "text", "label": "What is said", "default": ""},
+        {"name": "text", "kind": "text", "label": "What is said (not used by Match all text)", "default": ""},
         {
             "name": "match",
             "kind": "select",
@@ -164,19 +179,30 @@ BOXES: dict[str, dict[str, Any]] = {
     ),
     # Add-ons
     "wf_xtra_exec_in_order": _box("addon", DOCUMENTED),
-    "wf_xtra_random": _box("addon", DOCUMENTED),
+    "wf_xtra_random": _box(
+        "addon",
+        DOCUMENTED,
+        _saved(
+            {"name": "skip", "kind": "number", "label": "Effects to skip", "default": 0, "min": 0, "max": 100}
+        ),
+        _saved(
+            {"name": "pick", "kind": "number", "label": "Effects to pick", "default": 1, "min": 1, "max": 100}
+        ),
+    ),
     "wf_xtra_unseen": _box("addon", DOCUMENTED),
     "wf_xtra_or_eval": _box("addon", DOCUMENTED),
     "wf_xtra_execution_limit": _box(
         "addon",
         DOCUMENTED,
-        {"name": "count", "kind": "number", "label": "Runs allowed", "default": 10, "min": 1},
+        {"name": "count", "kind": "number", "label": "Runs allowed", "default": 10, "min": 1, "max": 100},
         {
             "name": "window_seconds",
             "kind": "number",
             "label": "Per this many seconds",
             "default": 1,
-            "min": 1,
+            "min": 0.5,
+            "max": 10,
+            "step": 0.5,
         },
     ),
     "wf_xtra_filter_users": _box("addon", DOCUMENTED, AMOUNT),
@@ -228,10 +254,10 @@ BOXES: dict[str, dict[str, Any]] = {
     ),
     "wf_xtra_var_time_util": _box("addon", DOCUMENTED, VARIABLE),
     # Variable definitions
-    "wf_var_user": _box("variable", DOCUMENTED, VARIABLE),
-    "wf_var_furni": _box("variable", DOCUMENTED, VARIABLE),
+    "wf_var_user": _box("variable", DOCUMENTED, VARIABLE, AVAILABILITY, HAS_VALUE),
+    "wf_var_furni": _box("variable", DOCUMENTED, VARIABLE, HAS_VALUE, AVAILABILITY),
     "wf_var_room": _box("variable", DOCUMENTED, VARIABLE),
-    "wf_var_context": _box("variable", ASSUMED, VARIABLE),
+    "wf_var_context": _box("variable", ASSUMED, VARIABLE, HAS_VALUE),
     # Effects
     "wf_act_give_var": _effect(ASSUMED, VARIABLE, VALUE, OVERWRITE, USER_SOURCE),
     "wf_act_remove_var": _effect(DOCUMENTED, VARIABLE, USER_SOURCE),
@@ -258,7 +284,9 @@ BOXES: dict[str, dict[str, Any]] = {
     "wf_act_show_message": _effect(
         DOCUMENTED, {"name": "text", "kind": "text", "label": "Message", "default": ""}, USER_SOURCE
     ),
-    "wf_act_log": _effect(ASSUMED, {"name": "text", "kind": "text", "label": "Log line", "default": ""}),
+    "wf_act_log": _effect(
+        ASSUMED, {"name": "text", "kind": "text", "label": "Log line", "default": ""}, LOG_LEVEL
+    ),
     "wf_act_neg_log": _effect(ASSUMED, {"name": "text", "kind": "text", "label": "Log line", "default": ""}),
     "wf_act_reset_timers": _effect(DOCUMENTED),
     "wf_act_teleport_to": _effect(DOCUMENTED, FURNI, USER_SOURCE),
@@ -296,7 +324,7 @@ BOXES: dict[str, dict[str, Any]] = {
             "name": "rotation",
             "kind": "select",
             "label": "Rotate",
-            "options": ["none", "clockwise", "counterclockwise"],
+            "options": ["none", "clockwise", "counterclockwise", "random"],
             "default": "none",
         },
     ),

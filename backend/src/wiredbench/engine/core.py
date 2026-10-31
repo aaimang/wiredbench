@@ -42,8 +42,11 @@ def _int(value: Any, default: int = 0) -> int:
     return default
 
 
-def _has_words(words: list[str], wanted: list[str]) -> bool:
-    return any(words[start : start + len(wanted)] == wanted for start in range(len(words)))
+def _float(value: Any, default: float) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
 
 
 def _clamp(value: int) -> int:
@@ -225,7 +228,7 @@ class Engine:
             self.definitions.setdefault(name, {"scope": "user", "time": True})["time"] = True
 
     def _schedule_period(self, stack: Stack, box: Box) -> None:
-        seconds = max(0.5, float(_int(box.get("seconds", 10), 10)))
+        seconds = max(0.5, _float(box.get("seconds", 10), 10.0))
         stack.next_period_ms[box.id] = self.now_ms + int(seconds * 1000)
 
     # --- Trace ---
@@ -300,13 +303,14 @@ class Engine:
         for stack, box in self._triggers("wf_trg_says_something"):
             keyword = str(box.get("text", "")).strip().lower()
             said = text.strip().lower()
-            # Assumed: "exact" means whole words and "all" the whole message. Older rooms saved exact=True.
-            match = "all" if box.get("exact") is True else box.get("match", "contains")
-            if not keyword:
-                continue
-            words = said.split()
-            found = {"all": said == keyword, "exact": _has_words(words, keyword.split())}
-            if found.get(str(match), keyword in said):
+            match = "exact" if box.get("exact") is True else str(box.get("match", "contains"))
+            if match == "all":
+                found = True  # Fires on every message, whatever the box's text says.
+            elif match == "exact":
+                found = bool(keyword) and said == keyword
+            else:
+                found = bool(keyword) and keyword in said
+            if found:
                 self._start(stack, Context(trigger=box, user=user_id))
 
     def _click(self, user_id: int, furni_id: int) -> None:
@@ -404,10 +408,11 @@ class Engine:
 
     def _limit_ok(self, stack: Stack) -> bool:
         addon = stack.find("wf_xtra_execution_limit")
-        count, window = DEFAULT_LIMIT
+        count, default_window = DEFAULT_LIMIT
+        window = float(default_window)
         if addon:
             count = max(1, _int(addon.get("count"), 10))
-            window = max(1, _int(addon.get("window_seconds"), 1))
+            window = max(0.5, _float(addon.get("window_seconds"), 1.0))
         while stack.last_runs and stack.last_runs[0] <= self.now_ms - window * 1000:
             stack.last_runs.popleft()
         if len(stack.last_runs) >= count:
@@ -848,7 +853,10 @@ class Engine:
             dx, dy = MOVES.get(str(box.get("direction", "none")), (0, 0))
             item["x"] += dx
             item["y"] += dy
-            turn = {"clockwise": 2, "counterclockwise": -2}.get(str(box.get("rotation", "none")), 0)
+            rotation = str(box.get("rotation", "none"))
+            turn = {"clockwise": 2, "counterclockwise": -2}.get(rotation, 0)
+            if rotation == "random":
+                turn = self.random.choice((0, 2, 4, 6))
             item["rot"] = (item["rot"] + turn) % 8
 
     # --- Inspection ---

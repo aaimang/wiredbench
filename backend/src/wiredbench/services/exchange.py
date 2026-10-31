@@ -46,6 +46,74 @@ KNOWN_BOXES: dict[str, dict[str, Any]] = {
 }
 
 
+# Where each setting sits in a box's options list: (setting, position, how the number reads).
+# A scale turns the number into seconds, a tuple lists names by number, and bool is 0 or 1.
+OPTION_FIELDS: dict[str, list[tuple[str, int, Any]]] = {
+    "wf_trg_says_something": [
+        ("owner_only", 0, bool),
+        ("match", 1, ("contains", "exact", "all")),
+        ("hide_message", 2, bool),
+    ],
+    "wf_trg_periodically": [("seconds", 0, 0.5)],
+    "wf_trg_period_short": [("seconds", 0, 0.05)],
+    "wf_trg_period_long": [("seconds", 0, 5)],
+    "wf_act_user_to_furni": [("walking", 0, ("closer", "keep", "stop"))],
+    "wf_act_move_rotate": [("rotation", 1, ("none", "clockwise", "counterclockwise", "random"))],
+    "wf_act_log": [("level", 0, ("0", "1", "2", "3"))],
+    "wf_cnd_user_count_in": [("min", 0, int), ("max", 1, int)],
+    "wf_cnd_not_user_count": [("min", 0, int), ("max", 1, int)],
+    "wf_xtra_execution_limit": [("count", 0, int), ("window_seconds", 1, 0.5)],
+    "wf_xtra_random": [("skip", 0, int), ("pick", 1, int)],
+    "wf_xtra_filter_users": [("amount", 0, int)],
+    "wf_xtra_filter_furni": [("amount", 0, int)],
+    "wf_xtra_text_output_variable": [
+        ("placeholder_type", 0, ("single", "multiple")),
+        ("display", 2, ("numeric", "textual")),
+    ],
+    "wf_var_user": [
+        ("availability", 0, {0: "active", 10: "persistent", 11: "shared"}),
+        ("has_value", 1, bool),
+    ],
+    "wf_var_furni": [
+        ("has_value", 0, bool),
+        ("availability", 1, {0: "active", 10: "persistent", 11: "shared"}),
+    ],
+    "wf_var_context": [("has_value", 0, bool)],
+}
+
+
+def _option_to_setting(raw: Any, reader: Any) -> Any:
+    if isinstance(raw, bool) or not isinstance(raw, int):
+        return None
+    if reader is bool:
+        return raw != 0
+    if reader is int:
+        return raw
+    if isinstance(reader, tuple):
+        return reader[raw] if 0 <= raw < len(reader) else None
+    if isinstance(reader, dict):
+        return reader.get(raw)
+    return raw * reader
+
+
+def _setting_to_option(value: Any, reader: Any) -> int | None:
+    if reader is bool:
+        return 1 if value else 0
+    if reader is int:
+        return int(value) if isinstance(value, int | float) else None
+    if isinstance(reader, tuple):
+        return reader.index(value) if value in reader else None
+    if isinstance(reader, dict):
+        return next((number for number, name in reader.items() if name == value), None)
+    return round(value / reader) if isinstance(value, int | float) else None
+
+
+def _write_option(box: dict[str, Any], position: int, number: int) -> None:
+    options = box["options"] if isinstance(box.get("options"), list) else []
+    box["options"] = options + [0] * (position + 1 - len(options)) if len(options) <= position else options
+    box["options"][position] = number
+
+
 def _invalid(message: str) -> ApiError:
     return ApiError(422, "invalid_room_file", message)
 
@@ -91,6 +159,12 @@ def friendly_settings(classname: str, box: dict[str, Any], names: dict[str, str]
         variable = names.get(str(box["variableIds"][0]))
         if variable:
             settings["variable"] = variable
+    options = box.get("options")
+    if isinstance(options, list):
+        for name, position, reader in OPTION_FIELDS.get(classname, []):
+            value = _option_to_setting(options[position], reader) if position < len(options) else None
+            if value is not None:
+                settings[name] = value
     return settings
 
 
@@ -225,7 +299,7 @@ def _export_furni(item: dict[str, Any]) -> dict[str, Any]:
 
 def _new_box(classname: str, warnings: list[str]) -> dict[str, Any]:
     known = KNOWN_BOXES.get(classname)
-    if known is None:
+    if known is None and classname not in OPTION_FIELDS:
         warnings.append(f"{classname} is new here, and its options are unknown. Check it after importing.")
     box: dict[str, Any] = {
         "secondItems": [],
@@ -265,9 +339,15 @@ def _apply_settings(
     """Writes back only the settings that differ from what the box already said."""
     settings: dict[str, Any] = item["wired"] if isinstance(item.get("wired"), dict) else {}
     classname = item["classname"]
+    mapped = {name: (position, reader) for name, position, reader in OPTION_FIELDS.get(classname, [])}
     for name, value in settings.items():
         if base.get(name) == value:
             continue
+        if name in mapped:
+            number = _setting_to_option(value, mapped[name][1])
+            if number is not None:
+                _write_option(box, mapped[name][0], number)
+                continue
         if name == "delay":
             box["delay"] = value
         elif name in ("furni", "antenna"):
@@ -312,6 +392,10 @@ def export_gpresets(document: dict[str, Any]) -> tuple[dict[str, Any], list[str]
             section, order = stored["section"], stored["order"]
         else:
             box, base = _new_box(classname, warnings), {}
+            for name, position, reader in OPTION_FIELDS.get(classname, []):
+                number = _setting_to_option(_default(classname, name), reader)
+                if number is not None:
+                    _write_option(box, position, number)
             order, next_order = next_order, next_order + 1
             if classname.startswith("wf_var_") and "variable" not in (item.get("wired") or {}):
                 warnings.append(f"{classname} at {item['x']}, {item['y']} has no variable name.")
