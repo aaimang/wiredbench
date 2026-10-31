@@ -250,18 +250,10 @@ test("the furni card, click outside, shortcuts and repeated use", async ({ page 
   const point = await page.evaluate(() =>
     (document.querySelector("wb-editor") as EditorElement).tileOnPage(6, 2),
   );
-  const seen: (number | undefined)[] = [];
-  for (let use = 0; use < 4; use += 1) {
-    const answered = page.waitForResponse(
-      async (res) =>
-        res.url().includes("/run/input") && res.request().postData()?.includes('"use"') === true,
-    );
+  for (const expected of [1, 0, 1, 0]) {
     await page.mouse.dblclick(point?.x ?? 0, point?.y ?? 0);
-    await answered;
-    await page.waitForTimeout(50);
-    seen.push((await first())?.state);
+    await expect.poll(async () => (await first())?.state).toBe(expected);
   }
-  expect(seen).toEqual([1, 0, 1, 0]);
   await page.getByRole("button", { name: "Stop" }).first().click();
 
   // Both options can be turned off.
@@ -290,4 +282,74 @@ test("the furni card, click outside, shortcuts and repeated use", async ({ page 
   await page.getByLabel("Clicking outside the room stops placing or moving").check();
   await page.getByLabel("Ctrl+Shift+click and the P key pick up furni").check();
   await page.getByRole("button", { name: "Save settings" }).click();
+});
+
+test("the avatar list selects, renames and removes", async ({ page }) => {
+  await login(page);
+  await page.getByRole("link", { name: "Workspace" }).click();
+  await page.getByRole("button", { name: "New sandbox" }).click();
+  await page.getByRole("textbox", { name: "Name" }).fill("Avatar room");
+  await page.getByRole("button", { name: "Create" }).click();
+  await page.getByRole("button", { name: /^Avatar room/ }).click();
+  await page.getByRole("link", { name: "Open room" }).click();
+  await expect(page.getByTestId("room-canvas")).toBeVisible();
+
+  const list = page.getByTestId("avatar-list");
+  await expect(list).toContainText("No avatars yet.");
+  await page.getByRole("button", { name: "Add avatar" }).click();
+  await list.getByLabel("Name of Demo").fill("First");
+  await list.getByLabel("Name of Demo").press("Enter");
+  await expect(list.getByLabel("Name of First")).toHaveValue("First");
+  await page.getByRole("button", { name: "Add avatar" }).click();
+  await expect(list.getByRole("listitem")).toHaveCount(2);
+  const names = async () =>
+    (await room(page)).avatars.map((a) => (a as unknown as { name: string }).name);
+  expect(await names()).toEqual(["First", "Demo"]);
+
+  // Bad and duplicate names are refused, and the look never changes.
+  const figure = await page.evaluate(
+    () =>
+      (
+        document.querySelector("wb-editor") as unknown as {
+          roomDocument: { avatars: { figure: string }[] };
+        }
+      ).roomDocument.avatars[0]?.figure,
+  );
+  await list.getByLabel("Name of Demo").fill("first");
+  await list.getByLabel("Name of Demo").press("Enter");
+  await expect(page.getByText("Another avatar in this room already has that name.")).toBeVisible();
+  await list.getByLabel("Name of First").fill("has space");
+  await list.getByLabel("Name of First").press("Enter");
+  await expect(page.getByText("Use up to 32 letters")).toBeVisible();
+  expect(await names()).toEqual(["First", "Demo"]);
+  const after = await page.evaluate(
+    () =>
+      (
+        document.querySelector("wb-editor") as unknown as {
+          roomDocument: { avatars: { figure: string }[] };
+        }
+      ).roomDocument.avatars[0]?.figure,
+  );
+  expect(after).toBe(figure);
+
+  // Selecting from the list shows it in the inspector, and renames survive a reload.
+  await list.getByRole("button", { name: "Select First" }).click();
+  await expect(page.getByTestId("inspector")).toContainText("First");
+  await page.getByRole("button", { name: "Save" }).click();
+  await expect(page.getByTestId("save-status")).toContainText("Saved");
+  await page.reload();
+  await expect(page.getByTestId("room-canvas")).toBeVisible();
+  await expect(list.getByLabel("Name of First")).toHaveValue("First");
+
+  // Names cannot change while the room runs.
+  await page.getByRole("button", { name: "Run", exact: true }).click();
+  await expect(list.getByLabel("Name of First")).toBeDisabled();
+  await expect(list.getByRole("button", { name: "Remove First" })).toBeDisabled();
+  await page.getByRole("button", { name: "Stop" }).first().click();
+
+  await list.getByRole("button", { name: "Remove First" }).click();
+  await expect(list.getByRole("listitem")).toHaveCount(1);
+  expect(await names()).toEqual(["Demo"]);
+  await page.keyboard.press("ControlOrMeta+z");
+  await expect(list.getByRole("listitem")).toHaveCount(2);
 });

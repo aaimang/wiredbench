@@ -116,6 +116,7 @@ class WbEditor extends HTMLElement {
   private paletteList = h("div", { class: "palette-list", "data-testid": "palette-list" });
   private canvasHost = h("div", { class: "editor-canvas" });
   private selectionBar = h("div", { class: "selection-bar" });
+  private avatarList = h("ul", { class: "avatar-list", "data-testid": "avatar-list" });
   private furniCard = h("div", { class: "furni-card", "data-testid": "furni-card", hidden: true });
   private stage = h("div", { class: "editor-stage" });
   private inspector = h("aside", { class: "editor-inspector", "data-testid": "inspector" });
@@ -813,6 +814,7 @@ class WbEditor extends HTMLElement {
     this.renderToolbar();
     this.renderSelectionBar();
     this.renderFurniCard();
+    this.renderAvatarList();
     this.renderInspector();
   }
 
@@ -958,6 +960,7 @@ class WbEditor extends HTMLElement {
     this.selected = null;
     this.mode = "build";
     this.needsDraw = true;
+    this.renderPanels();
   }
 
   /** Shows what the engine did. Walking avatars are left alone, because the browser moves them. */
@@ -1163,6 +1166,7 @@ class WbEditor extends HTMLElement {
     replace(
       this.palette,
       this.avatarForm(),
+      this.avatarList,
       h("h2", {}, T.furni),
       h("label", { class: "search" }, icon(Search), search),
       type,
@@ -1478,6 +1482,102 @@ class WbEditor extends HTMLElement {
     this.change(() => {
       item[key] = key === "z" ? Math.min(40, value) : Math.floor(value);
     });
+  }
+
+  private renderAvatarList(): void {
+    // Redrawing would lose what someone is typing.
+    if (
+      this.avatarList.contains(document.activeElement) &&
+      document.activeElement?.tagName === "INPUT"
+    ) {
+      return;
+    }
+    if (!this.room.avatars.length) {
+      replace(this.avatarList, h("li", { class: "muted" }, T.noAvatars));
+      return;
+    }
+    replace(this.avatarList, ...this.room.avatars.map((avatar) => this.avatarRow(avatar)));
+  }
+
+  private avatarRow(avatar: PlacedAvatar): HTMLElement {
+    const selected = this.selected?.kind === "avatar" && this.selected.id === avatar.id;
+    const locked = this.run !== null; // A running room has already read its names.
+    const name = h("input", {
+      value: avatar.name,
+      maxlength: 32,
+      "aria-label": T.avatarName(avatar.name),
+      disabled: locked,
+    });
+    name.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") name.blur();
+      if (event.key === "Escape") {
+        name.value = avatar.name;
+        name.blur();
+      }
+    });
+    name.addEventListener("change", () => this.renameAvatar(avatar, name));
+    return h(
+      "li",
+      { class: "avatar-row", "aria-current": selected ? "true" : null },
+      h(
+        "button",
+        {
+          class: "btn avatar-row-pick",
+          type: "button",
+          "aria-label": T.selectAvatar(avatar.name),
+          title: T.selectAvatar(avatar.name),
+          onclick: () => this.select({ kind: "avatar", id: avatar.id }),
+        },
+        h("img", { src: avatarUrl(avatar, "std", 2, 0), alt: "" }),
+      ),
+      name,
+      h(
+        "button",
+        {
+          class: "btn btn-quiet-danger btn-icon",
+          type: "button",
+          "aria-label": T.removeAvatar(avatar.name),
+          title: T.removeAvatar(avatar.name),
+          disabled: locked,
+          onclick: () => this.removeAvatar(avatar.id),
+        },
+        icon(Trash2),
+      ),
+    );
+  }
+
+  /** Changes the name shown here. The look stays, because it comes from the saved figure. */
+  private renameAvatar(avatar: PlacedAvatar, input: HTMLInputElement): void {
+    const wanted = input.value.trim();
+    const problem = !/^[\p{L}\p{N}_.-]{1,32}$/u.test(wanted)
+      ? T.nameInvalid
+      : this.room.avatars.some(
+            (other) => other.id !== avatar.id && other.name.toLowerCase() === wanted.toLowerCase(),
+          )
+        ? T.nameTaken
+        : null;
+    if (problem) {
+      toast(problem, "error");
+      input.value = avatar.name;
+      return;
+    }
+    if (wanted === avatar.name) {
+      input.value = wanted;
+      return;
+    }
+    input.blur();
+    this.change(() => {
+      avatar.name = wanted;
+    });
+  }
+
+  private removeAvatar(id: number): void {
+    this.change(() => {
+      this.room.avatars = this.room.avatars.filter((a) => a.id !== id);
+      this.walkers.delete(id);
+      if (this.selected?.kind === "avatar" && this.selected.id === id) this.selected = null;
+    });
+    this.needsDraw = true;
   }
 
   private avatarInspector(avatar: PlacedAvatar): HTMLElement[] {
