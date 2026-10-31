@@ -127,3 +127,24 @@ test("the time tracking example runs in the browser and leaves the saved room al
   await expect(page.getByTestId("save-status")).toContainText("Saved");
   expect(problems).toEqual([]);
 });
+
+test("the guide lists boxes, filters them and adds an example room", async ({ page }) => {
+  await login(page);
+  await page.getByRole("link", { name: "Guide" }).click();
+  const list = page.getByTestId("guide-list");
+  await expect(list).toContainText("wf_act_toggle_state");
+  await expect(list).toContainText("Tried in a real room");
+  await page.getByLabel("Search boxes").fill("toggle_state");
+  await expect(list.getByRole("listitem")).toHaveCount(1);
+  await page.getByLabel("Search boxes").fill("no such box");
+  await expect(list).toContainText("No boxes match");
+  await page.getByLabel("Search boxes").fill("");
+  await page.getByLabel("All statuses").selectOption("real_room");
+  await expect(list.getByRole("listitem")).toHaveCount(2);
+  await page
+    .getByTestId("tutorial-switch-flip")
+    .getByRole("button", { name: "Add and open" })
+    .click();
+  await expect(page.getByTestId("room-canvas")).toBeVisible();
+  await expect(page).toHaveURL(/\/sandbox\/\d+$/);
+});

@@ -5,7 +5,9 @@ import "./catalogue";
 import "./workspace";
 import "./settings";
 import "./dashboard";
+import "./guide";
 import {
+  BookOpen,
   Boxes,
   DoorOpen,
   Eye,
@@ -34,6 +36,7 @@ const root = document.getElementById("app") as HTMLElement;
 const PAGES: Record<string, { tag: string; label: string; node: Parameters<typeof icon>[0] }> = {
   "/catalogue": { tag: "wb-catalogue", label: t.nav.catalogue, node: Boxes },
   "/workspace": { tag: "wb-workspace", label: t.nav.workspace, node: FolderTree },
+  "/guide": { tag: "wb-guide", label: t.nav.guide, node: BookOpen },
   "/dashboard": { tag: "wb-dashboard", label: t.nav.dashboard, node: Gauge },
   "/settings": { tag: "wb-settings", label: t.nav.settings, node: SettingsIcon },
 };

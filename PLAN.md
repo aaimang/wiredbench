@@ -234,8 +234,15 @@ Import keeps each furni's and box's original data, and export changes only what 
 file comes back identical. All three sample files pass this. Settings are read only where samples support
 the meaning: `items`, `delay`, `config` and variable names. Option numbers stay unread, so boxes that are new
 in Wiredbench use values seen in real files, or empty options and a warning. The product describes the file
-format and links to neither G-Earth nor G-Presets, because of Fansite Policy 1.5. Guide and tutorials are still
-to come, and no exported file has been imported into a real room yet.
+format and links to neither G-Earth nor G-Presets, because of Fansite Policy 1.5.
+
+**Real-room result (2026-10-31):** a Wiredbench export with two `wf_floor_switch1`, `wf_trg_state_changed` and
+`wf_act_toggle_state` imported through G-Presets into a real room, and using one switch flipped the other. So the
+file shape works, and `furniSources: [100]` with `items` behaved as picks. Only those two box types are shown as
+tried in a real room, and other option values remain unproven.
+
+The guide lists every box from the catalogue and the engine. Example rooms are added as editable rooms, rather
+than the read-only ones first planned, because duplicating a read-only room added a step and no protection.
 
 ### Debugging additions
 
@@ -289,7 +296,7 @@ also covers the 10-second worst-case loss when a user leaves without standing up
 | 2. Room (built) | Renderer, asset cache, placement, avatars, pathfinding, editor layout | An avatar walks and sits in a saved room |
 | 3. Engine (built) | Wave 1, stubs, inspector, debugger | Time tracking tutorial passes |
 | 4. Control (built, real-room comparison open) | Mock API, dashboard, view-as, settings | Official wrappers work against the mock |
-| 5. Exchange | Import, export, guide, tutorials | A preset imports into a real room and behaves the same |
+| 5. Exchange (built, one small setup proven) | Import, export, guide, tutorials | A preset imports into a real room and behaves the same |
 | 6. Depth | Wave 2, stack checker | Every box has an honest badge |
 | 7. Launch | Security pass, landing page, Docker docs, `v1.0.0` | All release gates pass |
 
