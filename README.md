@@ -31,8 +31,10 @@ Wiredbench is not affiliated with, endorsed, sponsored, or specifically approved
 - **View as user:** walk and chat in a room as a visitor. WIRED settings, the trace and variables never
   leave the server, boxes with no catalogue offer are hidden, and every other route is refused.
 - **Import and export:** bring in a G-Presets JSON file, and export it again with unknown fields untouched.
-  Export also makes a furni list and warns about boxes that may be hard to get. Files from new rooms have
-  not yet been proven in a real room. A Wiredbench file backs up a room exactly.
+  Export also makes a furni list and warns about boxes that may be hard to get. A small exported file has
+  worked in a real room, and larger setups are still unproven. A Wiredbench file backs up a room exactly.
+- **Guide:** every WIRED box with its official name, purpose, an example and how far its simulation can be
+  trusted, plus example rooms you can add to your workspace.
 - **Workspace:** nested folders of sandboxes, with rename, move, duplicate, version history and a
   30-day trash.
 - **Settings:** default hotel, theme, automatic update checks, cache limit, engine tick, mock API rate
@@ -202,6 +204,7 @@ running server.
 | PATCH | `/api/folders/{folder_id}` | Admin |
 | GET | `/api/furni/{revision}/{classname}/atlas` | Admin |
 | GET | `/api/furni/{revision}/{classname}/manifest` | Admin |
+| GET | `/api/guide` | Admin |
 | POST | `/api/import` | Admin |
 | GET | `/api/public/rooms/{room_id}/variables` | Public |
 | POST | `/api/public/rooms/{room_id}/variables/bulk-delete` | Public |
@@ -245,7 +248,8 @@ running server.
 | GET | `/api/trash` | Admin |
 | DELETE | `/api/trash/{kind}/{item_id}` | Admin |
 | POST | `/api/trash/{kind}/{item_id}/restore` | Admin |
-| POST | `/api/tutorials/time-tracking` | Admin |
+| GET | `/api/tutorials` | Admin |
+| POST | `/api/tutorials/{slug}` | Admin |
 | GET | `/api/view/sandboxes` | Admin |
 | GET | `/api/view/sandboxes/{sandbox_id}` | Admin |
 | POST | `/api/view/sandboxes/{sandbox_id}/run` | Admin |

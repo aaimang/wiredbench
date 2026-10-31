@@ -162,3 +162,111 @@ def time_tracking(hotel: str = "sandbox") -> dict[str, Any]:
             }
         ],
     }
+
+
+def _box(furni_id: int, classname: str, x: int, y: int, z: float, settings: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "id": furni_id,
+        "classname": classname,
+        "x": x,
+        "y": y,
+        "z": z,
+        "rot": 0,
+        "state": 0,
+        "wired": settings,
+    }
+
+
+def _plain(furni_id: int, classname: str, x: int, y: int) -> dict[str, Any]:
+    return {"id": furni_id, "classname": classname, "x": x, "y": y, "z": 0, "rot": 0, "state": 0}
+
+
+def _visitor(hotel: str) -> dict[str, Any]:
+    return {
+        "id": AVATAR,
+        "name": "Visitor",
+        "hotel": hotel,
+        "figure": FIGURE,
+        "x": 4,
+        "y": 6,
+        "z": 0,
+        "dir": 0,
+        "pose": "std",
+    }
+
+
+def switch_flip(hotel: str = "sandbox") -> dict[str, Any]:
+    """The same room as the first preset that was tried in a real room."""
+    return {
+        "schema": 1,
+        "room": {"width": 10, "height": 10},
+        "furni": [
+            _plain(1, "wf_floor_switch1", 2, 4),
+            _plain(2, "wf_floor_switch1", 6, 4),
+            _box(3, "wf_trg_state_changed", 4, 2, 0, {"furni": [1]}),
+            _box(4, "wf_act_toggle_state", 4, 2, 0.65, {"furni": [2]}),
+        ],
+        "avatars": [_visitor(hotel)],
+    }
+
+
+def signal_relay(hotel: str = "sandbox") -> dict[str, Any]:
+    return {
+        "schema": 1,
+        "room": {"width": 10, "height": 10},
+        "furni": [
+            _plain(1, "wf_floor_switch1", 2, 4),
+            _plain(2, "wf_floor_switch1", 6, 4),
+            _plain(3, "wf_antenna1", 4, 0),
+            _box(4, "wf_trg_state_changed", 2, 2, 0, {"furni": [1]}),
+            _box(5, "wf_act_send_signal", 2, 2, 0.65, {"antenna": [3], "user_source": "trigger"}),
+            _box(6, "wf_trg_recv_signal", 6, 2, 0, {"antenna": [3]}),
+            _box(7, "wf_act_toggle_state", 6, 2, 0.65, {"furni": [2]}),
+        ],
+        "avatars": [_visitor(hotel)],
+    }
+
+
+def score_counter(hotel: str = "sandbox") -> dict[str, Any]:
+    # Boxes run from the top of the stack down, so giving the variable sits above adding to it.
+    add = {"variable": "score", "operation": "add", "value": 1, "user_source": "trigger"}
+    return {
+        "schema": 1,
+        "room": {"width": 10, "height": 10},
+        "furni": [
+            _box(1, "wf_var_user", 0, 0, 0, {"variable": "score"}),
+            _box(2, "wf_trg_says_something", 3, 2, 0, {"text": "point"}),
+            _box(3, "wf_act_change_var_val", 3, 2, 0.65, add),
+            _box(4, "wf_act_give_var", 3, 2, 1.3, {"variable": "score", "user_source": "trigger"}),
+            _box(5, "wf_xtra_exec_in_order", 3, 2, 1.95, {}),
+        ],
+        "avatars": [_visitor(hotel)],
+    }
+
+
+TUTORIALS: dict[str, dict[str, Any]] = {
+    "switch-flip": {
+        "title": "Switch flips a switch",
+        "description": "One trigger and one effect. This is the setup that has been tried in a real room.",
+        "try": "Press Run, then double-click the left switch.",
+        "build": switch_flip,
+    },
+    "signal-relay": {
+        "title": "Signal relay",
+        "description": "One stack sends a signal through an antenna, and another stack reacts to it.",
+        "try": "Press Run, double-click the left switch, and watch the trace.",
+        "build": signal_relay,
+    },
+    "score-counter": {
+        "title": "Score counter",
+        "description": "A user variable that goes up each time someone says a keyword.",
+        "try": "Press Run, say point, and watch score in the variables table.",
+        "build": score_counter,
+    },
+    "time-tracking": {
+        "title": "Time tracking example",
+        "description": "A larger room that counts time spent on a seat, from baikal's article.",
+        "try": "Press Run, walk onto the chair, wait, then say :time.",
+        "build": time_tracking,
+    },
+}

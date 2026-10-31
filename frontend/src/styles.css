@@ -1429,6 +1429,73 @@ wb-room-view {
   object-position: top;
 }
 
+/* Guide */
+
+wb-guide {
+  display: block;
+  height: 100%;
+  overflow: auto;
+}
+
+.guide-page {
+  display: grid;
+  gap: 12px;
+  max-width: 900px;
+  padding: 18px 16px 32px;
+}
+
+.guide-tutorials {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: 12px;
+}
+
+.guide-tutorial {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+  justify-items: start;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+
+.guide-tutorial h3,
+.guide-tutorial p,
+.guide-row h3,
+.guide-row p {
+  margin: 0;
+}
+
+.guide-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.guide-filters .search {
+  flex: 1 1 220px;
+}
+
+.guide-list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.guide-row {
+  display: grid;
+  gap: 3px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+
+.guide-status-real_room {
+  border-color: var(--wire-condition);
+  color: var(--wire-condition);
+}
+
 /* Toasts */
 
 #toasts {

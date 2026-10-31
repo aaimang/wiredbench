@@ -7,6 +7,7 @@ export const t = {
   nav: {
     catalogue: "Catalogue",
     workspace: "Workspace",
+    guide: "Guide",
     dashboard: "Dashboard",
     settings: "Settings",
     viewAs: "View as user",
@@ -27,6 +28,30 @@ export const t = {
     send: "Send",
     help: "Click a tile to walk there, or a furni to use it.",
     noWebgl: "This browser cannot draw the room, because WebGL is not available.",
+  },
+
+  guide: {
+    title: "Guide",
+    tutorials: "Example rooms",
+    tutorialsHelp: "Each one is added to your workspace as a room you can change.",
+    add: "Add and open",
+    tryIt: (text: string) => `Try it: ${text}`,
+    boxes: "WIRED boxes",
+    search: "Search boxes",
+    allTypes: "All types",
+    allStatuses: "All statuses",
+    count: (shown: number, total: number) => `Showing ${shown} of ${total}.`,
+    none: "No boxes match. Clear the search to see them all.",
+    noCatalogue: "Download furnidata in Catalogue to see every box and its official name.",
+    example: (text: string) => `Example: ${text}`,
+    noPurpose: "No description yet.",
+    statuses: {
+      real_room: "Tried in a real room",
+      documented: "Simulated from public sources",
+      assumed: "Simulated, best guess",
+      not_simulated: "Not simulated yet",
+    } as Record<string, string>,
+    noOffer: "No catalogue offer",
   },
 
   dashboard: {

@@ -9,17 +9,19 @@ from sqlalchemy.orm import Session
 
 from wiredbench.api.deps import Services, audit, get_db, get_services
 from wiredbench.config import Hotel
-from wiredbench.engine.boxes import catalogue
+from wiredbench.engine.boxes import BOXES, catalogue
 from wiredbench.engine.core import MAX_ADVANCE_MS
+from wiredbench.engine.guide import GUIDE, REAL_ROOM_CHECKED
 from wiredbench.engine.sessions import Run, run_command, state
-from wiredbench.engine.tutorials import time_tracking
-from wiredbench.errors import ApiError
+from wiredbench.engine.tutorials import TUTORIALS
+from wiredbench.errors import ApiError, not_found
 from wiredbench.models import Sandbox
 from wiredbench.services import preferences
 from wiredbench.services import workspace as ws
 
 router = APIRouter(prefix="/api", tags=["engine"])
 
+GUIDE_PAGE = 200
 Int = Annotated[int, Field(ge=0, le=2**31)]
 
 
@@ -163,20 +165,69 @@ def dashboard(services: Services = Depends(get_services), db: Session = Depends(
     return {"rooms": rooms}
 
 
-@router.post("/tutorials/time-tracking", status_code=201)
-def add_time_tracking(
+@router.get("/tutorials")
+def list_tutorials() -> list[dict[str, str]]:
+    return [
+        {"slug": slug, "title": item["title"], "description": item["description"], "try": item["try"]}
+        for slug, item in TUTORIALS.items()
+    ]
+
+
+@router.get("/guide")
+def guide(
+    hotel: Hotel | None = None,
+    services: Services = Depends(get_services),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Every WIRED box the catalogue or the engine knows, and how far its behaviour can be trusted."""
+    chosen = hotel or preferences.load(db, services.settings).default_hotel
+    listed: dict[str, dict[str, Any]] = {}
+    offset = 0
+    while True:
+        page = services.catalog.search(chosen, scope="wired", offset=offset, limit=GUIDE_PAGE)
+        listed.update({item["classname"]: item for item in page["items"]})
+        offset += GUIDE_PAGE
+        if len(page["items"]) < GUIDE_PAGE:
+            break
+    rows = []
+    for classname in sorted(listed | dict.fromkeys(BOXES, {})):
+        item, spec = listed.get(classname, {}), BOXES.get(classname)
+        purpose, example = GUIDE.get(classname, (item.get("description") or "", ""))
+        if classname in REAL_ROOM_CHECKED:
+            status = "real_room"
+        else:
+            status = spec["fidelity"] if spec else "not_simulated"
+        rows.append(
+            {
+                "classname": classname,
+                "name": item.get("name") or classname,
+                "type": item.get("wired_type") or (spec["kind"] if spec else "utility"),
+                "purpose": purpose,
+                "example": example,
+                "status": status,
+                "release_stage": item.get("release_stage", "unknown"),
+                "revision": item.get("revision"),
+            }
+        )
+    return {"hotel": chosen, "rows": rows}
+
+
+@router.post("/tutorials/{slug}", status_code=201)
+def add_tutorial(
+    slug: str,
     body: Tutorial,
     request: Request,
     services: Services = Depends(get_services),
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
+    tutorial = TUTORIALS.get(slug)
+    if tutorial is None:
+        raise not_found("Tutorial")
     hotel = body.hotel or preferences.load(db, services.settings).default_hotel
-    name = ws.free_name(db, "Time tracking example", None, "sandbox", "copy")
-    sandbox = ws.create_sandbox(
-        db, name, None, "From baikal's Habbo Wired time tracking article.", hotel, None
-    )
+    name = ws.free_name(db, tutorial["title"], None, "sandbox", "copy")
+    sandbox = ws.create_sandbox(db, name, None, tutorial["description"], hotel, None)
     ws.save_document(
-        db, sandbox.id, time_tracking(hotel), sandbox.revision, services.catalog.current_sha(hotel)
+        db, sandbox.id, tutorial["build"](hotel), sandbox.revision, services.catalog.current_sha(hotel)
     )
     audit(db, request, "tutorial_add", name)
     db.commit()
