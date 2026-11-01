@@ -346,6 +346,69 @@ test("a chosen face moves, is kept after Stop and a reload, and can go back to d
   await expect.poll(saved).toBeNull();
 });
 
+test("a new action or face only appears once all of its images have loaded", async ({ page }) => {
+  await login(page);
+  await page.getByRole("link", { name: "Guide" }).click();
+  await page
+    .getByTestId("tutorial-score-counter")
+    .getByRole("button", { name: "Add and open" })
+    .click();
+  const canvas = page.getByTestId("room-canvas");
+  await expect(canvas).toBeVisible();
+
+  // The test server's avatar images are empty, and these must show on the canvas.
+  const solid = Buffer.from(
+    await page.evaluate(() => {
+      const image = document.createElement("canvas");
+      image.width = 64;
+      image.height = 110;
+      const paint = image.getContext("2d") as CanvasRenderingContext2D;
+      paint.fillStyle = "#d02020";
+      paint.fillRect(0, 0, 64, 110);
+      return image.toDataURL("image/png").split(",")[1] as string;
+    }),
+    "base64",
+  );
+  const held = new Map<string, () => void>();
+  await page.route(/\/image\?.*(action=wav|gesture=sad|gesture=eyb)/, async (route) => {
+    const url = route.request().url();
+    await new Promise<void>((release) => held.set(url, release));
+    await route.fulfill({ contentType: "image/png", body: solid });
+  });
+  const release = (...parts: string[]) => {
+    for (const [url, go] of held) {
+      if (parts.every((part) => url.includes(part))) {
+        go();
+        held.delete(url);
+      }
+    }
+  };
+  await page.locator(".avatar-row-pick").first().click();
+  const room = page.locator("wb-editor");
+  const still = async () => {
+    await page.waitForTimeout(300);
+    return canvas.screenshot();
+  };
+  const before = await still();
+
+  await room.getByRole("button", { name: "Wave" }).click();
+  await expect
+    .poll(() => [...held.keys()].filter((url) => url.includes("action=wav")).length)
+    .toBe(2);
+  release("action=wav", "frame=0");
+  expect((await still()).equals(before)).toBe(true);
+  release("action=wav");
+  await expect.poll(async () => (await canvas.screenshot()).equals(before)).toBe(false);
+  await page.waitForTimeout(3000); // Lets the wave finish, back to the standing image.
+
+  const standing = await still();
+  await page.getByTestId("avatar-face").selectOption({ label: "Upset" });
+  release("gesture=sad");
+  expect((await still()).equals(standing)).toBe(true);
+  release("gesture=eyb");
+  await expect.poll(async () => (await canvas.screenshot()).equals(standing)).toBe(false);
+});
+
 test("walking in a run keeps the new facing and the panel follows it", async ({ page }) => {
   await login(page);
   await page.getByRole("link", { name: "Guide" }).click();
@@ -403,23 +466,23 @@ test("the user panel draws signs, hand items and actions, and values stay curren
     .click();
   await page.getByRole("button", { name: "Run", exact: true }).click();
   await page.locator(".avatar-row-pick").first().click();
+  // The panel loads its choices ahead of time, so an image may be asked for before it is chosen.
+  const images: string[] = [];
+  page.on("request", (r) => {
+    if (r.url().includes("/image")) images.push(decodeURIComponent(r.url()));
+  });
   const asked = (part: string) =>
-    page.waitForRequest(
-      (r) => r.url().includes("/image") && decodeURIComponent(r.url()).includes(part),
-    );
+    expect.poll(() => images.some((url) => url.includes(part)), { timeout: 15000 }).toBe(true);
   const actions = page.getByTestId("avatar-actions");
-  let shown = asked("action=sig=6");
   await actions.getByLabel("Sign").selectOption({ label: "6" });
-  await shown;
-  shown = asked("action=wav");
+  await asked("action=sig=6");
   await actions.getByRole("button", { name: "Wave" }).click();
-  await shown;
+  await asked("action=wav");
   await actions.getByLabel("Sign").selectOption({ label: "None" });
   await page.getByTestId("avatar-details").locator("summary").click();
-  shown = asked("crr=3");
   const hand = page.getByTestId("avatar-details").getByLabel("Hand item");
   await hand.selectOption("3");
-  await shown;
+  await asked("crr=3");
   await expect(page.getByTestId("run-built-ins")).toContainText("3");
   await expect(hand).toHaveValue("3");
   await hand.selectOption({ label: "None" });

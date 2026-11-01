@@ -72,6 +72,15 @@ const T = t.editor;
 const NOT_HELD = -1;
 const DEMO_FIGURE = "hd-180-1.ch-210-66.lg-270-82.sh-290-91.hr-100-61";
 const SECONDS_PER_STEP = 0.5;
+/** A look that takes longer than this to load is shown anyway, so a choice never seems ignored. */
+const LOOK_WAIT_MS = 3000;
+
+function lookReady(loading: Promise<void> | undefined): Promise<void> {
+  return Promise.race([
+    loading ?? Promise.resolve(),
+    new Promise<void>((done) => setTimeout(done, LOOK_WAIT_MS)),
+  ]);
+}
 const WALK_FRAMES_PER_SECOND = 8;
 const AUTOSAVE_MS = 1500;
 const PALETTE_SIZE = 60;
@@ -130,6 +139,10 @@ class WbEditor extends HTMLElement {
   private hover: [number, number] | null = null;
   private walkers = new Map<number, Walker>();
   private actions = new Map<number, { action: AvatarAction; started: number }>();
+  /** Looks chosen but not fully loaded. The avatar keeps doing what it was doing until they are. */
+  private actionWaits = new Map<number, number>();
+  private faceWaits = new Map<number, { shown: string | null; token: number }>();
+  private lookToken = 0;
   private actionStep = -1;
   private signs = new Map<number, { sign: number; started: number }>();
   private clock = 0;
@@ -316,13 +329,14 @@ class WbEditor extends HTMLElement {
 
   private avatarLook(avatar: PlacedAvatar) {
     const playing = this.actions.get(avatar.id);
+    const waiting = this.faceWaits.get(avatar.id);
     return withFace(
       avatarExtras(
         this.heldDetails(avatar),
         playing?.action,
         playing ? performance.now() - playing.started : 0,
       ),
-      avatar,
+      waiting ? { ...avatar, face: waiting.shown } : avatar,
       this.walkers.has(avatar.id),
       performance.now(),
     );
@@ -388,13 +402,22 @@ class WbEditor extends HTMLElement {
   }
 
   private playAction(avatar: PlacedAvatar, action: AvatarAction): void {
-    this.renderer?.preloadAction(avatar, avatar.pose, avatar.dir, action);
-    this.actions.set(avatar.id, { action, started: performance.now() });
-    this.needsDraw = true;
+    const walker = this.walkers.get(avatar.id);
+    if (walker) this.preloadWalker(walker, avatar, action);
+    const pose = this.avatarPose(avatar);
+    const token = ++this.lookToken;
+    this.actionWaits.set(avatar.id, token);
+    void lookReady(this.renderer?.preloadAction(avatar, pose.action, pose.dir, action)).then(() => {
+      if (this.actionWaits.get(avatar.id) !== token) return;
+      this.actionWaits.delete(avatar.id);
+      this.actions.set(avatar.id, { action, started: performance.now() });
+      this.needsDraw = true;
+    });
   }
 
   private tick(seconds: number): void {
     this.tickActions();
+    if (this.faceWaits.size > 0) this.needsDraw = true; // The face being replaced keeps moving.
     if (this.walkers.size > 0) {
       this.clock += seconds;
       this.advanceWalkers(seconds);
@@ -446,9 +469,12 @@ class WbEditor extends HTMLElement {
   }
 
   /** Every direction left on the path, for what the avatar is doing now. Known frames cost nothing. */
-  private preloadWalker(walker: Walker, avatar: PlacedAvatar): void {
+  private preloadWalker(
+    walker: Walker,
+    avatar: PlacedAvatar,
+    action = this.actions.get(avatar.id)?.action,
+  ): void {
     const details = this.heldDetails(avatar);
-    const action = this.actions.get(avatar.id)?.action;
     let from: [number, number] = [walker.from[0], walker.from[1]];
     const seen = new Set<number>();
     for (const step of walker.path) {
@@ -2015,6 +2041,13 @@ class WbEditor extends HTMLElement {
     }
     height.textContent = T.debugHeight(avatar.z);
     position.textContent = T.avatarAt(avatar.x, avatar.y, T.poses[avatar.pose] ?? avatar.pose);
+    if (!this.walkers.has(avatar.id)) {
+      this.renderer?.warmChoices(
+        avatar,
+        Object.keys(T.avatarActionNames) as AvatarAction[],
+        T.avatarSigns.length,
+      );
+    }
     const { extra, gesture } = withFace(avatarExtras(this.heldDetails(avatar)), avatar, false, 0);
     const src = avatarUrl(avatar, figureAction(avatar.pose, extra), avatar.dir, 0, gesture);
     if (preview.getAttribute("src") !== src) preview.src = src;
@@ -2051,7 +2084,17 @@ class WbEditor extends HTMLElement {
       this.history.record(this.room);
       this.markDirty();
     }
+    // The choice is kept at once, and the face on screen changes when all of the new one has loaded.
+    const pose = this.avatarPose(avatar);
+    const shown = this.faceWaits.get(avatar.id)?.shown ?? avatar.face ?? null;
+    const token = ++this.lookToken;
+    this.faceWaits.set(avatar.id, { shown, token });
     avatar.face = face;
+    void lookReady(this.renderer?.loadFace(avatar, pose)).then(() => {
+      if (this.faceWaits.get(avatar.id)?.token !== token) return;
+      this.faceWaits.delete(avatar.id);
+      this.needsDraw = true;
+    });
     this.needsDraw = true;
     this.syncAvatarPanel();
   }
