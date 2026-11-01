@@ -43,6 +43,7 @@ export interface BoxField {
 export interface BoxSpec {
   kind: string;
   fidelity: string;
+  checked_on?: string | null;
   fields: BoxField[];
 }
 

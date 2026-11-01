@@ -1923,6 +1923,10 @@ wb-editor {
   border-style: dashed;
 }
 
+.fidelity-checked {
+  border-color: var(--success, currentColor);
+}
+
 .editor-inspector .badge {
   align-self: flex-start;
 }

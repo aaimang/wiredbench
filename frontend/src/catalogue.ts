@@ -399,6 +399,7 @@ class WbCatalogue extends HTMLElement {
 
   private simulation(classname: string): string {
     const spec = this.boxes[classname];
+    if (spec?.checked_on) return t.run.checkedOn(spec.checked_on);
     return spec ? (t.run.fidelity[spec.fidelity] ?? spec.fidelity) : t.detail.notSimulated;
   }
 

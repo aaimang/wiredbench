@@ -7,6 +7,7 @@ compared with a real room. Boxes not listed here are placed as logging stubs.
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from wiredbench.engine.operations import OPERATION_LABELS
@@ -766,6 +767,11 @@ BOXES: dict[str, dict[str, Any]] = {
         },
     ),
 }
+
+
+def is_box(classname: str) -> bool:
+    """Whether a wf_ name is a WIRED box. Tiles, tokens and wires share the prefix but hold no WIRED logic."""
+    return re.search(r"(?:^|_)(trg|act|cnd|slc|xtra|var)(?:_|$)", classname[3:]) is not None
 
 
 def catalogue() -> dict[str, dict[str, Any]]:

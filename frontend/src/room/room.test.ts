@@ -16,6 +16,7 @@ import {
   History,
   highlightTint,
   type InfoLookup,
+  isWiredBox,
   nextDirection,
   nextId,
   normaliseRoom,
@@ -379,5 +380,14 @@ describe("variable displays", () => {
     expect(fxFill({ value: "150", min: 0, max: 100 })).toBe(1);
     expect(fxFill({ value: "-5", min: 0, max: 100 })).toBe(0);
     expect(fxFill({ value: "5", min: 10, max: 10 })).toBe(0);
+  });
+});
+
+describe("box names", () => {
+  it("tells WIRED boxes from furni that share the prefix", () => {
+    expect(isWiredBox("wf_act_give_var")).toBe(true);
+    expect(isWiredBox("wf_xtra_varfx_hp")).toBe(true);
+    expect(isWiredBox("wf_tile1")).toBe(false);
+    expect(isWiredBox("wf_upcounter1")).toBe(false);
   });
 });

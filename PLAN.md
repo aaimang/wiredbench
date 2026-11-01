@@ -225,8 +225,8 @@ No box is `verified in-game`, because nothing has been compared with a real room
 - The time tracking example follows the article's text. Its screenshots hold exact settings that could not
   be read.
 
-Not simulated yet, so logged as stubs: game boxes, bots, teams, chests, movement add-ons, Variable FX and
-the rest of the catalogue outside Wave 1. Walking still runs in the browser, which reports each step.
+Not simulated yet, so logged as stubs: bots, chests, physics, curves and the rest of the catalogue outside
+Waves 1 and 2. `docs/box-coverage.md` lists what is simulated and what has been checked. Walking still runs in the browser, which reports each step.
 
 ### Exchange status
 
@@ -346,7 +346,7 @@ also covers the 10-second worst-case loss when a user leaves without standing up
 | 3. Engine (built) | Wave 1, stubs, inspector, debugger | Time tracking tutorial passes |
 | 4. Control (built, real-room comparison open) | Mock API, dashboard, view-as, settings | Official wrappers work against the mock |
 | 5. Exchange (built, one small setup proven) | Import, export, guide, tutorials | A preset imports into a real room and behaves the same |
-| 6. Depth (stack checker built) | Wave 2, stack checker | Every box has an honest badge |
+| 6. Depth (stack checker and most of Wave 2 built, physics and curves open) | Wave 2, stack checker | Every box has an honest badge |
 | 7. Launch | Security pass, landing page, Docker docs, `v1.0.0` | All release gates pass |
 
 Real-room traces need a room on the sandbox hotel with the Web API add-on and its keys.
