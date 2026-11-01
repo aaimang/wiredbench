@@ -279,3 +279,27 @@ test("a game can be started and ended from the run panel", async ({ page }) => {
   await page.getByRole("button", { name: "End game" }).click();
   await expect(scores).toContainText("No game running");
 });
+
+test("a box saved during a run reaches the running room", async ({ page }) => {
+  await login(page);
+  await page.getByRole("link", { name: "Guide" }).click();
+  await page
+    .getByTestId("tutorial-switch-flip")
+    .getByRole("button", { name: "Add and open" })
+    .click();
+  await expect(page.getByTestId("room-canvas")).toBeVisible();
+  await page.getByRole("button", { name: "Run", exact: true }).click();
+  await page.getByRole("button", { name: "Build", exact: true }).click();
+  const point = await page.evaluate(() =>
+    (
+      document.querySelector("wb-editor") as unknown as {
+        tileOnPage(a: number, b: number): { x: number; y: number };
+      }
+    ).tileOnPage(4, 2),
+  );
+  await page.mouse.click(point.x, point.y);
+  const save = page.getByRole("button", { name: "Save settings" });
+  await expect(save).toBeVisible();
+  await save.click();
+  await expect(page.getByTestId("run-panel")).toContainText("was changed");
+});

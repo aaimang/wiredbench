@@ -1303,3 +1303,26 @@ def test_carry_users_moves_who_stands_on_the_furni() -> None:
     assert engine.users[101]["x"] == 9
     engine = moved(effect, lamp, users=[user(100, "Ann", 5, 5)])
     assert engine.users[100]["x"] == 5, "without the add-on the user stays"
+
+
+def test_a_box_edited_during_a_run_uses_its_new_settings() -> None:
+    engine = room(
+        box(50, "wf_colortile", 5, 5),
+        box(1, "wf_trg_says_something", 1, 1, text="go"),
+        box(2, "wf_act_rel_mov", 1, 1, 1, furni=[50], move_x=1),
+    )
+    say(engine, "go")
+    engine.advance(1000)
+    assert engine.furni[50]["x"] == 6
+    engine.apply_input({"type": "box_settings", "furni": 2, "settings": {"furni": [50], "move_y": 2}})
+    say(engine, "go")
+    engine.advance(1000)
+    assert (engine.furni[50]["x"], engine.furni[50]["y"]) == (6, 7)
+
+
+@pytest.mark.parametrize("settings", [None, "bad", 3, []])
+def test_bad_box_edits_are_ignored(settings: Any) -> None:
+    engine = room(box(1, "wf_trg_says_something", 1, 1, text="go"))
+    engine.apply_input({"type": "box_settings", "furni": 1, "settings": settings})
+    engine.apply_input({"type": "box_settings", "furni": 999, "settings": {}})
+    say(engine, "go")

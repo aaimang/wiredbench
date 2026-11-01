@@ -425,13 +425,15 @@ function mixWithWhite(color: number, amount: number): number {
   return part(16) | part(8) | part(0);
 }
 
-/**
- * A close stand-in for what the client draws: every look becomes a tint. Null means no change. An
- * outline, a glow and a brighten cannot be told apart here, because they would need a shader.
- */
+/** How strongly a look shows at a moment, from 0 to 1. A pulse rises and falls. */
+export function lookAmount(look: Highlight, nowMs: number): number {
+  const pulse = look.pulse ? 0.5 + 0.5 * Math.sin(nowMs / 200) : 1;
+  return (look.strength / 100) * pulse;
+}
+
+/** The tint for the looks a tint can draw. Outline, glow and brighten are drawn as extra sprites. */
 export function highlightTint(look: Highlight | undefined, nowMs: number): number | null {
   if (!look || look.strength <= 0) return null;
-  const pulse = look.pulse ? 0.5 + 0.5 * Math.sin(nowMs / 200) : 1;
-  const amount = (look.strength / 100) * pulse;
-  return mixWithWhite(look.type === "darken" ? 0x000000 : look.color, amount);
+  if (look.type === "darken") return mixWithWhite(0x000000, lookAmount(look, nowMs));
+  return look.type === "tint" ? mixWithWhite(look.color, lookAmount(look, nowMs)) : null;
 }

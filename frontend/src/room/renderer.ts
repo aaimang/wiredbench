@@ -1,6 +1,8 @@
 import "pixi.js/unsafe-eval"; // Pixi's default shader setup needs eval, which the Content-Security-Policy refuses.
 import {
   Application,
+  BlurFilter,
+  ColorMatrixFilter,
   Container,
   Graphics,
   Rectangle,
@@ -15,9 +17,11 @@ import {
   footprint,
   footprintSize,
   furniParts,
+  type Highlight,
   highlightTint,
   type InfoLookup,
   type Look,
+  lookAmount,
   type PlacedAvatar,
   type PlacedFurni,
   type RoomDocument,
@@ -65,8 +69,20 @@ export interface Scene {
 }
 
 /** Matches ART_VERSION on the server. Furni art is cached for good, so a new shape needs a new address. */
-// Invisible things stay faintly drawn here, so a builder can still find what a stack hid.
-const INVISIBLE_OPACITY = 0.15;
+// Invisible is fully hidden, as in a real room. Only what the builder has selected stays findable.
+const SELECTED_INVISIBLE_OPACITY = 0.35;
+const OUTLINE_OFFSETS = [
+  [-1, -1],
+  [0, -1],
+  [1, -1],
+  [-1, 0],
+  [1, 0],
+  [-1, 1],
+  [0, 1],
+  [1, 1],
+];
+const GLOW_OFFSETS = [...OUTLINE_OFFSETS, [-2, 0], [2, 0], [0, -2], [0, 2]];
+const GLOW_OPACITY = 0.8;
 const ART_VERSION = 3;
 const AVATAR_ANCHOR = { x: 32, y: 96 };
 const AVATAR_SIZE = { w: 64, h: 110 };
@@ -352,8 +368,8 @@ export class RoomRenderer {
       : scene.picked.has(item.id)
         ? PICKED_TINT
         : highlightTint(look?.highlight, performance.now());
-    const opacity = look?.invisible ? INVISIBLE_OPACITY : 1;
-    const bounds = this.addFurniSprites(scene, item, tint, opacity, depth);
+    const opacity = look?.invisible ? (selected ? SELECTED_INVISIBLE_OPACITY : 0) : 1;
+    const bounds = this.addFurniSprites(scene, item, tint, opacity, depth, look?.highlight);
     if (bounds && !look?.click_through) {
       const [fx, fy] = this.front(scene, item);
       this.hits.push({
@@ -387,6 +403,7 @@ export class RoomRenderer {
     tint: number | null,
     opacity: number,
     order: typeof depth,
+    highlight?: Highlight,
   ): Rectangle | null {
     const art = this.artFor(scene, item.classname);
     const centre = tileCentre(item.x, item.y, item.z);
@@ -410,6 +427,7 @@ export class RoomRenderer {
     let top = Number.POSITIVE_INFINITY;
     let right = Number.NEGATIVE_INFINITY;
     let bottom = Number.NEGATIVE_INFINITY;
+    const drawn: Sprite[] = [];
     for (const part of pose) {
       const sprite = new Sprite(this.partTexture(atlas, part));
       const x = centre.x + part.dx;
@@ -428,13 +446,51 @@ export class RoomRenderer {
       sprite.zIndex = order(fx, fy, item.z, part.z);
       this.layer.addChild(sprite);
       if (part.layer >= 0) {
+        drawn.push(sprite);
         left = Math.min(left, x);
         top = Math.min(top, y);
         right = Math.max(right, x + part.w);
         bottom = Math.max(bottom, y + part.h);
       }
     }
+    if (highlight && opacity > 0) this.addLook(drawn, highlight);
     return right > left ? new Rectangle(left, top, right - left, bottom - top) : null;
+  }
+
+  /** Draws the looks a tint cannot: an edge around the shape, or light added on top of it. */
+  private addLook(sprites: Sprite[], look: Highlight): void {
+    const amount = lookAmount(look, performance.now());
+    if (amount <= 0 || !sprites.length) return;
+    const copy = (source: Sprite, dx = 0, dy = 0) => {
+      const sprite = new Sprite(source.texture);
+      sprite.position.set(source.x + dx, source.y + dy);
+      sprite.scale.copyFrom(source.scale);
+      return sprite;
+    };
+    if (look.type === "brighten") {
+      for (const source of sprites) {
+        const light = copy(source);
+        light.blendMode = "add";
+        light.alpha = amount;
+        light.zIndex = source.zIndex + 0.001;
+        this.layer.addChild(light);
+      }
+      return;
+    }
+    if (look.type !== "outline" && look.type !== "glow") return;
+    const glow = look.type === "glow";
+    const edge = new Container();
+    for (const [dx = 0, dy = 0] of glow ? GLOW_OFFSETS : OUTLINE_OFFSETS) {
+      for (const source of sprites) edge.addChild(copy(source, dx, dy));
+    }
+    // Every pixel becomes the chosen colour and only its transparency is kept, which makes a silhouette.
+    const solid = new ColorMatrixFilter();
+    const [r, g, b] = [(look.color >> 16) & 255, (look.color >> 8) & 255, look.color & 255];
+    solid.matrix = [0, 0, 0, 0, r / 255, 0, 0, 0, 0, g / 255, 0, 0, 0, 0, b / 255, 0, 0, 0, 1, 0];
+    edge.filters = glow ? [solid, new BlurFilter({ strength: 3 })] : [solid];
+    edge.alpha = glow ? amount * GLOW_OPACITY : amount;
+    edge.zIndex = Math.min(...sprites.map((sprite) => sprite.zIndex)) - 0.001;
+    this.layer.addChild(edge);
   }
 
   /** One texture per atlas region, kept for reuse: each one holds a listener on the shared source. */
@@ -513,8 +569,9 @@ export class RoomRenderer {
       if (look?.highlight?.pulse) this.animating = true;
       const tinted = highlightTint(look?.highlight, performance.now());
       if (tinted !== null) sprite.tint = tinted;
-      if (look?.invisible) sprite.alpha = INVISIBLE_OPACITY;
+      if (look?.invisible) sprite.alpha = selected ? SELECTED_INVISIBLE_OPACITY : 0;
       this.layer.addChild(sprite);
+      if (look?.highlight && !look.invisible) this.addLook([sprite], look.highlight);
     } else {
       const stand = new Graphics()
         .ellipse(centre.x, centre.y - 30, 12, 30)

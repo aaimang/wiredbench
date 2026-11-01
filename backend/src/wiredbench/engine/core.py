@@ -328,6 +328,8 @@ class Engine:
             self._game_start()
         elif kind == "game_end":
             self._game_end()
+        elif kind == "box_settings":
+            self._edit_box(_int(entry.get("furni")), entry.get("settings"))
         elif kind == "turn":
             if (who := self.users.get(_int(user))) is not None:
                 who["dir"] = _int(entry.get("dir")) % 8
@@ -408,6 +410,14 @@ class Engine:
             self._set_state(furni_id, self._next_state(furni_id))
         if furni_id in self.furni:
             self._fire("wf_trg_state_changed", user=user_id, furni=furni_id)
+
+    def _edit_box(self, box_id: int, settings: Any) -> None:
+        """A real room uses a box's new settings as soon as it is saved, so a run does too."""
+        stack = self.stack_of.get(box_id)
+        box = next((b for b in stack.boxes if b.id == box_id), None) if stack else None
+        if box is not None and isinstance(settings, dict):
+            box.settings = settings
+            self._log("info", f"{self._name(box.classname)} was changed")
 
     def _use_game_timer(self, furni_id: int) -> None:
         if self.game_timer == furni_id:
