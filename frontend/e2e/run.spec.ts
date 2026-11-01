@@ -303,3 +303,28 @@ test("a box saved during a run reaches the running room", async ({ page }) => {
   await save.click();
   await expect(page.getByTestId("run-panel")).toContainText("was changed");
 });
+
+test("a value in the run panel can be changed by double-clicking it", async ({ page }) => {
+  await login(page);
+  await page.getByRole("link", { name: "Guide" }).click();
+  await page
+    .getByTestId("tutorial-score-counter")
+    .getByRole("button", { name: "Add and open" })
+    .click();
+  await expect(page.getByTestId("room-canvas")).toBeVisible();
+  await page.getByRole("button", { name: "Run", exact: true }).click();
+  const say = page.getByPlaceholder(/Say something/);
+  await say.fill("point");
+  await say.press("Enter");
+  const row = page.locator(".run-vars tr", { hasText: "score" });
+  await expect(row.locator(".run-value")).toHaveText("1");
+  await row.locator(".run-value").dblclick();
+  const field = row.getByRole("textbox");
+  await page.waitForTimeout(600); // The field must survive the ticks while it is open.
+  await field.fill("42");
+  await field.press("Enter");
+  await expect(row.locator(".run-value")).toHaveText("42");
+  await say.fill("point");
+  await say.press("Enter");
+  await expect(row.locator(".run-value")).toHaveText("43");
+});

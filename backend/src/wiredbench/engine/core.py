@@ -351,9 +351,21 @@ class Engine:
                 self._changed(
                     str(entry["variable"]), int(holder[2]) if holder[0] in ("user", "furni") else None
                 )
+        elif kind == "set_value":
+            self._set_value(str(entry.get("variable", "")), str(entry.get("key", "")), entry.get("value"))
         elif kind == "api_delete":
             self.variables[str(entry["variable"])].pop(str(entry["key"]), None)
         self._drain()
+
+    def _set_value(self, name: str, key: str, raw: Any) -> None:
+        """A value typed into the run panel. It acts like a change from a box, so stacks react to it."""
+        if key not in self.variables.get(name, {}):
+            return
+        value = max(INT64_MIN, min(_int(raw), INT64_MAX))
+        self._store(name, key, value)
+        self._log("info", f"{name} was set to {value} by hand")
+        holder, _, entity = key.partition(":")
+        self._changed(name, _int(entity) if holder in ("user", "furni") else None)
 
     def _store(self, name: str, key: str, value: int) -> None:
         holding = self.variables[name].get(key)

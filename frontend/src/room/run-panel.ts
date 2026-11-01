@@ -7,6 +7,7 @@ import type { FxShown, Look } from "./model";
 
 const T = t.run;
 const TICK_MS = 250;
+const INT64_TEXT = /^-?\d{1,19}$/;
 const TRACE_SHOWN = 300;
 
 export interface RunState {
@@ -133,6 +134,7 @@ export class RunPanel {
   }
 
   stop(): void {
+    this.stopped = true;
     if (this.timer !== null) clearInterval(this.timer);
     this.timer = null;
     void request("DELETE", this.url).catch(() => {});
@@ -193,10 +195,19 @@ export class RunPanel {
   }
 
   private apply(state: RunState): void {
+    if (this.stopped) return; // A late answer must not move things in the room Stop just put back.
     this.cursor = state.trace_next;
     this.paused = state.paused;
     this.clock.textContent = runClock(state.now_ms);
     for (const line of state.trace) this.addLine(line.at_ms, line.kind, line.message);
+    // The table is rebuilt on every tick, which would throw away a value being typed.
+    if (!this.editingValue) this.renderVariables(state);
+    this.game = state.game;
+    this.renderControls();
+    this.onState(state);
+  }
+
+  private renderVariables(state: RunState): void {
     replace(
       this.variables,
       ...state.variables.map((row) =>
@@ -205,7 +216,7 @@ export class RunPanel {
           {},
           h("td", {}, h("code", {}, row.variable)),
           h("td", {}, this.holderName(state, row.holder)),
-          h("td", {}, row.value),
+          this.valueCell(row),
         ),
       ),
       ...state.defined_variables.map((row) =>
@@ -218,9 +229,49 @@ export class RunPanel {
         ),
       ),
     );
-    this.game = state.game;
-    this.renderControls();
-    this.onState(state);
+  }
+
+  private valueCell(row: RunState["variables"][number]): HTMLElement {
+    const cell = h("td", { class: "run-value", title: T.editValueHint }, row.value);
+    cell.addEventListener("dblclick", () => this.editValue(cell, row));
+    return cell;
+  }
+
+  /** Enter or leaving the field saves the value, and Escape puts it back. */
+  private editValue(cell: HTMLElement, row: RunState["variables"][number]): void {
+    if (this.editingValue) return;
+    this.editingValue = true;
+    const field = h("input", {
+      value: row.value,
+      inputmode: "numeric",
+      "aria-label": T.editValue(row.variable),
+    }) as HTMLInputElement;
+    let done = false;
+    const finish = (save: boolean) => {
+      if (done) return;
+      done = true;
+      this.editingValue = false;
+      const value = field.value.trim();
+      if (!save || value === row.value) {
+        void this.tick();
+        return;
+      }
+      if (!INT64_TEXT.test(value)) {
+        toast(T.badValue, "error");
+        void this.tick();
+        return;
+      }
+      void this.input({ type: "set_value", variable: row.variable, key: row.holder, value });
+    };
+    field.addEventListener("keydown", (event) => {
+      event.stopPropagation();
+      if (event.key === "Enter") finish(true);
+      if (event.key === "Escape") finish(false);
+    });
+    field.addEventListener("blur", () => finish(true));
+    replace(cell, field);
+    field.focus();
+    field.select();
   }
 
   private holderName(state: RunState, holder: string): string {
@@ -244,6 +295,8 @@ export class RunPanel {
   }
 
   private game: RunState["game"] | null = null;
+  private editingValue = false;
+  private stopped = false;
 
   private renderControls(): void {
     const button = (label: string, node: Parameters<typeof icon>[0], run: () => void) =>
