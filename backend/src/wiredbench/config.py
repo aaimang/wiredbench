@@ -50,6 +50,9 @@ class Settings(BaseSettings):
     rate_limit_login: int = Field(5, ge=1, description="Failed logins allowed per address per 15 minutes.")
     rate_limit_writes: int = Field(240, ge=1, description="Write requests allowed per address per minute.")
     rate_limit_reads: int = Field(3000, ge=1, description="Read requests allowed per address per minute.")
+    rate_limit_ticks: int = Field(
+        1200, ge=1, description="Clock ticks from running rooms allowed per address per minute."
+    )
     rate_limit_mock: int = Field(
         600, ge=1, description="Mock Web API requests allowed per address per minute."
     )

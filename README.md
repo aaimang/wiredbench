@@ -164,6 +164,7 @@ from the code, and CI fails if it is out of date.
 | `WB_RATE_LIMIT_LOGIN` | `5` | Failed logins allowed per address per 15 minutes. |
 | `WB_RATE_LIMIT_WRITES` | `240` | Write requests allowed per address per minute. |
 | `WB_RATE_LIMIT_READS` | `3000` | Read requests allowed per address per minute. |
+| `WB_RATE_LIMIT_TICKS` | `1200` | Clock ticks from running rooms allowed per address per minute. |
 | `WB_RATE_LIMIT_MOCK` | `600` | Mock Web API requests allowed per address per minute. |
 | `WB_TICK_MS` | `500` | Initial WIRED engine tick length, in milliseconds. |
 | `WB_AUDIT_DAYS` | `90` | Initial number of days to keep the activity log. |
