@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from wiredbench.engine.boxes import BOXES
-from wiredbench.services.exchange import OPTION_FIELDS, export_gpresets, section_of
+from wiredbench.services.exchange import BRIGHTEN_ON, OPTION_FIELDS, WHITE, export_gpresets, section_of
 
 COLUMNS = 8
 UNUSUAL_NUMBER = 7
@@ -42,6 +42,9 @@ def build(group: str) -> tuple[dict[str, Any], dict[str, Any]]:
     for index, classname in enumerate(names):
         fields = {field["name"]: field for field in BOXES[classname]["fields"]}
         settings = {name: unusual(fields[name], reader) for name, _, reader in OPTION_FIELDS[classname]}
+        if classname == "wf_act_set_highlight":
+            # A real room refuses any other strength or colour for Brighten.
+            settings.update(strength=BRIGHTEN_ON, color=WHITE)
         if "text" in fields:
             settings["text"] = "proof"
         if classname.startswith("wf_var_"):

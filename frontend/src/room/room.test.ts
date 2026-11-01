@@ -13,6 +13,7 @@ import {
   furniAt,
   furniParts,
   History,
+  highlightTint,
   type InfoLookup,
   nextDirection,
   nextId,
@@ -350,5 +351,21 @@ describe("furni animation", () => {
     expect(showsTime("wf_game_upcounter2")).toBe(true);
     expect(showsTime("bb_counter")).toBe(true);
     expect(showsTime("rela_candle1")).toBe(false);
+  });
+});
+
+describe("wired looks", () => {
+  const look = { type: "tint", strength: 100, color: 0x123456, pulse: false };
+
+  it("tints with the chosen colour and strength", () => {
+    expect(highlightTint(look, 0)).toBe(0x123456);
+    expect(highlightTint({ ...look, strength: 0 }, 0)).toBeNull();
+    expect(highlightTint(undefined, 0)).toBeNull();
+    expect(highlightTint({ ...look, type: "darken", strength: 50 }, 0)).toBe(0x808080);
+  });
+
+  it("pulses over time", () => {
+    const pulsing = { ...look, pulse: true };
+    expect(highlightTint(pulsing, 0)).not.toBe(highlightTint(pulsing, 300));
   });
 });

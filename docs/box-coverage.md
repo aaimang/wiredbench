@@ -9,10 +9,10 @@ read at commit `3fc9c06f533c`, for facts only.
 - No evidence yet: 90
 - Reference only: 7
 - Seen in a real preset: 0
-- Seen in a real room dump: 152
-- Checked in a real room: 35
-- Have a form: 96
-- Option numbers mapped: 42
+- Seen in a real room dump: 149
+- Checked in a real room: 38
+- Have a form: 99
+- Option numbers mapped: 45
 
 | Box | Evidence | Form | Options | Room check |
 |---|---|---|---|---|
@@ -65,8 +65,8 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_act_send_message` | Seen in a real room dump |  |  |  |
 | `wf_act_send_signal` | Seen in a real room dump | Yes |  |  |
 | `wf_act_set_altitude` | Checked in a real room | Yes | Yes | 2026-11-01 |
-| `wf_act_set_highlight` | Seen in a real room dump |  |  |  |
-| `wf_act_set_visibility` | Seen in a real room dump |  |  |  |
+| `wf_act_set_highlight` | Checked in a real room | Yes | Yes | 2026-11-01 |
+| `wf_act_set_visibility` | Checked in a real room | Yes | Yes | 2026-11-01 |
 | `wf_act_show_message` | Checked in a real room | Yes |  | 2026-11-01 |
 | `wf_act_teleport_to` | Seen in a real room dump | Yes |  |  |
 | `wf_act_teleport_to_room` | Seen in a real room dump |  |  |  |
@@ -274,7 +274,7 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_xtra_filter_users` | Seen in a real room dump | Yes | Yes |  |
 | `wf_xtra_filter_users_by_var` | Seen in a real room dump | Yes | Yes |  |
 | `wf_xtra_link_speaker` | Seen in a real room dump |  |  |  |
-| `wf_xtra_mov_carry_users` | Seen in a real room dump |  |  |  |
+| `wf_xtra_mov_carry_users` | Checked in a real room | Yes | Yes | 2026-11-01 |
 | `wf_xtra_mov_curve` | Seen in a real room dump |  |  |  |
 | `wf_xtra_mov_no_animation` | Seen in a real room dump |  |  |  |
 | `wf_xtra_mov_physics` | Seen in a real room dump |  |  |  |

@@ -140,6 +140,23 @@ THREE_WAY = {
     "labels": {"less": "Less than", "equal": "Exactly", "more": "More than"},
     "default": "less",
 }
+AUDIENCE = {
+    "name": "audience",
+    "kind": "select",
+    "label": "Who sees it",
+    "options": ["selected", "everyone"],
+    "labels": {"selected": "The users below", "everyone": "Everyone"},
+    "default": "selected",
+}
+TARGET_KIND = {
+    "name": "target",
+    "kind": "select",
+    "label": "Applies to",
+    "options": ["furni", "users"],
+    "labels": {"furni": "Furni", "users": "Users"},
+    "default": "furni",
+}
+EASING = {"name": "easing", "kind": "number", "label": "Easing, 0 to 4", "default": 4, "min": 0, "max": 4}
 AMOUNT = {"name": "amount", "kind": "number", "label": "How many", "default": 10, "min": 0}
 ANTENNA = {"name": "antenna", "kind": "furni", "label": "Antenna", "default": []}
 SECONDS = {"name": "seconds", "kind": "number", "label": "Seconds", "default": 10, "min": 0, "step": 0.5}
@@ -389,6 +406,21 @@ BOXES: dict[str, dict[str, Any]] = {
             "step": 0.5,
         },
     ),
+    "wf_xtra_mov_carry_users": _box(
+        "addon",
+        ASSUMED,
+        _saved(
+            {
+                "name": "carry",
+                "kind": "select",
+                "label": "Carry",
+                "options": ["furni", "tile"],
+                "labels": {"furni": "Users on the furni", "tile": "Users on its tiles"},
+                "default": "furni",
+            }
+        ),
+        USER_SOURCE,
+    ),
     "wf_xtra_filter_users": _box("addon", DOCUMENTED, AMOUNT),
     "wf_xtra_filter_furni": _box("addon", DOCUMENTED, AMOUNT),
     "wf_xtra_filter_users_by_var": _box(
@@ -544,6 +576,57 @@ BOXES: dict[str, dict[str, Any]] = {
             "labels": {"add": "Add", "subtract": "Take away", "set": "Set to"},
             "default": "add",
         },
+    ),
+    "wf_act_set_highlight": _effect(
+        ASSUMED,
+        FURNI,
+        FURNI_SOURCE,
+        TARGET_KIND,
+        AUDIENCE,
+        USER_SOURCE,
+        {
+            "name": "highlight_type",
+            "kind": "select",
+            "label": "Look",
+            "options": ["outline", "glow", "darken", "tint", "brighten"],
+            "labels": {
+                "outline": "Outline",
+                "glow": "Glow",
+                "darken": "Darken",
+                "tint": "Colour tint",
+                "brighten": "Brighten",
+            },
+            "default": "outline",
+        },
+        {"name": "strength", "kind": "number", "label": "Strength", "default": 100, "min": 0, "max": 100},
+        {
+            "name": "color",
+            "kind": "number",
+            "label": "Colour number",
+            "default": 16771584,
+            "min": 0,
+            "max": 16771584,
+        },
+        {"name": "pulse", "kind": "bool", "label": "Pulse", "default": False},
+        _saved(EASING),
+    ),
+    "wf_act_set_visibility": _effect(
+        ASSUMED,
+        FURNI,
+        FURNI_SOURCE,
+        TARGET_KIND,
+        AUDIENCE,
+        USER_SOURCE,
+        {
+            "name": "visibility",
+            "kind": "select",
+            "label": "Make it",
+            "options": ["invisible", "visible"],
+            "labels": {"invisible": "Invisible", "visible": "Visible"},
+            "default": "invisible",
+        },
+        {"name": "click_through", "kind": "bool", "label": "Let clicks pass through", "default": False},
+        _saved(EASING),
     ),
     "wf_act_join_team": _effect(
         ASSUMED,

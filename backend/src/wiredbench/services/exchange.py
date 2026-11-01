@@ -53,6 +53,33 @@ SOURCE_FIELDS = {
 }
 ANY_TEAM_NUMBERS = {0: "any", 1: "red", 2: "green", 3: "blue", 4: "yellow"}
 CLOCK_FIELDS = [("clock_seconds", 0, int), ("clock_minutes", 1, int), ("clock_half", 2, bool)]
+HIGHLIGHT_DARKEN, HIGHLIGHT_TINT, HIGHLIGHT_BRIGHTEN = 2, 3, 4
+WHITE = 16777215
+# The colours the box's editor offers. Tint leaves out white.
+HIGHLIGHT_COLORS = (
+    WHITE,
+    16772910,
+    16758528,
+    16747008,
+    16734774,
+    16724016,
+    16724855,
+    16733627,
+    15741144,
+    12076287,
+    7883007,
+    4611327,
+    2395391,
+    2146303,
+    2156016,
+    1628592,
+    2149480,
+    5300272,
+    10546464,
+    16557530,
+    12291417,
+)
+BRIGHTEN_ON = 38  # The strength dropdown shows 76 and saves half of it.
 AREA_FIELDS = [("area_x", 0, int), ("area_y", 1, int), ("area_width", 2, int), ("area_height", 3, int)]
 # A selector's two switches sit on the box itself. The file calls invert "inverse".
 SELECTOR_SWITCHES = {"filter": "filter", "invert": "inverse"}
@@ -96,6 +123,23 @@ OPTION_FIELDS: dict[str, list[tuple[str, int, Any]]] = {
         ("points", 1, int),
         ("score_compare", 2, ("less", "equal", "more")),
     ],
+    "wf_act_set_highlight": [
+        ("audience", 0, ("selected", "everyone")),
+        ("highlight_type", 1, ("outline", "glow", "darken", "tint", "brighten")),
+        ("strength", 2, int),
+        ("color", 3, int),
+        ("pulse", 4, bool),
+        ("easing", 5, int),
+        ("target", 6, ("furni", "users")),
+    ],
+    "wf_act_set_visibility": [
+        ("audience", 0, ("selected", "everyone")),
+        ("visibility", 1, {0: "visible", 100: "invisible"}),
+        ("click_through", 2, bool),
+        ("easing", 3, int),
+        ("target", 4, ("furni", "users")),
+    ],
+    "wf_xtra_mov_carry_users": [("carry", 0, ("furni", "tile"))],
     "wf_act_join_team": [
         ("team", 0, {1: "red", 2: "green", 3: "blue", 4: "yellow"}),
         ("team_type", 1, ("wired", "banzai", "freeze")),
@@ -561,6 +605,26 @@ def _apply_settings(
                 _write_option(box, 0, TARGET_NUMBERS[scope])
         elif name != "variable" and value != _default(classname, name):
             warnings.append(f"{classname}: the setting {name} cannot go into a G-Presets file yet.")
+    if classname == "wf_act_set_highlight" and (
+        not base or any(base.get(k) != v for k, v in settings.items())
+    ):
+        _fit_highlight(box, warnings)
+
+
+def _fit_highlight(box: dict[str, Any], warnings: list[str]) -> None:
+    """Habbo refuses a whole file's update over a strength or colour its editor would not offer."""
+    options = box["options"]
+    kind, color = options[1], options[3]
+    if kind == HIGHLIGHT_BRIGHTEN:
+        options[2] = BRIGHTEN_ON if options[2] else 0
+        options[3] = WHITE
+    elif kind == HIGHLIGHT_DARKEN:
+        options[3] = 0
+        if options[2]:
+            warnings.append("wf_act_set_highlight: a real room may refuse Darken above strength 0.")
+    else:
+        palette = HIGHLIGHT_COLORS[1:] if kind == HIGHLIGHT_TINT else HIGHLIGHT_COLORS
+        options[3] = color if color in palette else palette[0]
 
 
 def export_gpresets(document: dict[str, Any]) -> tuple[dict[str, Any], list[str]]:

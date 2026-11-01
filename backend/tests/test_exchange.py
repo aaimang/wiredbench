@@ -672,3 +672,50 @@ def test_clock_and_team_score_options_read_their_positions() -> None:
         "points": 40,
         "score_compare": "equal",
     }
+
+
+def test_highlight_visibility_and_carry_options_read_their_positions() -> None:
+    read = exchange.friendly_settings
+    assert read("wf_act_set_highlight", {"options": [1, 3, 25, 255, 1, 2, 1]}, {}) == {
+        "audience": "everyone",
+        "highlight_type": "tint",
+        "strength": 25,
+        "color": 255,
+        "pulse": True,
+        "easing": 2,
+        "target": "users",
+    }
+    assert read("wf_act_set_visibility", {"options": [0, 100, 1, 4, 0]}, {}) == {
+        "audience": "selected",
+        "visibility": "invisible",
+        "click_through": True,
+        "easing": 4,
+        "target": "furni",
+    }
+    assert read("wf_xtra_mov_carry_users", {"options": [1]}, {}) == {"carry": "tile"}
+
+
+def test_highlight_strength_is_one_a_real_room_accepts() -> None:
+    def export(**wired: Any) -> tuple[list[Any], list[str]]:
+        furni = [{"id": 1, "classname": "wf_act_set_highlight", "x": 1, "y": 1, "wired": wired}]
+        out, warnings = exchange.export_gpresets({"furni": furni})
+        return out["wired"]["effects"][0]["options"], warnings
+
+    assert export(highlight_type="brighten", strength=76)[0][2] == 38
+    assert export(highlight_type="brighten", strength=0)[0][2] == 0
+    assert export(highlight_type="outline", strength=100)[0][2] == 100
+    assert any("Darken" in w for w in export(highlight_type="darken", strength=50)[1])
+
+
+def test_highlight_colour_is_one_a_real_room_accepts() -> None:
+    def colour(**wired: Any) -> int:
+        furni = [{"id": 1, "classname": "wf_act_set_highlight", "x": 1, "y": 1, "wired": wired}]
+        return exchange.export_gpresets({"furni": furni})[0]["wired"]["effects"][0]["options"][3]
+
+    assert colour() == exchange.WHITE, "a fresh box's stored default is not on the palette"
+    assert colour(highlight_type="glow", color=16772910) == 16772910
+    assert colour(highlight_type="glow", color=255) == exchange.WHITE
+    assert colour(highlight_type="tint", color=exchange.WHITE) == 16772910, "tint has no white"
+    assert colour(highlight_type="tint", color=2395391) == 2395391
+    assert colour(highlight_type="brighten", color=255) == exchange.WHITE
+    assert colour(highlight_type="darken", color=255) == 0

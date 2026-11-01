@@ -214,6 +214,8 @@ class Engine:
         self.game_running = False
         self.team_scores = dict.fromkeys(TEAMS, 0)
         self.clocks: dict[int, Clock] = {}
+        self.furni_looks: dict[int, dict[str, Any]] = {}
+        self.user_looks: dict[int, dict[str, Any]] = {}
         self.game_timer: int | None = None
         self.game_timer_run = 0
         self.score_grants: dict[tuple[int, int | None], int] = defaultdict(int)
@@ -1154,6 +1156,37 @@ class Engine:
             return False
         return bool(team == "any" or user["team"] == team)
 
+    def _look_targets(self, box: Box, ctx: Context) -> tuple[dict[int, dict[str, Any]], list[int]] | None:
+        """Where a look goes, or None if nobody is there to see it."""
+        if box.get("audience", "selected") != "everyone" and not self._users_for(box, ctx):
+            return None
+        if box.get("target", "furni") == "users":
+            # The box's first user source is its audience. The target falls back to the triggering user.
+            target = [ctx.user] if ctx.user in self.users else []
+            return self.user_looks, [u for u in target if u is not None]
+        return self.furni_looks, self._furni_for(box, ctx)
+
+    def _do_set_highlight(self, box: Box, ctx: Context) -> None:
+        found = self._look_targets(box, ctx)
+        if found:
+            looks, targets = found
+            for target in targets:
+                looks.setdefault(target, {})["highlight"] = {
+                    "type": str(box.get("highlight_type", "outline")),
+                    "strength": max(0, min(_int(box.get("strength", 100), 100), 100)),
+                    "color": max(0, min(_int(box.get("color", 16771584), 16771584), 0xFFFFFF)),
+                    "pulse": bool(box.get("pulse")),
+                }
+
+    def _do_set_visibility(self, box: Box, ctx: Context) -> None:
+        found = self._look_targets(box, ctx)
+        if found:
+            looks, targets = found
+            for target in targets:
+                look = looks.setdefault(target, {})
+                look["invisible"] = box.get("visibility", "invisible") != "visible"
+                look["click_through"] = bool(box.get("click_through"))
+
     def _do_control_clock(self, box: Box, ctx: Context) -> None:
         command = box.get("clock_control", "start")
         for furni_id in self._furni_for(box, ctx):
@@ -1243,13 +1276,30 @@ class Engine:
             return True
         return self.room_size is not None and (x >= self.room_size[0] or y >= self.room_size[1])
 
-    def _shift_furni(self, furni_id: int, dx: int, dy: int) -> bool:
+    def _carried(self, box: Box | None, ctx: Context | None, x: int, y: int) -> list[int]:
+        """The users a stack's Carry Users add-on takes along from a tile."""
+        stack = self.stack_of.get(box.id) if box else None
+        addon = stack.find("wf_xtra_mov_carry_users") if stack else None
+        if addon is None or ctx is None:
+            return []
+        here = [u for u, d in self.users.items() if (d["x"], d["y"]) == (x, y)]
+        if addon.get("user_source", "default") == "default":
+            return here
+        allowed = self._users_for(addon, ctx)
+        return [u for u in here if u in allowed]
+
+    def _shift_furni(
+        self, furni_id: int, dx: int, dy: int, box: Box | None = None, ctx: Context | None = None
+    ) -> bool:
         """A move off the room or onto a user cannot be made, and the furni stays put."""
         item = self.furni[furni_id]
         x, y = item["x"] + dx, item["y"] + dy
         if self._off_map(x, y) or any((u["x"], u["y"]) == (x, y) for u in self.users.values()):
             return False
+        carried = self._carried(box, ctx, item["x"], item["y"])
         item["x"], item["y"] = x, y
+        for user in carried:
+            self._move_user(user, x, y)
         return True
 
     def _furni_step(self, direction: str) -> tuple[int, int]:
@@ -1266,7 +1316,7 @@ class Engine:
         for furni_id in self._furni_for(box, ctx):
             item = self.furni[furni_id]
             dx, dy = self._furni_step(str(box.get("direction", "none")))
-            if (dx or dy) and not self._shift_furni(furni_id, dx, dy):
+            if (dx or dy) and not self._shift_furni(furni_id, dx, dy, box, ctx):
                 continue
             rotation = str(box.get("rotation", "none"))
             turn = {"clockwise": 2, "counterclockwise": -2}.get(rotation, 0)
@@ -1278,7 +1328,7 @@ class Engine:
         dx, dy = _int(box.get("move_x")), _int(box.get("move_y"))
         if dx or dy:
             for furni_id in self._furni_for(box, ctx):
-                self._shift_furni(furni_id, dx, dy)
+                self._shift_furni(furni_id, dx, dy, box, ctx)
 
     def _do_set_altitude(self, box: Box, ctx: Context) -> None:
         amount = _hundredths(box.get("altitude"))
@@ -1310,7 +1360,7 @@ class Engine:
         target = self.furni[self.random.choice(targets)]
         for furni_id in movers:
             item = self.furni[furni_id]
-            self._shift_furni(furni_id, target["x"] - item["x"], target["y"] - item["y"])
+            self._shift_furni(furni_id, target["x"] - item["x"], target["y"] - item["y"], box, ctx)
 
     def _do_move_rotate_user(self, box: Box, ctx: Context) -> None:
         step = MOVES.get(str(box.get("user_move", "none")))
@@ -1390,6 +1440,7 @@ class Engine:
             "users": sorted(self.users.values(), key=lambda u: u["id"]),
             "variables": self.view_variables(),
             "defined_variables": self.view_defined(),
+            "looks": {"furni": self.furni_looks, "users": self.user_looks},
             "game": {"running": self.game_running, "scores": dict(self.team_scores)},
             "limit_hits": self.limit_hits,
             "metrics": dict(sorted(self.metrics.items())),
