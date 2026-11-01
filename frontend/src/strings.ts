@@ -373,6 +373,12 @@ export const t = {
     variable: "Variable",
     holder: "Holder",
     nobodyYet: "Nobody yet",
+    startGame: "Start game",
+    endGame: "End game",
+    gameScores: (running: boolean, scores: Record<string, number>) =>
+      `${running ? "Game running" : "No game running"}. ${Object.entries(scores)
+        .map(([team, score]) => `${team} ${score}`)
+        .join(", ")}`,
     duringRun: "Only while a stack runs",
     value: "Value",
     commandPlaceholder: "Say something, or type a command such as :vars global",

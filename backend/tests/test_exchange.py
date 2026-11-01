@@ -646,3 +646,12 @@ def test_a_new_file_always_has_the_sections_g_presets_needs() -> None:
     assert wired["conditions"] == []
     assert wired["effects"] == []
     assert len(wired["triggers"]) == 1
+
+
+def test_team_and_score_options_read_their_positions() -> None:
+    read = exchange.friendly_settings
+    assert read("wf_act_join_team", {"options": [3, 1]}, {}) == {"team": "blue", "team_type": "banzai"}
+    assert read("wf_act_give_score", {"options": [-7, 2]}, {}) == {"points": -7, "times": 2}
+    assert read("wf_act_give_score_tm", {"options": [9, 0, 4]}, {})["team"] == "yellow"
+    assert read("wf_slc_users_team", {"options": [0]}, {})["team"] == "any"
+    assert read("wf_cnd_actor_in_team", {"options": [2]}, {})["team"] == "green"

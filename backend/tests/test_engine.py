@@ -1056,3 +1056,87 @@ def test_turn_input_sets_direction() -> None:
     engine = room(users=[user(100, "Ann")])
     engine.apply_input({"type": "turn", "user": 100, "dir": 5})
     assert engine.users[100]["dir"] == 5
+
+
+def team_room(*boxes: dict[str, Any]) -> Engine:
+    return room(
+        box(1, "wf_trg_says_something", 1, 1, text="join"),
+        box(2, "wf_act_join_team", 1, 1, 1, team="blue"),
+        box(3, "wf_trg_says_something", 2, 2, text="go"),
+        *boxes,
+    )
+
+
+def test_join_and_leave_team() -> None:
+    engine = team_room(box(4, "wf_act_leave_team", 2, 2, 1))
+    say(engine, "join")
+    engine.advance(1000)
+    assert engine.users[100]["team"] == "blue"
+    say(engine, "go")
+    engine.advance(1000)
+    assert engine.users[100]["team"] is None
+
+
+@pytest.mark.parametrize(("team", "expected"), [("any", True), ("blue", True), ("red", False)])
+def test_team_condition_and_selector(team: str, expected: bool) -> None:
+    engine = team_room(
+        box(4, "wf_cnd_actor_in_team", 2, 2, 1, team=team),
+        box(5, "wf_act_give_var", 2, 2, 2, variable="v"),
+    )
+    say(engine, "go")
+    engine.advance(1000)
+    assert engine.variables["v"] == {}, "not in a team yet"
+    say(engine, "join")
+    engine.advance(1000)
+    say(engine, "go")
+    engine.advance(1000)
+    assert bool(engine.variables["v"]) is expected
+
+    engine = team_room(
+        box(4, "wf_slc_users_team", 2, 2, 1, team=team),
+        box(5, "wf_act_give_var", 2, 2, 2, variable="v", user_source="selector"),
+    )
+    say(engine, "join")
+    engine.advance(1000)
+    say(engine, "go")
+    engine.advance(1000)
+    assert bool(engine.variables["v"]) is expected
+
+
+def test_points_only_count_during_a_game() -> None:
+    engine = team_room(box(4, "wf_act_give_score", 2, 2, 1, points=5, times=2))
+    say(engine, "join")
+    engine.advance(1000)
+    say(engine, "go")
+    engine.advance(1000)
+    assert engine.team_scores["blue"] == 0
+    engine.apply_input({"type": "game_start"})
+    for _ in range(3):
+        say(engine, "go")
+        engine.advance(1000)
+    assert engine.team_scores["blue"] == 10, "the limit stops the third"
+    engine.apply_input({"type": "game_end"})
+    say(engine, "go")
+    engine.advance(1000)
+    assert engine.team_scores["blue"] == 10, "the score stays after the game"
+    engine.apply_input({"type": "game_start"})
+    assert engine.team_scores["blue"] == 0, "a new game starts from nothing"
+
+
+def test_a_team_score_never_goes_below_zero() -> None:
+    engine = team_room(box(4, "wf_act_give_score_tm", 2, 2, 1, points=-5, team="red"))
+    engine.apply_input({"type": "game_start"})
+    say(engine, "go")
+    engine.advance(1000)
+    assert engine.team_scores["red"] == 0
+
+
+def test_game_triggers_fire() -> None:
+    engine = room(
+        box(1, "wf_trg_game_starts", 1, 1),
+        box(2, "wf_act_give_var", 1, 1, 1, variable="started", user_source="selector"),
+        box(3, "wf_slc_users_area", 1, 1, 2, area_x=0, area_y=0, area_width=64, area_height=64),
+    )
+    engine.apply_input({"type": "game_start"})
+    engine.advance(1000)
+    assert engine.variables["started"]

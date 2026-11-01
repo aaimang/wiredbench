@@ -42,6 +42,11 @@ def test_room_checks_have_dates_and_nothing_else_is_claimed() -> None:
             assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", entry["room"]), name
     assert coverage.room_checked() == {
         "wf_act_change_var_val",
+        "wf_act_join_team",
+        "wf_act_leave_team",
+        "wf_cnd_actor_in_team",
+        "wf_cnd_not_in_team",
+        "wf_slc_users_team",
         "wf_act_furni_to_user",
         "wf_act_move_rotate",
         "wf_act_move_rotate_user",

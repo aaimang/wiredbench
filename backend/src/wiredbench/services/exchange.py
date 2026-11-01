@@ -51,6 +51,7 @@ SOURCE_FIELDS = {
         {0: "trigger", 100: "picks", 200: "selector", 201: "signal"},
     ),
 }
+ANY_TEAM_NUMBERS = {0: "any", 1: "red", 2: "green", 3: "blue", 4: "yellow"}
 AREA_FIELDS = [("area_x", 0, int), ("area_y", 1, int), ("area_width", 2, int), ("area_height", 3, int)]
 # A selector's two switches sit on the box itself. The file calls invert "inverse".
 SELECTOR_SWITCHES = {"filter": "filter", "invert": "inverse"}
@@ -85,6 +86,19 @@ OPTION_FIELDS: dict[str, list[tuple[str, int, Any]]] = {
         ),
         ("rotation", 1, ("none", "clockwise", "counterclockwise", "random")),
     ],
+    "wf_act_join_team": [
+        ("team", 0, {1: "red", 2: "green", 3: "blue", 4: "yellow"}),
+        ("team_type", 1, ("wired", "banzai", "freeze")),
+    ],
+    "wf_act_give_score": [("points", 0, int), ("times", 1, int)],
+    "wf_act_give_score_tm": [
+        ("points", 0, int),
+        ("times", 1, int),
+        ("team", 2, {1: "red", 2: "green", 3: "blue", 4: "yellow"}),
+    ],
+    "wf_cnd_actor_in_team": [("team", 0, ANY_TEAM_NUMBERS)],
+    "wf_cnd_not_in_team": [("team", 0, ANY_TEAM_NUMBERS)],
+    "wf_slc_users_team": [("team", 0, ANY_TEAM_NUMBERS)],
     "wf_act_rel_mov": [("move_x", 0, int), ("move_y", 1, int)],
     "wf_act_set_altitude": [("altitude", 0, 0.01), ("altitude_change", 1, ("raise", "lower", "set"))],
     "wf_act_move_rotate_user": [

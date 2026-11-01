@@ -9,10 +9,10 @@ read at commit `3fc9c06f533c`, for facts only.
 - No evidence yet: 92
 - Reference only: 7
 - Seen in a real preset: 0
-- Seen in a real room dump: 166
-- Checked in a real room: 19
-- Have a form: 82
-- Option numbers mapped: 31
+- Seen in a real room dump: 161
+- Checked in a real room: 24
+- Have a form: 91
+- Option numbers mapped: 37
 
 | Box | Evidence | Form | Options | Room check |
 |---|---|---|---|---|
@@ -37,13 +37,13 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_act_give_currency` | Seen in a real room dump |  |  |  |
 | `wf_act_give_furni` | Seen in a real room dump |  |  |  |
 | `wf_act_give_reward` | Reference only |  |  |  |
-| `wf_act_give_score` | Seen in a real room dump |  |  |  |
-| `wf_act_give_score_tm` | Seen in a real room dump |  |  |  |
+| `wf_act_give_score` | Seen in a real room dump | Yes | Yes |  |
+| `wf_act_give_score_tm` | Seen in a real room dump | Yes | Yes |  |
 | `wf_act_give_var` | Seen in a real room dump | Yes | Yes |  |
 | `wf_act_init_transaction` | Seen in a real room dump |  |  |  |
-| `wf_act_join_team` | Seen in a real room dump |  |  |  |
+| `wf_act_join_team` | Checked in a real room | Yes | Yes | 2026-11-01 |
 | `wf_act_kick_user` | Seen in a real room dump |  |  |  |
-| `wf_act_leave_team` | Seen in a real room dump |  |  |  |
+| `wf_act_leave_team` | Checked in a real room | Yes |  | 2026-11-01 |
 | `wf_act_log` | Seen in a real room dump | Yes | Yes |  |
 | `wf_act_match_to_sshot` | Seen in a real room dump |  |  |  |
 | `wf_act_move_furni_as_group` | Seen in a real room dump |  |  |  |
@@ -92,7 +92,7 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_button_yellow` | No evidence yet |  |  |  |
 | `wf_cnd_actor_dir` | Seen in a real room dump |  |  |  |
 | `wf_cnd_actor_in_group` | Seen in a real room dump |  |  |  |
-| `wf_cnd_actor_in_team` | Seen in a real room dump |  |  |  |
+| `wf_cnd_actor_in_team` | Checked in a real room | Yes | Yes | 2026-11-01 |
 | `wf_cnd_chest_has_item_type` | Seen in a real room dump |  |  |  |
 | `wf_cnd_chest_has_items` | Seen in a real room dump |  |  |  |
 | `wf_cnd_counter_time_matches` | Seen in a real room dump |  |  |  |
@@ -110,7 +110,7 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_cnd_not_has_handitem` | Seen in a real room dump |  |  |  |
 | `wf_cnd_not_hv_avtrs` | Seen in a real room dump | Yes |  |  |
 | `wf_cnd_not_in_group` | Seen in a real room dump |  |  |  |
-| `wf_cnd_not_in_team` | Seen in a real room dump |  |  |  |
+| `wf_cnd_not_in_team` | Checked in a real room | Yes | Yes | 2026-11-01 |
 | `wf_cnd_not_match_snap` | Seen in a real room dump |  |  |  |
 | `wf_cnd_not_stuff_is` | Seen in a real room dump | Yes |  |  |
 | `wf_cnd_not_trggrer_on` | Seen in a real room dump | Yes |  |  |
@@ -181,7 +181,7 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_slc_users_neighborhood` | Seen in a real room dump |  |  |  |
 | `wf_slc_users_onfurni` | Seen in a real room dump | Yes |  |  |
 | `wf_slc_users_signal` | Seen in a real room dump | Yes |  |  |
-| `wf_slc_users_team` | Seen in a real room dump |  |  |  |
+| `wf_slc_users_team` | Checked in a real room | Yes | Yes | 2026-11-01 |
 | `wf_slc_users_with_var` | Seen in a real room dump | Yes |  |  |
 | `wf_slider` | No evidence yet |  |  |  |
 | `wf_storage_coins1` | No evidence yet |  |  |  |
@@ -227,8 +227,8 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_trg_clock_counter` | Seen in a real room dump |  |  |  |
 | `wf_trg_collision` | Seen in a real room dump |  |  |  |
 | `wf_trg_enter_room` | Seen in a real room dump | Yes |  |  |
-| `wf_trg_game_ends` | Seen in a real room dump |  |  |  |
-| `wf_trg_game_starts` | Seen in a real room dump |  |  |  |
+| `wf_trg_game_ends` | Seen in a real room dump | Yes |  |  |
+| `wf_trg_game_starts` | Seen in a real room dump | Yes |  |  |
 | `wf_trg_leave_room` | Seen in a real room dump | Yes |  |  |
 | `wf_trg_period_long` | Seen in a real room dump | Yes | Yes |  |
 | `wf_trg_period_short` | Seen in a real room dump | Yes | Yes |  |

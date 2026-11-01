@@ -36,7 +36,7 @@ class Advance(BaseModel):
 
 
 class Input(BaseModel):
-    type: Literal["move", "turn", "say", "click", "use", "enter", "leave"]
+    type: Literal["move", "turn", "say", "click", "use", "enter", "leave", "game_start", "game_end"]
     user: Int | None = None
     x: int | None = Field(None, ge=0, le=64)
     y: int | None = Field(None, ge=0, le=64)

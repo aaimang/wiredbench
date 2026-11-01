@@ -38,6 +38,9 @@ MOVES = {
     "x-y-": (-1, -1),
 }
 MAX_ALTITUDE = 8000
+TEAMS = ("red", "green", "blue", "yellow")
+MAX_POINTS = 1000
+MAX_TIMES = 10
 # A real room leaves these as they are when Toggle Furni State points at them.
 NOT_WIRED_TOGGLED = {"wf_floor_switch1", "wf_floor_switch2"}
 PLACEHOLDER = re.compile(r"\$\(([\w.-]{1,40})\)")
@@ -187,6 +190,9 @@ class Engine:
         self.box_runs: dict[int, int] = defaultdict(int)
         self.stack_work: dict[str, int] = defaultdict(int)
         self.log_counts: dict[str, int] = defaultdict(int)
+        self.game_running = False
+        self.team_scores = dict.fromkeys(TEAMS, 0)
+        self.score_grants: dict[tuple[int, int | None], int] = defaultdict(int)
         self.problems: deque[dict[str, Any]] = deque(maxlen=PROBLEMS_KEPT)
         self._load(document)
 
@@ -239,6 +245,7 @@ class Engine:
                 "x": raw["x"],
                 "y": raw["y"],
                 "dir": raw.get("dir", 2),
+                "team": None,
             }
         self._log("info", "Room started", seed=self.seed)
         self._fire("wf_trg_room_initializes")
@@ -287,6 +294,10 @@ class Engine:
         user = entry.get("user")
         if kind == "move":
             self._move_user(_int(user), _int(entry.get("x")), _int(entry.get("y")))
+        elif kind == "game_start":
+            self._game_start()
+        elif kind == "game_end":
+            self._game_end()
         elif kind == "turn":
             if (who := self.users.get(_int(user))) is not None:
                 who["dir"] = _int(entry.get("dir")) % 8
@@ -358,6 +369,19 @@ class Engine:
         if furni_id in self.furni:
             self._set_state(furni_id, self._next_state(furni_id))
             self._fire("wf_trg_state_changed", user=user_id, furni=furni_id)
+
+    def _game_start(self) -> None:
+        self.team_scores = dict.fromkeys(TEAMS, 0)
+        self.score_grants.clear()
+        self.game_running = True
+        self._log("info", "Game started")
+        self._fire("wf_trg_game_starts")
+
+    def _game_end(self) -> None:
+        if self.game_running:
+            self.game_running = False
+            self._log("info", "Game ended")
+            self._fire("wf_trg_game_ends")
 
     def _leave(self, user_id: int) -> None:
         if user_id in self.users:
@@ -609,6 +633,8 @@ class Engine:
                 return [i for i, f in self.furni.items() if self._at_altitude(box, f["z"])]
             case "wf_slc_furni_onfurni":
                 return self._stacked(box)
+            case "wf_slc_users_team":
+                return [u for u in self.users if self._in_team(u, box.get("team", "any"))]
             case "wf_slc_users_signal":
                 return list(ctx.signal_users)
             case "wf_slc_users_with_var":
@@ -696,6 +722,10 @@ class Engine:
         name = str(box.get("variable", ""))
         holders = self._holders(box, name, ctx)
         match box.classname:
+            case "wf_cnd_actor_in_team":
+                return bool(users) and all(self._in_team(u, box.get("team", "any")) for u in users)
+            case "wf_cnd_not_in_team":
+                return all(not self._in_team(u, box.get("team", "any")) for u in users)
             case "wf_cnd_var_age_match":
                 return bool(holders) and all(
                     self._age_matches(box, self._holding(name, h, ctx)) for h in holders
@@ -1004,6 +1034,49 @@ class Engine:
     _do_teleport_to = _teleport
     _do_user_to_furni = _teleport
 
+    def _in_team(self, user_id: int, team: Any) -> bool:
+        user = self.users.get(user_id)
+        if not user or user["team"] is None:
+            return False
+        return bool(team == "any" or user["team"] == team)
+
+    def _do_join_team(self, box: Box, ctx: Context) -> None:
+        team = box.get("team", "red")
+        if team in TEAMS:
+            for user_id in self._users_for(box, ctx):
+                if user_id in self.users:
+                    self.users[user_id]["team"] = team
+                    self._log("info", f"{self._user_name(user_id)} joined the {team} team")
+
+    def _do_leave_team(self, box: Box, ctx: Context) -> None:
+        for user_id in self._users_for(box, ctx):
+            if user_id in self.users and self.users[user_id]["team"] is not None:
+                self.users[user_id]["team"] = None
+                self._log("info", f"{self._user_name(user_id)} left their team")
+
+    def _give_points(self, box: Box, team: Any, scorer: int | None) -> None:
+        """Points only count during a game, and a team's score never goes below 0."""
+        if team not in TEAMS:
+            return
+        if not self.game_running:
+            self._log("info", "No game is running, so no points were given", box=box.id)
+            return
+        times = max(0, min(_int(box.get("times")), MAX_TIMES))
+        if times and self.score_grants[(box.id, scorer)] >= times:
+            return
+        self.score_grants[(box.id, scorer)] += 1
+        points = max(-MAX_POINTS, min(_int(box.get("points", 5), 5), MAX_POINTS))
+        self.team_scores[team] = max(0, self.team_scores[team] + points)
+        self._log("info", f"The {team} team has {self.team_scores[team]} points")
+
+    def _do_give_score(self, box: Box, ctx: Context) -> None:
+        for user_id in self._users_for(box, ctx):
+            if user_id in self.users and self.users[user_id]["team"] is not None:
+                self._give_points(box, self.users[user_id]["team"], user_id)
+
+    def _do_give_score_tm(self, box: Box, _ctx: Context) -> None:
+        self._give_points(box, box.get("team", "red"), None)
+
     def _off_map(self, x: int, y: int) -> bool:
         if x < 0 or y < 0:
             return True
@@ -1156,6 +1229,7 @@ class Engine:
             "users": sorted(self.users.values(), key=lambda u: u["id"]),
             "variables": self.view_variables(),
             "defined_variables": self.view_defined(),
+            "game": {"running": self.game_running, "scores": dict(self.team_scores)},
             "limit_hits": self.limit_hits,
             "metrics": dict(sorted(self.metrics.items())),
         }
