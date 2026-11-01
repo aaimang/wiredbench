@@ -297,7 +297,7 @@ class WbEditor extends HTMLElement {
       this.advanceWalkers(seconds);
       this.needsDraw = true;
     }
-    if (this.needsDraw) {
+    if (this.renderer?.motionDue() || this.needsDraw) {
       this.needsDraw = false;
       this.renderer?.draw(this.scene());
     }

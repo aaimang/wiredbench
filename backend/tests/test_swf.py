@@ -4,11 +4,19 @@ import io
 import struct
 import zlib
 
+import defusedxml.ElementTree as ET
 import pytest
 from PIL import Image
 
 from swf_builder import _binary, _image, _symbols, _tag, furni_swf, wrap
-from wiredbench.services.swf import SwfError, build
+from wiredbench.services.swf import (
+    MAX_TRACK_FRAMES,
+    SwfError,
+    _digit_layers,
+    _layer_tracks,
+    _track_frames,
+    build,
+)
 
 
 def test_builds_manifest_and_atlas() -> None:
@@ -100,3 +108,48 @@ def test_too_many_images_is_refused() -> None:
 def test_hostile_symbol_names_cannot_escape_the_manifest() -> None:
     manifest, _ = build(furni_swf("box"), "box")
     assert "../" not in str(manifest)
+
+
+def test_still_furni_has_no_tracks_or_digits() -> None:
+    manifest, _ = build(furni_swf("box"), "box")
+    assert manifest["tracks"] == {}
+    assert manifest["digits"] == {}
+
+
+def layer_xml(body: str, **attributes: str) -> ET.Element:
+    extras = " ".join(f'{key}="{value}"' for key, value in attributes.items())
+    return ET.fromstring(f'<animationLayer id="1" {extras}>{body}</animationLayer>')
+
+
+def test_track_frames_follow_each_sequence_in_order() -> None:
+    body = (
+        '<frameSequence loopCount="2"><frame id="1"/><frame id="2"/></frameSequence>'
+        '<frameSequence><frame id="3"/></frameSequence>'
+    )
+    assert _track_frames(layer_xml(body)) == [1, 2, 1, 2, 3]
+    huge = '<frameSequence loopCount="99999">' + '<frame id="1"/>' * 50 + "</frameSequence>"
+    assert len(_track_frames(layer_xml(huge))) == MAX_TRACK_FRAMES
+
+
+def test_layer_tracks_keep_speed_and_looping() -> None:
+    animation = ET.fromstring(
+        '<animation id="1">'
+        '<animationLayer id="0"><frameSequence><frame id="0"/></frameSequence></animationLayer>'
+        '<animationLayer id="1" frameRepeat="4" loopCount="0">'
+        '<frameSequence><frame id="0"/><frame id="1"/></frameSequence></animationLayer>'
+        "</animation>"
+    )
+    tracks = _layer_tracks(animation, 2, lambda _d, layer, frame: {"layer": layer, "frame": frame})
+    assert len(tracks) == 1, "a layer with one frame stands still"
+    assert (tracks[0]["layer"], tracks[0]["repeat"], tracks[0]["loop"]) == (1, 4, True)
+    assert [f["frame"] for f in tracks[0]["frames"]] == [0, 1]
+
+
+def test_digit_layers_run_left_to_right_and_need_all_ten() -> None:
+    def sprite_for(_direction: int, layer: int, frame: int) -> dict[str, int] | None:
+        if layer == 0:
+            return {"layer": 0, "dx": 0} if frame == 0 else None
+        return {"layer": layer, "dx": -layer} if frame < 10 else None
+
+    found = _digit_layers(2, 3, sprite_for)
+    assert [slot["0"]["layer"] for slot in found] == [2, 1], "the higher layer sits further left here"

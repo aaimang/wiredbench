@@ -38,6 +38,10 @@ def _write_atomic(path: Path, data: bytes) -> None:
         temp.unlink(missing_ok=True)
 
 
+MANIFEST_NAME = f"manifest.v{swf.ART_VERSION}.json"
+ATLAS_NAME = f"atlas.v{swf.ART_VERSION}.png"
+
+
 class AssetCache:
     def __init__(self, root: Path, upstream: Upstream) -> None:
         self.root = root
@@ -75,7 +79,7 @@ class AssetCache:
 
     def cached_states(self, revision: int, classname: str) -> list[int] | None:
         """A furni's states from art already on disk. Never downloads, because a room is about to run."""
-        manifest = self._folder(revision, classname.split("*")[0]) / "manifest.json"
+        manifest = self._folder(revision, classname.split("*")[0]) / MANIFEST_NAME
         try:
             states = json.loads(manifest.read_text()).get("states")
         except (OSError, ValueError):
@@ -86,7 +90,7 @@ class AssetCache:
         """Manifest and atlas paths, built on first use. None if the furni cannot be drawn."""
         base = classname.split("*")[0]  # Colour variants share one SWF.
         folder = self._folder(revision, base)
-        manifest, atlas = folder / "manifest.json", folder / "atlas.png"
+        manifest, atlas = folder / MANIFEST_NAME, folder / ATLAS_NAME
         if manifest.exists() and atlas.exists():
             os.utime(manifest)
             os.utime(atlas)

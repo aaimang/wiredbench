@@ -238,10 +238,33 @@ class _Atlas:
         return out.getvalue()
 
 
+# Raised when the shape of a manifest changes, so art built before is built again.
+ART_VERSION = 2
+MAX_TRACK_FRAMES = 1000
+DIGITS = 10
+
+
+def _track_frames(layer: ET.Element) -> list[int]:
+    """A layer's frames in playing order. Each sequence plays its own number of times."""
+    frames: list[int] = []
+    for sequence in layer.findall("frameSequence"):
+        ids = [_int(frame, "id") for frame in sequence.findall("frame")]
+        for _ in range(max(1, _int(sequence, "loopCount", 1))):
+            frames += ids
+            if len(frames) > MAX_TRACK_FRAMES:
+                return frames[:MAX_TRACK_FRAMES]
+    return frames
+
+
 def build(data: bytes, classname: str) -> tuple[dict[str, Any], bytes]:
     """Returns the manifest and atlas PNG for one furni. Raises SwfError if it cannot be read."""
     try:
-        return _build(parse(data), classname.split("*")[0])
+        parsed = parse(data)
+        base = classname.split("*")[0]
+        try:
+            return _build(parsed, base)
+        except SwfError:  # Too many frames to pack. A furni that stands still still beats no furni.
+            return _build(parsed, base, animate=False)
     except SwfError:
         raise
     except (
@@ -254,7 +277,38 @@ def build(data: bytes, classname: str) -> tuple[dict[str, Any], bytes]:
         raise SwfError("The furni file is damaged.") from exc
 
 
-def _build(swf: ParsedSwf, base: str) -> tuple[dict[str, Any], bytes]:
+def _layer_tracks(animation: ET.Element, direction: int, sprite_for: Any) -> list[dict[str, Any]]:
+    """The layers of one state that change over time, each with its own sprites and speed."""
+    tracks: list[dict[str, Any]] = []
+    for layer_element in animation.findall("animationLayer"):
+        frames = _track_frames(layer_element)
+        if len(set(frames)) < 2:
+            continue
+        layer = _int(layer_element, "id")
+        sprites = {frame: sprite_for(direction, layer, frame) for frame in set(frames)}
+        loops = _int(layer_element, "loopCount", 1)
+        tracks.append(
+            {
+                "layer": layer,
+                "repeat": max(1, _int(layer_element, "frameRepeat", 1)),
+                "loop": loops == 0,
+                "frames": [sprites[frame] for frame in frames * max(1, min(loops, 10))],
+            }
+        )
+    return tracks
+
+
+def _digit_layers(direction: int, layer_count: int, sprite_for: Any) -> list[dict[str, dict[str, Any]]]:
+    """Layers holding the digits 0 to 9, from the left of the display to the right."""
+    found = []
+    for layer in range(layer_count):
+        sprites = {digit: sprite_for(direction, layer, digit) for digit in range(DIGITS)}
+        if all(sprites.values()) and sprite_for(direction, layer, DIGITS) is None:
+            found.append({str(digit): item for digit, item in sprites.items()})
+    return sorted(found, key=lambda item: item["0"]["dx"])
+
+
+def _build(swf: ParsedSwf, base: str, animate: bool = True) -> tuple[dict[str, Any], bytes]:
     images = swf.named_images()
     xml = swf.named_xml()
     assets = {a.get("name", ""): a for a in _find_xml(xml, "_assets").iter("asset")}
@@ -280,6 +334,8 @@ def _build(swf: ParsedSwf, base: str) -> tuple[dict[str, Any], bytes]:
 
     atlas = _Atlas()
     poses: dict[str, list[dict[str, Any]]] = {}
+    tracks: dict[str, list[dict[str, Any]]] = {}
+    digits: dict[str, list[dict[str, dict[str, Any]]]] = {}
 
     def sprite(asset: ET.Element, layer: int, z: int, alpha: int, ink: str) -> dict[str, Any] | None:
         source = asset.get("source") or asset.get("name") or ""
@@ -303,6 +359,19 @@ def _build(swf: ParsedSwf, base: str) -> tuple[dict[str, Any], bytes]:
             "alpha": alpha,
             "ink": ink.lower(),
         }
+
+    def sprite_for(direction: int, layer: int, frame: int) -> dict[str, Any] | None:
+        asset = assets.get(f"{base}_{SIZE}_{chr(97 + layer)}_{direction}_{frame}")
+        if asset is None:
+            return None
+        chosen = {
+            _int(e, "id"): e
+            for e in (direction_config[direction].findall("layer") if direction in direction_config else [])
+        }
+        config = layer_config.get(layer)
+        z = _int(chosen.get(layer), "z", _int(config, "z"))
+        ink = config.get("ink", "") if config is not None else ""
+        return sprite(asset, layer, z, _int(config, "alpha", 255), ink)
 
     for direction in directions:
         layers_for_direction = {
@@ -332,6 +401,12 @@ def _build(swf: ParsedSwf, base: str) -> tuple[dict[str, Any], bytes]:
                     sprites.append(s)
             sprites.sort(key=lambda item: item["z"])
             poses[f"{direction}:{state}"] = sprites
+            if animate and state in animations:
+                moving = _layer_tracks(animations[state], direction, sprite_for)
+                if moving:
+                    tracks[f"{direction}:{state}"] = moving
+        if animate and (found := _digit_layers(direction, layer_count, sprite_for)):
+            digits[str(direction)] = found
 
     manifest = {
         "size": SIZE,
@@ -339,5 +414,7 @@ def _build(swf: ParsedSwf, base: str) -> tuple[dict[str, Any], bytes]:
         "states": states,
         "colors": _colors(visualization),
         "poses": poses,
+        "tracks": tracks,
+        "digits": digits,
     }
     return manifest, atlas.render()

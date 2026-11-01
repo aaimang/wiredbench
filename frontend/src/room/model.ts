@@ -314,3 +314,89 @@ export class History {
     return JSON.parse(next);
   }
 }
+
+const FURNI_FPS = 24;
+const GAME_TIMERS = new Set(["bb_counter", "fball_counter", "es_counter"]);
+
+export interface FurniPart {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  dx: number;
+  dy: number;
+  flip: boolean;
+  layer: number;
+  z: number;
+  alpha: number;
+  ink: string;
+}
+
+export interface FurniTrack {
+  layer: number;
+  repeat: number;
+  loop: boolean;
+  frames: (FurniPart | null)[];
+}
+
+export interface FurniArtData {
+  directions: number[];
+  poses: Record<string, FurniPart[]>;
+  tracks?: Record<string, FurniTrack[]>;
+  digits?: Record<string, Record<string, FurniPart>[]>;
+}
+
+/** Whether this furni shows a time rather than a picture for each state. */
+export function showsTime(classname: string): boolean {
+  const base = classname.split("*")[0] ?? "";
+  return (
+    base.startsWith("wf_upcounter") || base.startsWith("wf_game_upcounter") || GAME_TIMERS.has(base)
+  );
+}
+
+/** The digits a time takes up, most significant first: minutes and seconds on four digit displays. */
+export function timeDigits(seconds: number, count: number): number[] {
+  const whole = Math.max(0, Math.floor(seconds));
+  const shown =
+    count === 4
+      ? `${Math.min(Math.floor(whole / 60), 99)}`.padStart(2, "0") +
+        `${whole % 60}`.padStart(2, "0")
+      : `${whole}`.padStart(count, "0").slice(-count);
+  return [...shown].map(Number);
+}
+
+function trackFrame(track: FurniTrack, elapsedMs: number): FurniPart | null {
+  const step = Math.floor(((elapsedMs / 1000) * FURNI_FPS) / track.repeat);
+  const index = track.loop ? step % track.frames.length : Math.min(step, track.frames.length - 1);
+  return track.frames[index] ?? null;
+}
+
+/** What to draw for a furni at a moment. `elapsedMs` counts from when it entered this state. */
+export function furniParts(
+  art: FurniArtData,
+  classname: string,
+  direction: number,
+  state: number,
+  elapsedMs: number,
+): { parts: FurniPart[]; moving: boolean } {
+  const pose = art.poses[`${direction}:${state}`] ?? art.poses[`${direction}:0`] ?? [];
+  const digits = showsTime(classname) ? art.digits?.[String(direction)] : undefined;
+  if (digits?.length) {
+    const layers = new Set(digits.map((slot) => slot["0"]?.layer));
+    const values = timeDigits(state, digits.length);
+    const shown = digits.flatMap((slot, index) => slot[String(values[index])] ?? []);
+    const parts = [...pose.filter((part) => !layers.has(part.layer)), ...shown];
+    return { parts: parts.sort((a, b) => a.z - b.z), moving: false };
+  }
+  const tracks = art.tracks?.[`${direction}:${state}`];
+  if (!tracks?.length) return { parts: pose, moving: false };
+  const replaced = new Set(tracks.map((track) => track.layer));
+  const current = tracks.flatMap((track) => trackFrame(track, elapsedMs) ?? []);
+  const parts = [...pose.filter((part) => !replaced.has(part.layer)), ...current];
+  const moving = tracks.some((track) => track.loop || elapsedMs < endOf(track));
+  return { parts: parts.sort((a, b) => a.z - b.z), moving };
+}
+
+function endOf(track: FurniTrack): number {
+  return ((track.frames.length * track.repeat) / FURNI_FPS) * 1000;
+}
