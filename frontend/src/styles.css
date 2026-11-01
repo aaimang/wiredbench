@@ -1982,6 +1982,16 @@ wb-editor {
   width: 100%;
 }
 
+.avatar-action-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.avatar-action-buttons .btn {
+  justify-content: center;
+}
+
 .avatar-details summary {
   font-weight: 550;
   cursor: pointer;

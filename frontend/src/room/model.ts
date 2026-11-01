@@ -495,3 +495,41 @@ export function flightAt(
 /** A real room showed this before anyone set a time zone. */
 export const DEFAULT_TIMEZONE = "Europe/London";
 export const MAX_ROOM_SIZE = 64;
+
+export type AvatarAction = "wave" | "blow" | "respect" | "sixty_seven";
+
+export const ACTION_MS = 2500;
+const ACTION_FRAME_MS = 250;
+const SIXTY_SEVEN_MS = 400;
+export const SIGN_MAX = 17;
+/** A real room holds a sign for a few seconds. The exact length is assumed, and matches the engine. */
+export const SIGN_MS = 5000;
+
+/** What Habbo's avatar image is asked to add to a pose. Effect and dance have no art there. */
+export function avatarExtras(
+  saved: unknown,
+  action?: AvatarAction,
+  elapsedMs = 0,
+): { extra: string[]; gesture: string; frame: number } {
+  const details = (saved ?? {}) as Record<string, number>;
+  const step = Math.floor(elapsedMs / ACTION_FRAME_MS);
+  const extra: string[] = [];
+  let frame = 0;
+  const sign = details["@sign"];
+  if (action === "sixty_seven") {
+    extra.push(`sig=${Math.floor(elapsedMs / SIXTY_SEVEN_MS) % 2 ? 7 : 6}`);
+  } else if (action) {
+    extra.push({ wave: "wav", blow: "blw", respect: "respect" }[action]);
+    frame = step % 2;
+  } else if (sign !== undefined && sign >= 0 && sign <= SIGN_MAX) {
+    extra.push(`sig=${sign}`);
+  }
+  const hand = details["@handitem"] ?? 0;
+  if (hand > 0 && hand < 10000) extra.push(`crr=${hand}`);
+  return { extra, gesture: details["@is_idle"] ? "eyb" : "std", frame };
+}
+
+/** The action value of an avatar image: the pose first, and plain standing left out when more is added. */
+export function figureAction(pose: string, extra: string[]): string {
+  return [...(pose === "std" && extra.length ? [] : [pose]), ...extra].join(",");
+}

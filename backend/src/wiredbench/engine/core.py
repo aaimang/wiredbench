@@ -63,6 +63,8 @@ USER_DETAILS = {
     "@is_muted",
     "@is_idle",
 }
+ADDABLE_DETAILS = {"@handitem", "@habbicon"}  # The two a real room lets Give Variable create.
+SIGN_MS = 5000  # A real room holds a sign for a few seconds. The exact length is assumed.
 TEAM_TYPES = ("wired", "banzai", "freeze")
 TEAM_TYPE_NUMBERS = {"banzai": 0, "freeze": 1, "wired": 4}  # A real room read 0 for a Battle Banzai team.
 CHANGE_CREATED, CHANGE_VALUE, CHANGE_DELETED = 0, 1, 2
@@ -272,6 +274,7 @@ class Engine:
         self.projectile_values: dict[int, dict[str, int]] = {}
         self.furni_looks: dict[int, dict[str, Any]] = {}
         self.user_looks: dict[int, dict[str, Any]] = {}
+        self.sign_turns: dict[int, int] = {}
         self.game_timer: int | None = None
         self.game_timer_run = 0
         self.score_grants: dict[tuple[int, int | None], int] = defaultdict(int)
@@ -394,7 +397,14 @@ class Engine:
         elif kind == "user_detail":
             who = self.users.get(_int(user))
             if who is not None and entry.get("detail") in USER_DETAILS:
-                who["details"][entry["detail"]] = _clamp(_int(entry.get("amount")))
+                if entry.get("amount") is None:  # Such as a sign being put down.
+                    who["details"].pop(entry["detail"], None)
+                else:
+                    who["details"][entry["detail"]] = _clamp(_int(entry["amount"]))
+                    if entry["detail"] == "@sign":
+                        self.sign_turns[who["id"]] = self.sign_turns.get(who["id"], 0) + 1
+                        turn = self.sign_turns[who["id"]]
+                        self._push(self.now_ms + SIGN_MS, "sign_end", {"user": who["id"], "turn": turn})
         elif kind == "turn":
             if (who := self.users.get(_int(user))) is not None:
                 who["dir"] = _int(entry.get("dir")) % 8
@@ -641,6 +651,10 @@ class Engine:
                 self._clock_tick(payload["furni"], payload["run"])
             elif action == "game_timer":
                 self._game_timer_tick(payload["furni"], payload["run"])
+            elif action == "sign_end":
+                # A newer sign keeps its own time.
+                if self.sign_turns.get(payload["user"]) == payload["turn"] and payload["user"] in self.users:
+                    self.users[payload["user"]]["details"].pop("@sign", None)
             elif action == "signal":
                 self._deliver_signal(payload["antennas"], payload["users"], payload["furni"])
 
@@ -1096,6 +1110,10 @@ class Engine:
                 return None
             team = user["team"]
             if name in USER_DETAILS:
+                row = internal.row_for(name, "user")
+                # Most of these exist only while they apply, such as a sign being held.
+                if name not in user["details"] and row and not row.get("always_available"):
+                    return None
                 value = _int(user["details"].get(name))
                 # A real room holds a favourite group only while there is one.
                 return None if name == "@favourite_group_id" and not value else value
@@ -1296,6 +1314,15 @@ class Engine:
         if not name:
             self._log("error", "Give Variable has no variable chosen", box=box.id)
             return
+        if name in ADDABLE_DETAILS:
+            for target in self._users_for(box, ctx):
+                who = self.users.get(target)
+                if who is None or (name in who["details"] and not box.get("overwrite")):
+                    continue
+                amount = self._operand(box, target, ctx)
+                if amount is not None:
+                    who["details"][name] = _clamp(amount)
+            return
         if internal.targets(name):
             self._log("stub", f"Writing to {name} is not simulated yet", box=box.id)
             return
@@ -1310,6 +1337,11 @@ class Engine:
 
     def _do_remove_var(self, box: Box, ctx: Context) -> None:
         name = str(box.get("variable", "")).strip()
+        if name in ADDABLE_DETAILS:
+            for target in self._users_for(box, ctx):
+                if (who := self.users.get(target)) is not None:
+                    who["details"].pop(name, None)
+            return
         if internal.targets(name):
             self._log("stub", f"Writing to {name} is not simulated yet", box=box.id)
             return

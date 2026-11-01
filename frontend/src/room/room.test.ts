@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { depth, screenToTile, tileCentre } from "./iso";
 import {
+  avatarExtras,
   directionBetween,
   drawTile,
   emptyRoom,
   type FurniArtData,
   type FurniInfo,
   type FurniPart,
+  figureAction,
   findPath,
   fitsInRoom,
   flightAt,
@@ -419,5 +421,28 @@ describe("projectile flights", () => {
   it("is a straight line at height 0, and animates past its target when asked", () => {
     expect(flightAt({ ...flight, height: 0 }, 0.5).lift).toBe(0);
     expect(flightAt({ ...flight, past: 3 }, 1).x).toBe(11);
+  });
+});
+
+describe("avatar actions", () => {
+  it("adds what the panel holds to the pose", () => {
+    expect(avatarExtras({ "@sign": 0 }).extra).toEqual(["sig=0"]);
+    expect(avatarExtras({ "@sign": 18 }).extra).toEqual([]);
+    expect(avatarExtras({ "@handitem": 12 }).extra).toEqual(["crr=12"]);
+    expect(avatarExtras({ "@is_idle": 1 }).gesture).toBe("eyb");
+    expect(avatarExtras({ "@effect": 4, "@dance": 1 }).extra).toEqual([]);
+  });
+
+  it("swaps frames while an action plays, and an action covers a held sign", () => {
+    expect(avatarExtras({ "@sign": 6 }, "wave", 0)).toMatchObject({ extra: ["wav"], frame: 0 });
+    expect(avatarExtras({}, "blow", 250).frame).toBe(1);
+    expect(avatarExtras({}, "sixty_seven", 0).extra).toEqual(["sig=6"]);
+    expect(avatarExtras({}, "sixty_seven", 400).extra).toEqual(["sig=7"]);
+  });
+
+  it("builds the image action with the pose first", () => {
+    expect(figureAction("std", [])).toBe("std");
+    expect(figureAction("std", ["sig=6"])).toBe("sig=6");
+    expect(figureAction("sit", ["sig=6", "crr=1"])).toBe("sit,sig=6,crr=1");
   });
 });

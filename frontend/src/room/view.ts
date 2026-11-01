@@ -3,6 +3,7 @@ import { h, replace } from "../dom";
 import { t } from "../strings";
 import { errorMessage, toast } from "../ui";
 import {
+  avatarExtras,
   drawTile,
   type FurniInfo,
   fitsInRoom,
@@ -274,7 +275,7 @@ class WbRoomView extends HTMLElement {
           z: avatar.z,
           dir: avatar.dir,
           action: avatar.pose,
-          frame: 0,
+          ...avatarExtras(avatar.details),
           frontX,
           frontY,
         };

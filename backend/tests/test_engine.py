@@ -707,6 +707,15 @@ def test_walking_turns_the_user_and_a_plain_move_does_not() -> None:
     assert engine.users[100]["dir"] == 6, "a move without a direction keeps the facing"
 
 
+def test_a_detail_can_be_put_down_and_the_room_state_shows_it() -> None:
+    effect = box(2, "wf_act_move_rotate_user", 1, 1, 1)
+    engine = moved(effect, users=[user(100, "Ann", 4, 4)])
+    engine.apply_input({"type": "user_detail", "user": 100, "detail": "@sign", "amount": 6})
+    assert engine.snapshot()["users"][0]["details"]["@sign"] == 6
+    engine.apply_input({"type": "user_detail", "user": 100, "detail": "@sign"})
+    assert "@sign" not in engine.snapshot()["users"][0]["details"]
+
+
 def test_teleport_and_move() -> None:
     engine = room(
         plain(50, x=5, y=6),
@@ -1800,6 +1809,39 @@ def test_avatar_details_reach_built_ins() -> None:
     assert "@nope" not in engine.users[100]["details"]
 
 
+def test_details_exist_only_while_they_apply() -> None:
+    engine = room(users=[user(100, "Ann")])
+    for name in ("@sign", "@dance", "@effect", "@handitem", "@habbicon", "@is_idle", "@is_muted"):
+        assert reads(engine, name, "user", 100) is None, name
+    assert reads(engine, "@level", "user", 100) == 0, "a room always has this one"
+    engine.apply_input({"type": "user_detail", "user": 100, "detail": "@dance", "amount": 2})
+    assert reads(engine, "@dance", "user", 100) == 2
+
+
+def test_a_sign_goes_down_on_its_own_and_a_newer_one_keeps_its_time() -> None:
+    engine = room(users=[user(100, "Ann")])
+    engine.apply_input({"type": "user_detail", "user": 100, "detail": "@sign", "amount": 0})
+    assert reads(engine, "@sign", "user", 100) == 0, "sign 0 is a real sign"
+    engine.advance(3000)
+    engine.apply_input({"type": "user_detail", "user": 100, "detail": "@sign", "amount": 6})
+    engine.advance(3000)
+    assert reads(engine, "@sign", "user", 100) == 6
+    engine.advance(2000)
+    assert reads(engine, "@sign", "user", 100) is None
+
+
 def test_hand_item_is_writable() -> None:
     engine = moved(change("@handitem", 5))
+    assert reads(engine, "@handitem", "user", 100) is None, "nothing to change until it is added"
+    ann = {**user(100, "Ann", 4, 4), "details": {"@handitem": 1}}
+    engine = moved(change("@handitem", 5), users=[ann])
     assert reads(engine, "@handitem", "user", 100) == 5
+
+
+def test_give_and_remove_variable_add_a_hand_item_by_hand() -> None:
+    give = box(2, "wf_act_give_var", 1, 1, 1, variable="@handitem", variable_on="user", value=3)
+    engine = moved(give)
+    assert reads(engine, "@handitem", "user", 100) == 3
+    remove = box(2, "wf_act_remove_var", 1, 1, 1, variable="@handitem", variable_on="user")
+    ann = {**user(100, "Ann", 4, 4), "details": {"@handitem": 3}}
+    assert reads(moved(remove, users=[ann]), "@handitem", "user", 100) is None

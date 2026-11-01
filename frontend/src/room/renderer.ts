@@ -14,9 +14,12 @@ import { get, withQuery } from "../api";
 import { fxArt, fxHeight } from "./fx-art";
 import { depth, screenToTile, TILE_HEIGHT, TILE_WIDTH, tileCentre, Z_UNIT } from "./iso";
 import {
+  type AvatarAction,
+  avatarExtras,
   type Flight,
   type FurniArtData,
   type FxShown,
+  figureAction,
   flightAt,
   footprint,
   footprintSize,
@@ -53,6 +56,9 @@ export interface AvatarPose {
   z: number;
   dir: number;
   action: string;
+  /** Added to the pose in the avatar's image, such as a sign. */
+  extra?: string[];
+  gesture?: string;
   frame: number;
   /** Tile used for draw order, because a walking avatar is between tiles. */
   frontX: number;
@@ -119,10 +125,12 @@ export function avatarUrl(
   action: string,
   dir: number,
   frame: number,
+  gesture = "std",
 ): string {
   return withQuery(`/api/avatars/${avatar.hotel}/image`, {
     figure: avatar.figure,
     action,
+    gesture,
     direction: dir,
     frame,
   });
@@ -139,6 +147,7 @@ export class RoomRenderer {
   private furniLoaded = new Map<string, FurniArt | null>();
   private avatars = new Map<string, Texture | null>();
   private avatarLoading = new Set<string>();
+  private avatarShown = new Map<number, Texture>();
   private parts = new Map<string, Texture>();
   private hits: { hit: Hit; bounds: Rectangle; order: number }[] = [];
   private scene: Scene | null = null;
@@ -196,8 +205,14 @@ export class RoomRenderer {
     return pending;
   }
 
-  private avatarTexture(avatar: PlacedAvatar, action: string, dir: number, frame: number) {
-    const url = avatarUrl(avatar, action, dir, frame);
+  private avatarTexture(
+    avatar: PlacedAvatar,
+    action: string,
+    dir: number,
+    frame: number,
+    gesture = "std",
+  ) {
+    const url = avatarUrl(avatar, action, dir, frame, gesture);
     const known = this.avatars.get(url);
     if (known !== undefined) return known;
     if (!this.avatarLoading.has(url)) {
@@ -215,7 +230,19 @@ export class RoomRenderer {
 
   /** Loads walking frames ahead of time, so the first steps do not flicker. */
   preloadWalk(avatar: PlacedAvatar, dir: number): void {
-    for (let frame = 0; frame < 4; frame++) this.avatarTexture(avatar, "wlk", dir, frame);
+    const { extra, gesture } = avatarExtras(avatar.details);
+    const action = figureAction("wlk", extra);
+    for (let frame = 0; frame < 4; frame++) this.avatarTexture(avatar, action, dir, frame, gesture);
+  }
+
+  /** Loads both frames of an action, so it does not stutter on its first swap. */
+  preloadAction(avatar: PlacedAvatar, pose: string, dir: number, action: AvatarAction): void {
+    const { extra, gesture } = avatarExtras(avatar.details, action);
+    const shown = figureAction(pose, extra);
+    for (let frame = 0; frame < 2; frame++) this.avatarTexture(avatar, shown, dir, frame, gesture);
+    if (action === "sixty_seven") {
+      this.avatarTexture(avatar, figureAction(pose, ["sig=7", ...extra.slice(1)]), dir, 0, gesture);
+    }
   }
 
   private centre(): { x: number; y: number } {
@@ -605,7 +632,11 @@ export class RoomRenderer {
     const top = centre.y - AVATAR_ANCHOR.y;
     const selected = scene.selected?.kind === "avatar" && scene.selected.id === avatar.id;
     const order = depth(pose.frontX, pose.frontY, pose.z, 900);
-    const texture = this.avatarTexture(avatar, pose.action, pose.dir, pose.frame);
+    const action = figureAction(pose.action, pose.extra ?? []);
+    const loaded = this.avatarTexture(avatar, action, pose.dir, pose.frame, pose.gesture);
+    // The last image stays up while the next loads, so a change never flashes the placeholder.
+    const texture = loaded ?? this.avatarShown.get(avatar.id) ?? null;
+    if (loaded) this.avatarShown.set(avatar.id, loaded);
     if (selected) {
       const ring = new Graphics();
       this.tilePath(ring, pose.x, pose.y, pose.z);
