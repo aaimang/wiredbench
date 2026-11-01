@@ -31,11 +31,15 @@ import { state } from "../state";
 import { t } from "../strings";
 import { act, confirmDialog, errorMessage, formDialog, toast } from "../ui";
 import {
+  ACTION_MS,
+  type AvatarAction,
+  avatarExtras,
   DEFAULT_TIMEZONE,
   directionBetween,
   drawTile,
   emptyRoom,
   type FurniInfo,
+  figureAction,
   findPath,
   fitsInRoom,
   footprint,
@@ -48,6 +52,7 @@ import {
   type PlacedAvatar,
   type PlacedFurni,
   type RoomDocument,
+  SIGN_MS,
   stackHeight,
   standAt,
   UNKNOWN_FURNI,
@@ -62,6 +67,7 @@ import {
 } from "./run-panel";
 
 const T = t.editor;
+const NOT_HELD = -1;
 const DEMO_FIGURE = "hd-180-1.ch-210-66.lg-270-82.sh-290-91.hr-100-61";
 const SECONDS_PER_STEP = 0.5;
 const WALK_FRAMES_PER_SECOND = 8;
@@ -121,6 +127,9 @@ class WbEditor extends HTMLElement {
   private checked: CheckIssue[] | null = null;
   private hover: [number, number] | null = null;
   private walkers = new Map<number, Walker>();
+  private actions = new Map<number, { action: AvatarAction; started: number }>();
+  private actionStep = -1;
+  private signs = new Map<number, { sign: number; started: number }>();
   private clock = 0;
   private dirty = false;
   private savedAt: string | null = null;
@@ -128,6 +137,8 @@ class WbEditor extends HTMLElement {
   private saving: Promise<void> | null = null;
   private needsDraw = true;
   private builtIns: string[] = [];
+  /** What a built-in value stands for, such as hand item 3 being a carrot. */
+  private valueNames: Record<string, Record<string, string>> = {};
   private runEdits = new Map<number, string>();
   private looks: RunState["looks"] | null = null;
   private fx: RunState["fx"] | null = null;
@@ -183,7 +194,19 @@ class WbEditor extends HTMLElement {
       h("div", { class: "editor-body" }, this.palette, this.stage, this.inspector),
     );
     this.boxes = await loadBoxCatalogue().catch(() => ({}));
-    this.builtIns = await get<{ name: string }[]>("/api/engine/built-in-variables")
+    const builtInRows = get<
+      { name: string; target: string; text_connector?: Record<string, string> }[]
+    >("/api/engine/built-in-variables");
+    void builtInRows
+      .then((rows) => {
+        for (const row of rows) {
+          if (row.target === "user" && row.text_connector) {
+            this.valueNames[row.name] = row.text_connector;
+          }
+        }
+      })
+      .catch(() => {});
+    this.builtIns = await builtInRows
       .then((rows) => [...new Set(rows.map((row) => row.name))])
       .catch(() => []);
     this.buildPalette();
@@ -279,7 +302,26 @@ class WbEditor extends HTMLElement {
     };
   }
 
+  /** The avatar's details with a sign held outside a run, which is never saved. */
+  private heldDetails(avatar: PlacedAvatar): Record<string, number> {
+    const sign = this.signs.get(avatar.id);
+    return {
+      ...((avatar.details ?? {}) as Record<string, number>),
+      ...(sign ? { "@sign": sign.sign } : {}),
+    };
+  }
+
+  private avatarLook(avatar: PlacedAvatar) {
+    const playing = this.actions.get(avatar.id);
+    return avatarExtras(
+      this.heldDetails(avatar),
+      playing?.action,
+      playing ? performance.now() - playing.started : 0,
+    );
+  }
+
   private avatarPose(avatar: PlacedAvatar): AvatarPose {
+    const look = this.avatarLook(avatar);
     const walker = this.walkers.get(avatar.id);
     const [next] = walker?.path ?? [];
     if (!walker || !next) {
@@ -290,7 +332,7 @@ class WbEditor extends HTMLElement {
         z: avatar.z,
         dir: avatar.dir,
         action: avatar.pose,
-        frame: 0,
+        ...look,
         frontX,
         frontY,
       };
@@ -305,13 +347,46 @@ class WbEditor extends HTMLElement {
       z: fromZ + (target.z - fromZ) * progress,
       dir: directionBetween([fromX, fromY], next),
       action: "wlk",
+      extra: look.extra,
+      gesture: look.gesture,
       frame: Math.floor(this.clock * WALK_FRAMES_PER_SECOND) % 4,
       frontX: Math.max(fromX, front[0]),
       frontY: Math.max(fromY, front[1]),
     };
   }
 
+  /** Redraws an action only when its frame changes, and ends it on time. */
+  private tickActions(): void {
+    const now = performance.now();
+    for (const [id, playing] of this.actions) {
+      if (now - playing.started >= ACTION_MS) {
+        this.actions.delete(id);
+        this.needsDraw = true;
+      }
+    }
+    for (const [id, held] of this.signs) {
+      if (now - held.started >= SIGN_MS) {
+        this.signs.delete(id);
+        this.needsDraw = true;
+        this.syncAvatarPanel();
+      }
+    }
+    if (this.actions.size === 0) return;
+    const step = Math.floor(now / 100);
+    if (step !== this.actionStep) {
+      this.actionStep = step;
+      this.needsDraw = true;
+    }
+  }
+
+  private playAction(avatar: PlacedAvatar, action: AvatarAction): void {
+    this.renderer?.preloadAction(avatar, avatar.pose, avatar.dir, action);
+    this.actions.set(avatar.id, { action, started: performance.now() });
+    this.needsDraw = true;
+  }
+
   private tick(seconds: number): void {
+    this.tickActions();
     if (this.walkers.size > 0) {
       this.clock += seconds;
       this.advanceWalkers(seconds);
@@ -542,6 +617,7 @@ class WbEditor extends HTMLElement {
     preview: HTMLImageElement;
     position: HTMLElement;
     editing: Set<HTMLInputElement | HTMLSelectElement>;
+    details: Map<string, HTMLInputElement | HTMLSelectElement>;
   } | null = null;
 
   private change(apply: () => void): void {
@@ -1111,6 +1187,7 @@ class WbEditor extends HTMLElement {
         }
         avatar.dir = user.dir;
       }
+      if (avatar && user.details) avatar.details = user.details;
     }
     this.needsDraw = true;
     this.syncAvatarPanel();
@@ -1857,7 +1934,8 @@ class WbEditor extends HTMLElement {
     const preview = h("img", { alt: "", class: "avatar-preview" }) as HTMLImageElement;
     const position = h("p", { "data-testid": "avatar-position" });
     const place = this.avatarPlace(avatar);
-    this.avatarPanel = { ...place, avatarId: avatar.id, preview, position };
+    const details = new Map<string, HTMLInputElement | HTMLSelectElement>();
+    this.avatarPanel = { ...place, avatarId: avatar.id, preview, position, details };
     this.syncAvatarPanel();
     return [
       h(
@@ -1877,7 +1955,8 @@ class WbEditor extends HTMLElement {
         ),
         h("p", { class: "muted" }, this.mode === "play" ? T.clickToWalk : T.switchToPlay),
         place.form,
-        this.avatarDetails(avatar),
+        this.avatarActions(avatar, details),
+        this.avatarDetails(avatar, details),
         this.walkStatus,
       ),
     ];
@@ -1895,29 +1974,122 @@ class WbEditor extends HTMLElement {
     show(x, avatar.x);
     show(y, avatar.y);
     show(dir, avatar.dir);
+    const held = this.heldDetails(avatar);
+    for (const [name, input] of panel.details) {
+      if (input instanceof HTMLInputElement && input.type === "checkbox") {
+        input.checked = Boolean(held[name]);
+      } else if (input instanceof HTMLSelectElement && name !== "@gender") {
+        const value = String(held[name] ?? NOT_HELD);
+        // Wired can set a value the list does not name.
+        if (![...input.options].some((option) => option.value === value)) {
+          input.append(h("option", { value }, value));
+        }
+        show(input, Number(value));
+      } else {
+        show(input, held[name] ?? 0);
+      }
+    }
     height.textContent = T.debugHeight(avatar.z);
     position.textContent = T.avatarAt(avatar.x, avatar.y, T.poses[avatar.pose] ?? avatar.pose);
-    const src = avatarUrl(avatar, avatar.pose, avatar.dir, 0);
+    const { extra, gesture } = avatarExtras(this.heldDetails(avatar));
+    const src = avatarUrl(avatar, figureAction(avatar.pose, extra), avatar.dir, 0, gesture);
     if (preview.getAttribute("src") !== src) preview.src = src;
   }
 
-  /** What built-in variables read for this avatar. In a run a change reaches the room and is not saved. */
-  private avatarDetails(avatar: PlacedAvatar): HTMLElement {
-    const details = (avatar.details ?? {}) as Record<string, number>;
-    const set = (name: string, amount: number) => {
+  /** Changes one detail: for this run while running, or in the saved room. No amount removes it. */
+  private setDetail(avatar: PlacedAvatar, name: string, amount: number | null): void {
+    const next = { ...(avatar.details ?? {}) } as Record<string, number>;
+    if (amount === null) delete next[name];
+    else next[name] = amount;
+    if (this.run) {
+      void this.run.input({
+        type: "user_detail",
+        user: avatar.id,
+        detail: name,
+        ...(amount === null ? {} : { amount }),
+      });
+    } else {
+      this.history.record(this.room);
+      this.markDirty();
+    }
+    avatar.details = next;
+    this.needsDraw = true;
+    this.syncAvatarPanel();
+  }
+
+  /** What the avatar does in the room. Actions play once and are never saved. */
+  private avatarActions(
+    avatar: PlacedAvatar,
+    fields: Map<string, HTMLInputElement | HTMLSelectElement>,
+  ): HTMLElement {
+    const sign = h(
+      "select",
+      { "aria-label": T.avatarSign },
+      h("option", { value: NOT_HELD }, T.avatarNoSign),
+      ...T.avatarSigns.map((name, value) => h("option", { value }, name)),
+    ) as HTMLSelectElement;
+    sign.addEventListener("change", () => {
+      const value = Number(sign.value);
       if (this.run) {
-        details[name] = amount;
-        void this.run.input({ type: "user_detail", user: avatar.id, detail: name, amount });
+        this.setDetail(avatar, "@sign", value < 0 ? null : value);
         return;
       }
-      this.history.record(this.room);
-      avatar.details = { ...details, [name]: amount };
-      details[name] = amount;
-      this.markDirty();
-    };
+      if (value < 0) this.signs.delete(avatar.id);
+      else this.signs.set(avatar.id, { sign: value, started: performance.now() });
+      this.needsDraw = true;
+      this.syncAvatarPanel();
+    });
+    fields.set("@sign", sign);
+    return h(
+      "div",
+      { class: "avatar-section", "data-testid": "avatar-actions" },
+      h(
+        "div",
+        { class: "avatar-action-buttons" },
+        ...Object.entries(T.avatarActionNames).map(([action, name]) =>
+          h(
+            "button",
+            {
+              class: "btn btn-small",
+              type: "button",
+              onclick: () => this.playAction(avatar, action as AvatarAction),
+            },
+            name,
+          ),
+        ),
+      ),
+      h("label", { class: "avatar-field" }, h("span", {}, T.avatarSign), sign),
+    );
+  }
+
+  /** What built-in variables read for this avatar. In a run a change reaches the room and is not saved. */
+  private avatarDetails(
+    avatar: PlacedAvatar,
+    fields: Map<string, HTMLInputElement | HTMLSelectElement>,
+  ): HTMLElement {
     const number = ([name, label]: [string, string]) => {
-      const input = h("input", { type: "number", value: details[name] ?? 0, "aria-label": label });
-      input.addEventListener("change", () => set(name, Math.trunc(Number(input.value) || 0)));
+      const input = h("input", { type: "number", "aria-label": label }) as HTMLInputElement;
+      input.addEventListener("change", () =>
+        this.setDetail(avatar, name, Math.trunc(Number(input.value) || 0)),
+      );
+      fields.set(name, input);
+      return h("label", { class: "avatar-field" }, h("span", {}, label), input);
+    };
+    const list = ([name, label]: [string, string]) => {
+      const names = Object.entries(this.valueNames[name] ?? {}).sort(
+        ([a], [b]) => Number(a) - Number(b),
+      );
+      const input = h(
+        "select",
+        { "aria-label": label },
+        h("option", { value: NOT_HELD }, T.avatarNoSign),
+        ...names.map(([value, text]) => h("option", { value }, `${value} ${text}`)),
+      ) as HTMLSelectElement;
+      input.addEventListener("change", () => {
+        const value = Number(input.value);
+        this.setDetail(avatar, name, value < 0 ? null : value);
+      });
+      fields.set(name, input);
       return h("label", { class: "avatar-field" }, h("span", {}, label), input);
     };
     const gender = () => {
@@ -1927,16 +2099,18 @@ class WbEditor extends HTMLElement {
         { "aria-label": label },
         ...T.avatarGenders.map((name, value) => h("option", { value }, name)),
       ) as HTMLSelectElement;
-      input.value = String(details["@gender"] ?? 0);
-      input.addEventListener("change", () => set("@gender", Number(input.value)));
+      input.addEventListener("change", () =>
+        this.setDetail(avatar, "@gender", Number(input.value)),
+      );
+      fields.set("@gender", input);
       return h("label", { class: "avatar-field" }, h("span", {}, label), input);
     };
     const flag = ([name, label]: [string, string]) => {
-      const input = h("input", {
-        type: "checkbox",
-        checked: Boolean(details[name]),
-      }) as HTMLInputElement;
-      input.addEventListener("change", () => set(name, input.checked ? 1 : 0));
+      const input = h("input", { type: "checkbox" }) as HTMLInputElement;
+      input.addEventListener("change", () =>
+        this.setDetail(avatar, name, input.checked ? 1 : null),
+      );
+      fields.set(name, input);
       return h("label", { class: "avatar-flag" }, input, h("span", {}, label));
     };
     return h(
@@ -1949,7 +2123,9 @@ class WbEditor extends HTMLElement {
         { class: "avatar-fields" },
         gender(),
         ...Object.entries(T.avatarNumbers).map(number),
+        ...Object.entries(T.avatarLists).map(list),
       ),
+      h("p", { class: "muted" }, T.avatarNotDrawn),
       h("div", { class: "avatar-flags" }, ...Object.entries(T.avatarFlags).map(flag)),
     );
   }

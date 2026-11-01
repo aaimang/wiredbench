@@ -88,6 +88,9 @@ def test_avatar_frames_are_cached(api: Api, habbo: FakeHabbo) -> None:
         {"figure": "../../etc/passwd"},
         {"figure": "hd-180&user=x"},
         {"figure": FIGURE, "action": "evil"},
+        {"figure": FIGURE, "action": "sig=6&x=1"},
+        {"figure": FIGURE, "action": "sit,evil"},
+        {"figure": FIGURE, "action": "sig=999"},
         {"figure": FIGURE, "gesture": "evil"},
         {"figure": FIGURE, "direction": 8},
         {"figure": FIGURE, "frame": 4},
@@ -196,3 +199,16 @@ def test_cached_states_reads_only_what_is_on_disk(tmp_path: Path) -> None:
     assert cache.cached_states(7, "switch*3") == [0, 1, 2], "colour variants share one file"
     (folder / "manifest.v3.json").write_text("not json")
     assert cache.cached_states(7, "switch") is None
+
+
+@pytest.mark.parametrize(
+    "action", ["wav", "blw", "respect", "sig=6", "sit,sig=17", "wlk,crr=1", "wav,crr=12"]
+)
+def test_avatar_actions_reach_habbo(api: Api, habbo: FakeHabbo, action: str) -> None:
+    params = {"figure": FIGURE, "action": action}
+    assert api.get("/api/avatars/com/image", params=params).status_code == 200
+
+
+def test_head_facing_seven_is_not_requested(api: Api, habbo: FakeHabbo) -> None:
+    api.get("/api/avatars/com/image", params={"figure": FIGURE, "direction": 7})
+    assert "head_direction=6" in str(habbo.requests[-1])

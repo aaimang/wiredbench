@@ -124,7 +124,8 @@ class AssetCache:
             "figure": figure,
             "size": "m",
             "direction": direction,
-            "head_direction": direction,
+            # Habbo draws the wrong hair for a head facing 7. Facing 6 looks right on that body.
+            "head_direction": 6 if direction == 7 else direction,
             "action": action,
             "gesture": gesture,
             "frame": frame,

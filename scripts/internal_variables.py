@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Writes the internal variable facts from a real room dump. Only names, IDs and flags are kept.
+"""Writes the internal variable facts from a real room dump. Only names, IDs, flags and the names a value stands for are kept.
 
 uv run python scripts/internal_variables.py DUMP.json
 """
@@ -23,6 +23,8 @@ def main() -> None:
             "target": TARGETS[row["variable_type"]],
             "has_value": row["has_value"],
             "can_write": row["can_write_value"],
+            "always_available": row["always_available"],
+            **({"text_connector": row["text_connector"]} if row.get("text_connector") else {}),
         }
         for row in dump["variables"]
         if str(row["name"]).startswith(("@", "~"))

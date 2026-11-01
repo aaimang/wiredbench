@@ -15,7 +15,9 @@ from wiredbench.services.upstream import UpstreamError
 router = APIRouter(prefix="/api", tags=["assets"])
 
 IMMUTABLE = {"Cache-Control": "private, max-age=31536000, immutable"}
-Action = Literal["std", "wlk", "sit", "lay", "wav", "crr", "drk", "sig", "respect"]
+# A pose with what the avatar is doing on top, such as sit,sig=6 or wlk,crr=1.
+ACTION_PART = r"(?:std|wlk|sit|lay|wav|blw|respect|crr(?:=\d{1,4})?|drk(?:=\d{1,4})?|sig(?:=\d{1,2})?)"
+ACTION = rf"^{ACTION_PART}(?:,{ACTION_PART}){{0,3}}$"
 Gesture = Literal["std", "sml", "agr", "sad", "srp", "spk", "eyb"]
 
 
@@ -71,7 +73,7 @@ async def avatar_lookup(
 async def avatar_image(
     hotel: Hotel,
     figure: str = Query(max_length=400),
-    action: Action = "std",
+    action: str = Query("std", pattern=ACTION, max_length=40),
     gesture: Gesture = "std",
     direction: int = Query(2, ge=0, le=7),
     frame: int = Query(0, ge=0, le=3),

@@ -324,6 +324,43 @@ test("a slow click on Pause counts while the room is running", async ({ page }) 
   await expect(page.getByTestId("run-trace").getByText("Paused.")).toHaveCount(1);
 });
 
+test("the user panel draws signs, hand items and actions, and values stay current", async ({
+  page,
+}) => {
+  await login(page);
+  await page.getByRole("link", { name: "Guide" }).click();
+  await page
+    .getByTestId("tutorial-score-counter")
+    .getByRole("button", { name: "Add and open" })
+    .click();
+  await page.getByRole("button", { name: "Run", exact: true }).click();
+  await page.locator(".avatar-row-pick").first().click();
+  const asked = (part: string) =>
+    page.waitForRequest(
+      (r) => r.url().includes("/image") && decodeURIComponent(r.url()).includes(part),
+    );
+  const actions = page.getByTestId("avatar-actions");
+  let shown = asked("action=sig=6");
+  await actions.getByLabel("Sign").selectOption({ label: "6" });
+  await shown;
+  shown = asked("action=wav");
+  await actions.getByRole("button", { name: "Wave" }).click();
+  await shown;
+  await actions.getByLabel("Sign").selectOption({ label: "None" });
+  await page.getByTestId("avatar-details").locator("summary").click();
+  shown = asked("crr=3");
+  const hand = page.getByTestId("avatar-details").getByLabel("Hand item");
+  await hand.selectOption("3");
+  await shown;
+  await expect(page.getByTestId("run-built-ins")).toContainText("3");
+  await expect(hand).toHaveValue("3");
+  await hand.selectOption({ label: "None" });
+  await expect(page.getByTestId("run-built-ins")).not.toContainText("@handitem");
+  // A sign goes down on its own, which the panel then shows.
+  await actions.getByLabel("Sign").selectOption({ label: "Heart" });
+  await expect(actions.getByLabel("Sign")).toHaveValue("-1", { timeout: 9000 });
+});
+
 test("a game can be started and ended from the run panel", async ({ page }) => {
   await login(page);
   await page.getByRole("link", { name: "Guide" }).click();
