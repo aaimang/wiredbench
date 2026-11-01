@@ -5,7 +5,7 @@ import { t } from "../strings";
 import { errorMessage, toast } from "../ui";
 
 const T = t.run;
-const TICK_MS = 1000;
+const TICK_MS = 250;
 const TRACE_SHOWN = 300;
 
 export interface RunState {

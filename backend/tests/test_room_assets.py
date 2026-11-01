@@ -192,7 +192,7 @@ def test_cached_states_reads_only_what_is_on_disk(tmp_path: Path) -> None:
     assert cache.cached_states(7, "switch") is None, "nothing downloaded, and no upstream to ask"
     folder = tmp_path / "7" / "switch"
     folder.mkdir(parents=True)
-    (folder / "manifest.v2.json").write_text('{"states": [0, 1, 2]}')
+    (folder / "manifest.v3.json").write_text('{"states": [0, 1, 2]}')
     assert cache.cached_states(7, "switch*3") == [0, 1, 2], "colour variants share one file"
-    (folder / "manifest.v2.json").write_text("not json")
+    (folder / "manifest.v3.json").write_text("not json")
     assert cache.cached_states(7, "switch") is None

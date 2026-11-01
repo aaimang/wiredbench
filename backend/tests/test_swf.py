@@ -153,3 +153,7 @@ def test_digit_layers_run_left_to_right_and_need_all_ten() -> None:
 
     found = _digit_layers(2, 3, sprite_for)
     assert [slot["0"]["layer"] for slot in found] == [2, 1], "the higher layer sits further left here"
+
+
+def test_transitions_are_not_states() -> None:
+    assert build(furni_swf("box"), "box")[0]["states"] == [0, 1]
