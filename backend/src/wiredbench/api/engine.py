@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from wiredbench.api.deps import Services, audit, get_db, get_services, ticker
 from wiredbench.config import Hotel
 from wiredbench.engine import box_facts, coverage
-from wiredbench.engine.boxes import BOXES, catalogue
+from wiredbench.engine.boxes import BOXES, catalogue, is_box
 from wiredbench.engine.checker import check_room
 from wiredbench.engine.core import MAX_ADVANCE_MS
 from wiredbench.engine.guide import GUIDE
@@ -93,7 +93,10 @@ def _run(sandbox_id: int, services: Services) -> Run:
 
 @router.get("/engine/boxes")
 def boxes() -> dict[str, Any]:
-    return catalogue()
+    checked = coverage.load()["boxes"]
+    return {
+        name: {**spec, "checked_on": checked.get(name, {}).get("room")} for name, spec in catalogue().items()
+    }
 
 
 @router.post("/sandboxes/{sandbox_id}/run", status_code=201)
@@ -224,10 +227,12 @@ def guide(
         item, spec, fact = listed.get(classname, {}), BOXES.get(classname), box_facts.of(classname)
         purpose, example = GUIDE.get(classname, (item.get("description") or "", ""))
         evidence = tracked.get(classname)
-        if classname in checked and spec:
+        if classname in checked:
             status = "real_room"
+        elif spec:
+            status = spec["fidelity"]
         else:
-            status = spec["fidelity"] if spec else "not_simulated"
+            status = "not_simulated" if is_box(classname) else "other_furni"
         rows.append(
             {
                 "classname": classname,

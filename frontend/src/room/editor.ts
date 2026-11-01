@@ -39,6 +39,7 @@ import {
   fitsInRoom,
   footprint,
   History,
+  isWiredBox,
   nextDirection,
   nextId,
   normaliseRoom,
@@ -1156,6 +1157,7 @@ class WbEditor extends HTMLElement {
     if (!item.classname.startsWith("wf_")) return [];
     const spec = this.boxes[item.classname];
     if (!spec) {
+      if (!isWiredBox(item.classname)) return [];
       return [
         h("span", { class: "badge badge-hidden", "data-testid": "fidelity" }, t.run.stub),
         h("p", { class: "muted" }, t.run.stubHelp),
@@ -1173,12 +1175,18 @@ class WbEditor extends HTMLElement {
       event.preventDefault();
       this.saveBoxSettings(form, spec.fields, item, settings);
     });
-    const help = t.run.fidelityHelp[spec.fidelity] ?? "";
+    const help = spec.checked_on ? t.run.checkedHelp : (t.run.fidelityHelp[spec.fidelity] ?? "");
     return [
       h(
         "span",
-        { class: `badge fidelity-${spec.fidelity}`, title: help, "data-testid": "fidelity" },
-        t.run.fidelity[spec.fidelity] ?? spec.fidelity,
+        {
+          class: `badge fidelity-${spec.checked_on ? "checked" : spec.fidelity}`,
+          title: help,
+          "data-testid": "fidelity",
+        },
+        spec.checked_on
+          ? t.run.checkedOn(spec.checked_on)
+          : (t.run.fidelity[spec.fidelity] ?? spec.fidelity),
       ),
       h("p", { class: "muted" }, help),
       ...(spec.fields.length ? [form] : []),

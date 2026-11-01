@@ -12,7 +12,7 @@ from typing import Any
 
 from conftest import Api, FakeHabbo, apply_update, furni, furnidata
 from wiredbench.engine import coverage
-from wiredbench.engine.boxes import BOXES
+from wiredbench.engine.boxes import BOXES, is_box
 from wiredbench.services import exchange, room
 from wiredbench.services.exchange import OPTION_FIELDS
 
@@ -114,7 +114,23 @@ def test_guide_shows_evidence_and_flags_new_boxes(api: Api, habbo: FakeHabbo) ->
     assert rows["wf_act_toggle_state"]["evidence"] == "real_room"
     assert rows["wf_act_toggle_state"]["room_checked_on"] == "2026-10-31"
     assert rows["wf_act_never_seen_before"]["evidence"] == "new"
-    assert body["coverage"]["total"] >= 284
+    assert body["coverage"]["total"] + body["coverage"]["other_furni"] >= 284
+    assert rows["wf_act_never_seen_before"]["status"] == "not_simulated"
+
+
+def test_box_settings_say_when_a_box_was_checked(api: Api) -> None:
+    boxes = api.get("/api/engine/boxes").json()
+    assert boxes["wf_act_toggle_state"]["checked_on"] == "2026-10-31"
+    assert boxes["wf_trg_var_changed"]["checked_on"] is None
+
+
+def test_guide_labels_ordinary_furni_apart(api: Api, habbo: FakeHabbo) -> None:
+    habbo.set(furnidata(furni("wf_tile1"), furni("wf_act_never_seen_before")), 'W/"tile"')
+    apply_update(api)
+    rows = {
+        row["classname"]: row for row in api.get("/api/guide", params={"hotel": "sandbox"}).json()["rows"]
+    }
+    assert rows.get("wf_tile1", {"status": "other_furni"})["status"] == "other_furni"
 
 
 def test_updating_evidence_only_adds(tmp_path: Path, monkeypatch: Any) -> None:
@@ -145,3 +161,13 @@ def test_proof_preset_uses_unusual_values_that_read_back() -> None:
             assert settings[name] != defaults[name], (item["classname"], name)
     assert "wf_trg_says_something" in module.checklist("all", expected)
     assert module.build("triggers")[1].keys() < expected.keys()
+
+
+def test_furni_with_a_wired_name_do_not_count_as_boxes() -> None:
+    assert is_box("wf_act_give_var")
+    assert is_box("wf_ltdproto_act_toggle_state")
+    assert not is_box("wf_tile1")
+    assert not is_box("wf_upcounter1")
+    total = coverage.summary()
+    assert total["other_furni"] > 0
+    assert total["total"] + total["other_furni"] == len(coverage.load()["boxes"])

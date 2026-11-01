@@ -12,7 +12,7 @@ from collections import Counter
 from importlib import resources
 from typing import Any
 
-from wiredbench.engine.boxes import BOXES
+from wiredbench.engine.boxes import BOXES, is_box
 from wiredbench.services.exchange import OPTION_FIELDS
 
 LEVELS = ("unknown", "from_reference", "real_preset", "real_dump", "real_room")
@@ -44,6 +44,7 @@ def rows() -> list[dict[str, Any]]:
             "classname": name,
             "evidence": level(entry),
             "room_checked_on": entry.get("room"),
+            "is_box": is_box(name),
             "has_form": name in BOXES,
             "options_mapped": name in OPTION_FIELDS,
             "note": entry.get("note", ""),
@@ -53,11 +54,14 @@ def rows() -> list[dict[str, Any]]:
 
 
 def summary() -> dict[str, int]:
+    """Counts cover WIRED boxes. Other furni with a wf_ name are counted apart, so they do not read as gaps."""
     all_rows = rows()
-    counts = Counter(row["evidence"] for row in all_rows)
+    boxes = [row for row in all_rows if row["is_box"]]
+    counts = Counter(row["evidence"] for row in boxes)
     return {
-        "total": len(all_rows),
+        "total": len(boxes),
+        "other_furni": len(all_rows) - len(boxes),
         **{name: counts[name] for name in LEVELS},
-        "has_form": sum(row["has_form"] for row in all_rows),
-        "options_mapped": sum(row["options_mapped"] for row in all_rows),
+        "has_form": sum(row["has_form"] for row in boxes),
+        "options_mapped": sum(row["options_mapped"] for row in boxes),
     }

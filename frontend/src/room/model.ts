@@ -454,3 +454,8 @@ export function fxFill(fx: Pick<FxShown, "value" | "min" | "max">): number {
   if (span <= 0) return 0;
   return Math.max(0, Math.min((Number(fx.value) - fx.min) / span, 1));
 }
+
+/** Whether a wf_ name is a WIRED box. Tiles, tokens and wires share the prefix but hold no WIRED logic. */
+export function isWiredBox(classname: string): boolean {
+  return /(?:^|_)(trg|act|cnd|slc|xtra|var)(?:_|$)/.test(classname.slice(3));
+}

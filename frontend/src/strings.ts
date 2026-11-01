@@ -50,6 +50,7 @@ export const t = {
       documented: "Simulated from public sources",
       assumed: "Simulated, best guess",
       not_simulated: "Not simulated yet",
+      other_furni: "Ordinary furni, not a WIRED box",
     } as Record<string, string>,
     noOffer: "No catalogue offer",
     coverage: (room: number, total: number, mapped: number) =>
@@ -406,6 +407,9 @@ export const t = {
       documented: "A public source describes this box. It has not been compared with a real room.",
       assumed: "This behaviour is a best guess and may differ from the game.",
     } as Record<string, string>,
+    checkedOn: (date: string) => `Checked in a real room on ${date}`,
+    checkedHelp:
+      "The main behaviour was compared with a real room on that date. Options the test did not use may differ, and Habbo can change.",
     stub: "Not simulated yet",
     stubHelp: "It can be placed, and a run logs when its stack fires, but it does nothing.",
     idLabel: (id: number) => `Furni ID ${id}`,
