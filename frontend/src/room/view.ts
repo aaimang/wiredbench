@@ -11,6 +11,7 @@ import {
   type RoomDocument,
   standAt,
   UNKNOWN_FURNI,
+  withFace,
 } from "./model";
 import { RoomRenderer } from "./renderer";
 
@@ -283,7 +284,7 @@ class WbRoomView extends HTMLElement {
           z: avatar.z,
           dir: avatar.dir,
           action: avatar.pose,
-          ...avatarExtras(avatar.details),
+          ...withFace(avatarExtras(avatar.details), avatar, false, performance.now()),
           frontX,
           frontY,
         };

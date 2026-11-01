@@ -310,6 +310,42 @@ test("walking loads every direction ahead for what the avatar holds and does", a
     .toBeGreaterThanOrEqual(2);
 });
 
+test("a chosen face moves, is kept after Stop and a reload, and can go back to default", async ({
+  page,
+}) => {
+  await login(page);
+  await page.getByRole("link", { name: "Guide" }).click();
+  await page
+    .getByTestId("tutorial-score-counter")
+    .getByRole("button", { name: "Add and open" })
+    .click();
+  await expect(page.getByTestId("room-canvas")).toBeVisible();
+  await page.getByRole("button", { name: "Run", exact: true }).click();
+  await page.locator(".avatar-row-pick").first().click();
+  const asked = (part: string) =>
+    page.waitForRequest((r) => r.url().includes("/image") && r.url().includes(part));
+  const speaking = asked("gesture=spk");
+  const face = page.getByTestId("avatar-face");
+  await face.selectOption({ label: "Speaking" });
+  await speaking;
+  await page.getByRole("button", { name: "Stop" }).first().click();
+  await expect(page.getByTestId("save-status")).toContainText("Saved", { timeout: 10000 });
+
+  type Editor = HTMLElement & { roomDocument: { avatars: { face?: string | null }[] } };
+  const saved = () =>
+    page.evaluate(
+      () => (document.querySelector("wb-editor") as Editor).roomDocument.avatars[0]?.face,
+    );
+  expect(await saved()).toBe("speaking");
+  await page.reload();
+  await expect(page.getByTestId("room-canvas")).toBeVisible();
+  await expect.poll(saved).toBe("speaking");
+  await page.locator(".avatar-row-pick").first().click();
+  await expect(page.getByTestId("avatar-face")).toHaveValue("speaking");
+  await page.getByTestId("avatar-face").selectOption({ label: "Default" });
+  await expect.poll(saved).toBeNull();
+});
+
 test("walking in a run keeps the new facing and the panel follows it", async ({ page }) => {
   await login(page);
   await page.getByRole("link", { name: "Guide" }).click();

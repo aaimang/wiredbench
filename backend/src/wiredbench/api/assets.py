@@ -16,7 +16,7 @@ router = APIRouter(prefix="/api", tags=["assets"])
 
 IMMUTABLE = {"Cache-Control": "private, max-age=31536000, immutable"}
 # A pose with what the avatar is doing on top, such as sit,sig=6 or wlk,crr=1.
-ACTION_PART = r"(?:std|wlk|sit|lay|wav|blw|respect|crr(?:=\d{1,4})?|drk(?:=\d{1,4})?|sig(?:=\d{1,2})?)"
+ACTION_PART = r"(?:std|wlk|sit|lay|wav|blw|lgh|respect|crr(?:=\d{1,4})?|drk(?:=\d{1,4})?|sig(?:=\d{1,2})?)"
 ACTION = rf"^{ACTION_PART}(?:,{ACTION_PART}){{0,3}}$"
 Gesture = Literal["std", "sml", "agr", "sad", "srp", "spk", "eyb"]
 

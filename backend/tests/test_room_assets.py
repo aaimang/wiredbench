@@ -84,6 +84,15 @@ def test_avatar_frames_are_cached(api: Api, habbo: FakeHabbo) -> None:
 
 @pytest.mark.parametrize(
     "params",
+    [{"action": "lgh"}, {"action": "wlk,crr=3", "gesture": "spk"}],
+)
+def test_face_images_are_allowed(api: Api, habbo: FakeHabbo, params: dict) -> None:
+    res = api.get("/api/avatars/com/image", params={"figure": FIGURE, **params})
+    assert res.status_code == 200
+
+
+@pytest.mark.parametrize(
+    "params",
     [
         {"figure": "../../etc/passwd"},
         {"figure": "hd-180&user=x"},
