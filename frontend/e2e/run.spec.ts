@@ -344,3 +344,29 @@ test("the run panel shows built-in values for the room and a selected user", asy
   await expect(table).toContainText("@direction");
   await expect(table).not.toContainText("@user_count");
 });
+
+test("avatar details reach built-in values, and a change in a run takes effect", async ({
+  page,
+}) => {
+  await login(page);
+  await page.getByRole("link", { name: "Guide" }).click();
+  await page
+    .getByTestId("tutorial-score-counter")
+    .getByRole("button", { name: "Add and open" })
+    .click();
+  await expect(page.getByTestId("room-canvas")).toBeVisible();
+  await page.locator(".avatar-row-pick").first().click();
+  const details = page.getByTestId("avatar-details");
+  await details.locator("summary").click();
+  await details.getByRole("spinbutton", { name: "Level" }).fill("7");
+  await details.getByRole("spinbutton", { name: "Level" }).press("Tab");
+  await page.getByRole("button", { name: "Run", exact: true }).click();
+  await page.locator(".avatar-row-pick").first().click();
+  const row = page.getByTestId("run-built-ins").locator("tr", { hasText: "@level" });
+  await expect(row).toContainText("7");
+  const live = page.getByTestId("avatar-details");
+  await live.locator("summary").click();
+  await live.getByRole("spinbutton", { name: "Level" }).fill("9");
+  await live.getByRole("spinbutton", { name: "Level" }).press("Tab");
+  await expect(row).toContainText("9");
+});

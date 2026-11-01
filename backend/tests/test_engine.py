@@ -1762,3 +1762,35 @@ def test_a_new_variable_has_no_old_value_and_a_team_type_uses_real_numbers() -> 
     for kind, number in (("banzai", 0), ("freeze", 1), ("wired", 4)):
         engine = moved(box(2, "wf_act_join_team", 1, 1, 1, team="red", team_type=kind))
         assert reads(engine, "@team.type", "user", 100) == number
+
+
+def test_current_time_follows_the_room_time_zone() -> None:
+    def hour(timezone: str | None) -> int | None:
+        room_size: dict[str, Any] = {"width": 5, "height": 5}
+        if timezone:
+            room_size["timezone"] = timezone
+        engine = Engine({"room": room_size, "furni": [], "avatars": []}, clock_start_ms=1_793_551_520_205)
+        return reads(engine, "@current_time.hour_of_day", "global")
+
+    assert hour(None) == 16, "London, as a real room showed"
+    assert hour("Australia/Perth") == 0, "as the same room showed after changing it"
+    assert hour("Mars/Olympus") == 16, "an unknown zone falls back to UTC instead of failing"
+
+
+def test_avatar_details_reach_built_ins() -> None:
+    ann = {**user(100, "Ann"), "details": {"@level": 7, "@is_owner": 1, "@has_rights": 0}}
+    engine = room(users=[ann])
+    assert reads(engine, "@level", "user", 100) == 7
+    assert reads(engine, "@achievement_score", "user", 100) == 0
+    assert reads(engine, "@is_owner", "user", 100) == 1
+    assert reads(engine, "@has_rights", "user", 100) is None, "a flag exists only while true"
+    assert reads(engine, "@favourite_group_id", "user", 100) is None
+    engine.apply_input({"type": "user_detail", "user": 100, "detail": "@level", "amount": 9})
+    engine.apply_input({"type": "user_detail", "user": 100, "detail": "@nope", "amount": 9})
+    assert reads(engine, "@level", "user", 100) == 9
+    assert "@nope" not in engine.users[100]["details"]
+
+
+def test_hand_item_is_writable() -> None:
+    engine = moved(change("@handitem", 5))
+    assert reads(engine, "@handitem", "user", 100) == 5
