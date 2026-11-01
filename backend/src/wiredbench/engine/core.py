@@ -63,6 +63,14 @@ def _ids(value: Any) -> list[int]:
     )
 
 
+def _hundredths(value: Any) -> int:
+    """Heights compare in hundredths of a tile, which is as fine as a box can state them."""
+    try:
+        return round(float(value) * 100)
+    except (TypeError, ValueError, OverflowError):
+        return 0
+
+
 @dataclass
 class Holding:
     value: int
@@ -484,8 +492,12 @@ class Engine:
     # --- Selectors ---
 
     def _apply_selectors(self, stack: Stack, ctx: Context) -> None:
-        for box in stack.of("selector"):
+        selectors = stack.of("selector")
+        # Picks add up first. Filters then narrow them, wherever they stand in the pile.
+        for box in [b for b in selectors if not b.get("filter")] + [b for b in selectors if b.get("filter")]:
             self._select(box, ctx)
+        if ctx.selected_furni is not None:
+            ctx.selected_furni.sort()
         for box in stack.of("addon"):
             amount = max(0, _int(box.get("amount", 1), 1))
             if box.classname == "wf_xtra_filter_users" and ctx.users is not None:
@@ -504,31 +516,95 @@ class Engine:
                 ctx.users = ranked[:amount]
 
     def _select(self, box: Box, ctx: Context) -> None:
+        if box.spec is None:
+            return
+        users = box.classname.startswith("wf_slc_users")
+        room: list[int] = list(self.users if users else self.furni)
+        found = self._matches(box, ctx)
+        if box.get("invert"):
+            found = [i for i in room if i not in found]
+        current = (ctx.users if users else ctx.selected_furni) or []
+        if box.get("filter"):
+            result = [i for i in current if i in found]
+        else:
+            result = [*current, *(i for i in found if i not in current)]
+        if users:
+            ctx.users = result
+        else:
+            ctx.selected_furni = result
+
+    def _in_area(self, box: Box, x: int, y: int) -> bool:
+        left, top = _int(box.get("area_x")), _int(box.get("area_y"))
+        return left <= x < left + _int(box.get("area_width")) and top <= y < top + _int(
+            box.get("area_height")
+        )
+
+    def _at_altitude(self, box: Box, z: float) -> bool:
+        wanted, height = _hundredths(box.get("altitude")), _hundredths(z)
+        match box.get("altitude_compare", "less"):
+            case "equal":
+                return height == wanted
+            case "more":
+                return height > wanted
+            case _:
+                return height < wanted
+
+    def _stacked(self, box: Box) -> list[int]:
+        found: set[int] = set()
+        for pick in _ids(box.get("furni")):
+            if pick not in self.furni:
+                continue
+            item = self.furni[pick]
+            for other in self._furni_on_tile(item["x"], item["y"]):
+                height, base = _hundredths(self.furni[other]["z"]), _hundredths(item["z"])
+                match box.get("stacking", "above"):
+                    case "below":
+                        keep = height < base
+                    case "level":
+                        keep = height == base
+                    case "tile":
+                        keep = True
+                    case _:
+                        keep = height > base
+                if keep:
+                    found.add(other)
+        return list(found)
+
+    def _matches(self, box: Box, ctx: Context) -> list[int]:
         name = str(box.get("variable", ""))
         match box.classname:
             case "wf_slc_furni_picks":
-                ctx.selected_furni = [i for i in _ids(box.get("furni")) if i in self.furni]
+                return [i for i in _ids(box.get("furni")) if i in self.furni]
             case "wf_slc_furni_bytype":
                 types = {self.furni[i]["classname"] for i in _ids(box.get("furni")) if i in self.furni}
-                ctx.selected_furni = [i for i, f in self.furni.items() if f["classname"] in types]
+                return [i for i, f in self.furni.items() if f["classname"] in types]
             case "wf_slc_furni_signal":
-                ctx.selected_furni = list(ctx.signal_furni)
+                return list(ctx.signal_furni)
             case "wf_slc_furni_with_var":
-                ctx.selected_furni = [i for i in self.furni if f"furni:{i}" in self.variables[name]]
+                return [i for i in self.furni if f"furni:{i}" in self.variables[name]]
+            case "wf_slc_furni_area":
+                return [i for i, f in self.furni.items() if self._in_area(box, f["x"], f["y"])]
+            case "wf_slc_furni_altitude":
+                return [i for i, f in self.furni.items() if self._at_altitude(box, f["z"])]
+            case "wf_slc_furni_onfurni":
+                return self._stacked(box)
             case "wf_slc_users_signal":
-                ctx.users = list(ctx.signal_users)
+                return list(ctx.signal_users)
             case "wf_slc_users_with_var":
-                ctx.users = [u for u in self.users if f"user:{u}" in self.variables[name]]
+                return [u for u in self.users if f"user:{u}" in self.variables[name]]
+            case "wf_slc_users_area":
+                return [u for u, d in self.users.items() if self._in_area(box, d["x"], d["y"])]
             case "wf_slc_users_onfurni":
                 tiles = {
                     (self.furni[i]["x"], self.furni[i]["y"])
                     for i in _ids(box.get("furni"))
                     if i in self.furni
                 }
-                ctx.users = [u for u, d in self.users.items() if (d["x"], d["y"]) in tiles]
+                return [u for u, d in self.users.items() if (d["x"], d["y"]) in tiles]
             case "wf_slc_users_byname":
                 wanted = {n.strip().lower() for n in str(box.get("names", "")).splitlines() if n.strip()}
-                ctx.users = [u for u, d in self.users.items() if d["name"].lower() in wanted]
+                return [u for u, d in self.users.items() if d["name"].lower() in wanted]
+        return []
 
     def _users_for(self, box: Box, ctx: Context) -> list[int]:
         source = box.get("user_source", "default")

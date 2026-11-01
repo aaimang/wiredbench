@@ -4,7 +4,7 @@ from typing import Any
 
 import pytest
 
-from wiredbench.engine.core import INT64_MAX, Engine, replay
+from wiredbench.engine.core import INT64_MAX, Context, Engine, replay
 from wiredbench.engine.tutorials import ANTENNA_CALC, AVATAR, KEYWORD, SEAT, SYNC_SECONDS, time_tracking
 
 SECOND = 1000
@@ -476,6 +476,108 @@ def test_selectors_and_filters() -> None:
     )
     say(engine, "go")
     assert len(engine.variables["v"]) == 1
+
+
+def holders(engine: Engine) -> set[str]:
+    return set(engine.variables["v"])
+
+
+def test_selectors_add_up_and_filters_narrow_wherever_they_stand() -> None:
+    users = [user(100, "Ann"), user(101, "Bob", x=1), user(102, "Cy", x=2)]
+    engine = room(
+        box(1, "wf_trg_says_something", 1, 1, text="go"),
+        box(2, "wf_slc_users_byname", 1, 1, 1, names="ann"),
+        box(3, "wf_slc_users_byname", 1, 1, 2, names="bob"),
+        box(4, "wf_act_give_var", 1, 1, 3, variable="v"),
+        users=users,
+    )
+    say(engine, "go")
+    assert holders(engine) == {"user:100", "user:101"}
+
+    for filter_height, pick_height in ((1, 2), (2, 1)):
+        engine = room(
+            box(1, "wf_trg_says_something", 1, 1, text="go"),
+            box(2, "wf_slc_users_byname", 1, 1, filter_height, names="bob\ncy", filter=True),
+            box(3, "wf_slc_users_byname", 1, 1, pick_height, names="ann\nbob"),
+            box(4, "wf_act_give_var", 1, 1, 3, variable="v"),
+            users=users,
+        )
+        say(engine, "go")
+        assert holders(engine) == {"user:101"}
+
+
+def test_a_filter_alone_selects_nobody() -> None:
+    engine = room(
+        box(1, "wf_trg_says_something", 1, 1, text="go"),
+        box(2, "wf_slc_users_byname", 1, 1, 1, names="ann", filter=True),
+        box(3, "wf_act_give_var", 1, 1, 2, variable="v"),
+    )
+    say(engine, "go")
+    assert holders(engine) == set()
+
+
+def test_invert_selects_what_did_not_match() -> None:
+    engine = room(
+        box(1, "wf_trg_says_something", 1, 1, text="go"),
+        box(2, "wf_slc_users_byname", 1, 1, 1, names="ann", invert=True),
+        box(3, "wf_act_give_var", 1, 1, 2, variable="v"),
+        users=[user(100, "Ann"), user(101, "Bob", x=1)],
+    )
+    say(engine, "go")
+    assert holders(engine) == {"user:101"}
+
+
+def test_area_selectors_cover_their_rectangle() -> None:
+    engine = room(
+        box(1, "wf_trg_says_something", 1, 1, text="go"),
+        box(2, "wf_slc_users_area", 1, 1, 1, area_x=2, area_y=3, area_width=2, area_height=1),
+        box(3, "wf_act_give_var", 1, 1, 2, variable="v"),
+        users=[
+            user(100, "Ann", x=2, y=3),
+            user(101, "Bob", x=3, y=3),
+            user(102, "Cy", x=4, y=3),
+            user(103, "Di", x=2, y=4),
+        ],
+    )
+    say(engine, "go")
+    assert holders(engine) == {"user:100", "user:101"}
+
+
+def selected_furni(*selectors: dict[str, Any], extra: tuple[dict[str, Any], ...] = ()) -> list[int] | None:
+    engine = room(box(1, "wf_trg_says_something", 1, 1, text="go"), *selectors, *extra)
+    stack = engine.stacks[0]
+    ctx = Context()
+    engine._apply_selectors(stack, ctx)
+    return ctx.selected_furni
+
+
+def test_furni_area_and_altitude() -> None:
+    inside = box(10, "lamp", 5, 5, 0.5)
+    outside = box(11, "lamp", 6, 5, 2)
+    assert selected_furni(
+        box(2, "wf_slc_furni_area", 1, 1, 1, area_x=5, area_y=5, area_width=1, area_height=1),
+        extra=(inside, outside),
+    ) == [10]
+    for compare, expected in (("less", [10]), ("equal", [11]), ("more", [])):
+        found = selected_furni(
+            box(2, "wf_slc_furni_altitude", 1, 1, 1, altitude=2, altitude_compare=compare, filter=False),
+            extra=(inside, outside),
+        )
+        assert [i for i in found or [] if i >= 10] == expected
+
+
+def test_furni_on_furni_follows_the_pile() -> None:
+    pile = (box(10, "a", 5, 5, 0), box(11, "b", 5, 5, 1), box(12, "c", 5, 5, 2), box(13, "d", 6, 5, 2))
+    for stacking, expected in (
+        ("above", [12]),
+        ("below", [10]),
+        ("level", [11]),
+        ("tile", [10, 11, 12]),
+    ):
+        assert (
+            selected_furni(box(2, "wf_slc_furni_onfurni", 1, 1, 1, furni=[11], stacking=stacking), extra=pile)
+            == expected
+        )
 
 
 def test_selector_with_no_match_affects_nobody_not_the_triggerer() -> None:

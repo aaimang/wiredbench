@@ -39,6 +39,9 @@ VARIABLE_SCOPES = {
     "wf_var_room": "global",
     "wf_var_context": "context",
 }
+AREA_FIELDS = [("area_x", 0, int), ("area_y", 1, int), ("area_width", 2, int), ("area_height", 3, int)]
+# A selector's two switches sit on the box itself. The file calls invert "inverse".
+SELECTOR_SWITCHES = {"filter": "filter", "invert": "inverse"}
 OPTION_FIELDS: dict[str, list[tuple[str, int, Any]]] = {
     "wf_trg_says_something": [
         ("owner_only", 0, bool),
@@ -55,6 +58,10 @@ OPTION_FIELDS: dict[str, list[tuple[str, int, Any]]] = {
     "wf_cnd_not_user_count": [("min", 0, int), ("max", 1, int)],
     "wf_xtra_execution_limit": [("count", 0, int), ("window_seconds", 1, 0.5)],
     "wf_xtra_random": [("skip", 0, int), ("pick", 1, int)],
+    "wf_slc_furni_area": AREA_FIELDS,
+    "wf_slc_users_area": AREA_FIELDS,
+    "wf_slc_furni_altitude": [("altitude", 0, 0.01), ("altitude_compare", 1, ("less", "equal", "more"))],
+    "wf_slc_furni_onfurni": [("stacking", 0, ("above", "below", "level", "tile"))],
     "wf_xtra_filter_users": [("amount", 0, int)],
     "wf_xtra_filter_furni": [("amount", 0, int)],
     "wf_xtra_filter_users_by_var": [("amount", 0, int), ("lowest", 1, bool)],
@@ -226,6 +233,9 @@ def friendly_settings(classname: str, box: dict[str, Any], names: dict[str, str]
             )
             if value is not None:
                 settings[name] = value
+    for name, key in SELECTOR_SWITCHES.items():
+        if name in fields and isinstance(box.get(key), bool):
+            settings[name] = box[key]
     if classname in REFERENCE_FLAG and isinstance(options, list):
         ids = box.get("variableIds")
         flag = REFERENCE_FLAG[classname]
@@ -450,7 +460,9 @@ def _apply_settings(
             if number is not None:
                 _write_option(box, mapped[name][0], number)
                 continue
-        if name == "from_variable" and classname in REFERENCE_FLAG:
+        if name in SELECTOR_SWITCHES and classname.startswith("wf_slc_"):
+            box[SELECTOR_SWITCHES[name]] = bool(value)
+        elif name == "from_variable" and classname in REFERENCE_FLAG:
             _write_reference(box, classname, str(value).strip(), scopes, variables, used, warnings)
         elif name == "delay":
             box["delay"] = value
