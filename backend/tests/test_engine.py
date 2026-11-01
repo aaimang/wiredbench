@@ -698,6 +698,15 @@ def test_toggle_state_and_state_trigger() -> None:
     assert logs(engine) == ["changed"]
 
 
+def test_walking_turns_the_user_and_a_plain_move_does_not() -> None:
+    effect = box(2, "wf_act_move_rotate_user", 1, 1, 1)
+    engine = moved(effect, users=[user(100, "Ann", 4, 4)])
+    engine.apply_input({"type": "move", "user": 100, "x": 3, "y": 4, "dir": 6})
+    assert engine.users[100]["dir"] == 6
+    engine.apply_input({"type": "move", "user": 100, "x": 2, "y": 4})
+    assert engine.users[100]["dir"] == 6, "a move without a direction keeps the facing"
+
+
 def test_teleport_and_move() -> None:
     engine = room(
         plain(50, x=5, y=6),
