@@ -188,6 +188,11 @@ GUIDE: dict[str, tuple[str, str]] = {
     "wf_act_teleport_to": ("Teleports a user to a picked furni.", "Send a player back to the start."),
     "wf_act_user_to_furni": ("Moves a user to a picked furni.", "Walk a player to a seat."),
     "wf_act_move_rotate": ("Moves or turns picked furni.", "Slide a door open."),
+    "wf_act_control_clock": ("Starts, stops, pauses or resets a counter.", "Start a round's clock."),
+    "wf_act_adjust_clock": ("Changes the time on a counter.", "Add ten seconds for a bonus."),
+    "wf_cnd_counter_time_matches": ("Compares a counter's time.", "Only open a door in the first minute."),
+    "wf_cnd_team_has_score": ("Compares a team's score.", "Open the prize room at 50 points."),
+    "wf_trg_clock_counter": ("Runs when a counter counts up to a time.", "End the round at two minutes."),
     "wf_act_join_team": ("Puts users in a team.", "Sort players into red and blue."),
     "wf_act_leave_team": ("Takes users out of their team.", "Clear teams when a round ends."),
     "wf_act_give_score": (

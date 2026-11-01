@@ -8,11 +8,11 @@ it, and a named position is still unverified until a box is changed and read aga
 
 No reply from: `wf_contract_payment`, `wf_contract_reward`, `wf_contract_trade`. The cause is unconfirmed.
 
-Named positions: 67. Unnamed positions: 515.
+Named positions: 82. Unnamed positions: 500.
 
 | Box | Section | Default numbers | Named positions | Unnamed positions |
 |---|---|---|---|---|
-| `wf_act_adjust_clock` | effect | `[0, 0, 0, 0]` |  | 0, 1, 2, 3 |
+| `wf_act_adjust_clock` | effect | `[0, 0, 0, 0]` | 0: clock_seconds, 1: clock_minutes, 2: clock_half, 3: clock_change |  |
 | `wf_act_bot_clothes` | effect | `[]` |  |  |
 | `wf_act_bot_follow_avatar` | effect | `[1]` |  | 0 |
 | `wf_act_bot_give_handitem` | effect | `[2]` |  | 0 |
@@ -25,7 +25,7 @@ Named positions: 67. Unnamed positions: 515.
 | `wf_act_change_var_val` | effect | `[1, 0, 0, 0, 0, -10, 0]` | 1: operation, 4: value | 0, 2, 3, 5, 6 |
 | `wf_act_chase` | effect | `[]` |  |  |
 | `wf_act_click_conf` | effect | `[0, 0]` |  | 0, 1 |
-| `wf_act_control_clock` | effect | `[0]` |  | 0 |
+| `wf_act_control_clock` | effect | `[0]` | 0: clock_control |  |
 | `wf_act_flee` | effect | `[]` |  |  |
 | `wf_act_freeze` | effect | `[0, 0]` |  | 0, 1 |
 | `wf_act_furni_to_furni` | effect | `[]` |  |  |
@@ -71,7 +71,7 @@ Named positions: 67. Unnamed positions: 515.
 | `wf_cnd_actor_in_team` | condition | `[0]` | 0: team |  |
 | `wf_cnd_chest_has_item_type` | condition | `[0, 0, -20, 2]` |  | 0, 1, 2, 3 |
 | `wf_cnd_chest_has_items` | condition | `[0, 0, -20, 2]` |  | 0, 1, 2, 3 |
-| `wf_cnd_counter_time_matches` | condition | `[0, 0, 0, 0]` |  | 0, 1, 2, 3 |
+| `wf_cnd_counter_time_matches` | condition | `[0, 0, 0, 0]` | 0: clock_seconds, 1: clock_minutes, 2: clock_half, 3: clock_compare |  |
 | `wf_cnd_date_rng_active` | condition | `[0, 0]` |  | 0, 1 |
 | `wf_cnd_furnis_hv_avtrs` | condition | `[1]` |  | 0 |
 | `wf_cnd_has_altitude` | condition | `[0, 0]` |  | 0, 1 |
@@ -96,7 +96,7 @@ Named positions: 67. Unnamed positions: 515.
 | `wf_cnd_slc_quantity` | condition | `[0, 5, 0]` |  | 0, 1, 2 |
 | `wf_cnd_stuff_is` | condition | `[]` |  |  |
 | `wf_cnd_team_has_rank` | condition | `[0, 0]` |  | 0, 1 |
-| `wf_cnd_team_has_score` | condition | `[0, 0, 0]` |  | 0, 1, 2 |
+| `wf_cnd_team_has_score` | condition | `[0, 0, 0]` | 0: team, 1: points, 2: score_compare |  |
 | `wf_cnd_time_less_than` | condition | `[20]` |  | 0 |
 | `wf_cnd_time_more_than` | condition | `[20]` |  | 0 |
 | `wf_cnd_trggrer_on_frn` | condition | `[]` |  |  |
@@ -132,7 +132,7 @@ Named positions: 67. Unnamed positions: 515.
 | `wf_trg_click_furni` | trigger | `[]` |  |  |
 | `wf_trg_click_tile` | trigger | `[]` |  |  |
 | `wf_trg_click_user` | trigger | `[1, 0]` |  | 0, 1 |
-| `wf_trg_clock_counter` | trigger | `[0, 0, 0]` |  | 0, 1, 2 |
+| `wf_trg_clock_counter` | trigger | `[0, 0, 0]` | 0: clock_seconds, 1: clock_minutes, 2: clock_half |  |
 | `wf_trg_collision` | trigger | `[]` |  |  |
 | `wf_trg_enter_room` | trigger | `[]` |  |  |
 | `wf_trg_game_ends` | trigger | `[]` |  |  |

@@ -128,6 +128,18 @@ POINTS = (
         "max": 10,
     },
 )
+CLOCK_TIME = (
+    {"name": "clock_minutes", "kind": "number", "label": "Minutes", "default": 0, "min": 0, "max": 99},
+    {"name": "clock_seconds", "kind": "number", "label": "Seconds", "default": 0, "min": 0, "max": 59},
+    {"name": "clock_half", "kind": "bool", "label": "And half a second", "default": False},
+)
+THREE_WAY = {
+    "kind": "select",
+    "label": "Comparison",
+    "options": ["less", "equal", "more"],
+    "labels": {"less": "Less than", "equal": "Exactly", "more": "More than"},
+    "default": "less",
+}
 AMOUNT = {"name": "amount", "kind": "number", "label": "How many", "default": 10, "min": 0}
 ANTENNA = {"name": "antenna", "kind": "furni", "label": "Antenna", "default": []}
 SECONDS = {"name": "seconds", "kind": "number", "label": "Seconds", "default": 10, "min": 0, "step": 0.5}
@@ -249,6 +261,21 @@ BOXES: dict[str, dict[str, Any]] = {
     ),
     "wf_cnd_actor_in_team": _box("condition", ASSUMED, ANY_TEAM, USER_SOURCE),
     "wf_cnd_not_in_team": _box("condition", ASSUMED, ANY_TEAM, USER_SOURCE),
+    "wf_cnd_counter_time_matches": _box(
+        "condition", ASSUMED, FURNI, *CLOCK_TIME, {**THREE_WAY, "name": "clock_compare"}
+    ),
+    "wf_cnd_team_has_score": _box(
+        "condition",
+        ASSUMED,
+        {
+            **TEAM,
+            "options": ["own", *TEAMS],
+            "labels": {"own": "The triggering user's team", **{team: team.capitalize() for team in TEAMS}},
+            "default": "own",
+        },
+        {"name": "points", "kind": "number", "label": "Points", "default": 0, "min": 0, "max": 1000},
+        {**THREE_WAY, "name": "score_compare"},
+    ),
     "wf_cnd_has_var": _box("condition", DOCUMENTED, VARIABLE, *HOLDERS),
     "wf_cnd_neg_has_var": _box("condition", DOCUMENTED, VARIABLE, *HOLDERS),
     "wf_cnd_var_val_match": _box(
@@ -417,6 +444,7 @@ BOXES: dict[str, dict[str, Any]] = {
     "wf_var_furni": _box("variable", DOCUMENTED, VARIABLE, HAS_VALUE, _availability("active", "persistent")),
     "wf_var_room": _box("variable", DOCUMENTED, VARIABLE, _availability("active", "persistent", "shared")),
     "wf_var_context": _box("variable", ASSUMED, VARIABLE, HAS_VALUE),
+    "wf_trg_clock_counter": _box("trigger", ASSUMED, FURNI, *CLOCK_TIME),
     "wf_trg_game_starts": _box("trigger", ASSUMED),
     "wf_trg_game_ends": _box("trigger", ASSUMED),
     # Effects
@@ -483,6 +511,39 @@ BOXES: dict[str, dict[str, Any]] = {
         ),
         FURNI,
         USER_SOURCE,
+    ),
+    "wf_act_control_clock": _effect(
+        ASSUMED,
+        FURNI,
+        FURNI_SOURCE,
+        {
+            "name": "clock_control",
+            "kind": "select",
+            "label": "Command",
+            "options": ["start", "stop", "reset", "pause", "resume"],
+            "labels": {
+                "start": "Start",
+                "stop": "Stop",
+                "reset": "Reset",
+                "pause": "Pause",
+                "resume": "Resume",
+            },
+            "default": "start",
+        },
+    ),
+    "wf_act_adjust_clock": _effect(
+        ASSUMED,
+        FURNI,
+        FURNI_SOURCE,
+        *CLOCK_TIME,
+        {
+            "name": "clock_change",
+            "kind": "select",
+            "label": "Change",
+            "options": ["add", "subtract", "set"],
+            "labels": {"add": "Add", "subtract": "Take away", "set": "Set to"},
+            "default": "add",
+        },
     ),
     "wf_act_join_team": _effect(
         ASSUMED,

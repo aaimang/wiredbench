@@ -41,7 +41,11 @@ def test_room_checks_have_dates_and_nothing_else_is_claimed() -> None:
         if "room" in entry:
             assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", entry["room"]), name
     assert coverage.room_checked() == {
+        "wf_act_adjust_clock",
         "wf_act_change_var_val",
+        "wf_act_control_clock",
+        "wf_act_give_score",
+        "wf_act_give_score_tm",
         "wf_act_join_team",
         "wf_act_leave_team",
         "wf_cnd_actor_in_team",
@@ -54,16 +58,23 @@ def test_room_checks_have_dates_and_nothing_else_is_claimed() -> None:
         "wf_act_set_altitude",
         "wf_act_show_message",
         "wf_act_toggle_state",
+        "wf_cnd_counter_time_matches",
+        "wf_cnd_team_has_score",
         "wf_cnd_var_age_match",
         "wf_cnd_var_val_match",
         "wf_floor_switch1",
+        "wf_game_upcounter1",
         "wf_slc_furni_altitude",
         "wf_slc_furni_area",
         "wf_slc_furni_onfurni",
         "wf_slc_furni_picks",
         "wf_slc_users_area",
+        "wf_trg_clock_counter",
+        "wf_trg_game_ends",
+        "wf_trg_game_starts",
         "wf_trg_says_something",
         "wf_trg_state_changed",
+        "wf_upcounter1",
         "wf_var_room",
     }
 
