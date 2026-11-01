@@ -382,6 +382,8 @@ class Engine:
         kind = entry.get("type")
         user = entry.get("user")
         if kind == "move":
+            if entry.get("dir") is not None and (who := self.users.get(_int(user))) is not None:
+                who["dir"] = _int(entry["dir"]) % 8
             self._move_user(_int(user), _int(entry.get("x")), _int(entry.get("y")))
         elif kind == "game_start":
             self._game_start()

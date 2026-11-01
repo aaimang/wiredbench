@@ -18,6 +18,22 @@ const furni = (classname: string, extra: object = {}) => ({
   ...extra,
 });
 
+async function clickTile(page: Page, x: number, y: number): Promise<void> {
+  const point = await page.evaluate(
+    ([tx, ty]) =>
+      (
+        document.querySelector("wb-editor") as unknown as {
+          tileOnPage(x: number, y: number): { x: number; y: number } | null;
+        }
+      ).tileOnPage(tx as number, ty as number),
+    [x, y],
+  );
+  if (!point) throw new Error("The room is not drawn yet.");
+  await page.mouse.move(point.x, point.y);
+  await page.mouse.down();
+  await page.mouse.up();
+}
+
 async function login(page: Page): Promise<void> {
   await page.goto("/");
   await page.getByLabel("Username").fill("admin");
@@ -253,14 +269,38 @@ test("a running user can be moved and turned from the inspector", async ({ page 
   await expect(page.getByTestId("room-canvas")).toBeVisible();
   await page.getByRole("button", { name: "Run", exact: true }).click();
   await page.locator(".avatar-row-pick").first().click();
-  const panel = page.getByTestId("avatar-debug");
+  const panel = page.getByTestId("avatar-place");
   await panel.getByLabel("Column").fill("3");
   await panel.getByLabel("Row").fill("4");
-  await panel.getByLabel("Direction, 0 to 7").fill("5");
-  await panel.getByRole("button", { name: "Move this user" }).click();
+  await panel.getByLabel("Direction").selectOption("5");
   await expect(page.getByTestId("avatar-position")).toContainText("3");
   await expect(page.getByTestId("avatar-position")).toContainText("4");
-  await expect(panel.getByLabel("Direction, 0 to 7")).toHaveValue("5");
+  await expect(panel.getByLabel("Direction")).toHaveValue("5");
+});
+
+test("walking in a run keeps the new facing and the panel follows it", async ({ page }) => {
+  await login(page);
+  await page.getByRole("link", { name: "Guide" }).click();
+  await page
+    .getByTestId("tutorial-score-counter")
+    .getByRole("button", { name: "Add and open" })
+    .click();
+  await expect(page.getByTestId("room-canvas")).toBeVisible();
+  await page.getByRole("button", { name: "Run", exact: true }).click();
+  await page.locator(".avatar-row-pick").first().click();
+  const panel = page.getByTestId("avatar-place");
+  await panel.getByLabel("Column").fill("3");
+  await panel.getByLabel("Row").fill("1");
+  await panel.getByLabel("Direction").selectOption("2");
+  await expect(panel.getByLabel("Column")).toHaveValue("3");
+  await clickTile(page, 1, 1);
+  await expect(page.getByTestId("walk-status")).toContainText("stopped at 1, 1", {
+    timeout: 15000,
+  });
+  await expect(panel.getByLabel("Column")).toHaveValue("1");
+  await expect(panel.getByLabel("Direction")).toHaveValue("6");
+  await page.waitForTimeout(800);
+  await expect(panel.getByLabel("Direction")).toHaveValue("6");
 });
 
 test("a game can be started and ended from the run panel", async ({ page }) => {

@@ -332,13 +332,21 @@ class WbEditor extends HTMLElement {
         if (!next) break;
         walker.elapsed -= SECONDS_PER_STEP;
         const stand = standAt(this.room, this.lookup, next[0], next[1]);
-        avatar.dir = directionBetween([walker.from[0], walker.from[1]], next);
+        const [after] = walker.path;
+        const seated = after ? undefined : stand.dir;
+        avatar.dir = seated ?? directionBetween([walker.from[0], walker.from[1]], next);
         avatar.x = next[0];
         avatar.y = next[1];
         avatar.z = stand.z;
-        void this.run?.input({ type: "move", user: avatar.id, x: next[0], y: next[1] });
+        void this.run?.input({
+          type: "move",
+          user: avatar.id,
+          x: next[0],
+          y: next[1],
+          dir: avatar.dir,
+        });
         walker.from = [next[0], next[1], stand.z];
-        const [after] = walker.path;
+        this.syncAvatarPanel();
         if (after) {
           this.renderer?.preloadWalk(avatar, directionBetween(next, after));
         } else {
@@ -356,9 +364,8 @@ class WbEditor extends HTMLElement {
   ): void {
     this.walkers.delete(walker.avatarId);
     avatar.pose = stand.pose;
-    if (stand.dir !== undefined) avatar.dir = stand.dir;
     this.walkStatus.textContent = T.arrived(avatar.name, stand.pose, avatar.x, avatar.y);
-    this.renderInspector();
+    this.syncAvatarPanel();
     this.markDirty();
   }
 
@@ -521,6 +528,17 @@ class WbEditor extends HTMLElement {
   }
 
   // --- Room changes ---
+
+  private avatarPanel: {
+    avatarId: number;
+    x: HTMLInputElement;
+    y: HTMLInputElement;
+    dir: HTMLSelectElement;
+    height: HTMLElement;
+    preview: HTMLImageElement;
+    position: HTMLElement;
+    editing: Set<HTMLInputElement | HTMLSelectElement>;
+  } | null = null;
 
   private change(apply: () => void): void {
     this.history.record(this.room);
@@ -1091,6 +1109,7 @@ class WbEditor extends HTMLElement {
       }
     }
     this.needsDraw = true;
+    this.syncAvatarPanel();
   }
 
   private togglePick(id: number): void {
@@ -1803,25 +1822,51 @@ class WbEditor extends HTMLElement {
   }
 
   private avatarInspector(avatar: PlacedAvatar): HTMLElement[] {
-    const preview = h("img", {
-      src: avatarUrl(avatar, avatar.pose, avatar.dir, 0),
-      alt: "",
-      class: "avatar-preview",
-    });
+    const preview = h("img", { alt: "", class: "avatar-preview" }) as HTMLImageElement;
+    const position = h("p", { "data-testid": "avatar-position" });
+    const place = this.avatarPlace(avatar);
+    this.avatarPanel = { ...place, avatarId: avatar.id, preview, position };
+    this.syncAvatarPanel();
     return [
-      preview,
-      h("h2", {}, avatar.name),
-      h("p", { class: "muted" }, hotelLabel(avatar.hotel)),
       h(
-        "p",
-        { "data-testid": "avatar-position" },
-        T.avatarAt(avatar.x, avatar.y, T.poses[avatar.pose] ?? avatar.pose),
+        "div",
+        { class: "avatar-panel" },
+        h(
+          "div",
+          { class: "avatar-head" },
+          preview,
+          h(
+            "div",
+            {},
+            h("h2", {}, avatar.name),
+            h("p", { class: "muted" }, hotelLabel(avatar.hotel)),
+            position,
+          ),
+        ),
+        h("p", { class: "muted" }, this.mode === "play" ? T.clickToWalk : T.switchToPlay),
+        place.form,
+        this.avatarDetails(avatar),
+        this.walkStatus,
       ),
-      h("p", { class: "muted" }, this.mode === "play" ? T.clickToWalk : T.switchToPlay),
-      ...(this.run ? [this.avatarDebug(avatar)] : []),
-      this.avatarDetails(avatar),
-      this.walkStatus,
     ];
+  }
+
+  /** Shows where the selected avatar is now, leaving alone a field that is being typed in. */
+  private syncAvatarPanel(): void {
+    const panel = this.avatarPanel;
+    const avatar = this.selectedAvatar();
+    if (!panel || avatar?.id !== panel.avatarId) return;
+    const { x, y, dir, height, preview, position, editing } = panel;
+    const show = (input: HTMLInputElement | HTMLSelectElement, value: number) => {
+      if (!editing.has(input)) input.value = String(value);
+    };
+    show(x, avatar.x);
+    show(y, avatar.y);
+    show(dir, avatar.dir);
+    height.textContent = T.debugHeight(avatar.z);
+    position.textContent = T.avatarAt(avatar.x, avatar.y, T.poses[avatar.pose] ?? avatar.pose);
+    const src = avatarUrl(avatar, avatar.pose, avatar.dir, 0);
+    if (preview.getAttribute("src") !== src) preview.src = src;
   }
 
   /** What built-in variables read for this avatar. In a run a change reaches the room and is not saved. */
@@ -1833,14 +1878,26 @@ class WbEditor extends HTMLElement {
         void this.run.input({ type: "user_detail", user: avatar.id, detail: name, amount });
         return;
       }
-      this.change(() => {
-        avatar.details = { ...details, [name]: amount };
-      });
+      this.history.record(this.room);
+      avatar.details = { ...details, [name]: amount };
+      details[name] = amount;
+      this.markDirty();
     };
     const number = ([name, label]: [string, string]) => {
       const input = h("input", { type: "number", value: details[name] ?? 0, "aria-label": label });
       input.addEventListener("change", () => set(name, Math.trunc(Number(input.value) || 0)));
-      return h("label", {}, label, input);
+      return h("label", { class: "avatar-field" }, h("span", {}, label), input);
+    };
+    const gender = () => {
+      const label = T.avatarGender;
+      const input = h(
+        "select",
+        { "aria-label": label },
+        ...T.avatarGenders.map((name, value) => h("option", { value }, name)),
+      ) as HTMLSelectElement;
+      input.value = String(details["@gender"] ?? 0);
+      input.addEventListener("change", () => set("@gender", Number(input.value)));
+      return h("label", { class: "avatar-field" }, h("span", {}, label), input);
     };
     const flag = ([name, label]: [string, string]) => {
       const input = h("input", {
@@ -1848,49 +1905,98 @@ class WbEditor extends HTMLElement {
         checked: Boolean(details[name]),
       }) as HTMLInputElement;
       input.addEventListener("change", () => set(name, input.checked ? 1 : 0));
-      return h("label", { class: "avatar-flag" }, input, label);
+      return h("label", { class: "avatar-flag" }, input, h("span", {}, label));
     };
     return h(
       "details",
-      { class: "avatar-details", "data-testid": "avatar-details" },
+      { class: "avatar-details avatar-section", "data-testid": "avatar-details" },
       h("summary", {}, T.avatarDetails),
       ...(this.run ? [h("p", { class: "muted" }, T.avatarDetailsRun)] : []),
-      ...Object.entries(T.avatarNumbers).map(number),
-      ...Object.entries(T.avatarFlags).map(flag),
+      h(
+        "div",
+        { class: "avatar-fields" },
+        gender(),
+        ...Object.entries(T.avatarNumbers).map(number),
+      ),
+      h("div", { class: "avatar-flags" }, ...Object.entries(T.avatarFlags).map(flag)),
     );
   }
 
-  /** Puts a user where a test needs them while the room runs. Height comes from what is on the tile. */
-  private avatarDebug(avatar: PlacedAvatar): HTMLElement {
-    const number = (label: string, value: number, max: number) =>
-      h("input", { type: "number", min: 0, max, value, "aria-label": label });
-    const x = number(T.debugX, avatar.x, this.room.room.width - 1);
-    const y = number(T.debugY, avatar.y, this.room.room.height - 1);
-    const dir = number(T.debugDir, avatar.dir, 7);
-    const apply = async () => {
-      const [toX, toY] = [Number(x.value), Number(y.value)];
-      if (toX !== avatar.x || toY !== avatar.y) {
-        await this.run?.input({ type: "move", user: avatar.id, x: toX, y: toY });
-      }
-      await this.run?.input({ type: "turn", user: avatar.id, dir: Number(dir.value) });
-      this.renderInspector();
+  /** Where the avatar stands now. A change moves it at once. In a run it may stand on any tile, as a test needs. */
+  private avatarPlace(avatar: PlacedAvatar) {
+    const editing = new Set<HTMLInputElement | HTMLSelectElement>();
+    const track = <T extends HTMLInputElement | HTMLSelectElement>(input: T): T => {
+      input.addEventListener("input", () => editing.add(input));
+      input.addEventListener("blur", () => editing.delete(input));
+      input.addEventListener("change", () => {
+        editing.delete(input);
+        void this.placeAvatar(avatar, Number(x.value), Number(y.value), Number(dir.value));
+      });
+      return input;
     };
-    return h(
+    const number = (label: string, max: number) =>
+      track(h("input", { type: "number", min: 0, max, "aria-label": label }) as HTMLInputElement);
+    const x = number(T.debugX, this.room.room.width - 1);
+    const y = number(T.debugY, this.room.room.height - 1);
+    const dir = track(
+      h(
+        "select",
+        { "aria-label": T.debugDir },
+        ...T.debugDirs.map((name, value) => h("option", { value }, name)),
+      ) as HTMLSelectElement,
+    );
+    const height = h("p", { class: "muted" });
+    const form = h(
       "form",
       {
-        class: "avatar-debug",
-        "data-testid": "avatar-debug",
-        onsubmit: (event: Event) => {
-          event.preventDefault();
-          void apply();
-        },
+        class: "avatar-place avatar-section",
+        "data-testid": "avatar-place",
+        onsubmit: (event: Event) => event.preventDefault(),
       },
-      h("label", {}, T.debugX, x),
-      h("label", {}, T.debugY, y),
-      h("label", {}, T.debugDir, dir),
-      h("p", { class: "muted" }, T.debugHeight(avatar.z)),
-      h("button", { class: "btn", type: "submit" }, T.debugApply),
+      h(
+        "div",
+        { class: "avatar-place-fields" },
+        h("label", {}, h("span", {}, T.debugX), x),
+        h("label", {}, h("span", {}, T.debugY), y),
+        h("label", {}, h("span", {}, T.debugDir), dir),
+      ),
+      height,
     );
+    form.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && event.target instanceof HTMLInputElement) {
+        event.preventDefault();
+        event.target.blur();
+      }
+    });
+    return { form, x, y, dir, height, editing };
+  }
+
+  private async placeAvatar(avatar: PlacedAvatar, x: number, y: number, dir: number) {
+    const { width, height } = this.room.room;
+    const inRoom = x >= 0 && y >= 0 && x < width && y < height;
+    const whole = Number.isInteger(x) && Number.isInteger(y);
+    const moved = x !== avatar.x || y !== avatar.y;
+    const stand = standAt(this.room, this.lookup, x, y);
+    if (!inRoom || !whole || (moved && !this.run && !stand.walkable)) {
+      if (moved) this.walkStatus.textContent = T.noWay(avatar.name);
+      this.syncAvatarPanel();
+      return;
+    }
+    if (moved) this.walkers.delete(avatar.id);
+    if (this.run) {
+      await this.run.input(
+        moved
+          ? { type: "move", user: avatar.id, x, y, dir }
+          : { type: "turn", user: avatar.id, dir },
+      );
+      return;
+    }
+    this.history.record(this.room);
+    avatar.dir = dir;
+    if (moved) Object.assign(avatar, { x, y, z: stand.z, pose: stand.pose });
+    this.markDirty();
+    this.needsDraw = true;
+    this.syncAvatarPanel();
   }
 }
 

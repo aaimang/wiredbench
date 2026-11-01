@@ -1881,15 +1881,103 @@ wb-editor {
   overflow: auto;
 }
 
-.avatar-details label {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--space-2, 8px);
-  margin-block: 4px;
+.avatar-panel {
+  display: grid;
+  gap: 12px;
+  width: 100%;
 }
 
-.avatar-details .avatar-flag {
-  justify-content: flex-start;
+.avatar-panel p {
+  margin: 0;
+}
+
+.avatar-head {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+}
+
+.avatar-head h2 {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.avatar-section {
+  display: grid;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.avatar-place-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.3fr;
+  gap: 8px;
+}
+
+.avatar-place-fields label {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  font-size: 13px;
+}
+
+.avatar-place-fields input {
+  appearance: textfield;
+}
+
+.avatar-place-fields input::-webkit-inner-spin-button {
+  appearance: none;
+}
+
+.avatar-panel select {
+  width: 100%;
+}
+
+.avatar-details summary {
+  font-weight: 550;
+  cursor: pointer;
+}
+
+.avatar-details[open] summary {
+  margin-bottom: 4px;
+}
+
+.avatar-fields {
+  display: grid;
+  gap: 6px;
+}
+
+.avatar-field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 96px;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.avatar-flags {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.avatar-flag {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.avatar-flag input {
+  flex: none;
+  width: 16px;
+  min-height: 0;
+  height: 16px;
+  margin: 0;
+  padding: 0;
 }
 
 .run-vars th {

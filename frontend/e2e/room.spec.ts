@@ -140,6 +140,11 @@ test("build a room, walk to a chair, sit, and find it all there after a reload",
   await expect(page.getByTestId("walk-status")).toContainText("stopped at 0, 2", {
     timeout: 15000,
   });
+  const place = page.getByTestId("avatar-place");
+  await expect(place.getByLabel("Column")).toHaveValue("0");
+  await expect(place.getByLabel("Row")).toHaveValue("2");
+  await place.getByLabel("Direction").selectOption("4");
+  await expect.poll(async () => (await room(page)).avatars[0]?.dir).toBe(4);
   await clickTile(page, 5, 2);
   await expect(page.getByTestId("walk-status")).toContainText("walking to 5, 2");
   await expect(page.getByTestId("walk-status")).toContainText("sat down at 5, 2", {
