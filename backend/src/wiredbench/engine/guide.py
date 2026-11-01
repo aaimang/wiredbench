@@ -195,6 +195,18 @@ GUIDE: dict[str, tuple[str, str]] = {
     "wf_trg_clock_counter": ("Runs when a counter counts up to a time.", "End the round at two minutes."),
     "wf_act_set_highlight": ("Outlines, tints or darkens furni or users.", "Show which tile is safe."),
     "wf_act_set_visibility": ("Makes furni or users invisible or visible.", "Hide a secret door."),
+    "wf_xtra_varfx_number": ("Shows a variable as a number over its holders.", "Show each player's coins."),
+    "wf_xtra_varfx_levelling": (
+        "Shows a variable as level progress over its holders.",
+        "Show a player's rank.",
+    ),
+    "wf_xtra_varfx_prog": (
+        "Shows a variable as a progress bar over its holders.",
+        "Show how full a tank is.",
+    ),
+    "wf_xtra_varfx_status": ("Shows a variable as a status bar over its holders.", "Show a player's energy."),
+    "wf_xtra_varfx_hp": ("Shows a variable as health over its holders.", "Show health in a battle."),
+    "wf_xtra_varfx_boss": ("Shows a variable as a wide boss bar over its holders.", "Show a boss's health."),
     "wf_xtra_mov_carry_users": (
         "Moves users along with the furni they stand on.",
         "Build a moving platform.",

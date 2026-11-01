@@ -9,10 +9,10 @@ read at commit `3fc9c06f533c`, for facts only.
 - No evidence yet: 90
 - Reference only: 7
 - Seen in a real preset: 0
-- Seen in a real room dump: 149
-- Checked in a real room: 38
-- Have a form: 99
-- Option numbers mapped: 45
+- Seen in a real room dump: 140
+- Checked in a real room: 47
+- Have a form: 105
+- Option numbers mapped: 51
 
 | Box | Evidence | Form | Options | Room check |
 |---|---|---|---|---|
@@ -39,7 +39,7 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_act_give_reward` | Reference only |  |  |  |
 | `wf_act_give_score` | Checked in a real room | Yes | Yes | 2026-11-01 |
 | `wf_act_give_score_tm` | Checked in a real room | Yes | Yes | 2026-11-01 |
-| `wf_act_give_var` | Seen in a real room dump | Yes | Yes |  |
+| `wf_act_give_var` | Checked in a real room | Yes | Yes | 2026-11-01 |
 | `wf_act_init_transaction` | Seen in a real room dump |  |  |  |
 | `wf_act_join_team` | Checked in a real room | Yes | Yes | 2026-11-01 |
 | `wf_act_kick_user` | Seen in a real room dump |  |  |  |
@@ -252,13 +252,13 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_var_context` | Seen in a real room dump | Yes | Yes |  |
 | `wf_var_dailytask` | No evidence yet |  |  |  |
 | `wf_var_echo` | Seen in a real room dump |  |  |  |
-| `wf_var_furni` | Seen in a real room dump | Yes | Yes |  |
+| `wf_var_furni` | Checked in a real room | Yes | Yes | 2026-11-01 |
 | `wf_var_pointer` | Seen in a real room dump |  |  |  |
 | `wf_var_quest` | No evidence yet |  |  |  |
 | `wf_var_quest_chain` | No evidence yet |  |  |  |
 | `wf_var_reference` | Seen in a real room dump |  |  |  |
 | `wf_var_room` | Checked in a real room | Yes | Yes | 2026-11-01 |
-| `wf_var_user` | Seen in a real room dump | Yes | Yes |  |
+| `wf_var_user` | Checked in a real room | Yes | Yes | 2026-11-01 |
 | `wf_vu` | No evidence yet |  |  |  |
 | `wf_wire1` | No evidence yet |  |  |  |
 | `wf_wire2` | No evidence yet |  |  |  |
@@ -294,9 +294,9 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_xtra_var_text_connector` | Seen in a real room dump | Yes |  |  |
 | `wf_xtra_var_time_util` | Seen in a real room dump | Yes |  |  |
 | `wf_xtra_var_web_api` | No evidence yet |  |  |  |
-| `wf_xtra_varfx_boss` | Seen in a real room dump |  |  |  |
-| `wf_xtra_varfx_hp` | Seen in a real room dump |  |  |  |
-| `wf_xtra_varfx_levelling` | Seen in a real room dump |  |  |  |
-| `wf_xtra_varfx_number` | Seen in a real room dump |  |  |  |
-| `wf_xtra_varfx_prog` | Seen in a real room dump |  |  |  |
-| `wf_xtra_varfx_status` | Seen in a real room dump |  |  |  |
+| `wf_xtra_varfx_boss` | Checked in a real room | Yes | Yes | 2026-11-01 |
+| `wf_xtra_varfx_hp` | Checked in a real room | Yes | Yes | 2026-11-01 |
+| `wf_xtra_varfx_levelling` | Checked in a real room | Yes | Yes | 2026-11-01 |
+| `wf_xtra_varfx_number` | Checked in a real room | Yes | Yes | 2026-11-01 |
+| `wf_xtra_varfx_prog` | Checked in a real room | Yes | Yes | 2026-11-01 |
+| `wf_xtra_varfx_status` | Checked in a real room | Yes | Yes | 2026-11-01 |

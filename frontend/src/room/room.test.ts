@@ -12,6 +12,7 @@ import {
   footprint,
   furniAt,
   furniParts,
+  fxFill,
   History,
   highlightTint,
   type InfoLookup,
@@ -369,5 +370,14 @@ describe("wired looks", () => {
   it("pulses over time", () => {
     const pulsing = { ...look, pulse: true };
     expect(highlightTint(pulsing, 0)).not.toBe(highlightTint(pulsing, 300));
+  });
+});
+
+describe("variable displays", () => {
+  it("fills a bar within its range and never past it", () => {
+    expect(fxFill({ value: "50", min: 0, max: 100 })).toBe(0.5);
+    expect(fxFill({ value: "150", min: 0, max: 100 })).toBe(1);
+    expect(fxFill({ value: "-5", min: 0, max: 100 })).toBe(0);
+    expect(fxFill({ value: "5", min: 10, max: 10 })).toBe(0);
   });
 });

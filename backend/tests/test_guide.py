@@ -20,7 +20,7 @@ def test_guide_without_a_catalogue_still_lists_simulated_boxes(api: Api) -> None
     assert {row["classname"] for row in rows} == set(BOXES)
     by_name = {row["classname"]: row for row in rows}
     assert by_name["wf_act_toggle_state"]["status"] == "real_room"
-    assert by_name["wf_act_give_var"]["status"] == "assumed"
+    assert by_name["wf_trg_var_changed"]["status"] == "assumed"
     assert by_name["wf_act_send_signal"]["status"] == "documented"
 
 

@@ -124,6 +124,7 @@ class WbEditor extends HTMLElement {
   private needsDraw = true;
   private runEdits = new Map<number, string>();
   private looks: RunState["looks"] | null = null;
+  private fx: RunState["fx"] | null = null;
   private query = "";
   private paletteType = "";
   private toolbar = h("div", { class: "toolbar editor-toolbar" });
@@ -220,6 +221,7 @@ class WbEditor extends HTMLElement {
   private scene(): Scene {
     return {
       looks: this.run ? this.looks : null,
+      fx: this.run ? this.fx : null,
       room: this.room,
       lookup: this.lookup,
       revisionOf: (classname) => this.items.get(classname)?.revision ?? null,
@@ -1060,6 +1062,7 @@ class WbEditor extends HTMLElement {
   /** Shows what the engine did. Walking avatars are left alone, because the browser moves them. */
   private applyRun(state: RunState): void {
     this.looks = state.looks;
+    this.fx = state.fx;
     for (const item of state.furni) {
       const placed = this.room.furni.find((f) => f.id === item.id);
       if (placed) Object.assign(placed, item);

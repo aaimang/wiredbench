@@ -40,6 +40,7 @@ MOVES = {
 MAX_ALTITUDE = 8000
 TEAMS = ("red", "green", "blue", "yellow")
 MAX_POINTS = 1000
+MAX_FX_PER_VARIABLE = 5  # A real room saves a sixth but never draws it.
 CLOCK_TICK_MS = 500
 GAME_TIMERS = {"bb_counter", "fball_counter", "es_counter"}
 DEFAULT_GAME_SECONDS = 30
@@ -1403,6 +1404,39 @@ class Engine:
                 )
         return rows
 
+    def view_fx(self) -> list[dict[str, Any]]:
+        """What each Variable FX box shows: the variable of the box on its tile, over everyone holding it."""
+        shown = []
+        for stack in self.stacks:
+            source = next((b for b in stack.boxes if b.classname in ("wf_var_user", "wf_var_furni")), None)
+            name = str(source.get("variable", "")).strip() if source else ""
+            drawn = [b for b in stack.boxes if b.classname.startswith("wf_xtra_varfx_")]
+            for box in drawn[:MAX_FX_PER_VARIABLE] if name else []:
+                prefix = "furni" if box.get("fx_target", "user") == "furni" else "user"
+                for key, holding in sorted(self.variables[name].items()):
+                    holder, _, entity = key.partition(":")
+                    if holder == prefix and self._fx_showing(box, holding):
+                        shown.append(
+                            {
+                                "kind": box.classname.removeprefix("wf_xtra_varfx_"),
+                                "target": prefix,
+                                "id": _int(entity),
+                                "value": str(holding.value),
+                                "min": _int(box.get("fx_min")),
+                                "max": _int(box.get("fx_max", 100), 100),
+                                "order": _int(box.get("fx_order")),
+                            }
+                        )
+        return shown
+
+    def _fx_showing(self, box: Box, holding: Holding) -> bool:
+        match box.get("fx_show", "always"):
+            case "never":
+                return False
+            case "changes":
+                return self.now_ms - holding.updated_ms < _int(box.get("fx_duration", 3000), 3000)
+        return True
+
     def view_defined(self) -> list[dict[str, str]]:
         """Variables a box defines that nothing holds yet. A real room lists these by definition too."""
         return [
@@ -1450,6 +1484,7 @@ class Engine:
             "users": sorted(self.users.values(), key=lambda u: u["id"]),
             "variables": self.view_variables(),
             "defined_variables": self.view_defined(),
+            "fx": self.view_fx(),
             "looks": {"furni": self.furni_looks, "users": self.user_looks},
             "game": {"running": self.game_running, "scores": dict(self.team_scores)},
             "limit_hits": self.limit_hits,

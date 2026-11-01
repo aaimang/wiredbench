@@ -8,7 +8,7 @@ it, and a named position is still unverified until a box is changed and read aga
 
 No reply from: `wf_contract_payment`, `wf_contract_reward`, `wf_contract_trade`. The cause is unconfirmed.
 
-Named positions: 95. Unnamed positions: 487.
+Named positions: 127. Unnamed positions: 455.
 
 | Box | Section | Default numbers | Named positions | Unnamed positions |
 |---|---|---|---|---|
@@ -190,9 +190,9 @@ Named positions: 95. Unnamed positions: 487.
 | `wf_xtra_var_share` | addon | `[1, 1, 1]` |  | 0, 1, 2 |
 | `wf_xtra_var_text_connector` | addon | `[]` |  |  |
 | `wf_xtra_var_time_util` | addon | `[0, 1]` |  | 0, 1 |
-| `wf_xtra_varfx_boss` | addon | `[1, 2, 0, 7, 0, 3000, 0, -1, -1, -1, 0, 0, 0, 100, 0, 0, 1, 1, 0, 0, 0, 0, 0]` |  | 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22 |
-| `wf_xtra_varfx_hp` | addon | `[1, 2, 0, 7, 0, 3000, 0, -1, -1, -1, 0, 0, 0, 100, 0, 0, 1, 1, 0, 0, 0, 0, 0]` |  | 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22 |
-| `wf_xtra_varfx_levelling` | addon | `[1, 2, 0, 7, 0, 3000, 0, -1, -1, -1, 0, 0, 0, 100, 0, 0, 1, 1, 0, 0, 0, 2, 0]` |  | 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22 |
-| `wf_xtra_varfx_number` | addon | `[1, 2, 0, 7, 0, 3000, 0, -1, -1, -1, 0, 0, 0, 100, 0, 0, 1, 1, 0, 0, 0, 0, 0]` |  | 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22 |
-| `wf_xtra_varfx_prog` | addon | `[1, 2, 0, 7, 0, 3000, 0, -1, -1, -1, 0, 0, 0, 100, 0, 0, 1, 1, 0, 0, 0, 0, 0]` |  | 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22 |
-| `wf_xtra_varfx_status` | addon | `[1, 2, 0, 7, 0, 3000, 0, -1, -1, -1, 0, 0, 0, 100, 0, 0, 1, 1, 0, 0, 0, 0, 0]` |  | 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22 |
+| `wf_xtra_varfx_boss` | addon | `[1, 2, 0, 7, 0, 3000, 0, -1, -1, -1, 0, 0, 0, 100, 0, 0, 1, 1, 0, 0, 0, 0, 0]` | 0: fx_target, 2: fx_show, 5: fx_duration, 11: fx_min, 13: fx_max, 22: fx_order | 1, 3, 4, 6, 7, 8, 9, 10, 12, 14, 15, 16, 17, 18, 19, 20, 21 |
+| `wf_xtra_varfx_hp` | addon | `[1, 2, 0, 7, 0, 3000, 0, -1, -1, -1, 0, 0, 0, 100, 0, 0, 1, 1, 0, 0, 0, 0, 0]` | 0: fx_target, 2: fx_show, 5: fx_duration, 11: fx_min, 13: fx_max, 22: fx_order | 1, 3, 4, 6, 7, 8, 9, 10, 12, 14, 15, 16, 17, 18, 19, 20, 21 |
+| `wf_xtra_varfx_levelling` | addon | `[1, 2, 0, 7, 0, 3000, 0, -1, -1, -1, 0, 0, 0, 100, 0, 0, 1, 1, 0, 0, 0, 2, 0]` | 0: fx_target, 2: fx_show, 5: fx_duration, 22: fx_order | 1, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21 |
+| `wf_xtra_varfx_number` | addon | `[1, 2, 0, 7, 0, 3000, 0, -1, -1, -1, 0, 0, 0, 100, 0, 0, 1, 1, 0, 0, 0, 0, 0]` | 0: fx_target, 2: fx_show, 5: fx_duration, 22: fx_order | 1, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21 |
+| `wf_xtra_varfx_prog` | addon | `[1, 2, 0, 7, 0, 3000, 0, -1, -1, -1, 0, 0, 0, 100, 0, 0, 1, 1, 0, 0, 0, 0, 0]` | 0: fx_target, 2: fx_show, 5: fx_duration, 11: fx_min, 13: fx_max, 22: fx_order | 1, 3, 4, 6, 7, 8, 9, 10, 12, 14, 15, 16, 17, 18, 19, 20, 21 |
+| `wf_xtra_varfx_status` | addon | `[1, 2, 0, 7, 0, 3000, 0, -1, -1, -1, 0, 0, 0, 100, 0, 0, 1, 1, 0, 0, 0, 0, 0]` | 0: fx_target, 2: fx_show, 5: fx_duration, 11: fx_min, 13: fx_max, 22: fx_order | 1, 3, 4, 6, 7, 8, 9, 10, 12, 14, 15, 16, 17, 18, 19, 20, 21 |
