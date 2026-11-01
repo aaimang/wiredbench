@@ -16,6 +16,7 @@ import { depth, screenToTile, TILE_HEIGHT, TILE_WIDTH, tileCentre, Z_UNIT } from
 import {
   type AvatarAction,
   avatarExtras,
+  FACE_NAMES,
   type Flight,
   type FurniArtData,
   type FxShown,
@@ -109,6 +110,8 @@ const SELECTED_TINT = 0xfff0a0;
 const PICKED_TINT = 0xb28ad8;
 /** How far a pose sits below the top of its furni, in height units. Matched by eye to real furni. */
 const POSE_DROP: Record<string, number> = { sit: 0.5, lay: 0.5 };
+/** Habbo gets four downloads at a time, and this leaves two for images already on screen. */
+const WARM_DOWNLOADS = 2;
 
 function cssColor(name: string, fallback: number): number {
   const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -150,8 +153,13 @@ export class RoomRenderer {
   private furni = new Map<string, Promise<FurniArt | null>>();
   private furniLoaded = new Map<string, FurniArt | null>();
   private avatars = new Map<string, Texture | null>();
-  private avatarLoading = new Set<string>();
-  private avatarShown = new Map<number, { texture: Texture; dir: number }>();
+  private avatarLoading = new Map<string, Promise<void>>();
+  private avatarShown = new Map<
+    number,
+    { texture: Texture; dir: number; extra: string[]; gesture: string | undefined }
+  >();
+  private warmQueue: string[] = [];
+  private warmLoading = 0;
   private parts = new Map<string, Texture>();
   private hits: { hit: Hit; bounds: Rectangle; order: number }[] = [];
   private scene: Scene | null = null;
@@ -219,17 +227,45 @@ export class RoomRenderer {
     const url = avatarUrl(avatar, action, dir, frame, gesture);
     const known = this.avatars.get(url);
     if (known !== undefined) return known;
-    if (!this.avatarLoading.has(url)) {
-      this.avatarLoading.add(url);
-      loadTexture(url)
-        .then((texture) => this.avatars.set(url, texture))
-        .catch(() => this.avatars.set(url, null))
+    this.loadAvatar(url);
+    return null;
+  }
+
+  private loadAvatar(url: string): Promise<void> {
+    if (this.avatars.has(url)) return Promise.resolve();
+    let loading = this.avatarLoading.get(url);
+    if (!loading) {
+      loading = loadTexture(url)
+        .then((texture) => void this.avatars.set(url, texture))
+        .catch(() => void this.avatars.set(url, null))
         .finally(() => {
           this.avatarLoading.delete(url);
           this.onChange();
         });
+      this.avatarLoading.set(url, loading);
     }
-    return null;
+    return loading;
+  }
+
+  private async loadAvatars(urls: string[]): Promise<void> {
+    await Promise.all(urls.map((url) => this.loadAvatar(url)));
+  }
+
+  /** Loads images nobody is waiting for yet, leaving Habbo's other download slots for those in view. */
+  private warm(urls: string[]): void {
+    for (const url of urls) {
+      if (!this.avatars.has(url) && !this.warmQueue.includes(url)) this.warmQueue.push(url);
+    }
+    while (this.warmLoading < WARM_DOWNLOADS) {
+      const url = this.warmQueue.shift();
+      if (!url) return;
+      if (this.avatars.has(url) || this.avatarLoading.has(url)) continue;
+      this.warmLoading++;
+      void this.loadAvatar(url).finally(() => {
+        this.warmLoading--;
+        this.warm([]);
+      });
+    }
   }
 
   /**
@@ -253,28 +289,76 @@ export class RoomRenderer {
     }
   }
 
-  /** Loads the rest of a face for this pose, so that its next change never waits on an image. */
-  private preloadFace(avatar: PlacedAvatar, pose: AvatarPose): void {
-    if (faceIsAnimated(avatar.face)) this.animating = true;
+  private faceUrls(avatar: PlacedAvatar, pose: AvatarPose): string[] {
     const extra = (pose.extra ?? []).filter((part) => part !== "lgh");
     const action = figureAction(pose.action, extra);
     const frames = pose.action === "wlk" ? [0, 1, 2, 3] : [pose.frame];
-    for (const gesture of faceGestures(avatar.face)) {
-      for (const frame of frames) this.avatarTexture(avatar, action, pose.dir, frame, gesture);
-    }
+    const gestures = faceGestures(avatar.face);
+    const urls = (gestures.length ? gestures : ["std"]).flatMap((gesture) =>
+      frames.map((frame) => avatarUrl(avatar, action, pose.dir, frame, gesture)),
+    );
     if (faceHasLaugh(avatar.face) && pose.action === "std" && extra.length === 0) {
-      this.avatarTexture(avatar, "lgh", pose.dir, 0, "std");
+      urls.push(avatarUrl(avatar, "lgh", pose.dir, 0, "std"));
     }
+    return urls;
   }
 
-  /** Loads both frames of an action, so it does not stutter on its first swap. */
-  preloadAction(avatar: PlacedAvatar, pose: string, dir: number, action: AvatarAction): void {
+  /** Settles once all of this avatar's chosen face can be shown in this pose. */
+  loadFace(avatar: PlacedAvatar, pose: AvatarPose): Promise<void> {
+    return this.loadAvatars(this.faceUrls(avatar, pose));
+  }
+
+  private actionUrls(
+    avatar: PlacedAvatar,
+    pose: string,
+    dir: number,
+    action: AvatarAction,
+  ): string[] {
     const { extra, gesture } = avatarExtras(avatar.details, action);
     const shown = figureAction(pose, extra);
-    for (let frame = 0; frame < 2; frame++) this.avatarTexture(avatar, shown, dir, frame, gesture);
-    if (action === "sixty_seven") {
-      this.avatarTexture(avatar, figureAction(pose, ["sig=7", ...extra.slice(1)]), dir, 0, gesture);
-    }
+    const faces = faceGestures(avatar.face);
+    const gestures = faces.length ? faces : [gesture];
+    const frames = pose === "wlk" ? [0, 1, 2, 3] : [0, 1];
+    return gestures.flatMap((look) => [
+      ...frames.map((frame) => avatarUrl(avatar, shown, dir, frame, look)),
+      ...(action === "sixty_seven"
+        ? frames.map((frame) =>
+            avatarUrl(avatar, figureAction(pose, ["sig=7", ...extra.slice(1)]), dir, frame, look),
+          )
+        : []),
+    ]);
+  }
+
+  /** Settles once every frame of an action can be shown, so it starts without a stutter. */
+  preloadAction(
+    avatar: PlacedAvatar,
+    pose: string,
+    dir: number,
+    action: AvatarAction,
+  ): Promise<void> {
+    return this.loadAvatars(this.actionUrls(avatar, pose, dir, action));
+  }
+
+  /** Loads what the user panel can ask for next, so a choice is usually ready when it is made. */
+  warmChoices(avatar: PlacedAvatar, actions: AvatarAction[], signs: number): void {
+    const { pose, dir } = avatar;
+    const faces = FACE_NAMES.flatMap((face) =>
+      this.faceUrls({ ...avatar, face }, {
+        ...avatarExtras(avatar.details),
+        action: pose,
+        dir,
+      } as AvatarPose),
+    );
+    const moves = actions.flatMap((action) => this.actionUrls(avatar, pose, dir, action));
+    const gestures = faceGestures(avatar.face);
+    const held = Array.from({ length: signs }, (_, sign) => {
+      const { extra, gesture } = avatarExtras({
+        ...((avatar.details ?? {}) as object),
+        "@sign": sign,
+      });
+      return avatarUrl(avatar, figureAction(pose, extra), dir, 0, gestures[0] ?? gesture);
+    });
+    this.warm([...faces, ...moves, ...held]);
   }
 
   private centre(): { x: number; y: number } {
@@ -674,9 +758,31 @@ export class RoomRenderer {
     const last = this.avatarShown.get(avatar.id);
     // Standing still facing the same way, the last image beats a flash of the default face.
     const keepLast = last?.dir === pose.dir && pose.action !== "wlk";
-    const texture = loaded ?? (keepLast ? last.texture : plain) ?? last?.texture ?? null;
-    if (loaded) this.avatarShown.set(avatar.id, { texture: loaded, dir: pose.dir });
-    this.preloadFace(avatar, pose);
+    // Walking or turning, the previous look on this frame is closest to what was on screen.
+    const previous =
+      !loaded && last
+        ? this.avatars.get(
+            avatarUrl(
+              avatar,
+              figureAction(pose.action, last.extra),
+              pose.dir,
+              pose.frame,
+              last.gesture,
+            ),
+          )
+        : null;
+    const texture =
+      loaded ?? (keepLast ? last.texture : (previous ?? plain)) ?? last?.texture ?? null;
+    if (loaded) {
+      this.avatarShown.set(avatar.id, {
+        texture: loaded,
+        dir: pose.dir,
+        extra: pose.extra ?? [],
+        gesture: pose.gesture,
+      });
+    }
+    if (faceIsAnimated(avatar.face)) this.animating = true;
+    void this.loadFace(avatar, pose);
     if (selected) {
       const ring = new Graphics();
       this.tilePath(ring, pose.x, pose.y, pose.z);
