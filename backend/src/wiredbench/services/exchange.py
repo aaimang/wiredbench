@@ -52,6 +52,7 @@ SOURCE_FIELDS = {
     ),
 }
 ANY_TEAM_NUMBERS = {0: "any", 1: "red", 2: "green", 3: "blue", 4: "yellow"}
+CLOCK_FIELDS = [("clock_seconds", 0, int), ("clock_minutes", 1, int), ("clock_half", 2, bool)]
 AREA_FIELDS = [("area_x", 0, int), ("area_y", 1, int), ("area_width", 2, int), ("area_height", 3, int)]
 # A selector's two switches sit on the box itself. The file calls invert "inverse".
 SELECTOR_SWITCHES = {"filter": "filter", "invert": "inverse"}
@@ -85,6 +86,15 @@ OPTION_FIELDS: dict[str, list[tuple[str, int, Any]]] = {
             },
         ),
         ("rotation", 1, ("none", "clockwise", "counterclockwise", "random")),
+    ],
+    "wf_act_control_clock": [("clock_control", 0, ("start", "stop", "reset", "pause", "resume"))],
+    "wf_act_adjust_clock": [*CLOCK_FIELDS, ("clock_change", 3, ("add", "subtract", "set"))],
+    "wf_trg_clock_counter": CLOCK_FIELDS,
+    "wf_cnd_counter_time_matches": [*CLOCK_FIELDS, ("clock_compare", 3, ("less", "equal", "more"))],
+    "wf_cnd_team_has_score": [
+        ("team", 0, {0: "own", 1: "red", 2: "green", 3: "blue", 4: "yellow"}),
+        ("points", 1, int),
+        ("score_compare", 2, ("less", "equal", "more")),
     ],
     "wf_act_join_team": [
         ("team", 0, {1: "red", 2: "green", 3: "blue", 4: "yellow"}),

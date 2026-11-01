@@ -655,3 +655,20 @@ def test_team_and_score_options_read_their_positions() -> None:
     assert read("wf_act_give_score_tm", {"options": [9, 0, 4]}, {})["team"] == "yellow"
     assert read("wf_slc_users_team", {"options": [0]}, {})["team"] == "any"
     assert read("wf_cnd_actor_in_team", {"options": [2]}, {})["team"] == "green"
+
+
+def test_clock_and_team_score_options_read_their_positions() -> None:
+    read = exchange.friendly_settings
+    assert read("wf_act_control_clock", {"options": [3]}, {}) == {"clock_control": "pause"}
+    assert read("wf_act_adjust_clock", {"options": [12, 3, 1, 2]}, {}) == {
+        "clock_seconds": 12,
+        "clock_minutes": 3,
+        "clock_half": True,
+        "clock_change": "set",
+    }
+    assert read("wf_cnd_counter_time_matches", {"options": [0, 1, 0, 2]}, {})["clock_compare"] == "more"
+    assert read("wf_cnd_team_has_score", {"options": [2, 40, 1]}, {}) == {
+        "team": "green",
+        "points": 40,
+        "score_compare": "equal",
+    }

@@ -1140,3 +1140,122 @@ def test_game_triggers_fire() -> None:
     engine.apply_input({"type": "game_start"})
     engine.advance(1000)
     assert engine.variables["started"]
+
+
+def clock_room(*boxes: dict[str, Any], classname: str = "wf_upcounter1") -> Engine:
+    return room(box(50, classname, 9, 9), box(1, "wf_trg_says_something", 1, 1, text="go"), *boxes)
+
+
+def control(command: str, z: float = 1, **settings: Any) -> dict[str, Any]:
+    return box(2, "wf_act_control_clock", 1, 1, z, furni=[50], clock_control=command, **settings)
+
+
+def test_a_counter_counts_up_in_half_seconds_and_shows_seconds() -> None:
+    engine = clock_room(control("start"))
+    say(engine, "go")
+    engine.advance(3000)
+    assert engine.clocks[50].half_seconds == 6
+    assert engine.furni[50]["state"] == 3
+    assert not engine.game_running, "a plain counter does not start a game"
+
+
+def test_clock_commands() -> None:
+    engine = clock_room(
+        control("start"),
+        box(3, "wf_trg_says_something", 2, 2, text="pause"),
+        box(4, "wf_act_control_clock", 2, 2, 1, furni=[50], clock_control="pause"),
+        box(5, "wf_trg_says_something", 3, 3, text="resume"),
+        box(6, "wf_act_control_clock", 3, 3, 1, furni=[50], clock_control="resume"),
+        box(7, "wf_trg_says_something", 4, 4, text="stop"),
+        box(8, "wf_act_control_clock", 4, 4, 1, furni=[50], clock_control="stop"),
+    )
+    say(engine, "go")
+    engine.advance(2000)
+    say(engine, "pause")
+    engine.advance(2000)
+    assert engine.clocks[50].half_seconds == 4
+    say(engine, "resume")
+    engine.advance(1000)
+    assert engine.clocks[50].half_seconds == 6
+    say(engine, "stop")
+    engine.advance(1000)
+    assert engine.clocks[50].half_seconds == 6
+    say(engine, "go")
+    engine.advance(1000)
+    assert engine.clocks[50].half_seconds == 2, "a stopped counter starts afresh"
+
+
+def test_adjusting_does_not_fire_the_time_trigger_but_counting_does() -> None:
+    engine = clock_room(
+        box(2, "wf_act_adjust_clock", 1, 1, 1, furni=[50], clock_seconds=2, clock_change="set"),
+        box(3, "wf_trg_says_something", 2, 2, text="run"),
+        box(4, "wf_act_control_clock", 2, 2, 1, furni=[50]),
+        box(5, "wf_trg_clock_counter", 3, 3, furni=[50], clock_seconds=2),
+        box(6, "wf_act_show_message", 3, 3, 1, text="reached", user_source="trigger"),
+        box(7, "wf_trg_clock_counter", 4, 4, furni=[50], clock_seconds=3),
+        box(8, "wf_act_log", 4, 4, 1, text="three"),
+    )
+    say(engine, "go")
+    engine.advance(1000)
+    assert engine.clocks[50].half_seconds == 4
+    assert engine.furni[50]["state"] == 2
+    say(engine, "run")
+    engine.advance(2000)
+    assert engine.clocks[50].half_seconds == 8
+    assert "three" in logs(engine)
+
+
+def test_a_game_counter_runs_the_game() -> None:
+    engine = clock_room(
+        control("start"),
+        box(3, "wf_trg_says_something", 2, 2, text="stop"),
+        box(4, "wf_act_control_clock", 2, 2, 1, furni=[50], clock_control="stop"),
+        box(5, "wf_trg_says_something", 3, 3, text="score"),
+        box(6, "wf_act_give_score_tm", 3, 3, 1, points=9, team="red"),
+        classname="wf_game_upcounter1",
+    )
+    say(engine, "go")
+    engine.advance(1000)
+    assert engine.game_running
+    say(engine, "score")
+    engine.advance(1000)
+    assert engine.team_scores["red"] == 9
+    say(engine, "stop")
+    engine.advance(1000)
+    assert not engine.game_running
+    say(engine, "go")
+    engine.advance(1000)
+    assert engine.game_running
+    assert engine.team_scores["red"] == 0, "a new game starts from nothing"
+
+
+def test_a_game_timer_counts_down_and_ends_the_game() -> None:
+    engine = room(box(50, "bb_counter", 9, 9, state=0))
+    engine.furni[50]["state"] = 2
+    engine.apply_input({"type": "use", "user": 100, "furni": 50})
+    assert engine.game_running
+    engine.advance(1000)
+    assert engine.furni[50]["state"] == 1
+    assert engine.game_running
+    engine.advance(1000)
+    assert engine.furni[50]["state"] == 0
+    assert not engine.game_running
+
+
+@pytest.mark.parametrize(
+    ("compare", "points", "expected"), [("equal", 9, True), ("more", 9, False), ("less", 10, True)]
+)
+def test_team_has_score(compare: str, points: int, expected: bool) -> None:
+    engine = room(
+        box(1, "wf_trg_says_something", 1, 1, text="score"),
+        box(2, "wf_act_give_score_tm", 1, 1, 1, points=9, team="red"),
+        box(3, "wf_trg_says_something", 2, 2, text="check"),
+        box(4, "wf_cnd_team_has_score", 2, 2, 1, team="red", points=points, score_compare=compare),
+        box(5, "wf_act_give_var", 2, 2, 2, variable="v"),
+    )
+    engine.apply_input({"type": "game_start"})
+    say(engine, "score")
+    engine.advance(1000)
+    say(engine, "check")
+    engine.advance(1000)
+    assert bool(engine.variables["v"]) is expected

@@ -6,17 +6,17 @@ Habbo can change boxes at any time, so a check only holds for the date beside it
 read at commit `3fc9c06f533c`, for facts only.
 
 - Boxes: 284
-- No evidence yet: 92
+- No evidence yet: 90
 - Reference only: 7
 - Seen in a real preset: 0
-- Seen in a real room dump: 161
-- Checked in a real room: 24
-- Have a form: 91
-- Option numbers mapped: 37
+- Seen in a real room dump: 152
+- Checked in a real room: 35
+- Have a form: 96
+- Option numbers mapped: 42
 
 | Box | Evidence | Form | Options | Room check |
 |---|---|---|---|---|
-| `wf_act_adjust_clock` | Seen in a real room dump |  |  |  |
+| `wf_act_adjust_clock` | Checked in a real room | Yes | Yes | 2026-11-01 |
 | `wf_act_bot_clothes` | Seen in a real room dump |  |  |  |
 | `wf_act_bot_follow_avatar` | Seen in a real room dump |  |  |  |
 | `wf_act_bot_give_handitem` | Seen in a real room dump |  |  |  |
@@ -29,7 +29,7 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_act_change_var_val` | Checked in a real room | Yes | Yes | 2026-11-01 |
 | `wf_act_chase` | Seen in a real room dump |  |  |  |
 | `wf_act_click_conf` | Seen in a real room dump |  |  |  |
-| `wf_act_control_clock` | Seen in a real room dump |  |  |  |
+| `wf_act_control_clock` | Checked in a real room | Yes | Yes | 2026-11-01 |
 | `wf_act_flee` | Seen in a real room dump |  |  |  |
 | `wf_act_freeze` | Seen in a real room dump |  |  |  |
 | `wf_act_furni_to_furni` | Seen in a real room dump | Yes |  |  |
@@ -37,8 +37,8 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_act_give_currency` | Seen in a real room dump |  |  |  |
 | `wf_act_give_furni` | Seen in a real room dump |  |  |  |
 | `wf_act_give_reward` | Reference only |  |  |  |
-| `wf_act_give_score` | Seen in a real room dump | Yes | Yes |  |
-| `wf_act_give_score_tm` | Seen in a real room dump | Yes | Yes |  |
+| `wf_act_give_score` | Checked in a real room | Yes | Yes | 2026-11-01 |
+| `wf_act_give_score_tm` | Checked in a real room | Yes | Yes | 2026-11-01 |
 | `wf_act_give_var` | Seen in a real room dump | Yes | Yes |  |
 | `wf_act_init_transaction` | Seen in a real room dump |  |  |  |
 | `wf_act_join_team` | Checked in a real room | Yes | Yes | 2026-11-01 |
@@ -95,7 +95,7 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_cnd_actor_in_team` | Checked in a real room | Yes | Yes | 2026-11-01 |
 | `wf_cnd_chest_has_item_type` | Seen in a real room dump |  |  |  |
 | `wf_cnd_chest_has_items` | Seen in a real room dump |  |  |  |
-| `wf_cnd_counter_time_matches` | Seen in a real room dump |  |  |  |
+| `wf_cnd_counter_time_matches` | Checked in a real room | Yes | Yes | 2026-11-01 |
 | `wf_cnd_date_rng_active` | Seen in a real room dump |  |  |  |
 | `wf_cnd_furnis_hv_avtrs` | Seen in a real room dump | Yes |  |  |
 | `wf_cnd_has_altitude` | Seen in a real room dump |  |  |  |
@@ -122,7 +122,7 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_cnd_slc_quantity` | Seen in a real room dump |  |  |  |
 | `wf_cnd_stuff_is` | Seen in a real room dump | Yes |  |  |
 | `wf_cnd_team_has_rank` | Seen in a real room dump |  |  |  |
-| `wf_cnd_team_has_score` | Seen in a real room dump |  |  |  |
+| `wf_cnd_team_has_score` | Checked in a real room | Yes | Yes | 2026-11-01 |
 | `wf_cnd_time_less_than` | Seen in a real room dump | Yes |  |  |
 | `wf_cnd_time_more_than` | Seen in a real room dump | Yes |  |  |
 | `wf_cnd_trggrer_on_frn` | Seen in a real room dump | Yes |  |  |
@@ -143,7 +143,7 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_floor_switch1` | Checked in a real room |  |  | 2026-10-31 |
 | `wf_floor_switch2` | No evidence yet |  |  |  |
 | `wf_fx_firegate` | No evidence yet |  |  |  |
-| `wf_game_upcounter1` | No evidence yet |  |  |  |
+| `wf_game_upcounter1` | Checked in a real room |  |  | 2026-11-01 |
 | `wf_game_upcounter2` | No evidence yet |  |  |  |
 | `wf_glassdoor` | No evidence yet |  |  |  |
 | `wf_glowball` | No evidence yet |  |  |  |
@@ -224,11 +224,11 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_trg_click_furni` | Seen in a real room dump | Yes |  |  |
 | `wf_trg_click_tile` | Seen in a real room dump |  |  |  |
 | `wf_trg_click_user` | Seen in a real room dump |  |  |  |
-| `wf_trg_clock_counter` | Seen in a real room dump |  |  |  |
+| `wf_trg_clock_counter` | Checked in a real room | Yes | Yes | 2026-11-01 |
 | `wf_trg_collision` | Seen in a real room dump |  |  |  |
 | `wf_trg_enter_room` | Seen in a real room dump | Yes |  |  |
-| `wf_trg_game_ends` | Seen in a real room dump | Yes |  |  |
-| `wf_trg_game_starts` | Seen in a real room dump | Yes |  |  |
+| `wf_trg_game_ends` | Checked in a real room | Yes |  | 2026-11-01 |
+| `wf_trg_game_starts` | Checked in a real room | Yes |  | 2026-11-01 |
 | `wf_trg_leave_room` | Seen in a real room dump | Yes |  |  |
 | `wf_trg_period_long` | Seen in a real room dump | Yes | Yes |  |
 | `wf_trg_period_short` | Seen in a real room dump | Yes | Yes |  |
@@ -247,7 +247,7 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_trg_var_changed` | Seen in a real room dump | Yes |  |  |
 | `wf_trg_walks_off_furni` | Seen in a real room dump | Yes |  |  |
 | `wf_trg_walks_on_furni` | Seen in a real room dump | Yes |  |  |
-| `wf_upcounter1` | No evidence yet |  |  |  |
+| `wf_upcounter1` | Checked in a real room |  |  | 2026-11-01 |
 | `wf_upcounter2` | No evidence yet |  |  |  |
 | `wf_var_context` | Seen in a real room dump | Yes | Yes |  |
 | `wf_var_dailytask` | No evidence yet |  |  |  |

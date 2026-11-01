@@ -40,6 +40,9 @@ MOVES = {
 MAX_ALTITUDE = 8000
 TEAMS = ("red", "green", "blue", "yellow")
 MAX_POINTS = 1000
+CLOCK_TICK_MS = 500
+GAME_TIMERS = {"bb_counter", "fball_counter", "es_counter"}
+DEFAULT_GAME_SECONDS = 30
 MAX_TIMES = 10
 # A real room leaves these as they are when Toggle Furni State points at them.
 NOT_WIRED_TOGGLED = {"wf_floor_switch1", "wf_floor_switch2"}
@@ -78,12 +81,30 @@ def _ids(value: Any) -> list[int]:
     )
 
 
+def _three_way(compare: Any, value: int, reference: int) -> bool:
+    if compare == "equal":
+        return value == reference
+    return value > reference if compare == "more" else value < reference
+
+
 def _hundredths(value: Any) -> int:
     """Heights compare in hundredths of a tile, which is as fine as a box can state them."""
     try:
         return round(float(value) * 100)
     except (TypeError, ValueError, OverflowError):
         return 0
+
+
+@dataclass
+class Clock:
+    """A wired counter. It counts up in half seconds, and its furni state shows whole seconds."""
+
+    half_seconds: int
+    game_aware: bool
+    running: bool = False
+    started: bool = False
+    stopped: bool = False
+    run: int = 0
 
 
 @dataclass
@@ -192,6 +213,9 @@ class Engine:
         self.log_counts: dict[str, int] = defaultdict(int)
         self.game_running = False
         self.team_scores = dict.fromkeys(TEAMS, 0)
+        self.clocks: dict[int, Clock] = {}
+        self.game_timer: int | None = None
+        self.game_timer_run = 0
         self.score_grants: dict[tuple[int, int | None], int] = defaultdict(int)
         self.problems: deque[dict[str, Any]] = deque(maxlen=PROBLEMS_KEPT)
         self._load(document)
@@ -216,6 +240,10 @@ class Engine:
                 "state": raw.get("state", 0),
             }
             self.furni[item["id"]] = item
+            game_counter = raw["classname"].startswith("wf_game_upcounter")
+            if game_counter or raw["classname"].startswith("wf_upcounter"):
+                seconds = max(0, _int(item["state"]))
+                self.clocks[item["id"]] = Clock(seconds * 2, game_counter, started=seconds > 0)
             if raw["classname"].startswith("wf_"):
                 settings = raw.get("wired")
                 self.boxes_at[(raw["x"], raw["y"])].append(
@@ -366,9 +394,69 @@ class Engine:
             self._fire("wf_trg_click_furni", user=user_id, furni=furni_id)
 
     def _use(self, user_id: int, furni_id: int) -> None:
-        if furni_id in self.furni:
+        if furni_id in self.clocks:
+            clock = self.clocks[furni_id]
+            if clock.running:
+                clock.running = False
+            else:
+                self._clock_run(furni_id, clock)
+        elif furni_id in self.furni and self.furni[furni_id]["classname"] in GAME_TIMERS:
+            self._use_game_timer(furni_id)
+        elif furni_id in self.furni:
             self._set_state(furni_id, self._next_state(furni_id))
+        if furni_id in self.furni:
             self._fire("wf_trg_state_changed", user=user_id, furni=furni_id)
+
+    def _use_game_timer(self, furni_id: int) -> None:
+        if self.game_timer == furni_id:
+            self._game_end()
+            return
+        item = self.furni[furni_id]
+        item["state"] = max(0, _int(item["state"])) or DEFAULT_GAME_SECONDS
+        self.game_timer = furni_id
+        self.game_timer_run += 1
+        self._push(self.now_ms + 1000, "game_timer", {"furni": furni_id, "run": self.game_timer_run})
+        if not self.game_running:
+            self._game_start()
+
+    def _game_timer_tick(self, furni_id: int, run: int) -> None:
+        if self.game_timer != furni_id or run != self.game_timer_run:
+            return
+        item = self.furni[furni_id]
+        item["state"] = max(0, _int(item["state"]) - 1)
+        if item["state"] == 0:
+            self._game_end()
+        else:
+            self._push(self.now_ms + 1000, "game_timer", {"furni": furni_id, "run": run})
+
+    def _clock_run(self, furni_id: int, clock: Clock) -> None:
+        if clock.running:
+            return
+        clock.running, clock.started, clock.stopped = True, True, False
+        clock.run += 1
+        # The count follows the room's half second cycle, not the moment it was started.
+        due = (self.now_ms // CLOCK_TICK_MS + 1) * CLOCK_TICK_MS
+        self._push(due, "clock", {"furni": furni_id, "run": clock.run})
+        if clock.game_aware and not self.game_running:
+            self._game_start()
+
+    def _clock_tick(self, furni_id: int, run: int) -> None:
+        clock = self.clocks.get(furni_id)
+        if clock is None or not clock.running or clock.run != run:
+            return
+        clock.half_seconds += 1
+        self._clock_show(furni_id, clock)
+        self._push(self.now_ms + CLOCK_TICK_MS, "clock", {"furni": furni_id, "run": run})
+        for stack, box in self._triggers("wf_trg_clock_counter"):
+            if furni_id in _ids(box.get("furni")) and self._clock_target(box) == clock.half_seconds:
+                self._start(stack, Context(trigger=box, furni=furni_id))
+
+    def _clock_show(self, furni_id: int, clock: Clock) -> None:
+        self.furni[furni_id]["state"] = clock.half_seconds // 2
+
+    def _clock_target(self, box: Box) -> int:
+        seconds = _int(box.get("clock_minutes")) * 60 + _int(box.get("clock_seconds"))
+        return seconds * 2 + (1 if box.get("clock_half") else 0)
 
     def _game_start(self) -> None:
         self.team_scores = dict.fromkeys(TEAMS, 0)
@@ -380,6 +468,10 @@ class Engine:
     def _game_end(self) -> None:
         if self.game_running:
             self.game_running = False
+            self.game_timer = None
+            for clock in self.clocks.values():
+                if clock.game_aware:
+                    clock.running = False
             self._log("info", "Game ended")
             self._fire("wf_trg_game_ends")
 
@@ -448,6 +540,10 @@ class Engine:
                 return
             if action == "effect":
                 self._run_effect(payload["box"], payload["context"])
+            elif action == "clock":
+                self._clock_tick(payload["furni"], payload["run"])
+            elif action == "game_timer":
+                self._game_timer_tick(payload["furni"], payload["run"])
             elif action == "signal":
                 self._deliver_signal(payload["antennas"], payload["users"], payload["furni"])
 
@@ -722,6 +818,24 @@ class Engine:
         name = str(box.get("variable", ""))
         holders = self._holders(box, name, ctx)
         match box.classname:
+            case "wf_cnd_counter_time_matches":
+                return all(
+                    _three_way(
+                        box.get("clock_compare", "less"), self.clocks[i].half_seconds, self._clock_target(box)
+                    )
+                    for i in picks
+                    if i in self.clocks
+                )
+            case "wf_cnd_team_has_score":
+                wanted = box.get("team", "own")
+                teams = (
+                    [self.users[u]["team"] for u in users if u in self.users] if wanted == "own" else [wanted]
+                )
+                points = _int(box.get("points"))
+                compare = box.get("score_compare", "less")
+                return bool(teams) and all(
+                    t in TEAMS and _three_way(compare, self.team_scores[t], points) for t in teams
+                )
             case "wf_cnd_actor_in_team":
                 return bool(users) and all(self._in_team(u, box.get("team", "any")) for u in users)
             case "wf_cnd_not_in_team":
@@ -1039,6 +1153,53 @@ class Engine:
         if not user or user["team"] is None:
             return False
         return bool(team == "any" or user["team"] == team)
+
+    def _do_control_clock(self, box: Box, ctx: Context) -> None:
+        command = box.get("clock_control", "start")
+        for furni_id in self._furni_for(box, ctx):
+            clock = self.clocks.get(furni_id)
+            if clock is None:
+                continue
+            match command:
+                case "start":
+                    if clock.running:
+                        clock.running, clock.stopped = False, True
+                        if clock.game_aware:
+                            self._game_end()
+                    if clock.stopped:
+                        clock.half_seconds = 0
+                        self._clock_show(furni_id, clock)
+                    self._clock_run(furni_id, clock)
+                case "stop":
+                    was_running = clock.running
+                    clock.running, clock.stopped = False, True
+                    if was_running and clock.game_aware:
+                        self._game_end()
+                case "reset" if clock.started:
+                    clock.running, clock.started, clock.stopped = False, False, False
+                    clock.half_seconds = 0
+                    self._clock_show(furni_id, clock)
+                case "pause":
+                    clock.running = False
+                case "resume":
+                    self._clock_run(furni_id, clock)
+
+    def _do_adjust_clock(self, box: Box, ctx: Context) -> None:
+        amount = self._clock_target(box)
+        change = box.get("clock_change", "add")
+        for furni_id in self._furni_for(box, ctx):
+            clock = self.clocks.get(furni_id)
+            if clock is not None:
+                current = clock.half_seconds
+                wanted = (
+                    amount
+                    if change == "set"
+                    else current - amount
+                    if change == "subtract"
+                    else current + amount
+                )
+                clock.half_seconds = max(0, wanted)
+                self._clock_show(furni_id, clock)
 
     def _do_join_team(self, box: Box, ctx: Context) -> None:
         team = box.get("team", "red")

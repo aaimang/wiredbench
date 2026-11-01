@@ -2,7 +2,8 @@
  "boxes": {
   "wf_act_adjust_clock": {
    "reference": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_act_bot_clothes": {
    "reference": true,
@@ -52,7 +53,8 @@
   },
   "wf_act_control_clock": {
    "reference": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_act_flee": {
    "dump": true
@@ -79,10 +81,12 @@
   },
   "wf_act_give_score": {
    "reference": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_act_give_score_tm": {
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_act_give_var": {
    "preset": true,
@@ -249,7 +253,8 @@
   },
   "wf_cnd_counter_time_matches": {
    "reference": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_cnd_date_rng_active": {
    "reference": true,
@@ -352,7 +357,8 @@
   },
   "wf_cnd_team_has_score": {
    "reference": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_cnd_time_less_than": {
    "reference": true,
@@ -417,7 +423,9 @@
   },
   "wf_floor_switch2": {},
   "wf_fx_firegate": {},
-  "wf_game_upcounter1": {},
+  "wf_game_upcounter1": {
+   "room": "2026-11-01"
+  },
   "wf_game_upcounter2": {},
   "wf_glassdoor": {},
   "wf_glowball": {},
@@ -563,7 +571,8 @@
    "dump": true
   },
   "wf_trg_clock_counter": {
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_trg_collision": {
    "dump": true
@@ -572,10 +581,12 @@
    "dump": true
   },
   "wf_trg_game_ends": {
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_trg_game_starts": {
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_trg_leave_room": {
    "dump": true
@@ -641,7 +652,9 @@
   "wf_trg_walks_on_furni": {
    "dump": true
   },
-  "wf_upcounter1": {},
+  "wf_upcounter1": {
+   "room": "2026-11-01"
+  },
   "wf_upcounter2": {},
   "wf_var_context": {
    "preset": true,
