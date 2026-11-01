@@ -328,3 +328,19 @@ test("a value in the run panel can be changed by double-clicking it", async ({ p
   await say.press("Enter");
   await expect(row.locator(".run-value")).toHaveText("43");
 });
+
+test("the run panel shows built-in values for the room and a selected user", async ({ page }) => {
+  await login(page);
+  await page.getByRole("link", { name: "Guide" }).click();
+  await page
+    .getByTestId("tutorial-score-counter")
+    .getByRole("button", { name: "Add and open" })
+    .click();
+  await expect(page.getByTestId("room-canvas")).toBeVisible();
+  await page.getByRole("button", { name: "Run", exact: true }).click();
+  const table = page.getByTestId("run-built-ins");
+  await expect(table).toContainText("@user_count");
+  await page.locator(".avatar-row-pick").first().click();
+  await expect(table).toContainText("@direction");
+  await expect(table).not.toContainText("@user_count");
+});
