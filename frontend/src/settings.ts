@@ -71,6 +71,16 @@ class WbSettings extends HTMLElement {
           settings.hotels.map((hotel) => [hotel, hotelLabel(hotel)]),
         ),
       ),
+      field(
+        "default_timezone",
+        T.defaultTimezone,
+        select(
+          "default_timezone",
+          settings.default_timezone,
+          settings.time_zones.map((zone) => [zone, zone]),
+        ),
+        T.defaultTimezoneHelp,
+      ),
       field("theme", T.theme, select("theme", settings.theme, Object.entries(T.themes))),
       field(
         "session_hours",

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Literal
+from typing import Literal, get_args
 from urllib.parse import urlsplit
 
 from pydantic import Field, field_validator
@@ -22,6 +22,45 @@ HOTELS: dict[str, str] = {
     "sandbox": "sandbox.habbo.com",
 }
 Hotel = Literal["com", "com.br", "de", "es", "fi", "fr", "it", "nl", "com.tr", "sandbox"]
+
+# The zones the real client offers in :wired, in its order.
+TimeZone = Literal[
+    "Australia/Perth",
+    "Europe/London",
+    "America/Antigua",
+    "America/Barbados",
+    "America/Guyana",
+    "America/Jamaica",
+    "America/Puerto_Rico",
+    "Australia/Adelaide",
+    "Australia/Brisbane",
+    "Australia/Darwin",
+    "Australia/Eucla",
+    "Australia/Lord_Howe",
+    "Australia/Sydney",
+    "Canada/Atlantic",
+    "Canada/Central",
+    "Canada/Eastern",
+    "Canada/Mountain",
+    "Canada/Newfoundland",
+    "Canada/Pacific",
+    "Canada/Saskatchewan",
+    "Canada/Yukon",
+    "Pacific/Auckland",
+    "US/Alaska",
+    "US/Aleutian",
+    "US/Arizona",
+    "US/Central",
+    "US/East-Indiana",
+    "US/Eastern",
+    "US/Hawaii",
+    "US/Indiana-Starke",
+    "US/Michigan",
+    "US/Mountain",
+    "US/Pacific",
+    "US/Samoa",
+]
+TIME_ZONES: tuple[str, ...] = get_args(TimeZone)
 
 
 class Settings(BaseSettings):

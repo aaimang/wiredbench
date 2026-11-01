@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import timedelta
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import select, update
 
@@ -238,3 +239,17 @@ def test_settings_round_trip_and_validation(api: Api) -> None:
     assert api.get("/api/settings").json()["theme"] == "dark"
     assert api.patch("/api/settings", json={"cache_max_mb": 1}).status_code == 422
     assert api.patch("/api/settings", json={"default_hotel": "evil"}).status_code == 422
+
+
+def test_default_timezone_setting(api: Api) -> None:
+    settings = api.get("/api/settings").json()
+    assert settings["default_timezone"] == "Europe/London"
+    assert settings["time_zones"][:2] == ["Australia/Perth", "Europe/London"]
+    assert all(ZoneInfo(zone) for zone in settings["time_zones"])
+    saved = api.patch("/api/settings", json={"default_timezone": "Australia/Perth"})
+    assert saved.json()["default_timezone"] == "Australia/Perth"
+    assert api.patch("/api/settings", json={"default_timezone": "Mars/Olympus"}).status_code == 422
+    slug = api.get("/api/tutorials").json()[0]["slug"]
+    tutorial = api.post(f"/api/tutorials/{slug}", json={})
+    assert tutorial.status_code == 201, tutorial.text
+    assert tutorial.json()["document"]["room"]["timezone"] == "Australia/Perth"

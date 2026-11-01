@@ -7,7 +7,7 @@ from typing import Literal
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from wiredbench.config import Hotel, Settings
+from wiredbench.config import Hotel, Settings, TimeZone
 from wiredbench.models import Preference
 
 KEY = "preferences"
@@ -15,6 +15,7 @@ KEY = "preferences"
 
 class Preferences(BaseModel):
     default_hotel: Hotel
+    default_timezone: TimeZone = "Europe/London"
     gamedata_check: Literal["off", "startup", "daily"] = "off"
     cache_max_mb: int = Field(ge=16, le=102_400)
     session_hours: int = Field(ge=1, le=720)

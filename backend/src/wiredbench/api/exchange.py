@@ -64,6 +64,7 @@ def import_room(
     hotel = hotel or prefs.default_hotel
     if hotel not in HOTELS:
         hotel = prefs.default_hotel
+    document = room.with_timezone(document, prefs.default_timezone)
     room.validate(document)
     final_name = ws.free_name(db, name or "Imported room", body.folder_id, "sandbox", "copy")
     sandbox = ws.create_sandbox(db, final_name, body.folder_id, description, hotel, None)

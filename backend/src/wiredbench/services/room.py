@@ -65,6 +65,14 @@ class RoomDocument(_Open):
     avatars: list[PlacedAvatar] = Field(default_factory=list, max_length=25)
 
 
+def with_timezone(document: dict[str, Any], timezone: str) -> dict[str, Any]:
+    """A new room starts in the default zone. One the room already has stays."""
+    room = document.get("room")
+    if isinstance(room, dict) and not room.get("timezone"):
+        return {**document, "room": {**room, "timezone": timezone}}
+    return document
+
+
 def known_timezone(name: str) -> bool:
     try:
         ZoneInfo(name)
