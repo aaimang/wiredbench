@@ -17,6 +17,7 @@ import {
   History,
   highlightTint,
   type InfoLookup,
+  isTimeZone,
   isWiredBox,
   nextDirection,
   nextId,
@@ -419,5 +420,12 @@ describe("projectile flights", () => {
   it("is a straight line at height 0, and animates past its target when asked", () => {
     expect(flightAt({ ...flight, height: 0 }, 0.5).lift).toBe(0);
     expect(flightAt({ ...flight, past: 3 }, 1).x).toBe(11);
+  });
+});
+
+describe("room time zones", () => {
+  it("knows real zones and refuses made up ones", () => {
+    expect(isTimeZone("Australia/Perth")).toBe(true);
+    expect(isTimeZone("Mars/Olympus")).toBe(false);
   });
 });

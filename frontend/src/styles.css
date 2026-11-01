@@ -1881,6 +1881,17 @@ wb-editor {
   overflow: auto;
 }
 
+.avatar-details label {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2, 8px);
+  margin-block: 4px;
+}
+
+.avatar-details .avatar-flag {
+  justify-content: flex-start;
+}
+
 .run-vars th {
   padding-right: 8px;
   font-size: 13px;

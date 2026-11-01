@@ -7,6 +7,7 @@ data is never lost.
 from __future__ import annotations
 
 from typing import Annotated, Any, Literal
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, ValidationError
 
@@ -30,6 +31,7 @@ class _Open(BaseModel):
 class RoomSize(_Open):
     width: int = Field(ge=1, le=MAX_ROOM_SIZE)
     height: int = Field(ge=1, le=MAX_ROOM_SIZE)
+    timezone: str | None = Field(None, max_length=64)
 
 
 class PlacedFurni(_Open):
@@ -53,6 +55,7 @@ class PlacedAvatar(_Open):
     z: Height = 0
     dir: Direction = 2
     pose: Literal["std", "sit", "lay"] = "std"
+    details: dict[str, int] | None = None
 
 
 class RoomDocument(_Open):
@@ -62,6 +65,14 @@ class RoomDocument(_Open):
     avatars: list[PlacedAvatar] = Field(default_factory=list, max_length=25)
 
 
+def known_timezone(name: str) -> bool:
+    try:
+        ZoneInfo(name)
+    except (ZoneInfoNotFoundError, ValueError, OSError):
+        return False
+    return True
+
+
 def validate(document: dict[str, Any]) -> None:
     try:
         RoomDocument.model_validate(document)
@@ -69,6 +80,8 @@ def validate(document: dict[str, Any]) -> None:
         where = ".".join(str(part) for part in exc.errors()[0]["loc"])
         raise ApiError(422, "invalid_room", f"The room has a bad value at {where}.") from exc
     room = document.get("room")
+    if room and room.get("timezone") and not known_timezone(room["timezone"]):
+        raise ApiError(422, "invalid_room", "The room's time zone is not one we know.")
     if room:
         for key in ("furni", "avatars"):
             for item in document.get(key, []):

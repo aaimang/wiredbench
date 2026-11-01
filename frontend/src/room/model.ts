@@ -29,7 +29,7 @@ export interface PlacedAvatar {
 
 export interface RoomDocument {
   schema: number;
-  room: { width: number; height: number };
+  room: { width: number; height: number; timezone?: string };
   furni: PlacedFurni[];
   avatars: PlacedAvatar[];
   [key: string]: unknown;
@@ -490,4 +490,16 @@ export function flightAt(
     y: fromY + dy * reach * t,
     lift: Math.sin(Math.PI * t) * flight.height * CURVE_PIXELS_PER_HEIGHT,
   };
+}
+
+/** A real room showed this before anyone set a time zone. */
+export const DEFAULT_TIMEZONE = "Europe/London";
+
+export function isTimeZone(name: string): boolean {
+  try {
+    new Intl.DateTimeFormat("en", { timeZone: name });
+    return true;
+  } catch {
+    return false;
+  }
 }

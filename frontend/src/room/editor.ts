@@ -31,6 +31,7 @@ import { state } from "../state";
 import { t } from "../strings";
 import { act, confirmDialog, errorMessage, formDialog, toast } from "../ui";
 import {
+  DEFAULT_TIMEZONE,
   directionBetween,
   drawTile,
   emptyRoom,
@@ -39,6 +40,7 @@ import {
   fitsInRoom,
   footprint,
   History,
+  isTimeZone,
   isWiredBox,
   nextDirection,
   nextId,
@@ -1305,12 +1307,18 @@ class WbEditor extends HTMLElement {
   }
 
   private editRoomSize(): void {
-    const { width, height } = this.room.room;
+    const { width, height, timezone } = this.room.room;
     formDialog(
       T.roomSize,
       [
         { name: "width", label: T.width, value: String(width), required: true },
         { name: "height", label: T.depth, value: String(height), required: true },
+        {
+          name: "timezone",
+          label: T.timezone,
+          value: timezone ?? DEFAULT_TIMEZONE,
+          required: true,
+        },
       ],
       T.apply,
       async (values) => {
@@ -1326,8 +1334,10 @@ class WbEditor extends HTMLElement {
             footprint(f, this.lookup(f.classname), f.rot).some(([x, y]) => !fits(x, y)),
           );
         if (outside) throw new Error(T.sizeWouldCut);
+        const zone = String(values.timezone).trim();
+        if (!isTimeZone(zone)) throw new Error(T.badTimezone);
         this.change(() => {
-          this.room.room = { width: w, height: d };
+          this.room.room = { width: w, height: d, timezone: zone };
         });
       },
     );
@@ -1809,8 +1819,45 @@ class WbEditor extends HTMLElement {
       ),
       h("p", { class: "muted" }, this.mode === "play" ? T.clickToWalk : T.switchToPlay),
       ...(this.run ? [this.avatarDebug(avatar)] : []),
+      this.avatarDetails(avatar),
       this.walkStatus,
     ];
+  }
+
+  /** What built-in variables read for this avatar. In a run a change reaches the room and is not saved. */
+  private avatarDetails(avatar: PlacedAvatar): HTMLElement {
+    const details = (avatar.details ?? {}) as Record<string, number>;
+    const set = (name: string, amount: number) => {
+      if (this.run) {
+        details[name] = amount;
+        void this.run.input({ type: "user_detail", user: avatar.id, detail: name, amount });
+        return;
+      }
+      this.change(() => {
+        avatar.details = { ...details, [name]: amount };
+      });
+    };
+    const number = ([name, label]: [string, string]) => {
+      const input = h("input", { type: "number", value: details[name] ?? 0, "aria-label": label });
+      input.addEventListener("change", () => set(name, Math.trunc(Number(input.value) || 0)));
+      return h("label", {}, label, input);
+    };
+    const flag = ([name, label]: [string, string]) => {
+      const input = h("input", {
+        type: "checkbox",
+        checked: Boolean(details[name]),
+      }) as HTMLInputElement;
+      input.addEventListener("change", () => set(name, input.checked ? 1 : 0));
+      return h("label", { class: "avatar-flag" }, input, label);
+    };
+    return h(
+      "details",
+      { class: "avatar-details", "data-testid": "avatar-details" },
+      h("summary", {}, T.avatarDetails),
+      ...(this.run ? [h("p", { class: "muted" }, T.avatarDetailsRun)] : []),
+      ...Object.entries(T.avatarNumbers).map(number),
+      ...Object.entries(T.avatarFlags).map(flag),
+    );
   }
 
   /** Puts a user where a test needs them while the room runs. Height comes from what is on the tile. */

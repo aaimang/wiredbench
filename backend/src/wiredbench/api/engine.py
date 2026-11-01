@@ -48,6 +48,7 @@ class Input(BaseModel):
         "game_end",
         "box_settings",
         "set_value",
+        "user_detail",
     ]
     user: Int | None = None
     x: int | None = Field(None, ge=0, le=64)
@@ -56,6 +57,8 @@ class Input(BaseModel):
     furni: Int | None = None
     text: str | None = Field(None, max_length=500)
     settings: dict[str, Any] | None = None
+    detail: str | None = Field(None, max_length=32)
+    amount: int | None = None
     variable: str | None = Field(None, max_length=64)
     key: str | None = Field(None, max_length=64)
     # A string, because 64-bit values do not survive being a JavaScript number.

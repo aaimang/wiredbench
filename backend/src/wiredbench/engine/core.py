@@ -13,8 +13,9 @@ import random
 import re
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC, datetime, tzinfo
 from typing import Any
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from wiredbench.engine import internal, operations
 from wiredbench.engine.boxes import BOXES, TIME_UNITS
@@ -42,6 +43,26 @@ MOVES = {
 MAX_ALTITUDE = 8000
 TEAMS = ("red", "green", "blue", "yellow")
 MAX_POINTS = 1000
+DEFAULT_TIMEZONE = "Europe/London"  # What a real room showed before anyone set one.
+# Avatar details that are numbers, or flags that exist only while they are true.
+USER_DETAILS = {
+    "@gender",
+    "@level",
+    "@achievement_score",
+    "@handitem",
+    "@effect",
+    "@dance",
+    "@sign",
+    "@habbicon",
+    "@favourite_group_id",
+    "@is_hc",
+    "@has_rights",
+    "@is_group_admin",
+    "@is_owner",
+    "@is_frozen",
+    "@is_muted",
+    "@is_idle",
+}
 TEAM_TYPES = ("wired", "banzai", "freeze")
 TEAM_TYPE_NUMBERS = {"banzai": 0, "freeze": 1, "wired": 4}  # A real room read 0 for a Battle Banzai team.
 CHANGE_CREATED, CHANGE_VALUE, CHANGE_DELETED = 0, 1, 2
@@ -96,6 +117,13 @@ def _ids(value: Any) -> list[int]:
         if isinstance(value, list)
         else []
     )
+
+
+def _zone(name: Any) -> tzinfo:
+    try:
+        return ZoneInfo(str(name or DEFAULT_TIMEZONE))
+    except (ZoneInfoNotFoundError, ValueError, OSError):
+        return UTC
 
 
 def _three_way(compare: Any, value: int, reference: int) -> bool:
@@ -254,6 +282,7 @@ class Engine:
 
     def _load(self, document: dict[str, Any]) -> None:
         room = document.get("room")
+        self.timezone = _zone(room.get("timezone") if isinstance(room, dict) else None)
         self.room_size = (
             (_int(room.get("width")), _int(room.get("height")))
             if isinstance(room, dict) and "width" in room and "height" in room
@@ -305,6 +334,7 @@ class Engine:
                 "dir": raw.get("dir", 2),
                 "team": None,
                 "team_type": "wired",
+                "details": dict(raw["details"]) if isinstance(raw.get("details"), dict) else {},
             }
         self._log("info", "Room started", seed=self.seed)
         self._fire("wf_trg_room_initializes")
@@ -359,6 +389,10 @@ class Engine:
             self._game_end()
         elif kind == "box_settings":
             self._edit_box(_int(entry.get("furni")), entry.get("settings"))
+        elif kind == "user_detail":
+            who = self.users.get(_int(user))
+            if who is not None and entry.get("detail") in USER_DETAILS:
+                who["details"][entry["detail"]] = _clamp(_int(entry.get("amount")))
         elif kind == "turn":
             if (who := self.users.get(_int(user))) is not None:
                 who["dir"] = _int(entry.get("dir")) % 8
@@ -1059,6 +1093,10 @@ class Engine:
             if user is None:
                 return None
             team = user["team"]
+            if name in USER_DETAILS:
+                value = _int(user["details"].get(name))
+                # A real room holds a favourite group only while there is one.
+                return None if name == "@favourite_group_id" and not value else value
             return {
                 "@type": 1,
                 "@user_id": user["id"],
@@ -1099,9 +1137,9 @@ class Engine:
         }.get(name)
 
     def _current_time(self, name: str) -> int | None:
-        """Unix milliseconds, and its parts in UTC. Day and month numbers start at 1, as in a real room."""
+        """Unix milliseconds, and its parts in the room's time zone. Day and month numbers start at 1, as in a real room."""
         now_ms = self.clock_start_ms + self.now_ms
-        moment = datetime.fromtimestamp(now_ms / 1000, tz=UTC)
+        moment = datetime.fromtimestamp(now_ms / 1000, tz=self.timezone)
         return {
             "@current_time": now_ms,
             "@current_time.milliseconds_of_seconds": now_ms % 1000,
@@ -1133,6 +1171,8 @@ class Engine:
                     self._move_user(user["id"], value, user["y"])
                 case "@position.y":
                     self._move_user(user["id"], user["x"], value)
+                case "@handitem" | "@habbicon":
+                    user["details"][name] = value
                 case "@team.score" if user["team"] in TEAMS:
                     self.team_scores[user["team"]] = max(0, value)
                 case _:
