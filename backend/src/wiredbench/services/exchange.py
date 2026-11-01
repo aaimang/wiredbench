@@ -26,6 +26,8 @@ SECTIONS = {
     "wf_xtra_": "addons",
     "wf_var_": "variables",
 }
+# G-Presets will not load a file without these, even when they are empty.
+REQUIRED_SECTIONS = ("triggers", "conditions", "effects")
 MIN_ROOM = 12
 NEW_VARIABLE_ID = 900_000
 # Where each setting sits in a box's options list: (setting, position, how the number reads).
@@ -555,7 +557,7 @@ def export_gpresets(document: dict[str, Any]) -> tuple[dict[str, Any], list[str]
         for i in items
         if i["classname"] in VARIABLE_SCOPES and isinstance(i.get("wired"), dict)
     }
-    rows: dict[str, list[tuple[int, Any]]] = {key: [] for key in saved.get("sections", [])}
+    rows: dict[str, list[tuple[int, Any]]] = {key: [] for key in saved.get("sections", REQUIRED_SECTIONS)}
     next_order = 1_000_000
     for item in items:
         classname = item["classname"]
