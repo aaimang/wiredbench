@@ -72,7 +72,18 @@ export class RunPanel {
   private cursor = 0;
   private paused = false;
   private timer: ReturnType<typeof setInterval> | null = null;
-  private busy = false;
+  private waiting = 0;
+  private queue: Promise<void> = Promise.resolve();
+  private shownVariables = "";
+  private pauseButton = h("button", {
+    class: "btn btn-small",
+    onclick: () => void this.command(this.paused ? ":resume" : ":pause"),
+  });
+  private gameButton = h("button", {
+    class: "btn btn-small",
+    onclick: () => void this.input({ type: this.game?.running ? "game_end" : "game_start" }),
+  });
+  private scores = h("span", { class: "muted", "data-testid": "game-scores" });
 
   constructor(
     private url: string,
@@ -149,7 +160,7 @@ export class RunPanel {
   }
 
   private async tick(): Promise<void> {
-    if (this.busy || this.paused) return;
+    if (this.waiting > 0 || this.paused) return;
     await this.call(
       () => post<RunState>(`${this.url}/advance?since=${this.cursor}`, { ms: TICK_MS }),
       true,
@@ -182,8 +193,18 @@ export class RunPanel {
     });
   }
 
-  private async call(run: () => Promise<RunState>, background = false): Promise<void> {
-    this.busy = true;
+  /** One request at a time, in order, so an older answer cannot overwrite a newer one. */
+  private call(run: () => Promise<RunState>, background = false): Promise<void> {
+    this.waiting += 1;
+    this.queue = this.queue
+      .then(() => (this.stopped ? undefined : this.send(run, background)))
+      .finally(() => {
+        this.waiting -= 1;
+      });
+    return this.queue;
+  }
+
+  private async send(run: () => Promise<RunState>, background: boolean): Promise<void> {
     try {
       this.apply(await run());
     } catch (error) {
@@ -197,8 +218,6 @@ export class RunPanel {
         clearInterval(this.timer);
         this.timer = null;
       }
-    } finally {
-      this.busy = false;
     }
   }
 
@@ -237,6 +256,10 @@ export class RunPanel {
   }
 
   private renderVariables(state: RunState): void {
+    // Rebuilding on every tick would break a double click, which has to land on one element.
+    const shown = JSON.stringify([state.variables, state.defined_variables, state.users]);
+    if (shown === this.shownVariables) return;
+    this.shownVariables = shown;
     replace(
       this.variables,
       ...state.variables.map((row) =>
@@ -329,26 +352,32 @@ export class RunPanel {
   private builtIns = h("tbody");
   private stopped = false;
 
+  /** Changes the buttons in place. A button replaced between press and release loses the click. */
   private renderControls(): void {
-    const button = (label: string, node: Parameters<typeof icon>[0], run: () => void) =>
-      h("button", { class: "btn btn-small", onclick: run }, icon(node, 14), label);
-    replace(
-      this.controls,
-      this.paused
-        ? button(T.resume, Play, () => void this.command(":resume"))
-        : button(T.pause, Pause, () => void this.command(":pause")),
-      button(T.step, SkipForward, () => void this.command(":step")),
-      button(T.stop, Square, () => this.onStop()),
-      this.game?.running
-        ? button(T.endGame, Square, () => void this.input({ type: "game_end" }))
-        : button(T.startGame, Play, () => void this.input({ type: "game_start" })),
-      h(
-        "span",
-        { class: "muted", "data-testid": "game-scores" },
-        T.gameScores(this.game?.running ?? false, this.game?.scores ?? {}),
-      ),
-    );
+    if (this.controls.childElementCount === 0) {
+      const step = h(
+        "button",
+        { class: "btn btn-small", onclick: () => void this.command(":step") },
+        icon(SkipForward, 14),
+        T.step,
+      );
+      const stop = h(
+        "button",
+        { class: "btn btn-small", onclick: () => this.onStop() },
+        icon(Square, 14),
+        T.stop,
+      );
+      replace(this.controls, this.pauseButton, step, stop, this.gameButton, this.scores);
+    }
+    const running = this.game?.running ?? false;
+    label(this.pauseButton, this.paused ? Play : Pause, this.paused ? T.resume : T.pause);
+    label(this.gameButton, running ? Square : Play, running ? T.endGame : T.startGame);
+    this.scores.textContent = T.gameScores(running, this.game?.scores ?? {});
   }
+}
+
+function label(button: HTMLElement, node: Parameters<typeof icon>[0], text: string): void {
+  if (button.textContent !== text) replace(button, icon(node, 14), text);
 }
 
 let boxCatalogue: Promise<BoxCatalogue> | null = null;

@@ -303,6 +303,27 @@ test("walking in a run keeps the new facing and the panel follows it", async ({ 
   await expect(panel.getByLabel("Direction")).toHaveValue("6");
 });
 
+test("a slow click on Pause counts while the room is running", async ({ page }) => {
+  await login(page);
+  await page.getByRole("link", { name: "Guide" }).click();
+  await page
+    .getByTestId("tutorial-score-counter")
+    .getByRole("button", { name: "Add and open" })
+    .click();
+  await page.getByRole("button", { name: "Run", exact: true }).click();
+  const pause = page.getByRole("button", { name: "Pause", exact: true });
+  await pause.waitFor();
+  const box = await pause.boundingBox();
+  if (!box) throw new Error("The Pause button has no position.");
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  // Long enough for ticks to answer between press and release.
+  await page.mouse.down();
+  await page.waitForTimeout(600);
+  await page.mouse.up();
+  await expect(page.getByRole("button", { name: "Resume", exact: true })).toBeVisible();
+  await expect(page.getByTestId("run-trace").getByText("Paused.")).toHaveCount(1);
+});
+
 test("a game can be started and ended from the run panel", async ({ page }) => {
   await login(page);
   await page.getByRole("link", { name: "Guide" }).click();
