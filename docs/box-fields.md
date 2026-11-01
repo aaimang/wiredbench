@@ -8,7 +8,7 @@ it, and a named position is still unverified until a box is changed and read aga
 
 No reply from: `wf_contract_payment`, `wf_contract_reward`, `wf_contract_trade`. The cause is unconfirmed.
 
-Named positions: 57. Unnamed positions: 525.
+Named positions: 67. Unnamed positions: 515.
 
 | Box | Section | Default numbers | Named positions | Unnamed positions |
 |---|---|---|---|---|
@@ -32,11 +32,11 @@ Named positions: 57. Unnamed positions: 525.
 | `wf_act_furni_to_user` | effect | `[]` |  |  |
 | `wf_act_give_currency` | effect | `[0, 1, 0, -20, 1, 11]` |  | 0, 1, 2, 3, 4, 5 |
 | `wf_act_give_furni` | effect | `[0, 1, 0, -20, 1, 0]` |  | 0, 1, 2, 3, 4, 5 |
-| `wf_act_give_score` | effect | `[5, 0]` |  | 0, 1 |
-| `wf_act_give_score_tm` | effect | `[5, 0, 1]` |  | 0, 1, 2 |
+| `wf_act_give_score` | effect | `[5, 0]` | 0: points, 1: times |  |
+| `wf_act_give_score_tm` | effect | `[5, 0, 1]` | 0: points, 1: times, 2: team |  |
 | `wf_act_give_var` | effect | `[1, 0, 0, 0, 0, -10, 0]` | 2: value | 0, 1, 3, 4, 5, 6 |
 | `wf_act_init_transaction` | effect | `[0, 10, 0, -20, 0, 300]` |  | 0, 1, 2, 3, 4, 5 |
-| `wf_act_join_team` | effect | `[1, 0]` |  | 0, 1 |
+| `wf_act_join_team` | effect | `[1, 0]` | 0: team, 1: team_type |  |
 | `wf_act_kick_user` | effect | `[]` |  |  |
 | `wf_act_leave_team` | effect | `[]` |  |  |
 | `wf_act_log` | effect | `[0]` | 0: level |  |
@@ -68,7 +68,7 @@ Named positions: 57. Unnamed positions: 525.
 | `wf_act_user_to_furni` | effect | `[0]` | 0: walking |  |
 | `wf_cnd_actor_dir` | condition | `[0]` |  | 0 |
 | `wf_cnd_actor_in_group` | condition | `[]` |  |  |
-| `wf_cnd_actor_in_team` | condition | `[0]` |  | 0 |
+| `wf_cnd_actor_in_team` | condition | `[0]` | 0: team |  |
 | `wf_cnd_chest_has_item_type` | condition | `[0, 0, -20, 2]` |  | 0, 1, 2, 3 |
 | `wf_cnd_chest_has_items` | condition | `[0, 0, -20, 2]` |  | 0, 1, 2, 3 |
 | `wf_cnd_counter_time_matches` | condition | `[0, 0, 0, 0]` |  | 0, 1, 2, 3 |
@@ -86,7 +86,7 @@ Named positions: 57. Unnamed positions: 525.
 | `wf_cnd_not_has_handitem` | condition | `[2]` |  | 0 |
 | `wf_cnd_not_hv_avtrs` | condition | `[0]` |  | 0 |
 | `wf_cnd_not_in_group` | condition | `[]` |  |  |
-| `wf_cnd_not_in_team` | condition | `[0]` |  | 0 |
+| `wf_cnd_not_in_team` | condition | `[0]` | 0: team |  |
 | `wf_cnd_not_match_snap` | condition | `[0, 0, 0, 0]` |  | 0, 1, 2, 3 |
 | `wf_cnd_not_stuff_is` | condition | `[]` |  |  |
 | `wf_cnd_not_trggrer_on` | condition | `[]` |  |  |
@@ -124,7 +124,7 @@ Named positions: 57. Unnamed positions: 525.
 | `wf_slc_users_neighborhood` | selector | `[1, 0, 0, 33554431, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]` |  | 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17 |
 | `wf_slc_users_onfurni` | selector | `[]` |  |  |
 | `wf_slc_users_signal` | selector | `[]` |  |  |
-| `wf_slc_users_team` | selector | `[0]` |  | 0 |
+| `wf_slc_users_team` | selector | `[0]` | 0: team |  |
 | `wf_slc_users_with_var` | selector | `[2, 0, 0, 0, -10, 0]` |  | 0, 1, 2, 3, 4, 5 |
 | `wf_trg_at_given_time` | trigger | `[1]` |  | 0 |
 | `wf_trg_bot_reached_avtr` | trigger | `[]` |  |  |

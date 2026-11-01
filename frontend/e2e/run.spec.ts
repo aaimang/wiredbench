@@ -144,7 +144,7 @@ test("the guide lists boxes, filters them and adds an example room", async ({ pa
   await expect(list).toContainText("No boxes match");
   await page.getByLabel("Search boxes").fill("");
   await page.getByLabel("All statuses").selectOption("real_room");
-  await expect(list.getByRole("listitem")).toHaveCount(18);
+  await expect(list.getByRole("listitem")).toHaveCount(23);
   await page
     .getByTestId("tutorial-switch-flip")
     .getByRole("button", { name: "Add and open" })
@@ -261,4 +261,21 @@ test("a running user can be moved and turned from the inspector", async ({ page 
   await expect(page.getByTestId("avatar-position")).toContainText("3");
   await expect(page.getByTestId("avatar-position")).toContainText("4");
   await expect(panel.getByLabel("Direction, 0 to 7")).toHaveValue("5");
+});
+
+test("a game can be started and ended from the run panel", async ({ page }) => {
+  await login(page);
+  await page.getByRole("link", { name: "Guide" }).click();
+  await page
+    .getByTestId("tutorial-score-counter")
+    .getByRole("button", { name: "Add and open" })
+    .click();
+  await expect(page.getByTestId("room-canvas")).toBeVisible();
+  await page.getByRole("button", { name: "Run", exact: true }).click();
+  const scores = page.getByTestId("game-scores");
+  await expect(scores).toContainText("No game running");
+  await page.getByRole("button", { name: "Start game" }).click();
+  await expect(scores).toContainText("Game running");
+  await page.getByRole("button", { name: "End game" }).click();
+  await expect(scores).toContainText("No game running");
 });

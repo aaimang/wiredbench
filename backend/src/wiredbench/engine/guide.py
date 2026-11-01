@@ -188,6 +188,21 @@ GUIDE: dict[str, tuple[str, str]] = {
     "wf_act_teleport_to": ("Teleports a user to a picked furni.", "Send a player back to the start."),
     "wf_act_user_to_furni": ("Moves a user to a picked furni.", "Walk a player to a seat."),
     "wf_act_move_rotate": ("Moves or turns picked furni.", "Slide a door open."),
+    "wf_act_join_team": ("Puts users in a team.", "Sort players into red and blue."),
+    "wf_act_leave_team": ("Takes users out of their team.", "Clear teams when a round ends."),
+    "wf_act_give_score": (
+        "Gives points to a user's team during a game.",
+        "Score when a player reaches a goal.",
+    ),
+    "wf_act_give_score_tm": (
+        "Gives points to a chosen team during a game.",
+        "Reward red for holding a zone.",
+    ),
+    "wf_cnd_actor_in_team": ("Passes if the user is in a team.", "Only let red through a gate."),
+    "wf_cnd_not_in_team": ("Passes if the user is not in a team.", "Keep players without a team out."),
+    "wf_slc_users_team": ("Selects the users in a team.", "Message everyone on blue."),
+    "wf_trg_game_starts": ("Runs when a game starts.", "Open the arena doors."),
+    "wf_trg_game_ends": ("Runs when a game ends.", "Send everyone back to the lobby."),
     "wf_act_rel_mov": ("Moves picked furni by a set number of tiles.", "Shift a platform three tiles along."),
     "wf_act_set_altitude": ("Raises, lowers or sets the height of furni.", "Lift a bridge into place."),
     "wf_act_furni_to_user": (

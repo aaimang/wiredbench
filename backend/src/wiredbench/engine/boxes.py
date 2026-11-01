@@ -102,6 +102,32 @@ MOVERS = {
     "label": "Furni to move",
     "options": ["default", "trigger", "signal", "selector"],
 }
+TEAMS = ("red", "green", "blue", "yellow")
+TEAM = {
+    "name": "team",
+    "kind": "select",
+    "label": "Team",
+    "options": list(TEAMS),
+    "labels": {team: team.capitalize() for team in TEAMS},
+    "default": "red",
+}
+ANY_TEAM = {
+    **TEAM,
+    "options": ["any", *TEAMS],
+    "labels": {"any": "Any team", **{team: team.capitalize() for team in TEAMS}},
+    "default": "any",
+}
+POINTS = (
+    {"name": "points", "kind": "number", "label": "Points", "default": 5, "min": -1000, "max": 1000},
+    {
+        "name": "times",
+        "kind": "number",
+        "label": "Times per game, 0 for no limit",
+        "default": 0,
+        "min": 0,
+        "max": 10,
+    },
+)
 AMOUNT = {"name": "amount", "kind": "number", "label": "How many", "default": 10, "min": 0}
 ANTENNA = {"name": "antenna", "kind": "furni", "label": "Antenna", "default": []}
 SECONDS = {"name": "seconds", "kind": "number", "label": "Seconds", "default": 10, "min": 0, "step": 0.5}
@@ -221,6 +247,8 @@ BOXES: dict[str, dict[str, Any]] = {
         },
         *HOLDERS,
     ),
+    "wf_cnd_actor_in_team": _box("condition", ASSUMED, ANY_TEAM, USER_SOURCE),
+    "wf_cnd_not_in_team": _box("condition", ASSUMED, ANY_TEAM, USER_SOURCE),
     "wf_cnd_has_var": _box("condition", DOCUMENTED, VARIABLE, *HOLDERS),
     "wf_cnd_neg_has_var": _box("condition", DOCUMENTED, VARIABLE, *HOLDERS),
     "wf_cnd_var_val_match": _box(
@@ -255,6 +283,7 @@ BOXES: dict[str, dict[str, Any]] = {
     "wf_cnd_time_less_than": _box("condition", DOCUMENTED, SECONDS),
     "wf_cnd_time_more_than": _box("condition", DOCUMENTED, SECONDS),
     # Selectors
+    "wf_slc_users_team": _selector(ASSUMED, ANY_TEAM),
     "wf_slc_furni_area": _selector(ASSUMED, *AREA),
     "wf_slc_users_area": _selector(ASSUMED, *AREA),
     "wf_slc_furni_altitude": _selector(
@@ -388,6 +417,8 @@ BOXES: dict[str, dict[str, Any]] = {
     "wf_var_furni": _box("variable", DOCUMENTED, VARIABLE, HAS_VALUE, _availability("active", "persistent")),
     "wf_var_room": _box("variable", DOCUMENTED, VARIABLE, _availability("active", "persistent", "shared")),
     "wf_var_context": _box("variable", ASSUMED, VARIABLE, HAS_VALUE),
+    "wf_trg_game_starts": _box("trigger", ASSUMED),
+    "wf_trg_game_ends": _box("trigger", ASSUMED),
     # Effects
     "wf_act_give_var": _effect(ASSUMED, VARIABLE, VALUE, REFERENCE[0], OVERWRITE, *HOLDERS),
     "wf_act_remove_var": _effect(DOCUMENTED, VARIABLE, *HOLDERS),
@@ -453,6 +484,24 @@ BOXES: dict[str, dict[str, Any]] = {
         FURNI,
         USER_SOURCE,
     ),
+    "wf_act_join_team": _effect(
+        ASSUMED,
+        TEAM,
+        _saved(
+            {
+                "name": "team_type",
+                "kind": "select",
+                "label": "Kind of team",
+                "options": ["wired", "banzai", "freeze"],
+                "labels": {"wired": "Wired", "banzai": "Battle Banzai", "freeze": "Freeze"},
+                "default": "wired",
+            }
+        ),
+        USER_SOURCE,
+    ),
+    "wf_act_leave_team": _effect(ASSUMED, USER_SOURCE),
+    "wf_act_give_score": _effect(ASSUMED, *POINTS, USER_SOURCE),
+    "wf_act_give_score_tm": _effect(ASSUMED, *POINTS, TEAM),
     "wf_act_rel_mov": _effect(
         ASSUMED,
         FURNI,

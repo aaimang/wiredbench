@@ -93,14 +93,16 @@
   },
   "wf_act_join_team": {
    "reference": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_act_kick_user": {
    "reference": true,
    "dump": true
   },
   "wf_act_leave_team": {
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_act_log": {
    "preset": true,
@@ -236,7 +238,8 @@
   },
   "wf_cnd_actor_in_team": {
    "reference": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_cnd_chest_has_item_type": {
    "dump": true
@@ -305,7 +308,8 @@
    "dump": true
   },
   "wf_cnd_not_in_team": {
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_cnd_not_match_snap": {
    "dump": true
@@ -497,7 +501,8 @@
    "dump": true
   },
   "wf_slc_users_team": {
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_slc_users_with_var": {
    "preset": true,

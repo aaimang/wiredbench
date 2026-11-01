@@ -16,6 +16,7 @@ export interface RunState {
   users: { id: number; name: string; x: number; y: number; dir: number }[];
   variables: { variable: string; holder: string; value: string }[];
   defined_variables: { variable: string; scope: string }[];
+  game: { running: boolean; scores: Record<string, number> };
   trace: { at_ms: number; kind: string; message: string }[];
   trace_next: number;
   limit_hits: number;
@@ -208,6 +209,7 @@ export class RunPanel {
         ),
       ),
     );
+    this.game = state.game;
     this.renderControls();
     this.onState(state);
   }
@@ -232,6 +234,8 @@ export class RunPanel {
     this.traceList.scrollTop = this.traceList.scrollHeight;
   }
 
+  private game: RunState["game"] | null = null;
+
   private renderControls(): void {
     const button = (label: string, node: Parameters<typeof icon>[0], run: () => void) =>
       h("button", { class: "btn btn-small", onclick: run }, icon(node, 14), label);
@@ -242,6 +246,14 @@ export class RunPanel {
         : button(T.pause, Pause, () => void this.command(":pause")),
       button(T.step, SkipForward, () => void this.command(":step")),
       button(T.stop, Square, () => this.onStop()),
+      this.game?.running
+        ? button(T.endGame, Square, () => void this.input({ type: "game_end" }))
+        : button(T.startGame, Play, () => void this.input({ type: "game_start" })),
+      h(
+        "span",
+        { class: "muted", "data-testid": "game-scores" },
+        T.gameScores(this.game?.running ?? false, this.game?.scores ?? {}),
+      ),
     );
   }
 }
