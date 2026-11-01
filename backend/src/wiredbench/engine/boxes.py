@@ -51,6 +51,14 @@ FURNI_SOURCE = {
 }
 # The variable's kind decides which of these a box uses.
 HOLDERS = [USER_SOURCE, FURNI, FURNI_SOURCE]
+VARIABLE_ON = {
+    "name": "variable_on",
+    "kind": "select",
+    "label": "A built-in variable on",
+    "options": ["user", "furni"],
+    "labels": {"user": "Users", "furni": "Furni"},
+    "default": "user",
+}
 OVERWRITE = {"name": "overwrite", "kind": "bool", "label": "Overwrite if it already exists", "default": False}
 VALUE = {"name": "value", "kind": "number", "label": "Value", "default": 0}
 REFERENCE: list[dict[str, Any]] = [
@@ -189,6 +197,7 @@ FX_RANGE = (
     {"name": "fx_min", "kind": "number", "label": "Lowest value", "default": 0},
     {"name": "fx_max", "kind": "number", "label": "Highest value", "default": 100},
 )
+SPLIT_USERS = {"name": "split_users", "kind": "bool", "label": "One signal per user", "default": False}
 AMOUNT = {"name": "amount", "kind": "number", "label": "How many", "default": 10, "min": 0}
 ANTENNA = {"name": "antenna", "kind": "furni", "label": "Antenna", "default": []}
 SECONDS = {"name": "seconds", "kind": "number", "label": "Seconds", "default": 10, "min": 0, "step": 0.5}
@@ -325,10 +334,17 @@ BOXES: dict[str, dict[str, Any]] = {
         {"name": "points", "kind": "number", "label": "Points", "default": 0, "min": 0, "max": 1000},
         {**THREE_WAY, "name": "score_compare"},
     ),
-    "wf_cnd_has_var": _box("condition", DOCUMENTED, VARIABLE, *HOLDERS),
-    "wf_cnd_neg_has_var": _box("condition", DOCUMENTED, VARIABLE, *HOLDERS),
+    "wf_cnd_has_var": _box("condition", DOCUMENTED, VARIABLE, VARIABLE_ON, *HOLDERS),
+    "wf_cnd_neg_has_var": _box("condition", DOCUMENTED, VARIABLE, VARIABLE_ON, *HOLDERS),
     "wf_cnd_var_val_match": _box(
-        "condition", ASSUMED, VARIABLE, {**COMPARE, "default": ">"}, VALUE, REFERENCE[0], *HOLDERS
+        "condition",
+        ASSUMED,
+        VARIABLE,
+        VARIABLE_ON,
+        {**COMPARE, "default": ">"},
+        VALUE,
+        REFERENCE[0],
+        *HOLDERS,
     ),
     "wf_cnd_trggrer_on_frn": _box("condition", DOCUMENTED, FURNI, USER_SOURCE),
     "wf_cnd_not_trggrer_on": _box("condition", DOCUMENTED, FURNI, USER_SOURCE),
@@ -524,6 +540,7 @@ BOXES: dict[str, dict[str, Any]] = {
         ASSUMED,
         {"name": "placeholder", "kind": "text", "label": "Placeholder name", "default": ""},
         VARIABLE,
+        VARIABLE_ON,
         _saved(
             {
                 "name": "display",
@@ -581,8 +598,8 @@ BOXES: dict[str, dict[str, Any]] = {
         *REFERENCE,
         *HOLDERS,
     ),
-    "wf_act_send_signal": _effect(DOCUMENTED, ANTENNA, USER_SOURCE),
-    "wf_act_neg_send_signal": _effect(ASSUMED, ANTENNA, USER_SOURCE),
+    "wf_act_send_signal": _effect(DOCUMENTED, ANTENNA, USER_SOURCE, SPLIT_USERS),
+    "wf_act_neg_send_signal": _effect(ASSUMED, ANTENNA, USER_SOURCE, SPLIT_USERS),
     "wf_act_call_stacks": _effect(DOCUMENTED, FURNI),
     "wf_act_neg_call_stacks": _effect(ASSUMED, FURNI),
     "wf_act_toggle_state": _effect(

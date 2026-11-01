@@ -204,6 +204,7 @@ running server.
 | POST | `/api/catalog/sync` | Admin |
 | GET | `/api/dashboard` | Admin |
 | GET | `/api/engine/boxes` | Admin |
+| GET | `/api/engine/built-in-variables` | Admin |
 | POST | `/api/folders` | Admin |
 | DELETE | `/api/folders/{folder_id}` | Admin |
 | PATCH | `/api/folders/{folder_id}` | Admin |

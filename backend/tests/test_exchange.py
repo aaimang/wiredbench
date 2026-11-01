@@ -760,3 +760,37 @@ def test_projectile_options_read_their_positions() -> None:
     assert settings["proj_past_on"] is True
     assert settings["proj_past"] == 3
     assert settings["proj_height"] == 100
+
+
+def test_built_in_variables_export_their_real_ids() -> None:
+    wired = {"variable": "@position.x", "variable_on": "furni", "compare": "=", "value": 3}
+    furni = [{"id": 1, "classname": "wf_cnd_var_val_match", "x": 1, "y": 1, "wired": wired}]
+    out = exchange.export_gpresets({"furni": furni})[0]
+    box = out["wired"]["conditions"][0]
+    assert box["variableIds"][0] == "-120"
+    assert box["options"][0] == 0, "the box's holder is furni"
+    assert "@position.x" not in out["wired"].get("variables_map", {})
+    settings = exchange.friendly_settings("wf_cnd_var_val_match", box, {"-120": "@position.x"})
+    assert settings["variable"] == "@position.x"
+    assert settings["variable_on"] == "furni"
+
+
+@pytest.mark.parametrize(
+    ("variable", "extra", "number"),
+    [("@user_count", {}, -10), ("@selector_user_count", {}, -20), ("@index", {}, 1), ("mine", {}, 0)],
+)
+def test_a_variable_placeholder_says_who_holds_its_variable(
+    variable: str, extra: dict[str, Any], number: int
+) -> None:
+    furni = [
+        {"id": 1, "classname": "wf_var_furni", "x": 1, "y": 1, "wired": {"variable": "mine"}},
+        {
+            "id": 2,
+            "classname": "wf_xtra_text_output_variable",
+            "x": 2,
+            "y": 1,
+            "wired": {"placeholder": "n", "variable": variable, **extra},
+        },
+    ]
+    box = exchange.export_gpresets({"furni": furni})[0]["wired"]["addons"][0]
+    assert box["options"][1] == number

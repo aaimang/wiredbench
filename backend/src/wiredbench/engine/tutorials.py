@@ -131,7 +131,7 @@ def time_tracking(hotel: str = "sandbox") -> dict[str, Any]:
         2,
         ("wf_trg_periodically", {"seconds": SYNC_SECONDS}),
         ("wf_slc_users_with_var", {"variable": "on_duty"}),
-        ("wf_act_send_signal", {"antenna": [ANTENNA_CALC], "user_source": "selector"}),
+        ("wf_act_send_signal", {"antenna": [ANTENNA_CALC], "user_source": "selector", "split_users": True}),
     )
     stack(
         6,

@@ -15,7 +15,7 @@ from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from typing import Any
 
-from wiredbench.engine import operations
+from wiredbench.engine import internal, operations
 from wiredbench.engine.boxes import BOXES, TIME_UNITS
 
 TICK_MS = 500  # Assumed from delay values in real presets, which are small whole numbers.
@@ -222,6 +222,7 @@ class Engine:
         self.team_scores = dict.fromkeys(TEAMS, 0)
         self.clocks: dict[int, Clock] = {}
         self.flights: list[dict[str, Any]] = []
+        self.projectile_values: dict[int, dict[str, int]] = {}
         self.furni_looks: dict[int, dict[str, Any]] = {}
         self.user_looks: dict[int, dict[str, Any]] = {}
         self.game_timer: int | None = None
@@ -682,8 +683,8 @@ class Engine:
             elif box.classname == "wf_xtra_filter_users_by_var" and ctx.users is not None:
                 name = str(box.get("variable", ""))
                 ranked = sorted(
-                    (u for u in ctx.users if self._holding(name, u) is not None),
-                    key=lambda u: self._holding(name, u).value,  # type: ignore[union-attr]
+                    (u for u in ctx.users if self._holding(name, u, ctx, "user") is not None),
+                    key=lambda u: self._holding(name, u, ctx, "user").value,  # type: ignore[union-attr]
                     reverse=not box.get("lowest"),
                 )
                 ctx.users = ranked[:amount]
@@ -743,6 +744,11 @@ class Engine:
                     found.add(other)
         return list(found)
 
+    def _holds(self, name: str, on: str, holder: int, ctx: Context) -> bool:
+        if internal.targets(name):
+            return self._holding(name, holder, ctx, on) is not None
+        return f"{on}:{holder}" in self.variables[name]
+
     def _matches(self, box: Box, ctx: Context) -> list[int]:
         name = str(box.get("variable", ""))
         match box.classname:
@@ -754,7 +760,7 @@ class Engine:
             case "wf_slc_furni_signal":
                 return list(ctx.signal_furni)
             case "wf_slc_furni_with_var":
-                return [i for i in self.furni if f"furni:{i}" in self.variables[name]]
+                return [i for i in self.furni if self._holds(name, "furni", i, ctx)]
             case "wf_slc_furni_area":
                 return [i for i, f in self.furni.items() if self._in_area(box, f["x"], f["y"])]
             case "wf_slc_furni_altitude":
@@ -766,7 +772,7 @@ class Engine:
             case "wf_slc_users_signal":
                 return list(ctx.signal_users)
             case "wf_slc_users_with_var":
-                return [u for u in self.users if f"user:{u}" in self.variables[name]]
+                return [u for u in self.users if self._holds(name, "user", u, ctx)]
             case "wf_slc_users_area":
                 return [u for u, d in self.users.items() if self._in_area(box, d["x"], d["y"])]
             case "wf_slc_users_onfurni":
@@ -823,7 +829,7 @@ class Engine:
 
     def _holders(self, box: Box, name: str, ctx: Context) -> list[int | None]:
         """Who a variable box acts on, which follows the kind of variable it has chosen."""
-        match self.definitions.get(name, {}).get("scope", "user"):
+        match self._scope(box, name):
             case "global" | "context":
                 return [None]
             case "furni":
@@ -849,6 +855,7 @@ class Engine:
         picks = _ids(box.get("furni", []))
         name = str(box.get("variable", ""))
         holders = self._holders(box, name, ctx)
+        on = self._scope(box, name)
         match box.classname:
             case "wf_cnd_counter_time_matches":
                 return all(
@@ -874,15 +881,15 @@ class Engine:
                 return all(not self._in_team(u, box.get("team", "any")) for u in users)
             case "wf_cnd_var_age_match":
                 return bool(holders) and all(
-                    self._age_matches(box, self._holding(name, h, ctx)) for h in holders
+                    self._age_matches(box, self._holding(name, h, ctx, on)) for h in holders
                 )
             case "wf_cnd_has_var":
-                return bool(holders) and all(self._holding(name, h, ctx) is not None for h in holders)
+                return bool(holders) and all(self._holding(name, h, ctx, on) is not None for h in holders)
             case "wf_cnd_neg_has_var":
-                return all(self._holding(name, h, ctx) is None for h in holders)
+                return all(self._holding(name, h, ctx, on) is None for h in holders)
             case "wf_cnd_var_val_match":
                 return bool(users) and all(
-                    self._compare(box, self._holding(name, h, ctx), h, ctx) for h in holders
+                    self._compare(box, self._holding(name, h, ctx, on), h, ctx) for h in holders
                 )
             case "wf_cnd_trggrer_on_frn":
                 return bool(users) and all(self._on_furni(u, picks) for u in users)
@@ -974,7 +981,86 @@ class Engine:
         scope = self.definitions.get(name, {}).get("scope", "user")
         return "global" if scope == "global" else f"{scope}:{user}"
 
-    def _holding(self, name: str, user: int | None, ctx: Context | None = None) -> Holding | None:
+    def _scope(self, box: Box, name: str) -> str:
+        """The kind of holder a box means. A built-in name on both furni and users needs the box to say."""
+        found = internal.targets(name)
+        if not found:
+            return str(self.definitions.get(name, {}).get("scope", "user"))
+        chosen = box.get("variable_on", "user")
+        return str(chosen) if chosen in found else found[0]
+
+    def _built_in(self, name: str, on: str, holder: int | None, ctx: Context | None) -> Holding | None:
+        """A built-in variable, worked out from the room. None if this holder has no such value."""
+        row = internal.row_for(name, on)
+        if row is None:
+            return None
+        value = self._built_in_value(name, row["target"], holder, ctx)
+        if value is None:
+            return None
+        if not row["has_value"] and not value:
+            return None  # A flag with no number exists only while it is true.
+        return Holding(value, 0, 0)
+
+    def _built_in_value(self, name: str, target: str, holder: int | None, ctx: Context | None) -> int | None:
+        if target == "global":
+            if name.startswith("@teams."):
+                _, team, field = name.split(".")
+                size = sum(1 for u in self.users.values() if u["team"] == team)
+                return self.team_scores[team] if field == "score" else size
+            return {
+                "@furni_count": len(self.furni),
+                "@user_count": len(self.users),
+                "@wired_timer": (self.now_ms - self.timer_start_ms) // CLOCK_TICK_MS,
+            }.get(name)
+        if target == "context":
+            if ctx is None:
+                return None
+            return {
+                "@selector_furni_count": len(ctx.selected_furni or []),
+                "@selector_user_count": len(ctx.users or []),
+                "@signal_furni_count": len(ctx.signal_furni),
+                "@signal_user_count": len(ctx.signal_users),
+            }.get(name)
+        if target == "user":
+            user = self.users.get(holder) if holder is not None else None
+            if user is None:
+                return None
+            team = user["team"]
+            return {
+                "@index": user["id"],
+                "@position.x": user["x"],
+                "@position.y": user["y"],
+                "@direction": user["dir"],
+                "@team.color": TEAMS.index(team) + 1 if team in TEAMS else 0,
+                "@team.score": self.team_scores[team] if team in TEAMS else 0,
+            }.get(name)
+        item = self.furni.get(holder) if holder is not None else None
+        if item is None or holder is None:
+            return None
+        if name.startswith("@projectile.animation."):
+            return self.projectile_values.get(holder, {}).get(name.removeprefix("@projectile.animation."))
+        clock = self.clocks.get(holder)
+        if name == "~clock.pulse_count":
+            return clock.half_seconds if clock else None
+        if name == "~clock.is_game_aware":
+            return int(clock.game_aware) if clock else None
+        return {
+            "@id": holder,
+            "@state": _int(item["state"]),
+            "@position.x": item["x"],
+            "@position.y": item["y"],
+            "@rotation": item["rot"],
+            "@altitude": _hundredths(item["z"]),
+            "@is_invisible": int(bool(self.furni_looks.get(holder, {}).get("invisible"))),
+        }.get(name)
+
+    def _holding(
+        self, name: str, user: int | None, ctx: Context | None = None, on: str | None = None
+    ) -> Holding | None:
+        found = internal.targets(name)
+        if found:
+            chosen = on if on in found else "user" if "user" in found else found[0]
+            return self._built_in(name, chosen, user, ctx)
         if self.definitions.get(name, {}).get("scope") == "context":
             return ctx.context_vars.get(name) if ctx else None
         return self.variables[name].get(self._key(name, user))
@@ -1022,6 +1108,9 @@ class Engine:
         if not name:
             self._log("error", "Give Variable has no variable chosen", box=box.id)
             return
+        if internal.targets(name):
+            self._log("stub", f"Writing to {name} is not simulated yet", box=box.id)
+            return
         for user in self._holders(box, name, ctx):
             if self._holding(name, user, ctx) is not None and not box.get("overwrite"):
                 continue
@@ -1033,6 +1122,9 @@ class Engine:
 
     def _do_remove_var(self, box: Box, ctx: Context) -> None:
         name = str(box.get("variable", "")).strip()
+        if internal.targets(name):
+            self._log("stub", f"Writing to {name} is not simulated yet", box=box.id)
+            return
         for user in self._holders(box, name, ctx):
             if self.definitions.get(name, {}).get("scope") == "context":
                 ctx.context_vars.pop(name, None)
@@ -1045,7 +1137,7 @@ class Engine:
         reference = str(box.get("from_variable", "")).strip()
         if not reference:
             return _int(box.get("value", 0))
-        source = self._holding(reference, user, ctx)
+        source = self._holding(reference, user, ctx, self._scope(box, str(box.get("variable", ""))))
         if source is None:
             self._log(
                 "error", f"{reference} is not set for {self._holder_label(reference, user)}", box=box.id
@@ -1055,6 +1147,9 @@ class Engine:
 
     def _do_change_var_val(self, box: Box, ctx: Context) -> None:
         name = str(box.get("variable", "")).strip()
+        if internal.targets(name):
+            self._log("stub", f"Writing to {name} is not simulated yet", box=box.id)
+            return
         for user in self._holders(box, name, ctx):
             holding = self._holding(name, user, ctx)
             if holding is None:
@@ -1073,17 +1168,14 @@ class Engine:
             self._changed(name, user)
 
     def _send(self, box: Box, ctx: Context) -> None:
+        """A real room forwards the selected users unless told otherwise, all in one signal unless split."""
         antennas = _ids(box.get("antenna", []))
-        users = self._users_for(box, ctx)
-        furni = self._furni_for(box, ctx) if "furni" in box.settings else []
-        # One signal per user. Assumed, because the article's per-user conditions need it.
-        targets: list[int | None] = list(users) or [None]
-        for user in targets:
-            self._push(
-                self.now_ms,
-                "signal",
-                {"antennas": antennas, "users": [user] if user is not None else [], "furni": furni},
-            )
+        source = box.get("user_source", "default")
+        users = list(ctx.users or []) if source == "default" else self._users_for(box, ctx)
+        furni = self._furni_for(box, ctx) if "furni" in box.settings else list(ctx.selected_furni or [])
+        groups = [[user] for user in users] if box.get("split_users") and users else [users]
+        for group in groups:
+            self._push(self.now_ms, "signal", {"antennas": antennas, "users": group, "furni": furni})
 
     _do_send_signal = _send
     _do_neg_send_signal = _send
@@ -1139,7 +1231,8 @@ class Engine:
                 values[str(addon.get("placeholder", "user"))] = self._user_name(user)
             elif addon.classname == "wf_xtra_text_output_variable":
                 name = str(addon.get("variable", ""))
-                holding = self._holding(name, user, ctx)
+                on = self._scope(addon, name)
+                holding = self._holding(name, ctx.furni if on == "furni" else user, ctx, on)
                 values[str(addon.get("placeholder", name))] = self._connected(stack, name, holding)
         return PLACEHOLDER.sub(lambda m: values.get(m.group(1), m.group(0)), str(box.get("text", "")))
 
@@ -1358,6 +1451,16 @@ class Engine:
                 if user in self.users:
                     self.users[user]["dir"] = facing
         tiles = max(abs(dx), abs(dy))
+        if _int(addon.get("proj_variables")):
+            self.projectile_values[furni_id] = {
+                "tiles_travelled": tiles,
+                "user_collisions": 0,
+                "furni_collisions": 0,
+                "position.x": x,
+                "position.y": y,
+                "position.altitude": _hundredths(item["z"]),
+                "is_travelling": 0,
+            }
         custom = addon.get("proj_custom_time", False)
         ms = (
             min(tiles * _int(addon.get("proj_tile_ms", 100), 100), MAX_FLIGHT_MS)

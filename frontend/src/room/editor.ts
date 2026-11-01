@@ -100,6 +100,8 @@ interface Walker {
   elapsed: number;
 }
 
+const BUILT_IN_LIST = "built-in-variables";
+
 class WbEditor extends HTMLElement {
   private sandbox: SandboxData | null = null;
   private room: RoomDocument = emptyRoom();
@@ -123,6 +125,7 @@ class WbEditor extends HTMLElement {
   private saveError = "";
   private saving: Promise<void> | null = null;
   private needsDraw = true;
+  private builtIns: string[] = [];
   private runEdits = new Map<number, string>();
   private looks: RunState["looks"] | null = null;
   private fx: RunState["fx"] | null = null;
@@ -174,6 +177,9 @@ class WbEditor extends HTMLElement {
       h("div", { class: "editor-body" }, this.palette, this.stage, this.inspector),
     );
     this.boxes = await loadBoxCatalogue().catch(() => ({}));
+    this.builtIns = await get<{ name: string }[]>("/api/engine/built-in-variables")
+      .then((rows) => [...new Set(rows.map((row) => row.name))])
+      .catch(() => []);
     this.buildPalette();
     this.renderPanels();
     window.addEventListener("keydown", this.onKey);
@@ -1171,6 +1177,7 @@ class WbEditor extends HTMLElement {
     const controls = spec.fields.map((field) => this.fieldControl(field, item, settings));
     form.append(
       h("h3", {}, t.run.settings),
+      h("datalist", { id: BUILT_IN_LIST }, ...this.builtIns.map((value) => h("option", { value }))),
       ...controls,
       h("button", { class: "btn", type: "submit" }, t.run.saveSettings),
     );
@@ -1247,6 +1254,7 @@ class WbEditor extends HTMLElement {
         id,
         name: field.name,
         type: field.kind === "number" ? "number" : "text",
+        list: field.name === "variable" || field.name === "from_variable" ? BUILT_IN_LIST : null,
         value: String(value ?? ""),
         min: field.min,
         max: field.max,
