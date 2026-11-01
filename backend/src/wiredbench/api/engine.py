@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from wiredbench.api.deps import Services, audit, get_db, get_services, ticker
 from wiredbench.config import Hotel
-from wiredbench.engine import box_facts, coverage
+from wiredbench.engine import box_facts, coverage, internal
 from wiredbench.engine.boxes import BOXES, catalogue, is_box
 from wiredbench.engine.checker import check_room
 from wiredbench.engine.core import MAX_ADVANCE_MS
@@ -103,6 +103,11 @@ def _run(sandbox_id: int, services: Services) -> Run:
     if run is None:
         raise ApiError(409, "not_running", "This room is not running. Press Run first.")
     return run
+
+
+@router.get("/engine/built-in-variables")
+def built_in_variables() -> list[dict[str, Any]]:
+    return internal.rows()
 
 
 @router.get("/engine/boxes")

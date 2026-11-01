@@ -10,7 +10,7 @@ import copy
 from collections import Counter
 from typing import Any
 
-from wiredbench.engine import box_facts
+from wiredbench.engine import box_facts, internal
 from wiredbench.engine.boxes import BOXES
 from wiredbench.engine.operations import OPERATION_CODES
 from wiredbench.errors import ApiError
@@ -90,6 +90,7 @@ FX_RANGE_FIELDS = [*FX_FIELDS, ("fx_min", 11, LONG), ("fx_max", 13, LONG)]
 PICKED_FURNI = 100
 # Here the first slot is the furni that moves, and the picks belong to the second.
 TWO_FURNI_SLOTS = {"wf_act_furni_to_furni"}
+PLACEHOLDER_BOX, PLACEHOLDER_TARGET = "wf_xtra_text_output_variable", 1
 AREA_FIELDS = [("area_x", 0, int), ("area_y", 1, int), ("area_width", 2, int), ("area_height", 3, int)]
 # A selector's two switches sit on the box itself. The file calls invert "inverse".
 SELECTOR_SWITCHES = {"filter": "filter", "invert": "inverse"}
@@ -167,6 +168,8 @@ OPTION_FIELDS: dict[str, list[tuple[str, int, Any]]] = {
         ("proj_past", 16, int),
         ("proj_height", 18, int),
     ],
+    "wf_act_send_signal": [("split_users", 1, bool)],
+    "wf_act_neg_send_signal": [("split_users", 1, bool)],
     "wf_xtra_mov_carry_users": [("carry", 0, ("furni", "tile"))],
     "wf_act_join_team": [
         ("team", 0, {1: "red", 2: "green", 3: "blue", 4: "yellow"}),
@@ -326,6 +329,7 @@ def _field_names(classname: str) -> set[str]:
 def _variable_names(raw_map: Any, boxes: list[dict[str, Any]]) -> dict[str, str]:
     """Variable ID to name. IDs belong to one room, so names are what carry between rooms."""
     names = {str(value): str(name) for name, value in raw_map.items()} if isinstance(raw_map, dict) else {}
+    names.update({row["id"]: row["name"] for row in internal.rows()})
     for box in boxes:
         if "variableId" in box and isinstance(box.get("config"), str):
             names.setdefault(str(box["variableId"]), box["config"])
@@ -355,6 +359,9 @@ def friendly_settings(classname: str, box: dict[str, Any], names: dict[str, str]
         variable = names.get(str(box["variableIds"][0]))
         if variable:
             settings["variable"] = variable
+            built_in = internal.BY_ID.get(str(box["variableIds"][0]))
+            if built_in and built_in["target"] in ("user", "furni") and "variable_on" in fields:
+                settings["variable_on"] = built_in["target"]
     options = box.get("options")
     if isinstance(options, list):
         for name, position, reader in OPTION_FIELDS.get(classname, []):
@@ -547,7 +554,10 @@ def _new_box(classname: str, warnings: list[str]) -> dict[str, Any]:
     return box
 
 
-def _variable_id(name: str, variables: dict[str, Any], used: list[int]) -> str:
+def _variable_id(name: str, variables: dict[str, Any], used: list[int], on: str = "user") -> str:
+    built_in = internal.row_for(name, on)
+    if built_in:
+        return str(built_in["id"])  # A real room's own ID, which is not listed in the file's map.
     if name not in variables:
         used[0] += 1
         variables[name] = str(NEW_VARIABLE_ID + used[0])
@@ -557,6 +567,11 @@ def _variable_id(name: str, variables: dict[str, Any], used: list[int]) -> str:
 def _default(classname: str, name: str) -> Any:
     fields = BOXES.get(classname, {}).get("fields", [])
     return next((field["default"] for field in fields if field["name"] == name), None)
+
+
+def _built_in_scope(name: str, on: str) -> str | None:
+    row = internal.row_for(name, on)
+    return str(row["target"]) if row else None
 
 
 def _write_reference(
@@ -569,14 +584,14 @@ def _write_reference(
     warnings: list[str],
 ) -> None:
     """Our simulator always reads the variable on the same holder, so that is what the box is told to do."""
-    if name and name not in scopes:
+    if name and name not in scopes and not internal.targets(name):
         warnings.append(f"{classname}: a value source must be defined by a variable box in this room.")
         return
     ids: list[Any] = box["variableIds"] if isinstance(box.get("variableIds"), list) else []
     first = ids[0] if ids else "0"
     box["variableIds"] = [first, _variable_id(name, variables, used) if name else "0", *ids[2:]]
     _write_option(box, REFERENCE_FLAG[classname], 1 if name else 0)
-    scope = scopes.get(name, "global")
+    scope = scopes.get(name) or _built_in_scope(name, "user") or "global"
     _write_option(box, REFERENCE_TARGET, TARGET_NUMBERS[scope])
     _write_option(box, REFERENCE_SAME_HOLDER, 1 if scope in ("user", "furni") else 0)
 
@@ -605,6 +620,8 @@ def _apply_settings(
             if number is not None:
                 _write_option(box, mapped[name][0], number)
                 continue
+        if name == "variable_on":
+            continue  # It only says which built-in variable "variable" means.
         if name in SOURCE_FIELDS and value != "default":
             key, _, numbers = SOURCE_FIELDS[name]
             number = next((n for n, label in numbers.items() if label == value), None)
@@ -628,10 +645,13 @@ def _apply_settings(
             box["variableId"] = _variable_id(str(value), variables, used)
         elif name == "variable" and value:
             ids: list[Any] = box["variableIds"] if isinstance(box.get("variableIds"), list) else []
-            box["variableIds"] = [_variable_id(str(value), variables, used), *ids[1:]]
-            scope = scopes.get(str(value).strip())
+            on = str(settings.get("variable_on", "user"))
+            box["variableIds"] = [_variable_id(str(value), variables, used, on), *ids[1:]]
+            scope = scopes.get(str(value).strip()) or _built_in_scope(str(value).strip(), on)
             if classname in TARGET_FIRST and scope:
                 _write_option(box, 0, TARGET_NUMBERS[scope])
+            if classname == PLACEHOLDER_BOX and scope:
+                _write_option(box, PLACEHOLDER_TARGET, TARGET_NUMBERS[scope])
         elif name != "variable" and value != _default(classname, name):
             warnings.append(f"{classname}: the setting {name} cannot go into a G-Presets file yet.")
     if classname == "wf_act_set_highlight" and (

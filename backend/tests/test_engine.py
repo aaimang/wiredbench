@@ -1508,3 +1508,108 @@ def test_old_flights_are_dropped() -> None:
     engine = arrow_room()
     engine.advance(5000)
     assert engine.snapshot()["flights"] == []
+
+
+def test_built_in_variables_read_the_room() -> None:
+    engine = room(
+        box(50, "lamp", 5, 6, 1.5),
+        box(1, "wf_trg_says_something", 1, 1, text="go"),
+        box(
+            2,
+            "wf_cnd_var_val_match",
+            1,
+            1,
+            1,
+            variable="@position.x",
+            variable_on="user",
+            compare="=",
+            value=4,
+        ),
+        box(
+            3,
+            "wf_cnd_var_val_match",
+            1,
+            1,
+            2,
+            variable="@altitude",
+            variable_on="furni",
+            compare="=",
+            value=150,
+            furni=[50],
+        ),
+        box(4, "wf_cnd_var_val_match", 1, 1, 3, variable="@user_count", compare="=", value=1),
+        box(5, "wf_act_show_message", 1, 1, 4, text="all true"),
+        users=[user(100, "Ann", 4, 9)],
+    )
+    say(engine, "go")
+    engine.advance(500)
+    assert [m["text"] for m in engine.messages] == ["all true"]
+
+
+def test_built_in_variables_in_selectors_and_placeholders() -> None:
+    engine = room(
+        box(1, "wf_trg_says_something", 1, 1, text="go"),
+        box(2, "wf_xtra_text_output_variable", 1, 1, 1, placeholder="x", variable="@position.x"),
+        box(3, "wf_act_show_message", 1, 1, 2, text="at $(x)"),
+        box(4, "wf_slc_users_with_var", 2, 2, 1, variable="@index"),
+        box(5, "wf_trg_says_something", 2, 2, text="pick"),
+        box(6, "wf_act_show_message", 2, 2, 2, text="picked", user_source="selector"),
+        users=[user(100, "Ann", 7, 9)],
+    )
+    say(engine, "go")
+    say(engine, "pick")
+    engine.advance(500)
+    assert sorted(m["text"] for m in engine.messages) == ["at 7", "picked"]
+
+
+def test_built_in_variables_cannot_be_written_and_unknown_ones_read_as_absent() -> None:
+    engine = room(
+        box(1, "wf_trg_says_something", 1, 1, text="go"),
+        box(2, "wf_act_give_var", 1, 1, 1, variable="@index", value=9),
+        box(3, "wf_act_change_var_val", 1, 1, 2, variable="@direction", value=9),
+    )
+    say(engine, "go")
+    engine.advance(500)
+    assert engine.users[100]["id"] == 100
+    assert engine.users[100]["dir"] != 9
+    assert engine._holding("~pet.level", 100, None, "user") is None
+
+
+def test_placeholders_read_room_and_context_values() -> None:
+    engine = room(
+        box(1, "wf_trg_says_something", 1, 1, text="go"),
+        box(2, "wf_xtra_text_output_variable", 1, 1, 1, placeholder="n", variable="@user_count"),
+        box(3, "wf_slc_users_area", 1, 1, 2, area_x=0, area_y=0, area_width=64, area_height=64),
+        box(4, "wf_xtra_text_output_variable", 1, 1, 3, placeholder="s", variable="@selector_user_count"),
+        box(5, "wf_act_show_message", 1, 1, 4, text="$(n) and $(s)"),
+    )
+    say(engine, "go")
+    engine.advance(500)
+    assert engine.messages[0]["text"] == "1 and 1"
+
+
+def signal_room(**send: Any) -> Engine:
+    return room(
+        box(50, "wf_antenna1", 9, 9),
+        box(1, "wf_trg_says_something", 1, 1, text="go"),
+        box(2, "wf_slc_users_area", 1, 1, 1, area_x=0, area_y=0, area_width=64, area_height=64),
+        box(3, "wf_act_send_signal", 1, 1, 2, antenna=[50], **send),
+        box(4, "wf_trg_recv_signal", 2, 2, antenna=[50]),
+        box(5, "wf_act_log", 2, 2, 1, text="received"),
+        users=[user(100, "Ann"), user(101, "Bob", x=1)],
+    )
+
+
+def test_a_signal_forwards_the_selected_users_in_one_signal_unless_split() -> None:
+    engine = signal_room()
+    say(engine, "go")
+    engine.advance(500)
+    assert logs(engine).count("received") == 1
+    engine = signal_room(split_users=True)
+    say(engine, "go")
+    engine.advance(500)
+    assert logs(engine).count("received") == 2
+    engine = signal_room(user_source="trigger")
+    say(engine, "go")
+    engine.advance(500)
+    assert logs(engine).count("received") == 1

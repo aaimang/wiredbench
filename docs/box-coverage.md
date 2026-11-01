@@ -13,7 +13,7 @@ read at commit `3fc9c06f533c`, for facts only.
 - Seen in a real room dump: 97
 - Checked in a real room: 87
 - Have a form: 106
-- Option numbers mapped: 52
+- Option numbers mapped: 54
 
 | Box | Evidence | Form | Options | Room check |
 |---|---|---|---|---|
@@ -55,7 +55,7 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_act_mute_triggerer` | Reference only |  |  |  |
 | `wf_act_neg_call_stacks` | Checked in a real room | Yes |  | 2026-11-01 |
 | `wf_act_neg_log` | Seen in a real room dump | Yes |  |  |
-| `wf_act_neg_send_signal` | Checked in a real room | Yes |  | 2026-11-01 |
+| `wf_act_neg_send_signal` | Checked in a real room | Yes | Yes | 2026-11-01 |
 | `wf_act_place_furni` | Seen in a real room dump |  |  |  |
 | `wf_act_progress_ach` | No evidence yet |  |  |  |
 | `wf_act_rel_mov` | Checked in a real room | Yes | Yes | 2026-11-01 |
@@ -64,7 +64,7 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_act_reset_timers` | Seen in a real room dump | Yes |  |  |
 | `wf_act_send_dataframe` | Seen in a real room dump |  |  |  |
 | `wf_act_send_message` | Seen in a real room dump |  |  |  |
-| `wf_act_send_signal` | Checked in a real room | Yes |  | 2026-11-01 |
+| `wf_act_send_signal` | Checked in a real room | Yes | Yes | 2026-11-01 |
 | `wf_act_set_altitude` | Checked in a real room | Yes | Yes | 2026-11-01 |
 | `wf_act_set_highlight` | Checked in a real room | Yes | Yes | 2026-11-01 |
 | `wf_act_set_visibility` | Checked in a real room | Yes | Yes | 2026-11-01 |

@@ -1,0 +1,1136 @@
+[
+ {
+  "id": "-451",
+  "name": "@event.chat.style",
+  "target": "context",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-450",
+  "name": "@event.chat.type",
+  "target": "context",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-452",
+  "name": "@event.habbicon",
+  "target": "context",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-453",
+  "name": "@event.link.source_room_id",
+  "target": "context",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-420",
+  "name": "@event.signal.antenna_id",
+  "target": "context",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-472",
+  "name": "@event.transaction_complete.deposit.coins_count",
+  "target": "context",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-471",
+  "name": "@event.transaction_complete.deposit.furni_count",
+  "target": "context",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-470",
+  "name": "@event.transaction_complete.multiplier",
+  "target": "context",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-474",
+  "name": "@event.transaction_complete.withdrawal.coins_count",
+  "target": "context",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-473",
+  "name": "@event.transaction_complete.withdrawal.furni_count",
+  "target": "context",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-478",
+  "name": "@event.transaction_failed.reason",
+  "target": "context",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-459",
+  "name": "@event.variable_update.box_id",
+  "target": "context",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-464",
+  "name": "@event.variable_update.change_origin",
+  "target": "context",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-460",
+  "name": "@event.variable_update.change_type",
+  "target": "context",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-463",
+  "name": "@event.variable_update.difference",
+  "target": "context",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-462",
+  "name": "@event.variable_update.new_value",
+  "target": "context",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-461",
+  "name": "@event.variable_update.old_value",
+  "target": "context",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-400",
+  "name": "@selector_furni_count",
+  "target": "context",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-401",
+  "name": "@selector_user_count",
+  "target": "context",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-410",
+  "name": "@signal_furni_count",
+  "target": "context",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-411",
+  "name": "@signal_user_count",
+  "target": "context",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-123",
+  "name": "@altitude",
+  "target": "furni",
+  "has_value": true,
+  "can_write": true
+ },
+ {
+  "id": "-133",
+  "name": "@can_lay_on",
+  "target": "furni",
+  "has_value": false,
+  "can_write": false
+ },
+ {
+  "id": "-2000",
+  "name": "@can_move_freely",
+  "target": "furni",
+  "has_value": false,
+  "can_write": false
+ },
+ {
+  "id": "-132",
+  "name": "@can_sit_on",
+  "target": "furni",
+  "has_value": false,
+  "can_write": false
+ },
+ {
+  "id": "-131",
+  "name": "@can_stand_on",
+  "target": "furni",
+  "has_value": false,
+  "can_write": false
+ },
+ {
+  "id": "-101",
+  "name": "@class_id",
+  "target": "furni",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-140",
+  "name": "@dimensions.x",
+  "target": "furni",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-141",
+  "name": "@dimensions.y",
+  "target": "furni",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-102",
+  "name": "@height",
+  "target": "furni",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-100",
+  "name": "@id",
+  "target": "furni",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-124",
+  "name": "@is_invisible",
+  "target": "furni",
+  "has_value": false,
+  "can_write": false
+ },
+ {
+  "id": "-130",
+  "name": "@is_stackable",
+  "target": "furni",
+  "has_value": false,
+  "can_write": false
+ },
+ {
+  "id": "-126",
+  "name": "@occupation",
+  "target": "furni",
+  "has_value": true,
+  "can_write": true
+ },
+ {
+  "id": "-180",
+  "name": "@owner_id",
+  "target": "furni",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-125",
+  "name": "@position",
+  "target": "furni",
+  "has_value": true,
+  "can_write": true
+ },
+ {
+  "id": "-120",
+  "name": "@position.x",
+  "target": "furni",
+  "has_value": true,
+  "can_write": true
+ },
+ {
+  "id": "-121",
+  "name": "@position.y",
+  "target": "furni",
+  "has_value": true,
+  "can_write": true
+ },
+ {
+  "id": "-2102",
+  "name": "@projectile.animation.furni_collisions",
+  "target": "furni",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-2106",
+  "name": "@projectile.animation.is_travelling",
+  "target": "furni",
+  "has_value": false,
+  "can_write": false
+ },
+ {
+  "id": "-2105",
+  "name": "@projectile.animation.position.altitude",
+  "target": "furni",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-2103",
+  "name": "@projectile.animation.position.x",
+  "target": "furni",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-2104",
+  "name": "@projectile.animation.position.y",
+  "target": "furni",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-2100",
+  "name": "@projectile.animation.tiles_travelled",
+  "target": "furni",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-2101",
+  "name": "@projectile.animation.user_collisions",
+  "target": "furni",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-122",
+  "name": "@rotation",
+  "target": "furni",
+  "has_value": true,
+  "can_write": true
+ },
+ {
+  "id": "-110",
+  "name": "@state",
+  "target": "furni",
+  "has_value": true,
+  "can_write": true
+ },
+ {
+  "id": "-129",
+  "name": "@type",
+  "target": "furni",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-190",
+  "name": "@wallitem_offset",
+  "target": "furni",
+  "has_value": true,
+  "can_write": true
+ },
+ {
+  "id": "~115",
+  "name": "~area_hide.hiding_wallitems",
+  "target": "furni",
+  "has_value": false,
+  "can_write": false
+ },
+ {
+  "id": "~116",
+  "name": "~area_hide.inverted",
+  "target": "furni",
+  "has_value": false,
+  "can_write": false
+ },
+ {
+  "id": "~114",
+  "name": "~area_hide.is_invisible_furni",
+  "target": "furni",
+  "has_value": false,
+  "can_write": false
+ },
+ {
+  "id": "~113",
+  "name": "~area_hide.length",
+  "target": "furni",
+  "has_value": true,
+  "can_write": true
+ },
+ {
+  "id": "~110",
+  "name": "~area_hide.root_x",
+  "target": "furni",
+  "has_value": true,
+  "can_write": true
+ },
+ {
+  "id": "~111",
+  "name": "~area_hide.root_y",
+  "target": "furni",
+  "has_value": true,
+  "can_write": true
+ },
+ {
+  "id": "~112",
+  "name": "~area_hide.width",
+  "target": "furni",
+  "has_value": true,
+  "can_write": true
+ },
+ {
+  "id": "~100",
+  "name": "~background_color.hue",
+  "target": "furni",
+  "has_value": true,
+  "can_write": true
+ },
+ {
+  "id": "~102",
+  "name": "~background_color.lightness",
+  "target": "furni",
+  "has_value": true,
+  "can_write": true
+ },
+ {
+  "id": "~101",
+  "name": "~background_color.saturation",
+  "target": "furni",
+  "has_value": true,
+  "can_write": true
+ },
+ {
+  "id": "~130",
+  "name": "~chest.available_amount",
+  "target": "furni",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "~133",
+  "name": "~chest.capacity",
+  "target": "furni",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "~132",
+  "name": "~chest.is_auto_lock",
+  "target": "furni",
+  "has_value": false,
+  "can_write": false
+ },
+ {
+  "id": "~135",
+  "name": "~chest.is_donatable",
+  "target": "furni",
+  "has_value": false,
+  "can_write": false
+ },
+ {
+  "id": "~134",
+  "name": "~chest.is_open",
+  "target": "furni",
+  "has_value": false,
+  "can_write": false
+ },
+ {
+  "id": "~131",
+  "name": "~chest.locked",
+  "target": "furni",
+  "has_value": false,
+  "can_write": false
+ },
+ {
+  "id": "~122",
+  "name": "~clock.is_game_aware",
+  "target": "furni",
+  "has_value": false,
+  "can_write": false
+ },
+ {
+  "id": "~121",
+  "name": "~clock.pulse_count",
+  "target": "furni",
+  "has_value": true,
+  "can_write": true
+ },
+ {
+  "id": "~120",
+  "name": "~clock.state",
+  "target": "furni",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "~146",
+  "name": "~recolorable_furni.color.rgb",
+  "target": "furni",
+  "has_value": true,
+  "can_write": true
+ },
+ {
+  "id": "~142",
+  "name": "~recolorable_furni.color.rgb.blue",
+  "target": "furni",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "~141",
+  "name": "~recolorable_furni.color.rgb.green",
+  "target": "furni",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "~140",
+  "name": "~recolorable_furni.color.rgb.red",
+  "target": "furni",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "~103",
+  "name": "~teleport.target_id",
+  "target": "furni",
+  "has_value": true,
+  "can_write": true
+ },
+ {
+  "id": "~104",
+  "name": "~walk_helper.is_multi_walk",
+  "target": "furni",
+  "has_value": false,
+  "can_write": false
+ },
+ {
+  "id": "-1000",
+  "name": "@current_time",
+  "target": "global",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-1006",
+  "name": "@current_time.day_of_month",
+  "target": "global",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-1005",
+  "name": "@current_time.day_of_week",
+  "target": "global",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-1007",
+  "name": "@current_time.day_of_year",
+  "target": "global",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-1004",
+  "name": "@current_time.hour_of_day",
+  "target": "global",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-1001",
+  "name": "@current_time.milliseconds_of_seconds",
+  "target": "global",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-1003",
+  "name": "@current_time.minute_of_hour",
+  "target": "global",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-1009",
+  "name": "@current_time.month_of_year",
+  "target": "global",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-1002",
+  "name": "@current_time.seconds_of_minute",
+  "target": "global",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-1008",
+  "name": "@current_time.week_of_year",
+  "target": "global",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-1010",
+  "name": "@current_time.year",
+  "target": "global",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-300",
+  "name": "@furni_count",
+  "target": "global",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-381",
+  "name": "@group_id",
+  "target": "global",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-380",
+  "name": "@room_id",
+  "target": "global",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-322",
+  "name": "@teams.blue.score",
+  "target": "global",
+  "has_value": true,
+  "can_write": true
+ },
+ {
+  "id": "-332",
+  "name": "@teams.blue.size",
+  "target": "global",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-321",
+  "name": "@teams.green.score",
+  "target": "global",
+  "has_value": true,
+  "can_write": true
+ },
+ {
+  "id": "-331",
+  "name": "@teams.green.size",
+  "target": "global",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-320",
+  "name": "@teams.red.score",
+  "target": "global",
+  "has_value": true,
+  "can_write": true
+ },
+ {
+  "id": "-330",
+  "name": "@teams.red.size",
+  "target": "global",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-323",
+  "name": "@teams.yellow.score",
+  "target": "global",
+  "has_value": true,
+  "can_write": true
+ },
+ {
+  "id": "-333",
+  "name": "@teams.yellow.size",
+  "target": "global",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-301",
+  "name": "@user_count",
+  "target": "global",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-310",
+  "name": "@wired_timer",
+  "target": "global",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-211",
+  "name": "@achievement_score",
+  "target": "user",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-233",
+  "name": "@altitude",
+  "target": "user",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-272",
+  "name": "@bot_id",
+  "target": "user",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-260",
+  "name": "@dance",
+  "target": "user",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-232",
+  "name": "@direction",
+  "target": "user",
+  "has_value": true,
+  "can_write": true
+ },
+ {
+  "id": "-241",
+  "name": "@effect",
+  "target": "user",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-250",
+  "name": "@favourite_group_id",
+  "target": "user",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-206",
+  "name": "@gender",
+  "target": "user",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-245",
+  "name": "@habbicon",
+  "target": "user",
+  "has_value": true,
+  "can_write": true
+ },
+ {
+  "id": "-240",
+  "name": "@handitem",
+  "target": "user",
+  "has_value": true,
+  "can_write": true
+ },
+ {
+  "id": "-221",
+  "name": "@has_rights",
+  "target": "user",
+  "has_value": false,
+  "can_write": false
+ },
+ {
+  "id": "-200",
+  "name": "@index",
+  "target": "user",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-242",
+  "name": "@is_frozen",
+  "target": "user",
+  "has_value": false,
+  "can_write": false
+ },
+ {
+  "id": "-222",
+  "name": "@is_group_admin",
+  "target": "user",
+  "has_value": false,
+  "can_write": false
+ },
+ {
+  "id": "-220",
+  "name": "@is_hc",
+  "target": "user",
+  "has_value": false,
+  "can_write": false
+ },
+ {
+  "id": "-262",
+  "name": "@is_idle",
+  "target": "user",
+  "has_value": false,
+  "can_write": false
+ },
+ {
+  "id": "-243",
+  "name": "@is_muted",
+  "target": "user",
+  "has_value": false,
+  "can_write": false
+ },
+ {
+  "id": "-223",
+  "name": "@is_owner",
+  "target": "user",
+  "has_value": false,
+  "can_write": false
+ },
+ {
+  "id": "-244",
+  "name": "@is_trading",
+  "target": "user",
+  "has_value": false,
+  "can_write": false
+ },
+ {
+  "id": "-210",
+  "name": "@level",
+  "target": "user",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-271",
+  "name": "@pet_id",
+  "target": "user",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-280",
+  "name": "@pet_owner_id",
+  "target": "user",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-234",
+  "name": "@position",
+  "target": "user",
+  "has_value": true,
+  "can_write": true
+ },
+ {
+  "id": "-230",
+  "name": "@position.x",
+  "target": "user",
+  "has_value": true,
+  "can_write": true
+ },
+ {
+  "id": "-231",
+  "name": "@position.y",
+  "target": "user",
+  "has_value": true,
+  "can_write": true
+ },
+ {
+  "id": "-266",
+  "name": "@room_entry.method",
+  "target": "user",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-267",
+  "name": "@room_entry.teleport_id",
+  "target": "user",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-261",
+  "name": "@sign",
+  "target": "user",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-238",
+  "name": "@team.color",
+  "target": "user",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-237",
+  "name": "@team.score",
+  "target": "user",
+  "has_value": true,
+  "can_write": true
+ },
+ {
+  "id": "-239",
+  "name": "@team.type",
+  "target": "user",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-285",
+  "name": "@transaction.can_accept",
+  "target": "user",
+  "has_value": false,
+  "can_write": false
+ },
+ {
+  "id": "-283",
+  "name": "@transaction.contract_id",
+  "target": "user",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-286",
+  "name": "@transaction.current_multiplier",
+  "target": "user",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-281",
+  "name": "@transaction.in_trade",
+  "target": "user",
+  "has_value": false,
+  "can_write": false
+ },
+ {
+  "id": "-282",
+  "name": "@transaction.start_time",
+  "target": "user",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-284",
+  "name": "@transaction.state",
+  "target": "user",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-205",
+  "name": "@type",
+  "target": "user",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "-270",
+  "name": "@user_id",
+  "target": "user",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "~502",
+  "name": "~horse.controller_user_id",
+  "target": "user",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "~500",
+  "name": "~horse.has_saddle",
+  "target": "user",
+  "has_value": false,
+  "can_write": false
+ },
+ {
+  "id": "~501",
+  "name": "~horse.is_riding",
+  "target": "user",
+  "has_value": false,
+  "can_write": false
+ },
+ {
+  "id": "~431",
+  "name": "~pet.creation_time",
+  "target": "user",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "~402",
+  "name": "~pet.energy",
+  "target": "user",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "~401",
+  "name": "~pet.experience",
+  "target": "user",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "~411",
+  "name": "~pet.experience_required",
+  "target": "user",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "~403",
+  "name": "~pet.happiness",
+  "target": "user",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "~400",
+  "name": "~pet.level",
+  "target": "user",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "~412",
+  "name": "~pet.max_energy",
+  "target": "user",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "~413",
+  "name": "~pet.max_happiness",
+  "target": "user",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "~410",
+  "name": "~pet.max_level",
+  "target": "user",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "~430",
+  "name": "~pet.owner_id",
+  "target": "user",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "~420",
+  "name": "~pet.scratches",
+  "target": "user",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "~610",
+  "name": "~plant.can_breed",
+  "target": "user",
+  "has_value": false,
+  "can_write": false
+ },
+ {
+  "id": "~611",
+  "name": "~plant.can_harvest",
+  "target": "user",
+  "has_value": false,
+  "can_write": false
+ },
+ {
+  "id": "~612",
+  "name": "~plant.can_revive",
+  "target": "user",
+  "has_value": false,
+  "can_write": false
+ },
+ {
+  "id": "~602",
+  "name": "~plant.color",
+  "target": "user",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "~613",
+  "name": "~plant.is_dead",
+  "target": "user",
+  "has_value": false,
+  "can_write": false
+ },
+ {
+  "id": "~614",
+  "name": "~plant.is_growing",
+  "target": "user",
+  "has_value": false,
+  "can_write": false
+ },
+ {
+  "id": "~617",
+  "name": "~plant.max_wellbeing_seconds",
+  "target": "user",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "~600",
+  "name": "~plant.rarity_level",
+  "target": "user",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "~616",
+  "name": "~plant.remaining_growing_seconds",
+  "target": "user",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "~615",
+  "name": "~plant.remaining_wellbeing_seconds",
+  "target": "user",
+  "has_value": true,
+  "can_write": false
+ },
+ {
+  "id": "~601",
+  "name": "~plant.shape",
+  "target": "user",
+  "has_value": true,
+  "can_write": false
+ }
+]
