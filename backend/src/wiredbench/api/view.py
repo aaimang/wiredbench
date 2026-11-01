@@ -25,6 +25,7 @@ router = APIRouter(prefix="/api/view", tags=["view"])
 HIDDEN_STAGES = {"not_in_catalogue", "staff", "in_development"}
 FURNI_FIELDS = ("id", "classname", "x", "y", "z", "rot", "state")
 AVATAR_FIELDS = ("id", "name", "hotel", "figure", "x", "y", "z", "dir", "pose")
+VISIBLE_DETAILS = ("@handitem", "@sign", "@is_idle")
 ITEM_FIELDS = ("classname", "revision", "xdim", "ydim", "height", "data")
 MESSAGES_SHOWN = 20
 
@@ -78,7 +79,10 @@ def _public_room(services: Services, sandbox: Sandbox) -> dict[str, Any]:
             "room": document.get("room"),
             "furni": furni,
             "avatars": [
-                {key: avatar[key] for key in AVATAR_FIELDS if key in avatar}
+                {
+                    **{key: avatar[key] for key in AVATAR_FIELDS if key in avatar},
+                    "details": _visible_details(avatar),
+                }
                 for avatar in document.get("avatars", [])
             ],
         },
@@ -90,6 +94,14 @@ def _public_room(services: Services, sandbox: Sandbox) -> dict[str, Any]:
     }
 
 
+def _visible_details(user: dict[str, Any]) -> dict[str, int]:
+    """Only what can be seen on the avatar. The other details stay private."""
+    details = user.get("details")
+    if not isinstance(details, dict):
+        return {}
+    return {name: details[name] for name in VISIBLE_DETAILS if isinstance(details.get(name), int)}
+
+
 def _public_state(run: Run, hidden: set[int], user: int | None) -> dict[str, Any]:
     """Only what someone standing in the room could see: no trace, variables, seed or counts."""
     engine = run.engine
@@ -97,7 +109,10 @@ def _public_state(run: Run, hidden: set[int], user: int | None) -> dict[str, Any
     return {
         "now_ms": engine.now_ms,
         "furni": [item for item in snapshot["furni"] if item["id"] not in hidden],
-        "users": [{key: u[key] for key in ("id", "name", "x", "y", "dir")} for u in snapshot["users"]],
+        "users": [
+            {**{key: u[key] for key in ("id", "name", "x", "y", "dir")}, "details": _visible_details(u)}
+            for u in snapshot["users"]
+        ],
         "messages": [m for m in engine.messages if m.get("user") == user][-MESSAGES_SHOWN:],
     }
 

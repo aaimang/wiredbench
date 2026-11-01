@@ -34,7 +34,14 @@ interface ViewRoom {
 
 interface ViewState {
   furni: { id: number; x: number; y: number; z: number; rot: number; state: number }[];
-  users: { id: number; name: string; x: number; y: number; dir: number }[];
+  users: {
+    id: number;
+    name: string;
+    x: number;
+    y: number;
+    dir: number;
+    details?: Record<string, number>;
+  }[];
   messages: { at_ms: number; user: number; text: string }[];
 }
 
@@ -246,6 +253,7 @@ class WbRoomView extends HTMLElement {
           dir: user.dir,
           z: stand.z,
           pose: stand.pose,
+          details: user.details,
         });
       }
     }
