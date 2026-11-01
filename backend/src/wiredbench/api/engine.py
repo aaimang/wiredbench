@@ -20,6 +20,7 @@ from wiredbench.errors import ApiError, not_found
 from wiredbench.models import Sandbox
 from wiredbench.services import preferences
 from wiredbench.services import workspace as ws
+from wiredbench.services.room import with_timezone
 
 router = APIRouter(prefix="/api", tags=["engine"])
 
@@ -328,11 +329,16 @@ def add_tutorial(
     tutorial = TUTORIALS.get(slug)
     if tutorial is None:
         raise not_found("Tutorial")
-    hotel = body.hotel or preferences.load(db, services.settings).default_hotel
+    prefs = preferences.load(db, services.settings)
+    hotel = body.hotel or prefs.default_hotel
     name = ws.free_name(db, tutorial["title"], None, "sandbox", "copy")
     sandbox = ws.create_sandbox(db, name, None, tutorial["description"], hotel, None)
     ws.save_document(
-        db, sandbox.id, tutorial["build"](hotel), sandbox.revision, services.catalog.current_sha(hotel)
+        db,
+        sandbox.id,
+        with_timezone(tutorial["build"](hotel), prefs.default_timezone),
+        sandbox.revision,
+        services.catalog.current_sha(hotel),
     )
     audit(db, request, "tutorial_add", name)
     db.commit()

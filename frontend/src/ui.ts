@@ -39,10 +39,13 @@ export interface Field {
   name: string;
   label: string;
   value?: string;
-  type?: "text" | "textarea" | "select";
+  type?: "text" | "number" | "textarea" | "select";
   options?: { value: string; label: string }[];
   required?: boolean;
   maxlength?: number;
+  min?: number;
+  max?: number;
+  help?: string;
 }
 
 /** A small form in a dialog. onSubmit may throw: the message appears in the dialog and it stays open. */
@@ -78,14 +81,22 @@ export function formDialog(
       control = h("input", {
         id,
         name: field.name,
-        type: "text",
+        type: field.type ?? "text",
+        min: field.min,
+        max: field.max,
         value: field.value ?? "",
         required: field.required,
         maxlength: field.maxlength,
         autocomplete: "off",
       });
     }
-    return h("div", { class: "field" }, h("label", { for: id }, field.label), control);
+    return h(
+      "div",
+      { class: "field" },
+      h("label", { for: id }, field.label),
+      control,
+      field.help && h("p", { class: "muted" }, field.help),
+    );
   });
   const dialog = h("dialog", { class: "dialog dialog-small" });
   const confirm = h("button", { class: "btn btn-primary", type: "submit" }, submit);

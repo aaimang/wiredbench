@@ -174,6 +174,8 @@ export interface TrashEntry {
 
 export interface Settings {
   default_hotel: string;
+  default_timezone: string;
+  time_zones: string[];
   gamedata_check: string;
   cache_max_mb: number;
   session_hours: number;

@@ -207,6 +207,17 @@ test("settings save, the session survives reload, and logout ends it", async ({ 
   await expect(page.getByRole("heading", { name: "Log in to Wiredbench" })).toBeVisible();
 });
 
+test("the left menu hides, stays hidden after a reload, and comes back", async ({ page }) => {
+  await login(page);
+  await page.getByRole("button", { name: "Hide menu" }).click();
+  await expect(page.getByRole("link", { name: "Settings" })).toBeHidden();
+  await expect(page.getByRole("button", { name: "Show menu" })).toBeFocused();
+  await page.reload();
+  await expect(page.getByRole("link", { name: "Settings" })).toBeHidden();
+  await page.getByRole("button", { name: "Show menu" }).click();
+  await expect(page.getByRole("link", { name: "Settings" })).toBeVisible();
+});
+
 test("the phone layout has no sideways page scroll", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
   await login(page);

@@ -1,3 +1,5 @@
+const MAX_ROOM_SIZE = 64;
+
 /** All interface text lives here, so the app can be translated later. */
 export const t = {
   appName: "Wiredbench",
@@ -13,6 +15,8 @@ export const t = {
     viewAs: "View as user",
     rooms: "Rooms",
     logout: "Log out",
+    hideMenu: "Hide menu",
+    showMenu: "Show menu",
   },
 
   viewAs: {
@@ -286,9 +290,9 @@ export const t = {
     redo: "Redo",
     save: "Save",
     roomSize: "Room size",
-    width: "Width (tiles)",
-    timezone: "Time zone, such as Australia/Perth",
-    badTimezone: "That is not a time zone we know. Try one like Australia/Perth.",
+    width: `Width, 1 to ${MAX_ROOM_SIZE} tiles`,
+    timezone: "Time zone",
+    timezoneHelp: "Time and date variables in this room follow it.",
     avatarDetails: "Details for built-in variables",
     avatarDetailsRun: "Changes here last for this run.",
     avatarGender: "Gender",
@@ -312,9 +316,9 @@ export const t = {
       "@is_muted": "Muted",
       "@is_idle": "Idle",
     } as Record<string, string>,
-    depth: "Depth (tiles)",
+    depth: `Depth, 1 to ${MAX_ROOM_SIZE} tiles`,
     apply: "Apply",
-    badSize: "Enter whole numbers from 1 to 64.",
+    badSize: `Enter whole numbers from 1 to ${MAX_ROOM_SIZE}.`,
     sizeWouldCut: "Something would end up outside the room. Move it first.",
     clearRoom: "Clear room",
     confirmClear: "Remove all furni and avatars from this room? You can undo this.",
@@ -445,6 +449,8 @@ export const t = {
     title: "Settings",
     general: "General",
     defaultHotel: "Default hotel",
+    defaultTimezone: "Default time zone",
+    defaultTimezoneHelp: "New sandboxes start in this zone. Existing ones keep theirs.",
     theme: "Theme",
     themes: { system: "Match system", light: "Light", dark: "Dark" } as Record<string, string>,
     sessionHours: "Stay logged in for (hours)",

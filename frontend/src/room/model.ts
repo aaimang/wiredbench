@@ -494,12 +494,4 @@ export function flightAt(
 
 /** A real room showed this before anyone set a time zone. */
 export const DEFAULT_TIMEZONE = "Europe/London";
-
-export function isTimeZone(name: string): boolean {
-  try {
-    new Intl.DateTimeFormat("en", { timeZone: name });
-    return true;
-  } catch {
-    return false;
-  }
-}
+export const MAX_ROOM_SIZE = 64;

@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from wiredbench import __version__
 from wiredbench.api.deps import Services, audit, get_db, get_services, public, viewer
-from wiredbench.config import HOTELS, Hotel
+from wiredbench.config import HOTELS, TIME_ZONES, Hotel, TimeZone
 from wiredbench.models import AuditEvent
 from wiredbench.services import preferences
 
@@ -18,6 +18,7 @@ router = APIRouter(tags=["system"])
 
 class PreferencesUpdate(BaseModel):
     default_hotel: Hotel | None = None
+    default_timezone: TimeZone | None = None
     gamedata_check: Literal["off", "startup", "daily"] | None = None
     cache_max_mb: int | None = Field(None, ge=16, le=102_400)
     session_hours: int | None = Field(None, ge=1, le=720)
@@ -41,6 +42,7 @@ def get_settings(services: Services = Depends(get_services), db: Session = Depen
     return {
         **preferences.load(db, services.settings).model_dump(),
         "hotels": list(HOTELS),
+        "time_zones": list(TIME_ZONES),
         "version": __version__,
     }
 
@@ -59,7 +61,12 @@ def update_settings(
     db.commit()
     services.assets.enforce_limit(updated.cache_max_mb * 2**20)
     services.mock_limiter.limit = updated.rate_limit_mock
-    return {**updated.model_dump(), "hotels": list(HOTELS), "version": __version__}
+    return {
+        **updated.model_dump(),
+        "hotels": list(HOTELS),
+        "time_zones": list(TIME_ZONES),
+        "version": __version__,
+    }
 
 
 @router.get("/api/cache")

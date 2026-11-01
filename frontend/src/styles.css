@@ -149,6 +149,10 @@ select {
   max-width: 100%;
 }
 
+.dialog-small select {
+  width: 100%;
+}
+
 .btn {
   display: inline-flex;
   align-items: center;
@@ -258,6 +262,49 @@ select {
   padding: 6px 16px;
   border-top: 1px solid var(--line);
   font-size: 11px;
+}
+
+.shell.rail-hidden {
+  grid-template-columns: 20px minmax(0, 1fr);
+}
+
+.shell.rail-hidden .rail {
+  display: none;
+}
+
+.rail-show {
+  display: none;
+  grid-row: 1 / span 2;
+  justify-content: center;
+  padding: 19px 0 0;
+  border: 0;
+  border-right: 1px solid var(--line);
+  background: var(--panel);
+  color: inherit;
+  cursor: pointer;
+}
+
+.shell.rail-hidden .rail-show {
+  display: flex;
+}
+
+.rail-show:hover,
+.rail-hide:hover {
+  background: var(--selected);
+}
+
+.rail-hide {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin-left: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: none;
+  color: inherit;
+  cursor: pointer;
 }
 
 .rail {
@@ -2064,7 +2111,8 @@ wb-editor {
 }
 
 @media (max-width: 720px) {
-  .shell {
+  .shell,
+  .shell.rail-hidden {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto minmax(0, 1fr) auto;
   }
@@ -2073,7 +2121,15 @@ wb-editor {
     grid-column: 1;
   }
 
-  .rail {
+  /* The menu is a thin bar on a phone, so it stays. */
+  .rail-hide,
+  .shell.rail-hidden .rail-show {
+    display: none;
+  }
+
+  .rail,
+  .shell.rail-hidden .rail {
+    display: flex;
     grid-row: auto;
     flex-direction: row;
     align-items: center;

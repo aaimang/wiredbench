@@ -40,8 +40,8 @@ import {
   fitsInRoom,
   footprint,
   History,
-  isTimeZone,
   isWiredBox,
+  MAX_ROOM_SIZE,
   nextDirection,
   nextId,
   normaliseRoom,
@@ -157,6 +157,10 @@ class WbEditor extends HTMLElement {
     try {
       this.sandbox = await get<SandboxData>(`/api/sandboxes/${id}`);
       this.room = normaliseRoom(this.sandbox.document);
+      // A sandbox nobody has opened holds no room yet, so this is where it gets the default zone.
+      if (Object.keys(this.sandbox.document).length === 0) {
+        this.room.room.timezone = state.settings?.default_timezone ?? DEFAULT_TIMEZONE;
+      }
       this.savedAt = this.sandbox.updated_at;
       await this.loadItems(this.room.furni.map((f) => f.classname));
     } catch (error) {
@@ -1327,23 +1331,53 @@ class WbEditor extends HTMLElement {
 
   private editRoomSize(): void {
     const { width, height, timezone } = this.room.room;
+    const zone = timezone ?? DEFAULT_TIMEZONE;
     formDialog(
       T.roomSize,
       [
-        { name: "width", label: T.width, value: String(width), required: true },
-        { name: "height", label: T.depth, value: String(height), required: true },
+        {
+          name: "width",
+          label: T.width,
+          type: "number",
+          min: 1,
+          max: MAX_ROOM_SIZE,
+          value: String(width),
+          required: true,
+        },
+        {
+          name: "height",
+          label: T.depth,
+          type: "number",
+          min: 1,
+          max: MAX_ROOM_SIZE,
+          value: String(height),
+          required: true,
+        },
         {
           name: "timezone",
           label: T.timezone,
-          value: timezone ?? DEFAULT_TIMEZONE,
-          required: true,
+          type: "select",
+          value: zone,
+          // An older room may hold a zone the list lacks, and opening this must not change it.
+          options: [...new Set([zone, ...(state.settings?.time_zones ?? [])])].map((name) => ({
+            value: name,
+            label: name,
+          })),
+          help: T.timezoneHelp,
         },
       ],
       T.apply,
       async (values) => {
         const w = Number(values.width);
         const d = Number(values.height);
-        if (!Number.isInteger(w) || !Number.isInteger(d) || w < 1 || d < 1 || w > 64 || d > 64) {
+        if (
+          !Number.isInteger(w) ||
+          !Number.isInteger(d) ||
+          w < 1 ||
+          d < 1 ||
+          w > MAX_ROOM_SIZE ||
+          d > MAX_ROOM_SIZE
+        ) {
           throw new Error(T.badSize);
         }
         const fits = (x: number, y: number) => x < w && y < d;
@@ -1353,10 +1387,8 @@ class WbEditor extends HTMLElement {
             footprint(f, this.lookup(f.classname), f.rot).some(([x, y]) => !fits(x, y)),
           );
         if (outside) throw new Error(T.sizeWouldCut);
-        const zone = String(values.timezone).trim();
-        if (!isTimeZone(zone)) throw new Error(T.badTimezone);
         this.change(() => {
-          this.room.room = { width: w, height: d, timezone: zone };
+          this.room.room = { width: w, height: d, timezone: String(values.timezone) };
         });
       },
     );

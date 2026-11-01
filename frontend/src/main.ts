@@ -14,6 +14,8 @@ import {
   FolderTree,
   Gauge,
   LogOut,
+  PanelLeftClose,
+  PanelLeftOpen,
   Settings as SettingsIcon,
   Undo2,
 } from "lucide";
@@ -40,6 +42,8 @@ const PAGES: Record<string, { tag: string; label: string; node: Parameters<typeo
   "/dashboard": { tag: "wb-dashboard", label: t.nav.dashboard, node: Gauge },
   "/settings": { tag: "wb-settings", label: t.nav.settings, node: SettingsIcon },
 };
+
+const RAIL_KEY = "wb-rail-hidden";
 
 function logo(): SVGSVGElement {
   const ns = "http://www.w3.org/2000/svg";
@@ -157,7 +161,37 @@ async function enter(me: Me): Promise<void> {
   applyTheme(state.settings.theme);
 }
 
+function railHidden(): boolean {
+  try {
+    return localStorage.getItem(RAIL_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+/** Hides the left menu to give the page more room. The strip left behind brings it back. */
+function railButtons(): { hide: HTMLElement; show: HTMLElement } {
+  const button = (name: string, label: string, node: Parameters<typeof icon>[0]) =>
+    h("button", { class: name, "aria-label": label, title: label }, icon(node, 16));
+  const hide = button("rail-hide", t.nav.hideMenu, PanelLeftClose);
+  const show = button("rail-show", t.nav.showMenu, PanelLeftOpen);
+  const set = (hidden: boolean) => {
+    hide.closest(".shell")?.classList.toggle("rail-hidden", hidden);
+    try {
+      localStorage.setItem(RAIL_KEY, hidden ? "1" : "0");
+    } catch {
+      // Only remembering it is lost.
+    }
+    (hidden ? show : hide).focus();
+    window.dispatchEvent(new Event("resize")); // The room's canvas sizes itself on this.
+  };
+  hide.addEventListener("click", () => set(true));
+  show.addEventListener("click", () => set(false));
+  return { hide, show };
+}
+
 function showShell(path: string, tag: string): void {
+  const rail = railButtons();
   const links = Object.entries(PAGES).map(([href, page]) =>
     h(
       "a",
@@ -193,11 +227,12 @@ function showShell(path: string, tag: string): void {
     root,
     h(
       "div",
-      { class: "shell" },
+      { class: `shell${railHidden() ? " rail-hidden" : ""}` },
+      rail.show,
       h(
         "header",
         { class: "rail" },
-        h("div", { class: "rail-brand" }, logo(), h("span", {}, t.appName)),
+        h("div", { class: "rail-brand" }, logo(), h("span", {}, t.appName), rail.hide),
         h("nav", { class: "rail-nav", "aria-label": "Main" }, ...links),
         h(
           "div",
@@ -231,6 +266,7 @@ function logoutButton(): HTMLElement {
 
 /** The whole app while viewing as a normal user: no admin pages, and always a way back. */
 function showViewShell(): void {
+  const rail = railButtons();
   const stop = h("button", { class: "btn btn-small" }, icon(Undo2, 14), t.viewAs.stop);
   stop.addEventListener("click", () => {
     void act(stop, async () => {
@@ -258,11 +294,12 @@ function showViewShell(): void {
     root,
     h(
       "div",
-      { class: "shell" },
+      { class: `shell${railHidden() ? " rail-hidden" : ""}` },
+      rail.show,
       h(
         "header",
         { class: "rail" },
-        h("div", { class: "rail-brand" }, logo(), h("span", {}, t.appName)),
+        h("div", { class: "rail-brand" }, logo(), h("span", {}, t.appName), rail.hide),
         h("nav", { class: "rail-nav", "aria-label": "Main" }, rooms),
         h("div", { class: "rail-foot" }, logoutButton()),
       ),

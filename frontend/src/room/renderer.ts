@@ -158,6 +158,7 @@ export class RoomRenderer {
       autoStart: true,
     });
     this.app.canvas.setAttribute("data-testid", "room-canvas");
+    this.app.renderer.on("resize", () => this.onChange()); // The room is centred when drawn.
     host.append(this.app.canvas);
     this.floor.zIndex = -2;
     this.marks.zIndex = -1;

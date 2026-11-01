@@ -29,6 +29,7 @@ async function login(page: Page): Promise<void> {
 type EditorElement = HTMLElement & {
   tileOnPage(x: number, y: number): { x: number; y: number } | null;
   roomDocument: {
+    room?: { timezone?: string };
     furni: { classname: string; x: number; y: number; rot: number; z: number; state: number }[];
     avatars: { x: number; y: number; pose: string; dir: number; z: number }[];
   };
@@ -168,6 +169,36 @@ test("build a room, walk to a chair, sit, and find it all there after a reload",
 
   // The room draws without errors under the real Content-Security-Policy.
   expect(problems).toEqual([]);
+});
+
+test("the default time zone reaches a new sandbox, and the room can change it", async ({
+  page,
+}) => {
+  await login(page);
+  await page.getByRole("link", { name: "Settings" }).click();
+  await page.getByLabel("Default time zone").selectOption("Australia/Perth");
+  await page.getByRole("button", { name: "Save settings" }).click();
+  await expect(page.getByText("Settings saved")).toBeVisible();
+  await page.getByRole("link", { name: "Workspace" }).click();
+  await page.getByRole("button", { name: "New sandbox" }).click();
+  await page.getByRole("textbox", { name: "Name" }).fill("Zone room");
+  await page.getByRole("button", { name: "Create" }).click();
+  await page.getByRole("button", { name: /^Zone room/ }).click();
+  await page.getByRole("link", { name: "Open room" }).click();
+  await expect(page.getByTestId("room-canvas")).toBeVisible();
+  await page.getByRole("button", { name: "Room size" }).click();
+  const zone = page.getByLabel("Time zone");
+  await expect(zone).toHaveValue("Australia/Perth");
+  await expect(page.getByText("Width, 1 to 64 tiles")).toBeVisible();
+  await zone.selectOption("US/Hawaii");
+  await page.getByRole("button", { name: "Apply" }).click();
+  await expect.poll(async () => (await room(page)).room?.timezone).toBe("US/Hawaii");
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "Hide menu" }).click();
+  await page.getByRole("button", { name: "Show menu" }).click();
+  await page.getByRole("link", { name: "Settings" }).click();
+  await page.getByLabel("Default time zone").selectOption("Europe/London");
+  await page.getByRole("button", { name: "Save settings" }).click();
 });
 
 test("the phone layout of the editor has no sideways page scroll", async ({ page }) => {
