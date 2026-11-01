@@ -19,6 +19,9 @@ import {
   type Flight,
   type FurniArtData,
   type FxShown,
+  faceGestures,
+  faceHasLaugh,
+  faceIsAnimated,
   figureAction,
   flightAt,
   footprint,
@@ -148,7 +151,7 @@ export class RoomRenderer {
   private furniLoaded = new Map<string, FurniArt | null>();
   private avatars = new Map<string, Texture | null>();
   private avatarLoading = new Set<string>();
-  private avatarShown = new Map<number, Texture>();
+  private avatarShown = new Map<number, { texture: Texture; dir: number }>();
   private parts = new Map<string, Texture>();
   private hits: { hit: Hit; bounds: Rectangle; order: number }[] = [];
   private scene: Scene | null = null;
@@ -243,8 +246,24 @@ export class RoomRenderer {
     for (const elapsed of action === "sixty_seven" ? [0, SIXTY_SEVEN_MS] : [0]) {
       const { extra, gesture } = avatarExtras(details, action, elapsed);
       const shown = figureAction("wlk", extra);
-      for (let frame = 0; frame < 4; frame++)
-        this.avatarTexture(avatar, shown, dir, frame, gesture);
+      const gestures = faceGestures(avatar.face);
+      for (const look of gestures.length ? gestures : [gesture]) {
+        for (let frame = 0; frame < 4; frame++) this.avatarTexture(avatar, shown, dir, frame, look);
+      }
+    }
+  }
+
+  /** Loads the rest of a face for this pose, so that its next change never waits on an image. */
+  private preloadFace(avatar: PlacedAvatar, pose: AvatarPose): void {
+    if (faceIsAnimated(avatar.face)) this.animating = true;
+    const extra = (pose.extra ?? []).filter((part) => part !== "lgh");
+    const action = figureAction(pose.action, extra);
+    const frames = pose.action === "wlk" ? [0, 1, 2, 3] : [pose.frame];
+    for (const gesture of faceGestures(avatar.face)) {
+      for (const frame of frames) this.avatarTexture(avatar, action, pose.dir, frame, gesture);
+    }
+    if (faceHasLaugh(avatar.face) && pose.action === "std" && extra.length === 0) {
+      this.avatarTexture(avatar, "lgh", pose.dir, 0, "std");
     }
   }
 
@@ -652,8 +671,12 @@ export class RoomRenderer {
     const plain = loaded
       ? null
       : this.avatars.get(avatarUrl(avatar, pose.action, pose.dir, pose.frame));
-    const texture = loaded ?? plain ?? this.avatarShown.get(avatar.id) ?? null;
-    if (loaded) this.avatarShown.set(avatar.id, loaded);
+    const last = this.avatarShown.get(avatar.id);
+    // Standing still facing the same way, the last image beats a flash of the default face.
+    const keepLast = last?.dir === pose.dir && pose.action !== "wlk";
+    const texture = loaded ?? (keepLast ? last.texture : plain) ?? last?.texture ?? null;
+    if (loaded) this.avatarShown.set(avatar.id, { texture: loaded, dir: pose.dir });
+    this.preloadFace(avatar, pose);
     if (selected) {
       const ring = new Graphics();
       this.tilePath(ring, pose.x, pose.y, pose.z);

@@ -38,6 +38,7 @@ import {
   directionBetween,
   drawTile,
   emptyRoom,
+  FACE_NAMES,
   type FurniInfo,
   figureAction,
   findPath,
@@ -56,6 +57,7 @@ import {
   stackHeight,
   standAt,
   UNKNOWN_FURNI,
+  withFace,
 } from "./model";
 import { type AvatarPose, avatarUrl, type Hit, RoomRenderer, type Scene } from "./renderer";
 import {
@@ -140,6 +142,7 @@ class WbEditor extends HTMLElement {
   /** What a built-in value stands for, such as hand item 3 being a carrot. */
   private valueNames: Record<string, Record<string, string>> = {};
   private runEdits = new Map<number, string>();
+  private faceEdited = false;
   private looks: RunState["looks"] | null = null;
   private fx: RunState["fx"] | null = null;
   private flights: RunState["flights"] | null = null;
@@ -313,10 +316,15 @@ class WbEditor extends HTMLElement {
 
   private avatarLook(avatar: PlacedAvatar) {
     const playing = this.actions.get(avatar.id);
-    return avatarExtras(
-      this.heldDetails(avatar),
-      playing?.action,
-      playing ? performance.now() - playing.started : 0,
+    return withFace(
+      avatarExtras(
+        this.heldDetails(avatar),
+        playing?.action,
+        playing ? performance.now() - playing.started : 0,
+      ),
+      avatar,
+      this.walkers.has(avatar.id),
+      performance.now(),
     );
   }
 
@@ -1176,7 +1184,8 @@ class WbEditor extends HTMLElement {
       const box = this.room.furni.find((f) => f.id === id);
       if (box) box.wired = JSON.parse(wired);
     }
-    if (edits.length) this.markDirty();
+    if (edits.length || this.faceEdited) this.markDirty();
+    this.faceEdited = false;
     this.selected = null;
     this.mode = "build";
     this.needsDraw = true;
@@ -2006,7 +2015,7 @@ class WbEditor extends HTMLElement {
     }
     height.textContent = T.debugHeight(avatar.z);
     position.textContent = T.avatarAt(avatar.x, avatar.y, T.poses[avatar.pose] ?? avatar.pose);
-    const { extra, gesture } = avatarExtras(this.heldDetails(avatar));
+    const { extra, gesture } = withFace(avatarExtras(this.heldDetails(avatar)), avatar, false, 0);
     const src = avatarUrl(avatar, figureAction(avatar.pose, extra), avatar.dir, 0, gesture);
     if (preview.getAttribute("src") !== src) preview.src = src;
   }
@@ -2028,6 +2037,21 @@ class WbEditor extends HTMLElement {
       this.markDirty();
     }
     avatar.details = next;
+    this.needsDraw = true;
+    this.syncAvatarPanel();
+  }
+
+  /** A face stays until changed. Unlike other changes in a run, it is kept after Stop too. */
+  private setFace(avatar: PlacedAvatar, face: string | null): void {
+    if (this.run) {
+      const saved = this.savedRoom?.avatars.find((a) => a.id === avatar.id);
+      if (saved) saved.face = face;
+      this.faceEdited = true;
+    } else {
+      this.history.record(this.room);
+      this.markDirty();
+    }
+    avatar.face = face;
     this.needsDraw = true;
     this.syncAvatarPanel();
   }
@@ -2055,6 +2079,14 @@ class WbEditor extends HTMLElement {
       this.syncAvatarPanel();
     });
     fields.set("@sign", sign);
+    const face = h(
+      "select",
+      { "aria-label": T.avatarFace, "data-testid": "avatar-face" },
+      h("option", { value: "" }, T.avatarDefaultFace),
+      ...FACE_NAMES.map((name) => h("option", { value: name }, T.avatarFaces[name] ?? name)),
+    ) as HTMLSelectElement;
+    face.value = FACE_NAMES.includes(String(avatar.face)) ? String(avatar.face) : "";
+    face.addEventListener("change", () => this.setFace(avatar, face.value || null));
     return h(
       "div",
       { class: "avatar-section", "data-testid": "avatar-actions" },
@@ -2073,6 +2105,7 @@ class WbEditor extends HTMLElement {
           ),
         ),
       ),
+      h("label", { class: "avatar-field" }, h("span", {}, T.avatarFace), face),
       h("label", { class: "avatar-field" }, h("span", {}, T.avatarSign), sign),
     );
   }

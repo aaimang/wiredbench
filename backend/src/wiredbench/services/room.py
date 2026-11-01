@@ -56,6 +56,7 @@ class PlacedAvatar(_Open):
     dir: Direction = 2
     pose: Literal["std", "sit", "lay"] = "std"
     details: dict[str, int] | None = None
+    face: Annotated[str, StringConstraints(pattern=r"^[a-z_]{1,20}$")] | None = None
 
 
 class RoomDocument(_Open):

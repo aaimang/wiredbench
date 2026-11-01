@@ -24,6 +24,7 @@ export interface PlacedAvatar {
   z: number;
   dir: number;
   pose: "std" | "sit" | "lay";
+  face?: string | null;
   [key: string]: unknown;
 }
 
@@ -527,6 +528,59 @@ export function avatarExtras(
   const hand = details["@handitem"] ?? 0;
   if (hand > 0 && hand < 10000) extra.push(`crr=${hand}`);
   return { extra, gesture: details["@is_idle"] ? "eyb" : "std", frame };
+}
+
+/**
+ * Faces the avatar keeps until changed. Each frame is an avatar image gesture, and more than one
+ * makes it move. "lgh" is the laugh image, which only exists standing still.
+ */
+const FACES: Record<string, { frames: string[]; ms: number }> = {
+  happy: { frames: ["sml"], ms: 0 },
+  laughing: { frames: ["lgh", "sml"], ms: 350 },
+  excited: { frames: ["sml", "srp"], ms: 500 },
+  sad: { frames: ["sad"], ms: 0 },
+  upset: { frames: ["sad", "eyb"], ms: 700 },
+  angry: { frames: ["agr"], ms: 0 },
+  surprised: { frames: ["srp"], ms: 0 },
+  speaking: { frames: ["spk", "std"], ms: 180 },
+  sleepy: { frames: ["eyb", "std"], ms: 1200 },
+  sleeping: { frames: ["eyb"], ms: 0 },
+  dead: { frames: ["eyb"], ms: 0 }, // Habbo has no such face, so this is a stand-in.
+};
+export const FACE_NAMES = Object.keys(FACES);
+const LAUGH = "lgh";
+const LAUGH_WITH_POSE = "spk";
+
+export function faceIsAnimated(face: unknown): boolean {
+  return (FACES[String(face)]?.frames.length ?? 0) > 1;
+}
+
+/** Every gesture a face uses, so that they can all be loaded before the first one is shown. */
+export function faceGestures(face: unknown): string[] {
+  const frames = FACES[String(face)]?.frames ?? [];
+  return frames.map((frame) => (frame === LAUGH ? LAUGH_WITH_POSE : frame));
+}
+
+export function faceHasLaugh(face: unknown): boolean {
+  return FACES[String(face)]?.frames.includes(LAUGH) ?? false;
+}
+
+/** Puts the chosen face on a look. With no face, the look keeps its default expression. */
+export function withFace<T extends { extra: string[]; gesture: string }>(
+  look: T,
+  avatar: Pick<PlacedAvatar, "face" | "pose">,
+  moving: boolean,
+  now: number,
+): T {
+  const face = FACES[String(avatar.face)];
+  if (!face) return look;
+  const frame = face.frames[face.ms ? Math.floor(now / face.ms) % face.frames.length : 0] ?? "std";
+  if (frame !== LAUGH) return { ...look, gesture: frame };
+  // The laugh image replaces the whole body, so it would stop a walk or stand up someone sitting.
+  if (moving || avatar.pose !== "std" || look.extra.length > 0) {
+    return { ...look, gesture: LAUGH_WITH_POSE };
+  }
+  return { ...look, extra: [LAUGH], gesture: "std" };
 }
 
 /** The action value of an avatar image: the pose first, and plain standing left out when more is added. */
