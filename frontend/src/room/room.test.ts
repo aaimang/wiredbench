@@ -361,6 +361,8 @@ describe("wired looks", () => {
     expect(highlightTint(look, 0)).toBe(0x123456);
     expect(highlightTint({ ...look, strength: 0 }, 0)).toBeNull();
     expect(highlightTint(undefined, 0)).toBeNull();
+    expect(highlightTint({ ...look, type: "outline" }, 0)).toBeNull();
+    expect(highlightTint({ ...look, type: "brighten" }, 0)).toBeNull();
     expect(highlightTint({ ...look, type: "darken", strength: 50 }, 0)).toBe(0x808080);
   });
 

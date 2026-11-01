@@ -122,6 +122,7 @@ class WbEditor extends HTMLElement {
   private saveError = "";
   private saving: Promise<void> | null = null;
   private needsDraw = true;
+  private runEdits = new Map<number, string>();
   private looks: RunState["looks"] | null = null;
   private query = "";
   private paletteType = "";
@@ -572,7 +573,13 @@ class WbEditor extends HTMLElement {
   private markDirty(): void {
     this.checked = null;
     if (this.run) {
-      this.needsDraw = true; // A run works on a copy, so nothing here is saved.
+      // A run works on a copy, so only box settings carry on, into the run now and the room at Stop.
+      this.needsDraw = true;
+      const box = this.selectedFurni();
+      if (box?.wired && this.runEdits.get(box.id) !== JSON.stringify(box.wired)) {
+        this.runEdits.set(box.id, JSON.stringify(box.wired));
+        void this.run.input({ type: "box_settings", furni: box.id, settings: box.wired });
+      }
       return;
     }
     this.dirty = true;
@@ -1037,6 +1044,13 @@ class WbEditor extends HTMLElement {
     this.walkers.clear();
     if (this.savedRoom) this.room = this.savedRoom;
     this.savedRoom = null;
+    const edits = [...this.runEdits];
+    this.runEdits.clear();
+    for (const [id, wired] of edits) {
+      const box = this.room.furni.find((f) => f.id === id);
+      if (box) box.wired = JSON.parse(wired);
+    }
+    if (edits.length) this.markDirty();
     this.selected = null;
     this.mode = "build";
     this.needsDraw = true;
