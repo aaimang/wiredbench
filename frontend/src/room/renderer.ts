@@ -7,11 +7,11 @@ import {
   Graphics,
   Rectangle,
   Sprite,
-  Text,
   Texture,
   TextureStyle,
 } from "pixi.js";
 import { get, withQuery } from "../api";
+import { fxArt, fxHeight } from "./fx-art";
 import { depth, screenToTile, TILE_HEIGHT, TILE_WIDTH, tileCentre, Z_UNIT } from "./iso";
 import {
   type FurniArtData,
@@ -19,7 +19,6 @@ import {
   footprint,
   footprintSize,
   furniParts,
-  fxFill,
   type Highlight,
   highlightTint,
   type InfoLookup,
@@ -89,15 +88,6 @@ const GLOW_OFFSETS = [...OUTLINE_OFFSETS, [-2, 0], [2, 0], [0, -2], [0, 2]];
 const GLOW_OPACITY = 0.8;
 const FX_RISE_USER = 100;
 const FX_RISE_FURNI = 40;
-const FX_ROW_HEIGHT = 14;
-const FX_BAR_HEIGHT = 6;
-const FX_DEFAULT_STYLE = { width: 44, color: 0x4fb3e8 };
-const FX_STYLES: Record<string, { width: number; color: number }> = {
-  prog: { width: 44, color: 0x4fb3e8 },
-  status: { width: 44, color: 0xe0b23c },
-  hp: { width: 44, color: 0xd9534f },
-  boss: { width: 90, color: 0xa24fd9 },
-};
 const ART_VERSION = 3;
 const AVATAR_ANCHOR = { x: 32, y: 96 };
 const AVATAR_SIZE = { w: 64, h: 110 };
@@ -309,7 +299,7 @@ export class RoomRenderer {
 
   /** Wiredbench's own plain numbers and bars, stacked over each holder. Not Habbo's art. */
   private drawFx(scene: Scene): void {
-    const rows = new Map<string, number>();
+    const used = new Map<string, number>();
     const ordered = [...(scene.fx ?? [])].sort((a, b) => a.order - b.order);
     for (const fx of ordered) {
       const holder =
@@ -318,42 +308,16 @@ export class RoomRenderer {
           : scene.room.furni.find((f) => f.id === fx.id);
       if (!holder) continue;
       const key = `${fx.target}:${fx.id}`;
-      const row = rows.get(key) ?? 0;
-      rows.set(key, row + 1);
+      const below = used.get(key) ?? 0;
+      const height = fxHeight(fx.kind);
+      used.set(key, below + height);
       const centre = tileCentre(holder.x, holder.y, holder.z);
       const rise = fx.target === "user" ? FX_RISE_USER : FX_RISE_FURNI;
-      this.addFx(fx, centre.x, centre.y - rise - row * FX_ROW_HEIGHT);
+      const art = fxArt(fx);
+      art.position.set(centre.x, centre.y - rise - below - height / 2);
+      art.zIndex = Number.MAX_SAFE_INTEGER;
+      this.layer.addChild(art);
     }
-  }
-
-  private addFx(fx: FxShown, x: number, y: number): void {
-    const style = FX_STYLES[fx.kind] ?? FX_DEFAULT_STYLE;
-    const mark = new Container();
-    mark.zIndex = Number.MAX_SAFE_INTEGER;
-    mark.position.set(x, y);
-    if (fx.kind === "number" || fx.kind === "levelling") {
-      const label = fx.kind === "levelling" ? `Lv ${fx.value}` : fx.value;
-      const text = new Text({
-        text: label,
-        style: {
-          fontFamily: "monospace",
-          fontSize: 12,
-          fill: 0xffffff,
-          stroke: { color: 0x000000, width: 3 },
-        },
-      });
-      text.anchor.set(0.5, 1);
-      mark.addChild(text);
-    } else {
-      const half = style.width / 2;
-      const bar = new Graphics()
-        .rect(-half - 1, -FX_BAR_HEIGHT - 1, style.width + 2, FX_BAR_HEIGHT + 2)
-        .fill(0x000000)
-        .rect(-half, -FX_BAR_HEIGHT, style.width * fxFill(fx), FX_BAR_HEIGHT)
-        .fill(style.color);
-      mark.addChild(bar);
-    }
-    this.layer.addChild(mark);
   }
 
   private drawFloor(scene: Scene): void {
