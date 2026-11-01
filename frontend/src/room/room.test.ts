@@ -9,6 +9,7 @@ import {
   type FurniPart,
   findPath,
   fitsInRoom,
+  flightAt,
   footprint,
   furniAt,
   furniParts,
@@ -389,5 +390,27 @@ describe("box names", () => {
     expect(isWiredBox("wf_xtra_varfx_hp")).toBe(true);
     expect(isWiredBox("wf_tile1")).toBe(false);
     expect(isWiredBox("wf_upcounter1")).toBe(false);
+  });
+});
+
+describe("projectile flights", () => {
+  const flight = {
+    from: [5, 2] as [number, number],
+    to: [8, 2] as [number, number],
+    height: 100,
+    past: 0,
+  };
+
+  it("flies from start to target and curves highest in the middle", () => {
+    expect(flightAt(flight, 0)).toEqual({ x: 5, y: 2, lift: 0 });
+    expect(flightAt(flight, 0.5).x).toBe(6.5);
+    expect(flightAt(flight, 0.5).lift).toBeCloseTo(19);
+    expect(flightAt(flight, 1).x).toBe(8);
+    expect(flightAt(flight, 1).lift).toBeCloseTo(0);
+  });
+
+  it("is a straight line at height 0, and animates past its target when asked", () => {
+    expect(flightAt({ ...flight, height: 0 }, 0.5).lift).toBe(0);
+    expect(flightAt({ ...flight, past: 3 }, 1).x).toBe(11);
   });
 });

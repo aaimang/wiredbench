@@ -1462,3 +1462,49 @@ def test_walking_to_furni_needs_furni_a_user_can_stand_on() -> None:
 
     assert run(set()) == 5
     assert run({"candle"}) == 9
+
+
+def arrow_room(**addon: Any) -> Engine:
+    engine = room(
+        box(50, "arrow", 5, 2),
+        box(1, "wf_trg_says_something", 1, 1, text="go"),
+        box(2, "wf_act_rel_mov", 1, 1, 1, furni=[50], move_x=3),
+        box(3, "wf_xtra_rotate_to_dir", 1, 1, 2, **addon),
+        users=[user(100, "Ann", 9, 9)],
+    )
+    engine.users[100]["dir"] = 6
+    say(engine, "go")
+    engine.advance(100)
+    return engine
+
+
+def test_a_projectile_turns_the_furni_and_the_shooter() -> None:
+    engine = arrow_room()
+    assert engine.furni[50]["x"] == 8
+    assert engine.furni[50]["rot"] == 2
+    assert engine.users[100]["dir"] == 2
+    flight = engine.snapshot()["flights"][0]
+    assert (flight["from"], flight["to"], flight["ms"], flight["height"]) == ([5, 2], [8, 2], 500, 50)
+
+
+def test_projectile_options() -> None:
+    assert arrow_room(proj_rotate=False).furni[50]["rot"] == 0
+    assert arrow_room(proj_shooter=False).users[100]["dir"] == 6
+    assert arrow_room(proj_offset=2).furni[50]["rot"] == 4
+    slow = arrow_room(proj_custom_time=True, proj_tile_ms=500).snapshot()["flights"][0]
+    assert slow["ms"] == 1500
+    past = arrow_room(proj_past_on=True, proj_past=3)
+    assert past.furni[50]["x"] == 8, "past the target is only animation"
+    assert past.snapshot()["flights"][0]["past"] == 3
+
+
+def test_a_move_without_the_add_on_is_no_flight() -> None:
+    engine = moved(box(2, "wf_act_rel_mov", 1, 1, 1, furni=[50], move_x=1), box(50, "lamp", 5, 5))
+    assert engine.snapshot()["flights"] == []
+    assert engine.furni[50]["rot"] == 0
+
+
+def test_old_flights_are_dropped() -> None:
+    engine = arrow_room()
+    engine.advance(5000)
+    assert engine.snapshot()["flights"] == []

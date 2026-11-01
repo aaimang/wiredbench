@@ -126,6 +126,7 @@ class WbEditor extends HTMLElement {
   private runEdits = new Map<number, string>();
   private looks: RunState["looks"] | null = null;
   private fx: RunState["fx"] | null = null;
+  private flights: RunState["flights"] | null = null;
   private query = "";
   private paletteType = "";
   private toolbar = h("div", { class: "toolbar editor-toolbar" });
@@ -223,6 +224,7 @@ class WbEditor extends HTMLElement {
     return {
       looks: this.run ? this.looks : null,
       fx: this.run ? this.fx : null,
+      flights: this.run ? this.flights : null,
       room: this.room,
       lookup: this.lookup,
       revisionOf: (classname) => this.items.get(classname)?.revision ?? null,
@@ -1064,6 +1066,7 @@ class WbEditor extends HTMLElement {
   private applyRun(state: RunState): void {
     this.looks = state.looks;
     this.fx = state.fx;
+    this.flights = state.flights;
     for (const item of state.furni) {
       const placed = this.room.furni.find((f) => f.id === item.id);
       if (placed) Object.assign(placed, item);

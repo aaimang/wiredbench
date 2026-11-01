@@ -12,8 +12,8 @@ read at commit `3fc9c06f533c`, for facts only.
 - Seen in a real preset: 0
 - Seen in a real room dump: 97
 - Checked in a real room: 87
-- Have a form: 105
-- Option numbers mapped: 51
+- Have a form: 106
+- Option numbers mapped: 52
 
 | Box | Evidence | Form | Options | Room check |
 |---|---|---|---|---|
@@ -281,7 +281,7 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_xtra_mov_physics` | Seen in a real room dump |  |  |  |
 | `wf_xtra_or_eval` | Checked in a real room | Yes |  | 2026-11-01 |
 | `wf_xtra_random` | Checked in a real room | Yes | Yes | 2026-11-01 |
-| `wf_xtra_rotate_to_dir` | Seen in a real room dump |  |  |  |
+| `wf_xtra_rotate_to_dir` | Seen in a real room dump | Yes | Yes |  |
 | `wf_xtra_scan_chest_furni_by_type` | Seen in a real room dump |  |  |  |
 | `wf_xtra_text_input_variable` | Seen in a real room dump |  |  |  |
 | `wf_xtra_text_output_furni_name` | Seen in a real room dump |  |  |  |

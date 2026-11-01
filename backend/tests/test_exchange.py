@@ -746,3 +746,17 @@ def test_picks_replace_a_triggering_furni_default() -> None:
     assert sources("wf_act_give_var", variable="v") == [0, 200], "nothing picked"
     assert sources("wf_act_give_var", variable="v", furni=[2], furni_source="trigger")[0] == 0
     assert sources("wf_act_furni_to_furni", furni=[2]) == [0, 100], "picks are the target there"
+
+
+def test_projectile_options_read_their_positions() -> None:
+    options = [0, 1, 1, 0, 500, -20, 1, 1, 0, 4, 2, 127, 0, 1, 1, 0, 3, -20, 100]
+    settings = exchange.friendly_settings("wf_xtra_rotate_to_dir", {"options": options}, {})
+    assert settings["proj_rotate"] is False
+    assert settings["proj_custom_time"] is True
+    assert settings["proj_tile_ms"] == 500
+    assert settings["proj_offset"] == 2
+    assert settings["proj_variables"] == 127
+    assert settings["proj_shooter"] is False
+    assert settings["proj_past_on"] is True
+    assert settings["proj_past"] == 3
+    assert settings["proj_height"] == 100

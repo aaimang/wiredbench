@@ -155,6 +155,18 @@ OPTION_FIELDS: dict[str, list[tuple[str, int, Any]]] = {
     "wf_xtra_varfx_status": FX_RANGE_FIELDS,
     "wf_xtra_varfx_hp": FX_RANGE_FIELDS,
     "wf_xtra_varfx_boss": FX_RANGE_FIELDS,
+    "wf_xtra_rotate_to_dir": [
+        ("proj_rotate", 0, bool),
+        ("proj_custom_time", 2, bool),
+        ("proj_tile_ms", 4, int),
+        ("proj_offset", 10, int),
+        ("proj_variables", 11, int),
+        ("proj_shooter", 12, bool),
+        ("proj_bunny", 13, bool),
+        ("proj_past_on", 14, bool),
+        ("proj_past", 16, int),
+        ("proj_height", 18, int),
+    ],
     "wf_xtra_mov_carry_users": [("carry", 0, ("furni", "tile"))],
     "wf_act_join_team": [
         ("team", 0, {1: "red", 2: "green", 3: "blue", 4: "yellow"}),

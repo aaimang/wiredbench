@@ -459,3 +459,33 @@ export function fxFill(fx: Pick<FxShown, "value" | "min" | "max">): number {
 export function isWiredBox(classname: string): boolean {
   return /(?:^|_)(trg|act|cnd|slc|xtra|var)(?:_|$)/.test(classname.slice(3));
 }
+
+export interface Flight {
+  id: number;
+  start_ms: number;
+  ms: number;
+  from: [number, number];
+  to: [number, number];
+  height: number;
+  past: number;
+}
+
+/** A height of 100 rose about 19 pixels in a real room, and a height of 50 about half of that. */
+const CURVE_PIXELS_PER_HEIGHT = 0.19;
+
+/** Where a flying furni is drawn, `progress` from 0 to 1. Past the target is only animation. */
+export function flightAt(
+  flight: Pick<Flight, "from" | "to" | "height" | "past">,
+  progress: number,
+): { x: number; y: number; lift: number } {
+  const [fromX, fromY] = flight.from;
+  const [dx, dy] = [flight.to[0] - fromX, flight.to[1] - fromY];
+  const tiles = Math.max(Math.abs(dx), Math.abs(dy), 1);
+  const reach = 1 + flight.past / tiles;
+  const t = Math.max(0, Math.min(progress, 1));
+  return {
+    x: fromX + dx * reach * t,
+    y: fromY + dy * reach * t,
+    lift: Math.sin(Math.PI * t) * flight.height * CURVE_PIXELS_PER_HEIGHT,
+  };
+}
