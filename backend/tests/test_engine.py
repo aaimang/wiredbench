@@ -1378,3 +1378,24 @@ def test_a_variable_box_draws_at_most_five_fx() -> None:
     say(engine, "go")
     engine.advance(500)
     assert len(engine.snapshot()["fx"]) == 5
+
+
+def test_a_value_set_by_hand_changes_it_and_fires_variable_changed() -> None:
+    engine = room(
+        box(1, "wf_trg_says_something", 1, 1, text="go"),
+        box(2, "wf_act_give_var", 1, 1, 1, variable="v", value=3),
+        box(3, "wf_trg_var_changed", 2, 2, variable="v"),
+        box(4, "wf_act_log", 2, 2, 1, text="noticed"),
+    )
+    say(engine, "go")
+    engine.advance(500)
+    engine.apply_input({"type": "set_value", "variable": "v", "key": "user:100", "value": "42"})
+    engine.advance(500)
+    assert engine.variables["v"]["user:100"].value == 42
+    assert "noticed" in logs(engine)
+
+
+def test_a_value_set_by_hand_needs_an_existing_holder() -> None:
+    engine = room()
+    engine.apply_input({"type": "set_value", "variable": "nope", "key": "user:100", "value": "1"})
+    assert "user:100" not in engine.variables["nope"]

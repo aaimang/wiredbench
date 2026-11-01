@@ -37,7 +37,17 @@ class Advance(BaseModel):
 
 class Input(BaseModel):
     type: Literal[
-        "move", "turn", "say", "click", "use", "enter", "leave", "game_start", "game_end", "box_settings"
+        "move",
+        "turn",
+        "say",
+        "click",
+        "use",
+        "enter",
+        "leave",
+        "game_start",
+        "game_end",
+        "box_settings",
+        "set_value",
     ]
     user: Int | None = None
     x: int | None = Field(None, ge=0, le=64)
@@ -46,6 +56,10 @@ class Input(BaseModel):
     furni: Int | None = None
     text: str | None = Field(None, max_length=500)
     settings: dict[str, Any] | None = None
+    variable: str | None = Field(None, max_length=64)
+    key: str | None = Field(None, max_length=64)
+    # A string, because 64-bit values do not survive being a JavaScript number.
+    value: str | None = Field(None, pattern=r"^-?\d{1,19}$")
 
 
 class Command(BaseModel):

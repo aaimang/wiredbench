@@ -1867,6 +1867,15 @@ wb-editor {
   overflow: auto;
 }
 
+.run-value {
+  cursor: text;
+}
+
+.run-value input {
+  width: 100%;
+  min-width: 6ch;
+}
+
 .run-vars th {
   padding-right: 8px;
   font-size: 13px;

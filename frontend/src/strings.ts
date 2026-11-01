@@ -373,6 +373,9 @@ export const t = {
     variable: "Variable",
     holder: "Holder",
     nobodyYet: "Nobody yet",
+    editValueHint: "Double-click to change this value",
+    editValue: (name: string) => `New value for ${name}`,
+    badValue: "A value must be a whole number.",
     startGame: "Start game",
     endGame: "End game",
     gameScores: (running: boolean, scores: Record<string, number>) =>
