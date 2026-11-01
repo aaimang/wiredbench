@@ -625,3 +625,16 @@ def test_movement_options_read_their_positions() -> None:
         "direction": "x+y-",
         "rotation": "clockwise",
     }
+
+
+def test_sources_export_and_read_back() -> None:
+    wired = {"text": "hi", "user_source": "selector"}
+    furni = [{"id": 1, "classname": "wf_act_show_message", "x": 1, "y": 1, "wired": wired}]
+    box = exchange.export_gpresets({"furni": furni})[0]["wired"]["effects"][0]
+    assert box["userSources"] == [200]
+    assert exchange.friendly_settings("wf_act_show_message", box, {})["user_source"] == "selector"
+    fresh = exchange.export_gpresets({"furni": [{**furni[0], "wired": {"text": "hi"}}]})[0]["wired"][
+        "effects"
+    ][0]
+    assert fresh["userSources"] == [0]
+    assert "user_source" not in exchange.friendly_settings("wf_act_show_message", fresh, {})

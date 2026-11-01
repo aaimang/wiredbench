@@ -40,6 +40,15 @@ VARIABLE_SCOPES = {
     "wf_var_context": "context",
 }
 COMPASS_NUMBERS = dict(enumerate(("y-", "x+y-", "x+", "x+y+", "y+", "x-y+", "x-", "x-y-")))
+# Where a box takes its users and furni from. Only the first slot is read and written.
+SOURCE_FIELDS = {
+    "user_source": ("userSources", "default_user_sources", {0: "trigger", 200: "selector", 201: "signal"}),
+    "furni_source": (
+        "furniSources",
+        "default_furni_sources",
+        {0: "trigger", 100: "picks", 200: "selector", 201: "signal"},
+    ),
+}
 AREA_FIELDS = [("area_x", 0, int), ("area_y", 1, int), ("area_width", 2, int), ("area_height", 3, int)]
 # A selector's two switches sit on the box itself. The file calls invert "inverse".
 SELECTOR_SWITCHES = {"filter": "filter", "invert": "inverse"}
@@ -260,6 +269,17 @@ def friendly_settings(classname: str, box: dict[str, Any], names: dict[str, str]
             )
             if value is not None:
                 settings[name] = value
+    for name, (key, defaults, numbers) in SOURCE_FIELDS.items():
+        slots = box.get(key)
+        fresh = (box_facts.of(classname) or {}).get(defaults) or [None]
+        if (
+            name in fields
+            and isinstance(slots, list)
+            and slots
+            and slots[0] != fresh[0]
+            and slots[0] in numbers
+        ):
+            settings[name] = numbers[slots[0]]
     for name, key in SELECTOR_SWITCHES.items():
         if name in fields and isinstance(box.get(key), bool):
             settings[name] = box[key]
@@ -486,6 +506,13 @@ def _apply_settings(
             number = _setting_to_option(value, mapped[name][1])
             if number is not None:
                 _write_option(box, mapped[name][0], number)
+                continue
+        if name in SOURCE_FIELDS and value != "default":
+            key, _, numbers = SOURCE_FIELDS[name]
+            number = next((n for n, label in numbers.items() if label == value), None)
+            if number is not None:
+                slots = box[key] if isinstance(box.get(key), list) else []
+                box[key] = [number, *slots[1:]]
                 continue
         if name in SELECTOR_SWITCHES and classname.startswith("wf_slc_"):
             box[SELECTOR_SWITCHES[name]] = bool(value)
