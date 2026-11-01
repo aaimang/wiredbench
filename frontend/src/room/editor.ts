@@ -2044,6 +2044,7 @@ class WbEditor extends HTMLElement {
     if (!this.walkers.has(avatar.id)) {
       this.renderer?.warmChoices(
         avatar,
+        this.heldDetails(avatar),
         Object.keys(T.avatarActionNames) as AvatarAction[],
         T.avatarSigns.length,
       );

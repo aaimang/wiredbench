@@ -26,6 +26,7 @@ import {
   nextId,
   normaliseRoom,
   type PlacedFurni,
+  pickWalkLook,
   type RoomDocument,
   showsTime,
   stackHeight,
@@ -479,5 +480,13 @@ describe("avatar faces", () => {
     expect(withFace(look, { ...laughing, pose: "sit" }, false, 0).extra).toEqual([]);
     expect(withFace({ ...look, extra: ["sig=6"] }, laughing, false, 0).extra).toEqual(["sig=6"]);
     expect(faceGestures("laughing")).toEqual(["spk", "sml"]);
+  });
+});
+
+describe("walking looks", () => {
+  it("shows the first look with every step loaded, and nothing if none has", () => {
+    const ready = new Set(["old", "plain"]);
+    expect(pickWalkLook(["new", "old", "plain"], (look) => ready.has(look))).toBe("old");
+    expect(pickWalkLook(["new"], (look) => ready.has(look))).toBeNull();
   });
 });

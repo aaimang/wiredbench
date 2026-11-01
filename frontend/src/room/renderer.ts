@@ -35,6 +35,7 @@ import {
   lookAmount,
   type PlacedAvatar,
   type PlacedFurni,
+  pickWalkLook,
   type RoomDocument,
   SIXTY_SEVEN_MS,
 } from "./model";
@@ -112,6 +113,8 @@ const PICKED_TINT = 0xb28ad8;
 const POSE_DROP: Record<string, number> = { sit: 0.5, lay: 0.5 };
 /** Habbo gets four downloads at a time, and this leaves two for images already on screen. */
 const WARM_DOWNLOADS = 2;
+const WALK_FRAMES = [0, 1, 2, 3];
+const ALL_DIRECTIONS = [0, 1, 2, 3, 4, 5, 6, 7];
 
 function cssColor(name: string, fallback: number): number {
   const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -253,9 +256,9 @@ export class RoomRenderer {
 
   /** Loads images nobody is waiting for yet, leaving Habbo's other download slots for those in view. */
   private warm(urls: string[]): void {
-    for (const url of urls) {
-      if (!this.avatars.has(url) && !this.warmQueue.includes(url)) this.warmQueue.push(url);
-    }
+    const wanted = urls.filter((url) => !this.avatars.has(url));
+    // The latest request goes first, because it is what the avatar is doing now.
+    this.warmQueue = [...new Set([...wanted, ...this.warmQueue])];
     while (this.warmLoading < WARM_DOWNLOADS) {
       const url = this.warmQueue.shift();
       if (!url) return;
@@ -340,8 +343,27 @@ export class RoomRenderer {
   }
 
   /** Loads what the user panel can ask for next, so a choice is usually ready when it is made. */
-  warmChoices(avatar: PlacedAvatar, actions: AvatarAction[], signs: number): void {
+  warmChoices(
+    avatar: PlacedAvatar,
+    details: unknown,
+    actions: AvatarAction[],
+    signs: number,
+  ): void {
     const { pose, dir } = avatar;
+    // First the plain walk, which any walk can fall back on, then how this avatar looks now.
+    const look = avatarExtras(details);
+    const lookGestures = faceGestures(avatar.face);
+    const walking = [
+      { extra: [] as string[], gesture: "std" },
+      ...(lookGestures.length ? lookGestures : [look.gesture]).map((gesture) => ({
+        extra: look.extra,
+        gesture,
+      })),
+    ].flatMap(({ extra, gesture }) =>
+      ALL_DIRECTIONS.flatMap((direction) =>
+        WALK_FRAMES.map((frame) => this.walkUrl(avatar, extra, gesture, direction, frame)),
+      ),
+    );
     const faces = FACE_NAMES.flatMap((face) =>
       this.faceUrls({ ...avatar, face }, {
         ...avatarExtras(avatar.details),
@@ -358,7 +380,7 @@ export class RoomRenderer {
       });
       return avatarUrl(avatar, figureAction(pose, extra), dir, 0, gestures[0] ?? gesture);
     });
-    this.warm([...faces, ...moves, ...held]);
+    this.warm([...walking, ...faces, ...moves, ...held]);
   }
 
   private centre(): { x: number; y: number } {
@@ -741,38 +763,10 @@ export class RoomRenderer {
     return new Rectangle(c.x - halfW, c.y - lift - halfH, halfW * 2, lift + halfH * 2);
   }
 
-  private drawAvatar(scene: Scene, avatar: PlacedAvatar): void {
-    const pose = scene.avatarPose(avatar);
-    const centre = tileCentre(pose.x, pose.y, pose.z - (POSE_DROP[pose.action] ?? 0));
-    const left = centre.x - AVATAR_ANCHOR.x;
-    const top = centre.y - AVATAR_ANCHOR.y;
-    const selected = scene.selected?.kind === "avatar" && scene.selected.id === avatar.id;
-    const order = depth(pose.frontX, pose.frontY, pose.z, 900);
+  private standingTexture(avatar: PlacedAvatar, pose: AvatarPose): Texture | null {
     const action = figureAction(pose.action, pose.extra ?? []);
     const loaded = this.avatarTexture(avatar, action, pose.dir, pose.frame, pose.gesture);
-    // While a frame loads, the same pose without extras keeps the avatar facing and stepping correctly.
-    // Failing that, the last image stays up, so a change never flashes the placeholder.
-    const plain = loaded
-      ? null
-      : this.avatars.get(avatarUrl(avatar, pose.action, pose.dir, pose.frame));
     const last = this.avatarShown.get(avatar.id);
-    // Standing still facing the same way, the last image beats a flash of the default face.
-    const keepLast = last?.dir === pose.dir && pose.action !== "wlk";
-    // Walking or turning, the previous look on this frame is closest to what was on screen.
-    const previous =
-      !loaded && last
-        ? this.avatars.get(
-            avatarUrl(
-              avatar,
-              figureAction(pose.action, last.extra),
-              pose.dir,
-              pose.frame,
-              last.gesture,
-            ),
-          )
-        : null;
-    const texture =
-      loaded ?? (keepLast ? last.texture : (previous ?? plain)) ?? last?.texture ?? null;
     if (loaded) {
       this.avatarShown.set(avatar.id, {
         texture: loaded,
@@ -780,7 +774,77 @@ export class RoomRenderer {
         extra: pose.extra ?? [],
         gesture: pose.gesture,
       });
+      return loaded;
     }
+    // Facing the same way, the last image beats a flash of the default face.
+    if (last?.dir === pose.dir) return last.texture;
+    return (
+      this.avatars.get(avatarUrl(avatar, pose.action, pose.dir, pose.frame)) ??
+      last?.texture ??
+      null
+    );
+  }
+
+  /**
+   * A walk never waits on an image. It shows the closest look with all four steps loaded, so the
+   * avatar keeps stepping, and looks are not mixed on the way, which would flicker.
+   */
+  private walkingTexture(avatar: PlacedAvatar, pose: AvatarPose): Texture | null {
+    const extra = pose.extra ?? [];
+    const last = this.avatarShown.get(avatar.id);
+    this.loadWalkLook(avatar, extra, pose.gesture, pose.dir);
+    const look = pickWalkLook(
+      [
+        { extra, gesture: pose.gesture },
+        ...(last ? [{ extra: last.extra, gesture: last.gesture }] : []),
+        { extra: [], gesture: pose.gesture },
+        { extra: [], gesture: "std" },
+      ],
+      (option) =>
+        WALK_FRAMES.every((frame) =>
+          this.avatars.get(this.walkUrl(avatar, option.extra, option.gesture, pose.dir, frame)),
+        ),
+    );
+    if (!look) return last?.texture ?? null;
+    const texture = this.avatars.get(
+      this.walkUrl(avatar, look.extra, look.gesture, pose.dir, pose.frame),
+    );
+    if (!texture) return last?.texture ?? null;
+    this.avatarShown.set(avatar.id, { texture, dir: pose.dir, ...look });
+    return texture;
+  }
+
+  private walkUrl(
+    avatar: PlacedAvatar,
+    extra: string[],
+    gesture: string | undefined,
+    dir: number,
+    frame: number,
+  ): string {
+    return avatarUrl(avatar, figureAction("wlk", extra), dir, frame, gesture);
+  }
+
+  private loadWalkLook(
+    avatar: PlacedAvatar,
+    extra: string[],
+    gesture: string | undefined,
+    dir: number,
+  ): void {
+    for (const frame of WALK_FRAMES)
+      void this.loadAvatar(this.walkUrl(avatar, extra, gesture, dir, frame));
+  }
+
+  private drawAvatar(scene: Scene, avatar: PlacedAvatar): void {
+    const pose = scene.avatarPose(avatar);
+    const centre = tileCentre(pose.x, pose.y, pose.z - (POSE_DROP[pose.action] ?? 0));
+    const left = centre.x - AVATAR_ANCHOR.x;
+    const top = centre.y - AVATAR_ANCHOR.y;
+    const selected = scene.selected?.kind === "avatar" && scene.selected.id === avatar.id;
+    const order = depth(pose.frontX, pose.frontY, pose.z, 900);
+    const texture =
+      pose.action === "wlk"
+        ? this.walkingTexture(avatar, pose)
+        : this.standingTexture(avatar, pose);
     if (faceIsAnimated(avatar.face)) this.animating = true;
     void this.loadFace(avatar, pose);
     if (selected) {

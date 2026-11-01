@@ -583,6 +583,11 @@ export function withFace<T extends { extra: string[]; gesture: string }>(
   return { ...look, extra: [LAUGH], gesture: "std" };
 }
 
+/** The first look that can be shown in full. They come in order of preference. */
+export function pickWalkLook<T>(looks: T[], complete: (look: T) => boolean): T | null {
+  return looks.find(complete) ?? null;
+}
+
 /** The action value of an avatar image: the pose first, and plain standing left out when more is added. */
 export function figureAction(pose: string, extra: string[]): string {
   return [...(pose === "std" && extra.length ? [] : [pose]), ...extra].join(",");

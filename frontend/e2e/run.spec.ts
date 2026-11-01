@@ -409,6 +409,74 @@ test("a new action or face only appears once all of its images have loaded", asy
   await expect.poll(async () => (await canvas.screenshot()).equals(standing)).toBe(false);
 });
 
+test("a walk keeps stepping while its face is still loading", async ({ page }) => {
+  await login(page);
+  await page.getByRole("link", { name: "Guide" }).click();
+  await page
+    .getByTestId("tutorial-score-counter")
+    .getByRole("button", { name: "Add and open" })
+    .click();
+  await expect(page.getByTestId("room-canvas")).toBeVisible();
+  // The test server's avatar images are empty. Here the plain walking steps are red and blue.
+  const paint = (colour: string) =>
+    page.evaluate((fill) => {
+      const image = document.createElement("canvas");
+      image.width = 64;
+      image.height = 110;
+      const context = image.getContext("2d") as CanvasRenderingContext2D;
+      context.fillStyle = fill;
+      context.fillRect(0, 0, 64, 110);
+      return image.toDataURL("image/png").split(",")[1] as string;
+    }, colour);
+  const red = Buffer.from(await paint("#ff0000"), "base64");
+  const blue = Buffer.from(await paint("#0000ff"), "base64");
+  await page.route(/\/image\?.*action=wlk&gesture=std/, (route) =>
+    route.fulfill({
+      contentType: "image/png",
+      body: /frame=[02]/.test(route.request().url()) ? red : blue,
+    }),
+  );
+  await page.route(/\/image\?.*gesture=eyb/, () => {}); // Never answered: still loading.
+
+  await page.getByRole("button", { name: "Run", exact: true }).click();
+  await page.locator(".avatar-row-pick").first().click();
+  const panel = page.getByTestId("avatar-place");
+  await panel.getByLabel("Column").fill("3");
+  await panel.getByLabel("Row").fill("1");
+  await panel.getByLabel("Direction").selectOption("2");
+  await expect(panel.getByLabel("Column")).toHaveValue("3");
+  await page.getByTestId("avatar-face").selectOption({ label: "Sleeping" });
+  await page.waitForTimeout(4000); // The plain walk loads in the background.
+
+  const canvas = page.getByTestId("room-canvas");
+  const coloursIn = (shot: Buffer) =>
+    page.evaluate(async (data) => {
+      const bytes = Uint8Array.from(atob(data), (char) => char.charCodeAt(0));
+      const bitmap = await createImageBitmap(new Blob([bytes], { type: "image/png" }));
+      const copy = new OffscreenCanvas(bitmap.width, bitmap.height);
+      const context = copy.getContext("2d") as OffscreenCanvasRenderingContext2D;
+      context.drawImage(bitmap, 0, 0);
+      const { data: pixels } = context.getImageData(0, 0, bitmap.width, bitmap.height);
+      let reds = 0;
+      let blues = 0;
+      for (let i = 0; i < pixels.length; i += 4) {
+        if (pixels[i] === 255 && pixels[i + 2] === 0 && pixels[i + 1] === 0) reds++;
+        if (pixels[i] === 0 && pixels[i + 2] === 255 && pixels[i + 1] === 0) blues++;
+      }
+      return { reds, blues };
+    }, shot.toString("base64"));
+  // Walks back and forth until both steps are caught, however slow the screenshots are.
+  const seen = { red: false, blue: false };
+  const deadline = Date.now() + 15000;
+  for (let turn = 0; Date.now() < deadline && !(seen.red && seen.blue); turn++) {
+    await clickTile(page, turn % 2 ? 3 : 1, 1);
+    const { reds, blues } = await coloursIn(await canvas.screenshot());
+    seen.red ||= reds > 1000;
+    seen.blue ||= blues > 1000;
+  }
+  expect(seen).toEqual({ red: true, blue: true });
+});
+
 test("walking in a run keeps the new facing and the panel follows it", async ({ page }) => {
   await login(page);
   await page.getByRole("link", { name: "Guide" }).click();
