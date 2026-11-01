@@ -62,7 +62,7 @@ export interface Scene {
 }
 
 /** Matches ART_VERSION on the server. Furni art is cached for good, so a new shape needs a new address. */
-const ART_VERSION = 2;
+const ART_VERSION = 3;
 const AVATAR_ANCHOR = { x: 32, y: 96 };
 const AVATAR_SIZE = { w: 64, h: 110 };
 const SELECTED_TINT = 0xfff0a0;
@@ -248,8 +248,9 @@ export class RoomRenderer {
     const now = performance.now();
     const known = this.stateSince.get(key);
     if (known?.state === item.state) return now - known.since;
-    this.stateSince.set(key, { state: item.state, since: now });
-    return 0;
+    // A furni seen for the first time did not just change, so it plays no transition.
+    this.stateSince.set(key, { state: item.state, since: known ? now : Number.NEGATIVE_INFINITY });
+    return known ? 0 : Number.POSITIVE_INFINITY;
   }
 
   draw(scene: Scene): void {

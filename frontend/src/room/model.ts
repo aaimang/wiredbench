@@ -343,6 +343,7 @@ export interface FurniArtData {
   directions: number[];
   poses: Record<string, FurniPart[]>;
   tracks?: Record<string, FurniTrack[]>;
+  transitions?: Record<string, FurniTrack[]>;
   digits?: Record<string, Record<string, FurniPart>[]>;
 }
 
@@ -371,7 +372,7 @@ function trackFrame(track: FurniTrack, elapsedMs: number): FurniPart | null {
   return track.frames[index] ?? null;
 }
 
-/** What to draw for a furni at a moment. `elapsedMs` counts from when it entered this state. */
+/** What to draw for a furni at a moment. `elapsedMs` counts from when it entered this state, and a furni that was already in it has been there forever. */
 export function furniParts(
   art: FurniArtData,
   classname: string,
@@ -388,7 +389,9 @@ export function furniParts(
     const parts = [...pose.filter((part) => !layers.has(part.layer)), ...shown];
     return { parts: parts.sort((a, b) => a.z - b.z), moving: false };
   }
-  const tracks = art.tracks?.[`${direction}:${state}`];
+  const entering = art.transitions?.[`${direction}:${state}`] ?? [];
+  const playing = entering.some((track) => elapsedMs < endOf(track));
+  const tracks = playing ? entering : art.tracks?.[`${direction}:${state}`];
   if (!tracks?.length) return { parts: pose, moving: false };
   const replaced = new Set(tracks.map((track) => track.layer));
   const current = tracks.flatMap((track) => trackFrame(track, elapsedMs) ?? []);

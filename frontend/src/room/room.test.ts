@@ -314,6 +314,22 @@ describe("furni animation", () => {
     expect(result.moving).toBe(false);
   });
 
+  it("plays a transition on the way into a state, then shows the state", () => {
+    const bomb: FurniArtData = {
+      directions: [2],
+      poses: { "2:1": [part(0)] },
+      transitions: {
+        "2:1": [{ layer: 0, repeat: 24, loop: false, frames: [part(0, 5), part(0, 6)] }],
+      },
+    };
+    expect(furniParts(bomb, "bomb", 2, 1, 0).parts[0]?.dx).toBe(5);
+    expect(furniParts(bomb, "bomb", 2, 1, 0).moving).toBe(true);
+    expect(furniParts(bomb, "bomb", 2, 1, 1000).parts[0]?.dx).toBe(6);
+    const done = furniParts(bomb, "bomb", 2, 1, Number.POSITIVE_INFINITY);
+    expect(done.parts[0]?.dx).toBe(0);
+    expect(done.moving).toBe(false);
+  });
+
   it("shows a counter's time from its digit layers", () => {
     expect(timeDigits(90, 4)).toEqual([0, 1, 3, 0]);
     expect(timeDigits(6005, 4)).toEqual([9, 9, 0, 5]);

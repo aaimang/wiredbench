@@ -239,7 +239,7 @@ class _Atlas:
 
 
 # Raised when the shape of a manifest changes, so art built before is built again.
-ART_VERSION = 2
+ART_VERSION = 3
 MAX_TRACK_FRAMES = 1000
 DIGITS = 10
 
@@ -326,8 +326,9 @@ def _build(swf: ParsedSwf, base: str, animate: bool = True) -> tuple[dict[str, A
     directions = sorted({int(m.group(1)) for name in assets if (m := name_pattern.match(name))})
     if not directions:
         raise SwfError("The file has no usable images.")
-    # Animations numbered from 1000 are transitions between states, not states you can choose.
-    states = sorted({0} | {key for key in animations if key < 1000})
+    # A transition plays on the way into a state, and is not a state you can choose.
+    entering = {key: _int(a, "transitionTo") for key, a in animations.items() if a.get("transitionTo")}
+    states = sorted({0} | {key for key in animations if key < 1000 and key not in entering})
     layer_count = _int(visualization, "layerCount", 1)
     if not 0 < layer_count <= 26:
         raise SwfError("Bad layer count.")
@@ -335,6 +336,7 @@ def _build(swf: ParsedSwf, base: str, animate: bool = True) -> tuple[dict[str, A
     atlas = _Atlas()
     poses: dict[str, list[dict[str, Any]]] = {}
     tracks: dict[str, list[dict[str, Any]]] = {}
+    transitions: dict[str, list[dict[str, Any]]] = {}
     digits: dict[str, list[dict[str, dict[str, Any]]]] = {}
 
     def sprite(asset: ET.Element, layer: int, z: int, alpha: int, ink: str) -> dict[str, Any] | None:
@@ -405,6 +407,9 @@ def _build(swf: ParsedSwf, base: str, animate: bool = True) -> tuple[dict[str, A
                 moving = _layer_tracks(animations[state], direction, sprite_for)
                 if moving:
                     tracks[f"{direction}:{state}"] = moving
+        for key, into in entering.items():
+            if animate and (moving := _layer_tracks(animations[key], direction, sprite_for)):
+                transitions.setdefault(f"{direction}:{into}", moving)
         if animate and (found := _digit_layers(direction, layer_count, sprite_for)):
             digits[str(direction)] = found
 
@@ -415,6 +420,7 @@ def _build(swf: ParsedSwf, base: str, animate: bool = True) -> tuple[dict[str, A
         "colors": _colors(visualization),
         "poses": poses,
         "tracks": tracks,
+        "transitions": transitions,
         "digits": digits,
     }
     return manifest, atlas.render()

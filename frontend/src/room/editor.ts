@@ -378,9 +378,13 @@ class WbEditor extends HTMLElement {
     canvas.addEventListener("dblclick", (event) => {
       const at = position(event as unknown as PointerEvent);
       const hit = this.renderer?.hitAt(at.x, at.y);
-      if (this.run && hit?.kind === "furni") {
+      if (hit?.kind !== "furni") return;
+      if (this.run) {
         void this.run.input({ type: "use", user: this.runUser(), furni: hit.id });
+        return;
       }
+      const item = this.room.furni.find((f) => f.id === hit.id);
+      if (item) void this.useFurni(item);
     });
     canvas.addEventListener("pointerleave", () => {
       down = null;
