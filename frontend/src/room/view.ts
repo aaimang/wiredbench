@@ -137,6 +137,9 @@ class WbRoomView extends HTMLElement {
           if (revision !== undefined) void renderer.loadFurni(name, revision);
         }
         this.bindPointer(renderer.app.canvas);
+        renderer.app.ticker.add(() => {
+          if (renderer.motionDue()) this.draw();
+        });
         this.draw(); // Clicks need tile positions, which exist once the room has been drawn.
       }
       this.apply(await post<ViewState>(this.query(this.url)));

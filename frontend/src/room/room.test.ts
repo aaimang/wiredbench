@@ -4,11 +4,14 @@ import {
   directionBetween,
   drawTile,
   emptyRoom,
+  type FurniArtData,
   type FurniInfo,
+  type FurniPart,
   findPath,
   fitsInRoom,
   footprint,
   furniAt,
+  furniParts,
   History,
   type InfoLookup,
   nextDirection,
@@ -16,8 +19,10 @@ import {
   normaliseRoom,
   type PlacedFurni,
   type RoomDocument,
+  showsTime,
   stackHeight,
   standAt,
+  timeDigits,
 } from "./model";
 import { isDebugCommand, runClock } from "./run-panel";
 
@@ -266,5 +271,68 @@ describe("run console", () => {
   it("formats the clock", () => {
     expect(runClock(65500)).toBe("1:05.5");
     expect(runClock(0)).toBe("0:00.0");
+  });
+});
+
+describe("furni animation", () => {
+  const part = (layer: number, dx = 0): FurniPart => ({
+    x: dx,
+    y: 0,
+    w: 1,
+    h: 1,
+    dx,
+    dy: 0,
+    flip: false,
+    layer,
+    z: layer,
+    alpha: 255,
+    ink: "",
+  });
+  const art: FurniArtData = {
+    directions: [2],
+    poses: { "2:0": [part(0)], "2:1": [part(0), part(1, 1)] },
+    tracks: { "2:1": [{ layer: 1, repeat: 24, loop: true, frames: [part(1, 1), part(1, 2)] }] },
+  };
+
+  it("plays a state's frames and loops them", () => {
+    const at = (ms: number) =>
+      furniParts(art, "lamp", 2, 1, ms).parts.find((p) => p.layer === 1)?.dx;
+    expect(at(0)).toBe(1);
+    expect(at(1000)).toBe(2);
+    expect(at(2000)).toBe(1);
+    expect(furniParts(art, "lamp", 2, 1, 0).moving).toBe(true);
+    expect(furniParts(art, "lamp", 2, 0, 0).moving).toBe(false);
+  });
+
+  it("holds the last frame of an animation that does not loop", () => {
+    const once = {
+      ...art,
+      tracks: { "2:1": [{ layer: 1, repeat: 24, loop: false, frames: [part(1, 1), part(1, 2)] }] },
+    };
+    const result = furniParts(once, "lamp", 2, 1, 9000);
+    expect(result.parts.find((p) => p.layer === 1)?.dx).toBe(2);
+    expect(result.moving).toBe(false);
+  });
+
+  it("shows a counter's time from its digit layers", () => {
+    expect(timeDigits(90, 4)).toEqual([0, 1, 3, 0]);
+    expect(timeDigits(6005, 4)).toEqual([9, 9, 0, 5]);
+    expect(timeDigits(7, 2)).toEqual([0, 7]);
+    const slot = (layer: number) =>
+      Object.fromEntries([...Array(10).keys()].map((d) => [String(d), { ...part(layer), x: d }]));
+    const clock: FurniArtData = {
+      directions: [2],
+      poses: { "2:0": [part(0), part(1)] },
+      digits: { "2": [slot(1), slot(2)] },
+    };
+    const { parts } = furniParts(clock, "wf_upcounter1", 2, 37, 0);
+    expect(parts.filter((p) => p.layer > 0).map((p) => p.x)).toEqual([3, 7]);
+    expect(furniParts(clock, "lamp", 2, 37, 0).parts.map((p) => p.layer)).toEqual([0, 1]);
+  });
+
+  it("does not treat a state that has no picture as anything but its first", () => {
+    expect(showsTime("wf_game_upcounter2")).toBe(true);
+    expect(showsTime("bb_counter")).toBe(true);
+    expect(showsTime("rela_candle1")).toBe(false);
   });
 });

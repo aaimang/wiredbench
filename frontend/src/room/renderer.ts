@@ -11,34 +11,19 @@ import {
 import { get, withQuery } from "../api";
 import { depth, screenToTile, TILE_HEIGHT, TILE_WIDTH, tileCentre, Z_UNIT } from "./iso";
 import {
+  type FurniArtData,
   footprint,
   footprintSize,
+  furniParts,
   type InfoLookup,
   type PlacedAvatar,
   type PlacedFurni,
   type RoomDocument,
 } from "./model";
 
-export interface FurniManifest {
-  directions: number[];
+export interface FurniManifest extends FurniArtData {
   states: number[];
   colors: Record<string, Record<string, string>>;
-  poses: Record<
-    string,
-    {
-      x: number;
-      y: number;
-      w: number;
-      h: number;
-      dx: number;
-      dy: number;
-      flip: boolean;
-      layer: number;
-      z: number;
-      alpha: number;
-      ink: string;
-    }[]
-  >;
 }
 
 export interface FurniArt {
@@ -76,6 +61,8 @@ export interface Scene {
   avatarPose: (avatar: PlacedAvatar) => AvatarPose;
 }
 
+/** Matches ART_VERSION on the server. Furni art is cached for good, so a new shape needs a new address. */
+const ART_VERSION = 2;
 const AVATAR_ANCHOR = { x: 32, y: 96 };
 const AVATAR_SIZE = { w: 64, h: 110 };
 const SELECTED_TINT = 0xfff0a0;
@@ -160,8 +147,10 @@ export class RoomRenderer {
       const name = encodeURIComponent(classname);
       pending = (async () => {
         try {
-          const manifest = await get<FurniManifest>(`/api/furni/${revision}/${name}/manifest`);
-          const atlas = await loadTexture(`/api/furni/${revision}/${name}/atlas`);
+          const manifest = await get<FurniManifest>(
+            `/api/furni/${revision}/${name}/manifest?v=${ART_VERSION}`,
+          );
+          const atlas = await loadTexture(`/api/furni/${revision}/${name}/atlas?v=${ART_VERSION}`);
           return { manifest, atlas };
         } catch {
           return null;
@@ -240,8 +229,32 @@ export class RoomRenderer {
     return best?.hit ?? null;
   }
 
+  /** Set by a draw that showed something still moving, so the next frame must be drawn too. */
+  animating = false;
+  private lastMotion = 0;
+
+  /** Furni move at 24 frames a second at most, so a room is not rebuilt on every screen refresh. */
+  motionDue(): boolean {
+    const now = performance.now();
+    if (!this.animating || now - this.lastMotion < 1000 / 24) return false;
+    this.lastMotion = now;
+    return true;
+  }
+
+  private stateSince = new Map<string, { state: number; since: number }>();
+
+  private elapsedInState(item: { x: number; y: number; state: number; id?: number }): number {
+    const key = item.id === undefined ? "ghost" : String(item.id);
+    const now = performance.now();
+    const known = this.stateSince.get(key);
+    if (known?.state === item.state) return now - known.since;
+    this.stateSince.set(key, { state: item.state, since: now });
+    return 0;
+  }
+
   draw(scene: Scene): void {
     this.scene = scene;
+    this.animating = false;
     this.applyPan();
     const sizeKey = `${scene.room.room.width}x${scene.room.room.height}`;
     if (sizeKey !== this.drawnRoomSize) {
@@ -349,7 +362,15 @@ export class RoomRenderer {
 
   private addFurniSprites(
     scene: Scene,
-    item: { classname: string; x: number; y: number; z: number; rot: number; state: number },
+    item: {
+      id?: number;
+      classname: string;
+      x: number;
+      y: number;
+      z: number;
+      rot: number;
+      state: number;
+    },
     tint: number | null,
     opacity: number,
     order: typeof depth,
@@ -363,8 +384,14 @@ export class RoomRenderer {
     const direction = manifest.directions.includes(item.rot)
       ? item.rot
       : (manifest.directions[0] ?? 0);
-    const pose =
-      manifest.poses[`${direction}:${item.state}`] ?? manifest.poses[`${direction}:0`] ?? [];
+    const { parts: pose, moving } = furniParts(
+      manifest,
+      item.classname,
+      direction,
+      item.state,
+      this.elapsedInState(item),
+    );
+    if (moving) this.animating = true;
     const color = manifest.colors[item.classname.split("*")[1] ?? ""];
     let left = Number.POSITIVE_INFINITY;
     let top = Number.POSITIVE_INFINITY;
