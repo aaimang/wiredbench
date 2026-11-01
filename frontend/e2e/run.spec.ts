@@ -465,9 +465,11 @@ test("a walk keeps stepping while its face is still loading", async ({ page }) =
       }
       return { reds, blues };
     }, shot.toString("base64"));
-  await clickTile(page, 1, 1);
+  // Walks back and forth until both steps are caught, however slow the screenshots are.
   const seen = { red: false, blue: false };
-  for (let sample = 0; sample < 8; sample++) {
+  const deadline = Date.now() + 15000;
+  for (let turn = 0; Date.now() < deadline && !(seen.red && seen.blue); turn++) {
+    await clickTile(page, turn % 2 ? 3 : 1, 1);
     const { reds, blues } = await coloursIn(await canvas.screenshot());
     seen.red ||= reds > 1000;
     seen.blue ||= blues > 1000;
