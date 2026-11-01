@@ -405,6 +405,7 @@ class WbEditor extends HTMLElement {
         this.walkers.delete(walker.avatarId);
         continue;
       }
+      this.preloadWalker(walker, avatar);
       walker.elapsed += seconds;
       while (walker.elapsed >= SECONDS_PER_STEP) {
         const next = walker.path.shift();
@@ -433,6 +434,20 @@ class WbEditor extends HTMLElement {
           break;
         }
       }
+    }
+  }
+
+  /** Every direction left on the path, for what the avatar is doing now. Known frames cost nothing. */
+  private preloadWalker(walker: Walker, avatar: PlacedAvatar): void {
+    const details = this.heldDetails(avatar);
+    const action = this.actions.get(avatar.id)?.action;
+    let from: [number, number] = [walker.from[0], walker.from[1]];
+    const seen = new Set<number>();
+    for (const step of walker.path) {
+      const dir = directionBetween(from, step);
+      if (!seen.has(dir)) this.renderer?.preloadWalk(avatar, dir, details, action);
+      seen.add(dir);
+      from = [step[0], step[1]];
     }
   }
 

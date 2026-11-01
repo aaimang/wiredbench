@@ -95,6 +95,29 @@ def test_view_routes_never_send_config(api: Api, habbo: FakeHabbo) -> None:
     )
 
 
+def test_view_shows_what_an_avatar_holds_and_no_other_details(api: Api) -> None:
+    room = room_with_secrets(api)
+    document = api.get(f"/api/sandboxes/{room}").json()["document"]
+    document["avatars"] = [
+        {
+            "id": 1,
+            "name": "A",
+            "hotel": "com",
+            "figure": "hd-180-1",
+            "x": 1,
+            "y": 1,
+            "details": {"@handitem": 1000, "@sign": 6, "@achievement_score": 77},
+        }
+    ]
+    revision = api.get(f"/api/sandboxes/{room}").json()["revision"]
+    saved = api.put(f"/api/sandboxes/{room}/document", json={"document": document, "base_revision": revision})
+    assert saved.status_code == 200, saved.text
+    api.post("/api/auth/view-as")
+    shown = {"@handitem": 1000, "@sign": 6}
+    assert api.get(f"/api/view/sandboxes/{room}").json()["document"]["avatars"][0]["details"] == shown
+    assert api.post(f"/api/view/sandboxes/{room}/run").json()["users"][0]["details"] == shown
+
+
 def test_view_input_cannot_use_debug_or_api_writes(api: Api) -> None:
     room = room_with_secrets(api)
     api.post("/api/auth/view-as")

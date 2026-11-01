@@ -278,6 +278,38 @@ test("a running user can be moved and turned from the inspector", async ({ page 
   await expect(panel.getByLabel("Direction")).toHaveValue("5");
 });
 
+test("walking loads every direction ahead for what the avatar holds and does", async ({ page }) => {
+  await login(page);
+  await page.getByRole("link", { name: "Guide" }).click();
+  await page
+    .getByTestId("tutorial-score-counter")
+    .getByRole("button", { name: "Add and open" })
+    .click();
+  await expect(page.getByTestId("room-canvas")).toBeVisible();
+  await page.getByRole("button", { name: "Run", exact: true }).click();
+  await page.locator(".avatar-row-pick").first().click();
+  const panel = page.getByTestId("avatar-place");
+  await panel.getByLabel("Column").fill("3");
+  await panel.getByLabel("Row").fill("1");
+  await expect(panel.getByLabel("Column")).toHaveValue("3");
+  await page.getByTestId("avatar-actions").getByLabel("Sign").selectOption({ label: "6" });
+  const asked = new Map<string, Set<string>>();
+  page.on("request", (request) => {
+    const url = new URL(request.url());
+    if (!url.pathname.endsWith("/image")) return;
+    if (!(url.searchParams.get("action") ?? "").startsWith("wlk,sig=6")) return;
+    const dir = url.searchParams.get("direction") ?? "";
+    asked.set(dir, (asked.get(dir) ?? new Set()).add(url.searchParams.get("frame") ?? ""));
+  });
+  // Diagonal and straight, so that the avatar must turn on the way.
+  await clickTile(page, 1, 2);
+  await expect(page.getByTestId("walk-status")).toContainText("walking to");
+  // Well inside the first step, every direction it will use has its four frames on the way.
+  await expect
+    .poll(() => [...asked.values()].filter((frames) => frames.size === 4).length, { timeout: 450 })
+    .toBeGreaterThanOrEqual(2);
+});
+
 test("walking in a run keeps the new facing and the panel follows it", async ({ page }) => {
   await login(page);
   await page.getByRole("link", { name: "Guide" }).click();

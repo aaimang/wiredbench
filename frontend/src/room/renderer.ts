@@ -32,6 +32,7 @@ import {
   type PlacedAvatar,
   type PlacedFurni,
   type RoomDocument,
+  SIXTY_SEVEN_MS,
 } from "./model";
 
 export interface FurniManifest extends FurniArtData {
@@ -228,11 +229,23 @@ export class RoomRenderer {
     return null;
   }
 
-  /** Loads walking frames ahead of time, so the first steps do not flicker. */
-  preloadWalk(avatar: PlacedAvatar, dir: number): void {
-    const { extra, gesture } = avatarExtras(avatar.details);
-    const action = figureAction("wlk", extra);
-    for (let frame = 0; frame < 4; frame++) this.avatarTexture(avatar, action, dir, frame, gesture);
+  /**
+   * Loads walking frames ahead of time, so a step or a turn never waits on a frame. They must match
+   * what the avatar is holding or doing, because each combination is its own set of images.
+   */
+  preloadWalk(
+    avatar: PlacedAvatar,
+    dir: number,
+    details: unknown = avatar.details,
+    action?: AvatarAction,
+  ): void {
+    // Sixty-seven swaps between two signs, so both sets are needed.
+    for (const elapsed of action === "sixty_seven" ? [0, SIXTY_SEVEN_MS] : [0]) {
+      const { extra, gesture } = avatarExtras(details, action, elapsed);
+      const shown = figureAction("wlk", extra);
+      for (let frame = 0; frame < 4; frame++)
+        this.avatarTexture(avatar, shown, dir, frame, gesture);
+    }
   }
 
   /** Loads both frames of an action, so it does not stutter on its first swap. */
@@ -634,8 +647,12 @@ export class RoomRenderer {
     const order = depth(pose.frontX, pose.frontY, pose.z, 900);
     const action = figureAction(pose.action, pose.extra ?? []);
     const loaded = this.avatarTexture(avatar, action, pose.dir, pose.frame, pose.gesture);
-    // The last image stays up while the next loads, so a change never flashes the placeholder.
-    const texture = loaded ?? this.avatarShown.get(avatar.id) ?? null;
+    // While a frame loads, the same pose without extras keeps the avatar facing and stepping correctly.
+    // Failing that, the last image stays up, so a change never flashes the placeholder.
+    const plain = loaded
+      ? null
+      : this.avatars.get(avatarUrl(avatar, pose.action, pose.dir, pose.frame));
+    const texture = loaded ?? plain ?? this.avatarShown.get(avatar.id) ?? null;
     if (loaded) this.avatarShown.set(avatar.id, loaded);
     if (selected) {
       const ring = new Graphics();

@@ -6,6 +6,7 @@ Files are fetched on first use and removed oldest-used first.
 from __future__ import annotations
 
 import hashlib
+import io
 import json
 import os
 import re
@@ -15,8 +16,11 @@ from pathlib import Path
 from urllib.parse import quote, urlencode
 from uuid import uuid4
 
+from PIL import Image
+
 from wiredbench.config import HOTELS
 from wiredbench.services import swf
+from wiredbench.services.handitems import HandItems
 from wiredbench.services.upstream import IMAGE_HOST, Upstream, UpstreamError, icon_url
 
 MAX_ICON_BYTES = 2**20
@@ -26,6 +30,8 @@ PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 MISSING_RETRY_SECONDS = 24 * 3600
 
 FIGURE = re.compile(r"[a-z]{2}-\d{1,6}(-\d{1,6}){0,3}(\.[a-z]{2}-\d{1,6}(-\d{1,6}){0,3}){0,24}")
+CARRY = re.compile(r"^crr=(\d+)$")
+NO_ART = 9999  # The image service draws the raised hand with nothing in it.
 HABBO_NAME = re.compile(r"[\w.,:;=?!@+-]{1,32}")
 
 
@@ -48,6 +54,8 @@ class AssetCache:
         self.avatar_root = root.parent / "avatars"
         self.upstream = upstream
         self._downloads = threading.Semaphore(4)  # A page of icons must not flood Habbo.
+        self.hand_items = HandItems(root.parent / "handitems", upstream)
+        self._service_has_art: dict[int, bool] = {}
 
     def _folder(self, revision: int, classname: str) -> Path:
         # Classnames are checked against the catalogue first; this only makes * safe on Windows.
@@ -120,6 +128,7 @@ class AssetCache:
         self, hotel: str, figure: str, action: str, gesture: str, direction: int, frame: int
     ) -> Path | None:
         """One cached avatar frame. All values must already be validated by the route."""
+        action, art = self._translate_hand_item(hotel, action)
         query = {
             "figure": figure,
             "size": "m",
@@ -144,9 +153,60 @@ class AssetCache:
             return None
         if fetched.status != 200 or not fetched.body.startswith(PNG_MAGIC):
             raise UpstreamError(f"Unexpected avatar response: HTTP {fetched.status}.")
+        body = fetched.body
+        if art is not None and self._must_draw(hotel, figure, art):
+            image = Image.open(io.BytesIO(body)).convert("RGBA")
+            out = io.BytesIO()
+            self.hand_items.draw(hotel, image, art, direction).save(out, "PNG")
+            body = out.getvalue()
         folder.mkdir(parents=True, exist_ok=True)
-        _write_atomic(path, fetched.body)
+        _write_atomic(path, body)
         return path
+
+    def _translate_hand_item(self, hotel: str, action: str) -> tuple[str, int | None]:
+        """Swaps a @handitem value for its art number, or drops it if it draws nothing."""
+        parts = action.split(",")
+        for index, part in enumerate(parts):
+            found = CARRY.match(part)
+            if not found:
+                continue
+            art = self.hand_items.art(hotel, int(found[1]))
+            if art is None:  # Habbo's map is unreachable, so this may be the wrong item, but it is held.
+                return action, None
+            if art < 0:
+                rest = parts[:index] + parts[index + 1 :]
+                return ",".join(rest) or "std", None
+            parts[index] = f"crr={art}"
+            return ",".join(parts), art
+        return action, None
+
+    def _must_draw(self, hotel: str, figure: str, art: int) -> bool:
+        """True for art in Habbo's file that the image service does not have yet. Asked once per item."""
+        known = self._service_has_art.get(art)
+        if known is None:
+            if not self.hand_items.has_art(hotel, art):
+                return False
+            known = False
+            for direction in (2, 4):  # An item can be hidden behind the body in one of them.
+                frames = [
+                    self.upstream.get(
+                        f"https://{HOTELS[hotel]}/habbo-imaging/avatarimage?"
+                        + urlencode(
+                            {
+                                "figure": figure,
+                                "size": "m",
+                                "direction": direction,
+                                "head_direction": direction,
+                                "action": f"crr={number}",
+                            }
+                        ),
+                        MAX_AVATAR_BYTES,
+                    ).body
+                    for number in (art, NO_ART)
+                ]
+                known = known or frames[0] != frames[1]
+            self._service_has_art[art] = known
+        return not known
 
     def lookup_figure(self, hotel: str, name: str) -> dict[str, str] | None:
         """Finds a Habbo's look by name. Not cached, because looks change."""

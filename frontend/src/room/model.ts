@@ -500,7 +500,7 @@ export type AvatarAction = "wave" | "blow" | "respect" | "sixty_seven";
 
 export const ACTION_MS = 2500;
 const ACTION_FRAME_MS = 250;
-const SIXTY_SEVEN_MS = 400;
+export const SIXTY_SEVEN_MS = 400;
 export const SIGN_MAX = 17;
 /** A real room holds a sign for a few seconds. The exact length is assumed, and matches the engine. */
 export const SIGN_MS = 5000;
