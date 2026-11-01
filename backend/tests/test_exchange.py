@@ -607,3 +607,21 @@ def test_selector_settings_export_to_the_box() -> None:
     assert box["options"] == [3, 0, 2, 0]
     assert (box["filter"], box["inverse"]) == (True, True)
     assert warnings == []
+
+
+def test_movement_options_read_their_positions() -> None:
+    read = exchange.friendly_settings
+    assert read("wf_act_rel_mov", {"options": [-3, 4]}, {}) == {"move_x": -3, "move_y": 4}
+    assert read("wf_act_set_altitude", {"options": [125, 2]}, {}) == {
+        "altitude": 1.25,
+        "altitude_change": "set",
+    }
+    assert read("wf_act_move_rotate_user", {"options": [-1, 9]}, {}) == {
+        "user_move": "none",
+        "user_turn": "clockwise",
+    }
+    assert read("wf_act_move_rotate_user", {"options": [2, 4]}, {}) == {"user_move": "x+", "user_turn": "y+"}
+    assert read("wf_act_move_rotate", {"options": [8, 1, 1]}, {}) == {
+        "direction": "x+y-",
+        "rotation": "clockwise",
+    }

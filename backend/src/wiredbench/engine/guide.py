@@ -188,4 +188,12 @@ GUIDE: dict[str, tuple[str, str]] = {
     "wf_act_teleport_to": ("Teleports a user to a picked furni.", "Send a player back to the start."),
     "wf_act_user_to_furni": ("Moves a user to a picked furni.", "Walk a player to a seat."),
     "wf_act_move_rotate": ("Moves or turns picked furni.", "Slide a door open."),
+    "wf_act_rel_mov": ("Moves picked furni by a set number of tiles.", "Shift a platform three tiles along."),
+    "wf_act_set_altitude": ("Raises, lowers or sets the height of furni.", "Lift a bridge into place."),
+    "wf_act_furni_to_user": (
+        "Moves furni onto a user's tile.",
+        "Make a marker follow the player who clicked.",
+    ),
+    "wf_act_furni_to_furni": ("Moves furni onto the tile of another furni.", "Return a ball to its spot."),
+    "wf_act_move_rotate_user": ("Moves users one tile or turns them.", "Push a player off a trap."),
 }

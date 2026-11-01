@@ -27,7 +27,17 @@ TRACE_LIMIT = 4000
 PROBLEMS_KEPT = 20
 DASHBOARD_ROWS = 50
 DEFAULT_LIMIT = (100, 1)  # Runs per stack per seconds. Assumed: the real default is not public.
-MOVES = {"x+": (1, 0), "x-": (-1, 0), "y+": (0, 1), "y-": (0, -1)}
+MOVES = {
+    "y-": (0, -1),
+    "x+y-": (1, -1),
+    "x+": (1, 0),
+    "x+y+": (1, 1),
+    "y+": (0, 1),
+    "x-y+": (-1, 1),
+    "x-": (-1, 0),
+    "x-y-": (-1, -1),
+}
+MAX_ALTITUDE = 8000
 PLACEHOLDER = re.compile(r"\$\(([\w.-]{1,40})\)")
 
 
@@ -181,6 +191,12 @@ class Engine:
     # --- Loading ---
 
     def _load(self, document: dict[str, Any]) -> None:
+        room = document.get("room")
+        self.room_size = (
+            (_int(room.get("width")), _int(room.get("height")))
+            if isinstance(room, dict) and "width" in room and "height" in room
+            else None
+        )
         for raw in document.get("furni", []):
             item = {
                 "id": raw["id"],
@@ -983,17 +999,93 @@ class Engine:
     _do_teleport_to = _teleport
     _do_user_to_furni = _teleport
 
+    def _off_map(self, x: int, y: int) -> bool:
+        if x < 0 or y < 0:
+            return True
+        return self.room_size is not None and (x >= self.room_size[0] or y >= self.room_size[1])
+
+    def _shift_furni(self, furni_id: int, dx: int, dy: int) -> bool:
+        """A move off the room or onto a user cannot be made, and the furni stays put."""
+        item = self.furni[furni_id]
+        x, y = item["x"] + dx, item["y"] + dy
+        if self._off_map(x, y) or any((u["x"], u["y"]) == (x, y) for u in self.users.values()):
+            return False
+        item["x"], item["y"] = x, y
+        return True
+
+    def _furni_step(self, direction: str) -> tuple[int, int]:
+        match direction:
+            case "random":
+                return self.random.choice(list(MOVES.values()))
+            case "random_x":
+                return self.random.choice((MOVES["x+"], MOVES["x-"]))
+            case "random_y":
+                return self.random.choice((MOVES["y+"], MOVES["y-"]))
+        return MOVES.get(direction, (0, 0))
+
     def _do_move_rotate(self, box: Box, ctx: Context) -> None:
         for furni_id in self._furni_for(box, ctx):
             item = self.furni[furni_id]
-            dx, dy = MOVES.get(str(box.get("direction", "none")), (0, 0))
-            item["x"] += dx
-            item["y"] += dy
+            dx, dy = self._furni_step(str(box.get("direction", "none")))
+            if (dx or dy) and not self._shift_furni(furni_id, dx, dy):
+                continue
             rotation = str(box.get("rotation", "none"))
             turn = {"clockwise": 2, "counterclockwise": -2}.get(rotation, 0)
             if rotation == "random":
                 turn = self.random.choice((0, 2, 4, 6))
             item["rot"] = (item["rot"] + turn) % 8
+
+    def _do_rel_mov(self, box: Box, ctx: Context) -> None:
+        dx, dy = _int(box.get("move_x")), _int(box.get("move_y"))
+        if dx or dy:
+            for furni_id in self._furni_for(box, ctx):
+                self._shift_furni(furni_id, dx, dy)
+
+    def _do_set_altitude(self, box: Box, ctx: Context) -> None:
+        amount = _hundredths(box.get("altitude"))
+        change = str(box.get("altitude_change", "raise"))
+        for furni_id in self._furni_for(box, ctx):
+            item = self.furni[furni_id]
+            current = _hundredths(item["z"])
+            wanted = {"lower": current - amount, "set": amount}.get(change, current + amount)
+            item["z"] = max(0, min(wanted, MAX_ALTITUDE)) / 100
+
+    def _do_furni_to_user(self, box: Box, ctx: Context) -> None:
+        users = [u for u in self._users_for(box, ctx) if u in self.users]
+        if users:
+            target = self.users[users[0]]
+            for furni_id in self._furni_for(box, ctx):
+                self.furni[furni_id]["x"], self.furni[furni_id]["y"] = target["x"], target["y"]
+
+    def _do_furni_to_furni(self, box: Box, ctx: Context) -> None:
+        targets = [i for i in _ids(box.get("furni")) if i in self.furni]
+        if not targets:
+            return
+        match box.get("furni_source", "default"):
+            case "signal":
+                movers = list(ctx.signal_furni)
+            case "selector":
+                movers = list(ctx.selected_furni or [])
+            case _:
+                movers = [ctx.furni] if ctx.furni is not None else []
+        target = self.furni[self.random.choice(targets)]
+        for furni_id in movers:
+            item = self.furni[furni_id]
+            self._shift_furni(furni_id, target["x"] - item["x"], target["y"] - item["y"])
+
+    def _do_move_rotate_user(self, box: Box, ctx: Context) -> None:
+        step = MOVES.get(str(box.get("user_move", "none")))
+        turn = str(box.get("user_turn", "none"))
+        for user_id in self._users_for(box, ctx):
+            user = self.users.get(user_id)
+            if not user:
+                continue
+            if step and not self._off_map(user["x"] + step[0], user["y"] + step[1]):
+                self._move_user(user_id, user["x"] + step[0], user["y"] + step[1])
+            if turn in MOVES:
+                user["dir"] = list(MOVES).index(turn)
+            elif turn in ("clockwise", "counterclockwise"):
+                user["dir"] = (_int(user["dir"]) + (1 if turn == "clockwise" else -1)) % 8
 
     # --- Inspection ---
 

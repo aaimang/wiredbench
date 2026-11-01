@@ -11,8 +11,8 @@ read at commit `3fc9c06f533c`, for facts only.
 - Seen in a real preset: 0
 - Seen in a real room dump: 182
 - Checked in a real room: 3
-- Have a form: 77
-- Option numbers mapped: 28
+- Have a form: 82
+- Option numbers mapped: 31
 
 | Box | Evidence | Form | Options | Room check |
 |---|---|---|---|---|
@@ -32,8 +32,8 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_act_control_clock` | Seen in a real room dump |  |  |  |
 | `wf_act_flee` | Seen in a real room dump |  |  |  |
 | `wf_act_freeze` | Seen in a real room dump |  |  |  |
-| `wf_act_furni_to_furni` | Seen in a real room dump |  |  |  |
-| `wf_act_furni_to_user` | Seen in a real room dump |  |  |  |
+| `wf_act_furni_to_furni` | Seen in a real room dump | Yes |  |  |
+| `wf_act_furni_to_user` | Seen in a real room dump | Yes |  |  |
 | `wf_act_give_currency` | Seen in a real room dump |  |  |  |
 | `wf_act_give_furni` | Seen in a real room dump |  |  |  |
 | `wf_act_give_reward` | Reference only |  |  |  |
@@ -49,7 +49,7 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_act_move_furni_as_group` | Seen in a real room dump |  |  |  |
 | `wf_act_move_furni_to` | Reference only |  |  |  |
 | `wf_act_move_rotate` | Seen in a real room dump | Yes | Yes |  |
-| `wf_act_move_rotate_user` | Seen in a real room dump |  |  |  |
+| `wf_act_move_rotate_user` | Seen in a real room dump | Yes | Yes |  |
 | `wf_act_move_to_dir` | Seen in a real room dump |  |  |  |
 | `wf_act_mute_triggerer` | Reference only |  |  |  |
 | `wf_act_neg_call_stacks` | Seen in a real room dump | Yes |  |  |
@@ -57,14 +57,14 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_act_neg_send_signal` | Seen in a real room dump | Yes |  |  |
 | `wf_act_place_furni` | Seen in a real room dump |  |  |  |
 | `wf_act_progress_ach` | No evidence yet |  |  |  |
-| `wf_act_rel_mov` | Seen in a real room dump |  |  |  |
+| `wf_act_rel_mov` | Seen in a real room dump | Yes | Yes |  |
 | `wf_act_remove_furni` | Seen in a real room dump |  |  |  |
 | `wf_act_remove_var` | Seen in a real room dump | Yes |  |  |
 | `wf_act_reset_timers` | Seen in a real room dump | Yes |  |  |
 | `wf_act_send_dataframe` | Seen in a real room dump |  |  |  |
 | `wf_act_send_message` | Seen in a real room dump |  |  |  |
 | `wf_act_send_signal` | Seen in a real room dump | Yes |  |  |
-| `wf_act_set_altitude` | Seen in a real room dump |  |  |  |
+| `wf_act_set_altitude` | Seen in a real room dump | Yes | Yes |  |
 | `wf_act_set_highlight` | Seen in a real room dump |  |  |  |
 | `wf_act_set_visibility` | Seen in a real room dump |  |  |  |
 | `wf_act_show_message` | Seen in a real room dump | Yes |  |  |
