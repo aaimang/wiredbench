@@ -105,7 +105,17 @@ OPTION_FIELDS: dict[str, list[tuple[str, int, Any]]] = {
 # position 5 is that variable's target and position 6 says it is read on the same holder.
 REFERENCE_FLAG = {"wf_act_give_var": 4, "wf_act_change_var_val": 2, "wf_cnd_var_val_match": 2}
 REFERENCE_TARGET, REFERENCE_SAME_HOLDER = 5, 6
-TARGET_USER, TARGET_GLOBAL = 1, -10
+TARGET_NUMBERS = {"user": 1, "furni": 0, "global": -10, "context": -20}
+# Boxes whose first option says what kind of holder their variable has.
+TARGET_FIRST = {
+    "wf_act_give_var",
+    "wf_act_change_var_val",
+    "wf_act_remove_var",
+    "wf_cnd_var_val_match",
+    "wf_cnd_var_age_match",
+    "wf_cnd_has_var",
+    "wf_cnd_neg_has_var",
+}
 
 
 def _read_long(options: list[Any], position: int) -> int | None:
@@ -404,18 +414,16 @@ def _write_reference(
     warnings: list[str],
 ) -> None:
     """Our simulator always reads the variable on the same holder, so that is what the box is told to do."""
-    if name and scopes.get(name) not in ("global", "user"):
-        warnings.append(
-            f"{classname}: only user and global variables can be a value source in a G-Presets file."
-        )
+    if name and name not in scopes:
+        warnings.append(f"{classname}: a value source must be defined by a variable box in this room.")
         return
     ids: list[Any] = box["variableIds"] if isinstance(box.get("variableIds"), list) else []
     first = ids[0] if ids else "0"
     box["variableIds"] = [first, _variable_id(name, variables, used) if name else "0", *ids[2:]]
     _write_option(box, REFERENCE_FLAG[classname], 1 if name else 0)
-    is_user = scopes.get(name) == "user"
-    _write_option(box, REFERENCE_TARGET, TARGET_USER if is_user else TARGET_GLOBAL)
-    _write_option(box, REFERENCE_SAME_HOLDER, 1 if is_user else 0)
+    scope = scopes.get(name, "global")
+    _write_option(box, REFERENCE_TARGET, TARGET_NUMBERS[scope])
+    _write_option(box, REFERENCE_SAME_HOLDER, 1 if scope in ("user", "furni") else 0)
 
 
 def _apply_settings(
@@ -456,6 +464,9 @@ def _apply_settings(
         elif name == "variable" and value:
             ids: list[Any] = box["variableIds"] if isinstance(box.get("variableIds"), list) else []
             box["variableIds"] = [_variable_id(str(value), variables, used), *ids[1:]]
+            scope = scopes.get(str(value).strip())
+            if classname in TARGET_FIRST and scope:
+                _write_option(box, 0, TARGET_NUMBERS[scope])
         elif name != "variable" and value != _default(classname, name):
             warnings.append(f"{classname}: the setting {name} cannot go into a G-Presets file yet.")
 

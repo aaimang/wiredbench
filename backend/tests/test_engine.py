@@ -348,6 +348,47 @@ def test_give_variable_gives_nothing_when_its_source_is_empty() -> None:
     assert "user:100" not in engine.variables["copy"]
 
 
+def test_furni_variables_are_given_to_picked_furni() -> None:
+    engine = room(
+        box(1, "wf_var_furni", 5, 5, variable="mark"),
+        box(9, "wf_var_user", 6, 6, variable="plain"),
+        box(2, "wf_trg_says_something", 1, 1, text="go"),
+        box(3, "wf_act_give_var", 1, 1, 1, variable="mark", value=4, furni=[9]),
+    )
+    say(engine, "go")
+    assert engine.variables["mark"]["furni:9"].value == 4
+    assert "furni:100" not in engine.variables["mark"]
+
+
+def test_conditions_and_removal_follow_a_furni_variable() -> None:
+    engine = room(
+        box(1, "wf_var_furni", 5, 5, variable="mark"),
+        box(9, "wf_var_user", 6, 6, variable="plain"),
+        box(2, "wf_trg_says_something", 1, 1, text="go"),
+        box(3, "wf_cnd_has_var", 1, 1, 1, variable="mark", furni=[9]),
+        box(4, "wf_act_log", 1, 1, 2, text="held"),
+        box(5, "wf_trg_says_something", 2, 2, text="clear"),
+        box(6, "wf_act_remove_var", 2, 2, 1, variable="mark", furni=[9]),
+    )
+    say(engine, "go")
+    assert logs(engine) == []
+    engine.apply_input({"type": "api_set", "variable": "mark", "key": "furni:9", "value": 1})
+    say(engine, "go")
+    assert logs(engine) == ["held"]
+    say(engine, "clear")
+    assert "furni:9" not in engine.variables["mark"]
+
+
+def test_a_global_change_needs_no_user() -> None:
+    engine = room(
+        box(1, "wf_var_room", 5, 5, variable="round"),
+        box(2, "wf_trg_periodically", 1, 1, seconds=1),
+        box(3, "wf_act_change_var_val", 1, 1, 1, variable="round", operation="add", value=1),
+    )
+    engine.advance(1000)
+    assert engine.variables["round"]["global"].value == 1
+
+
 def test_delay_counts_half_seconds() -> None:
     engine = room(
         box(1, "wf_trg_says_something", 1, 1, text="go"),

@@ -275,7 +275,9 @@ class Engine:
             self._store(str(entry["variable"]), str(entry["key"]), _int(entry["value"]))
             if kind == "api_set":  # Assumed: an API write fires Variable Changed like an effect does.
                 holder = str(entry["key"]).partition(":")
-                self._changed(str(entry["variable"]), int(holder[2]) if holder[0] == "user" else None)
+                self._changed(
+                    str(entry["variable"]), int(holder[2]) if holder[0] in ("user", "furni") else None
+                )
         elif kind == "api_delete":
             self.variables[str(entry["variable"])].pop(str(entry["key"]), None)
         self._drain()
@@ -569,6 +571,19 @@ class Engine:
             )
         return any(results) if stack.find("wf_xtra_or_eval") else all(results)
 
+    def _holders(self, box: Box, name: str, ctx: Context) -> list[int | None]:
+        """Who a variable box acts on, which follows the kind of variable it has chosen."""
+        match self.definitions.get(name, {}).get("scope", "user"):
+            case "global" | "context":
+                return [None]
+            case "furni":
+                furni = self._furni_for(box, ctx)
+                if not furni and box.get("furni_source", "default") == "default" and ctx.furni is not None:
+                    return [ctx.furni]
+                return list(furni)
+            case _:
+                return list(self._users_for(box, ctx))
+
     def _on_furni(self, user_id: int, picks: list[int]) -> bool:
         user = self.users.get(user_id)
         if not user:
@@ -583,16 +598,19 @@ class Engine:
         users = self._users_for(box, ctx)
         picks = _ids(box.get("furni", []))
         name = str(box.get("variable", ""))
+        holders = self._holders(box, name, ctx)
         match box.classname:
             case "wf_cnd_var_age_match":
-                return bool(users) and all(self._age_matches(box, self._holding(name, u, ctx)) for u in users)
+                return bool(holders) and all(
+                    self._age_matches(box, self._holding(name, h, ctx)) for h in holders
+                )
             case "wf_cnd_has_var":
-                return bool(users) and all(self._holding(name, u, ctx) is not None for u in users)
+                return bool(holders) and all(self._holding(name, h, ctx) is not None for h in holders)
             case "wf_cnd_neg_has_var":
-                return all(self._holding(name, u, ctx) is None for u in users)
+                return all(self._holding(name, h, ctx) is None for h in holders)
             case "wf_cnd_var_val_match":
                 return bool(users) and all(
-                    self._compare(box, self._holding(name, u, ctx), u, ctx) for u in users
+                    self._compare(box, self._holding(name, h, ctx), h, ctx) for h in holders
                 )
             case "wf_cnd_trggrer_on_frn":
                 return bool(users) and all(self._on_furni(u, picks) for u in users)
@@ -695,10 +713,18 @@ class Engine:
             return
         self.variables[name][self._key(name, user)] = holding
 
-    def _changed(self, name: str, user: int | None) -> None:
+    def _changed(self, name: str, holder: int | None) -> None:
         for stack, box in self._triggers("wf_trg_var_changed"):
             if box.get("variable") == name:
-                self._start(stack, Context(trigger=box, user=user))
+                is_furni = self.definitions.get(name, {}).get("scope") == "furni"
+                self._start(
+                    stack,
+                    Context(trigger=box, furni=holder) if is_furni else Context(trigger=box, user=holder),
+                )
+
+    def _holder_label(self, name: str, holder: int | None) -> str:
+        scope = self.definitions.get(name, {}).get("scope", "user")
+        return f"{scope} {holder}" if holder is not None else f"this {scope} variable"
 
     def _read(self, holding: Holding, field_name: str) -> int:
         if field_name == "creation":
@@ -724,7 +750,7 @@ class Engine:
         if not name:
             self._log("error", "Give Variable has no variable chosen", box=box.id)
             return
-        for user in self._users_for(box, ctx):
+        for user in self._holders(box, name, ctx):
             if self._holding(name, user, ctx) is not None and not box.get("overwrite"):
                 continue
             amount = self._operand(box, user, ctx)
@@ -735,7 +761,7 @@ class Engine:
 
     def _do_remove_var(self, box: Box, ctx: Context) -> None:
         name = str(box.get("variable", "")).strip()
-        for user in self._users_for(box, ctx):
+        for user in self._holders(box, name, ctx):
             if self.definitions.get(name, {}).get("scope") == "context":
                 ctx.context_vars.pop(name, None)
             else:
@@ -749,16 +775,22 @@ class Engine:
             return _int(box.get("value", 0))
         source = self._holding(reference, user, ctx)
         if source is None:
-            self._log("error", f"{reference} is not set for user {user}", box=box.id)
+            self._log(
+                "error", f"{reference} is not set for {self._holder_label(reference, user)}", box=box.id
+            )
             return None
         return self._read(source, str(box.get("from_field", "value")))
 
     def _do_change_var_val(self, box: Box, ctx: Context) -> None:
         name = str(box.get("variable", "")).strip()
-        for user in self._users_for(box, ctx):
+        for user in self._holders(box, name, ctx):
             holding = self._holding(name, user, ctx)
             if holding is None:
-                self._log("error", f"{name} is not set for user {user}, so it was not changed", box=box.id)
+                self._log(
+                    "error",
+                    f"{name} is not set for {self._holder_label(name, user)}, so it was not changed",
+                    box=box.id,
+                )
                 continue
             amount = self._operand(box, user, ctx)
             if amount is None:

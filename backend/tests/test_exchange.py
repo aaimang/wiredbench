@@ -489,7 +489,13 @@ def _with_source(scope_box: str) -> dict[str, Any]:
 
 
 @pytest.mark.parametrize(
-    ("scope_box", "target", "same_holder"), [("wf_var_user", 1, 1), ("wf_var_room", -10, 0)]
+    ("scope_box", "target", "same_holder"),
+    [
+        ("wf_var_user", 1, 1),
+        ("wf_var_furni", 0, 1),
+        ("wf_var_room", -10, 0),
+        ("wf_var_context", -20, 0),
+    ],
 )
 def test_a_new_value_source_writes_its_target(scope_box: str, target: int, same_holder: int) -> None:
     out, warnings = exchange.export_gpresets(_with_source(scope_box))
@@ -499,10 +505,27 @@ def test_a_new_value_source_writes_its_target(scope_box: str, target: int, same_
     assert warnings == []
 
 
-def test_a_value_source_that_cannot_be_written_is_reported() -> None:
-    out, warnings = exchange.export_gpresets(_with_source("wf_var_furni"))
+def test_an_undefined_value_source_is_reported() -> None:
+    document = _with_source("wf_var_user")
+    document["furni"][1]["wired"]["from_variable"] = "nowhere"
+    out, warnings = exchange.export_gpresets(document)
     assert out["wired"]["effects"][0]["options"][4] == 0
     assert any("value source" in warning for warning in warnings)
+
+
+@pytest.mark.parametrize(
+    ("scope_box", "target"),
+    [("wf_var_user", 1), ("wf_var_furni", 0), ("wf_var_room", -10), ("wf_var_context", -20)],
+)
+def test_the_target_follows_the_variable(scope_box: str, target: int) -> None:
+    document = {
+        "furni": [
+            {"id": 1, "classname": scope_box, "x": 0, "y": 0, "wired": {"variable": "a"}},
+            {"id": 2, "classname": "wf_act_remove_var", "x": 1, "y": 1, "wired": {"variable": "a"}},
+        ]
+    }
+    out, _ = exchange.export_gpresets(document)
+    assert out["wired"]["effects"][0]["options"][0] == target
 
 
 def test_edited_settings_write_their_numbers() -> None:
