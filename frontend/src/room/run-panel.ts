@@ -3,7 +3,7 @@ import { ApiFailure, get, post, request } from "../api";
 import { h, icon, replace } from "../dom";
 import { t } from "../strings";
 import { errorMessage, toast } from "../ui";
-import type { FxShown, Look } from "./model";
+import type { Flight, FxShown, Look } from "./model";
 
 const T = t.run;
 const TICK_MS = 250;
@@ -20,6 +20,7 @@ export interface RunState {
   defined_variables: { variable: string; scope: string }[];
   game: { running: boolean; scores: Record<string, number> };
   fx: FxShown[];
+  flights: Flight[];
   looks: { furni: Record<number, Look>; users: Record<number, Look> };
   trace: { at_ms: number; kind: string; message: string }[];
   trace_next: number;

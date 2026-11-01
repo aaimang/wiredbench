@@ -14,8 +14,10 @@ import { get, withQuery } from "../api";
 import { fxArt, fxHeight } from "./fx-art";
 import { depth, screenToTile, TILE_HEIGHT, TILE_WIDTH, tileCentre, Z_UNIT } from "./iso";
 import {
+  type Flight,
   type FurniArtData,
   type FxShown,
+  flightAt,
   footprint,
   footprintSize,
   furniParts,
@@ -58,6 +60,7 @@ export interface AvatarPose {
 }
 
 export interface Scene {
+  flights?: Flight[] | null;
   fx?: FxShown[] | null;
   looks?: { furni: Record<number, Look>; users: Record<number, Look> } | null;
   room: RoomDocument;
@@ -267,6 +270,7 @@ export class RoomRenderer {
     return true;
   }
 
+  private flightStarts = new Map<string, number>();
   private stateSince = new Map<string, { state: number; since: number }>();
 
   private elapsedInState(item: { x: number; y: number; state: number; id?: number }): number {
@@ -388,7 +392,23 @@ export class RoomRenderer {
     return [item.x + width - 1, item.y + height - 1] as const;
   }
 
-  private drawFurni(scene: Scene, item: PlacedFurni): void {
+  /** Moves a furni along its flight. Clocks start when the browser hears of a flight, so it is never cut short. */
+  private flown(scene: Scene, item: PlacedFurni): PlacedFurni {
+    const flight = scene.flights?.find((f) => f.id === item.id);
+    if (!flight) return item;
+    const key = `${flight.id}:${flight.start_ms}`;
+    const now = performance.now();
+    const began = this.flightStarts.get(key) ?? now;
+    this.flightStarts.set(key, began);
+    const progress = (now - began) / flight.ms;
+    if (progress >= 1) return item;
+    this.animating = true;
+    const at = flightAt(flight, progress);
+    return { ...item, x: at.x, y: at.y, z: item.z + at.lift / Z_UNIT };
+  }
+
+  private drawFurni(scene: Scene, placed: PlacedFurni): void {
+    const item = this.flown(scene, placed);
     const selected = scene.selected?.kind === "furni" && scene.selected.id === item.id;
     const look = scene.looks?.furni[item.id];
     if (look?.highlight?.pulse) this.animating = true;

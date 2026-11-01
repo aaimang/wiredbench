@@ -8,6 +8,7 @@ exception.
 from __future__ import annotations
 
 import heapq
+import math
 import random
 import re
 from collections import defaultdict, deque
@@ -40,6 +41,8 @@ MOVES = {
 MAX_ALTITUDE = 8000
 TEAMS = ("red", "green", "blue", "yellow")
 MAX_POINTS = 1000
+DEFAULT_FLIGHT_MS = 500  # A real room took about this long for 3 tiles, with or without the add-on.
+MAX_FLIGHT_MS = 60_000
 NEGATIVE = "wf_act_neg_"
 MAX_FX_PER_VARIABLE = 5  # A real room saves a sixth but never draws it.
 CLOCK_TICK_MS = 500
@@ -218,6 +221,7 @@ class Engine:
         self.game_running = False
         self.team_scores = dict.fromkeys(TEAMS, 0)
         self.clocks: dict[int, Clock] = {}
+        self.flights: list[dict[str, Any]] = []
         self.furni_looks: dict[int, dict[str, Any]] = {}
         self.user_looks: dict[int, dict[str, Any]] = {}
         self.game_timer: int | None = None
@@ -1328,10 +1332,49 @@ class Engine:
         if self._off_map(x, y) or any((u["x"], u["y"]) == (x, y) for u in self.users.values()):
             return False
         carried = self._carried(box, ctx, item["x"], item["y"])
+        self._launch(box, ctx, furni_id, x, y)
         item["x"], item["y"] = x, y
         for user in carried:
             self._move_user(user, x, y)
         return True
+
+    def _launch(self, box: Box | None, ctx: Context | None, furni_id: int, x: int, y: int) -> None:
+        """What a stack's Projectile add-on does to a furni the stack is about to move."""
+        stack = self.stack_of.get(box.id) if box else None
+        addon = stack.find("wf_xtra_rotate_to_dir") if stack else None
+        if addon is None or ctx is None:
+            return
+        if addon.get("furni_source", "default") != "default" and furni_id not in self._furni_for(addon, ctx):
+            return
+        item = self.furni[furni_id]
+        dx, dy = x - item["x"], y - item["y"]
+        if not dx and not dy:
+            return
+        facing = round(math.atan2(dx, -dy) / (math.pi / 4)) % 8
+        if addon.get("proj_rotate", True):
+            item["rot"] = (facing + _int(addon.get("proj_offset"))) % 8
+        if addon.get("proj_shooter", True):
+            for user in self._users_for(addon, ctx):
+                if user in self.users:
+                    self.users[user]["dir"] = facing
+        tiles = max(abs(dx), abs(dy))
+        custom = addon.get("proj_custom_time", False)
+        ms = (
+            min(tiles * _int(addon.get("proj_tile_ms", 100), 100), MAX_FLIGHT_MS)
+            if custom
+            else DEFAULT_FLIGHT_MS
+        )
+        self.flights.append(
+            {
+                "id": furni_id,
+                "start_ms": self.now_ms,
+                "ms": max(1, ms),
+                "from": [item["x"], item["y"]],
+                "to": [x, y],
+                "height": _int(addon.get("proj_height", 50), 50),
+                "past": _int(addon.get("proj_past", 1), 1) if addon.get("proj_past_on") else 0,
+            }
+        )
 
     def _furni_step(self, direction: str) -> tuple[int, int]:
         match direction:
@@ -1375,6 +1418,7 @@ class Engine:
         if users:
             target = self.users[users[0]]
             for furni_id in self._furni_for(box, ctx):
+                self._launch(box, ctx, furni_id, target["x"], target["y"])
                 self.furni[furni_id]["x"], self.furni[furni_id]["y"] = target["x"], target["y"]
 
     def _do_furni_to_furni(self, box: Box, ctx: Context) -> None:
@@ -1423,6 +1467,11 @@ class Engine:
                     }
                 )
         return rows
+
+    def _view_flights(self) -> list[dict[str, Any]]:
+        """Flights still in the air. Old ones are dropped, so a long run does not keep them all."""
+        self.flights = [f for f in self.flights if f["start_ms"] + f["ms"] + 1000 > self.now_ms]
+        return list(self.flights)
 
     def view_fx(self) -> list[dict[str, Any]]:
         """What each Variable FX box shows: the variable of the box on its tile, over everyone holding it."""
@@ -1505,6 +1554,7 @@ class Engine:
             "variables": self.view_variables(),
             "defined_variables": self.view_defined(),
             "fx": self.view_fx(),
+            "flights": self._view_flights(),
             "looks": {"furni": self.furni_looks, "users": self.user_looks},
             "game": {"running": self.game_running, "scores": dict(self.team_scores)},
             "limit_hits": self.limit_hits,

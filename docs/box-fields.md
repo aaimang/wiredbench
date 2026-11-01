@@ -8,7 +8,7 @@ it, and a named position is still unverified until a box is changed and read aga
 
 No reply from: `wf_contract_payment`, `wf_contract_reward`, `wf_contract_trade`. The cause is unconfirmed.
 
-Named positions: 127. Unnamed positions: 455.
+Named positions: 137. Unnamed positions: 445.
 
 | Box | Section | Default numbers | Named positions | Unnamed positions |
 |---|---|---|---|---|
@@ -177,7 +177,7 @@ Named positions: 127. Unnamed positions: 455.
 | `wf_xtra_mov_physics` | addon | `[1, 0, 0, 0]` |  | 0, 1, 2, 3 |
 | `wf_xtra_or_eval` | addon | `[1, 0, 0]` |  | 0, 1, 2 |
 | `wf_xtra_random` | addon | `[0, 1]` | 0: skip, 1: pick |  |
-| `wf_xtra_rotate_to_dir` | addon | `[1, 1, 0, 0, 100, -20, 1, 1, 0, 4, 0, 0, 1, 1, 0, 0, 1, -20, 50]` |  | 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18 |
+| `wf_xtra_rotate_to_dir` | addon | `[1, 1, 0, 0, 100, -20, 1, 1, 0, 4, 0, 0, 1, 1, 0, 0, 1, -20, 50]` | 0: proj_rotate, 2: proj_custom_time, 4: proj_tile_ms, 10: proj_offset, 11: proj_variables, 12: proj_shooter, 13: proj_bunny, 14: proj_past_on, 16: proj_past, 18: proj_height | 1, 3, 5, 6, 7, 8, 9, 15, 17 |
 | `wf_xtra_scan_chest_furni_by_type` | addon | `[0]` |  | 0 |
 | `wf_xtra_text_input_variable` | addon | `[0]` |  | 0 |
 | `wf_xtra_text_output_furni_name` | addon | `[0]` |  | 0 |

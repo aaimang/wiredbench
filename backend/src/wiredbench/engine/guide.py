@@ -207,6 +207,10 @@ GUIDE: dict[str, tuple[str, str]] = {
     "wf_xtra_varfx_status": ("Shows a variable as a status bar over its holders.", "Show a player's energy."),
     "wf_xtra_varfx_hp": ("Shows a variable as health over its holders.", "Show health in a battle."),
     "wf_xtra_varfx_boss": ("Shows a variable as a wide boss bar over its holders.", "Show a boss's health."),
+    "wf_xtra_rotate_to_dir": (
+        "Makes furni the stack moves fly and face their direction.",
+        "Fire an arrow at a target.",
+    ),
     "wf_xtra_mov_carry_users": (
         "Moves users along with the furni they stand on.",
         "Build a moving platform.",
