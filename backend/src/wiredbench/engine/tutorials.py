@@ -65,12 +65,9 @@ def time_tracking(hotel: str = "sandbox") -> dict[str, Any]:
         ("wf_act_give_var", {"variable": "on_duty", "overwrite": True}),
     )
 
-    # The calculator. Boxes run from the top of the stack down, so they are listed last to first.
+    # The calculator. Boxes run from the bottom of the stack up. They read best last to first, so they are reversed.
     from_signal = {"user_source": "signal"}
-    stack(
-        1,
-        2,
-        ("wf_trg_recv_signal", {"antenna": [ANTENNA_CALC]}),
+    calculator: list[tuple[str, dict[str, Any]]] = [
         ("wf_act_send_signal", {"antenna": [ANTENNA_CHECK], **from_signal}),
         (
             "wf_act_change_var_val",
@@ -103,7 +100,13 @@ def time_tracking(hotel: str = "sandbox") -> dict[str, Any]:
         ),
         ("wf_act_give_var", {"variable": "last_duty", "overwrite": True, **from_signal}),
         ("wf_act_give_var", {"variable": "seconds", **from_signal}),
+    ]
+    stack(
+        1,
+        2,
+        ("wf_trg_recv_signal", {"antenna": [ANTENNA_CALC]}),
         ("wf_xtra_exec_in_order", {}),
+        *reversed(calculator),
     )
 
     # Still on the seat: renew on_duty. Gone: remove it.
@@ -228,7 +231,7 @@ def signal_relay(hotel: str = "sandbox") -> dict[str, Any]:
 
 
 def score_counter(hotel: str = "sandbox") -> dict[str, Any]:
-    # Boxes run from the top of the stack down, so giving the variable sits above adding to it.
+    # Boxes run from the bottom of the stack up, so giving the variable sits below adding to it.
     add = {"variable": "score", "operation": "add", "value": 1, "user_source": "trigger"}
     return {
         "schema": 1,
@@ -236,8 +239,8 @@ def score_counter(hotel: str = "sandbox") -> dict[str, Any]:
         "furni": [
             _box(1, "wf_var_user", 0, 0, 0, {"variable": "score"}),
             _box(2, "wf_trg_says_something", 3, 2, 0, {"text": "point"}),
-            _box(3, "wf_act_change_var_val", 3, 2, 0.65, add),
-            _box(4, "wf_act_give_var", 3, 2, 1.3, {"variable": "score", "user_source": "trigger"}),
+            _box(4, "wf_act_give_var", 3, 2, 0.65, {"variable": "score", "user_source": "trigger"}),
+            _box(3, "wf_act_change_var_val", 3, 2, 1.3, add),
             _box(5, "wf_xtra_exec_in_order", 3, 2, 1.95, {}),
         ],
         "avatars": [_visitor(hotel)],

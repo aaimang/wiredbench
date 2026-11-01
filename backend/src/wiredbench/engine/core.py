@@ -40,6 +40,7 @@ MOVES = {
 MAX_ALTITUDE = 8000
 TEAMS = ("red", "green", "blue", "yellow")
 MAX_POINTS = 1000
+NEGATIVE = "wf_act_neg_"
 MAX_FX_PER_VARIABLE = 5  # A real room saves a sixth but never draws it.
 CLOCK_TICK_MS = 500
 GAME_TIMERS = {"bb_counter", "fball_counter", "es_counter"}
@@ -185,8 +186,10 @@ class Engine:
         seed: int = 1,
         tick_ms: int = TICK_MS,
         furni_states: dict[str, list[int]] | None = None,
+        not_standable: set[str] | None = None,
     ) -> None:
         self.seed = seed
+        self.not_standable = not_standable or set()
         self.tick_ms = tick_ms
         self.furni_states = furni_states or {}
         self.random = random.Random(seed)  # noqa: S311 - Replays need a seed; this is not for security.
@@ -617,9 +620,9 @@ class Engine:
         self._log("run", f"Stack {stack.key} runs, from {label}", stack=stack.key, user=context.user)
         self._flag_stubs(stack)
         self._apply_selectors(stack, context)
-        if not ignore_conditions and not self._conditions_pass(stack, context):
-            return
-        effects = stack.of("effect")
+        passed = ignore_conditions or self._conditions_pass(stack, context)
+        # Negative effects are the ones that run when the conditions fail, and only then.
+        effects = [box for box in stack.of("effect") if box.classname.startswith(NEGATIVE) != passed]
         chosen = self._choose_effects(stack, effects)
         for box in chosen:
             self._push(self.now_ms + self._delay_ms(box), "effect", {"box": box, "context": context})
@@ -647,8 +650,8 @@ class Engine:
             pick = stack.unseen.pop()
             return [box for box in known if box.id == pick]
         if stack.find("wf_xtra_exec_in_order"):
-            # Top of the stack first. Assumed: the direction is not publicly documented.
-            return sorted(known, key=lambda box: -box.z)
+            # Bottom of the stack first. A real room set 3 then 9 from low to high and ended on 9.
+            return sorted(known, key=lambda box: box.z)
         # Without Execute In Order the order is not guaranteed, so it varies here and exposes
         # stacks that rely on it by accident.
         shuffled = list(known)
@@ -1171,7 +1174,12 @@ class Engine:
                 self._move_user(user, target["x"], target["y"])
 
     _do_teleport_to = _teleport
-    _do_user_to_furni = _teleport
+
+    def _do_user_to_furni(self, box: Box, ctx: Context) -> None:
+        """A real room walks nobody onto furni they cannot stand on, and it moved them onto a tile."""
+        known = [i for i in _ids(box.get("furni")) if i in self.furni]
+        if all(self.furni[i]["classname"] not in self.not_standable for i in known):
+            self._teleport(box, ctx)
 
     def _in_team(self, user_id: int, team: Any) -> bool:
         user = self.users.get(user_id)

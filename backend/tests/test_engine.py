@@ -414,12 +414,12 @@ def test_negative_delays_are_milliseconds_and_all_delays_are_capped(delay: int, 
     assert logs(engine) == ["later"]
 
 
-def test_execute_in_order_runs_top_down_and_default_order_varies() -> None:
+def test_execute_in_order_runs_bottom_up_and_default_order_varies() -> None:
     boxes = [box(i, "wf_act_log", 1, 1, i, text=str(i)) for i in range(2, 8)]
     trigger = box(1, "wf_trg_says_something", 1, 1, text="go")
     engine = room(trigger, *boxes, box(20, "wf_xtra_exec_in_order", 1, 1, 9))
     say(engine, "go")
-    assert logs(engine) == ["7", "6", "5", "4", "3", "2"]
+    assert logs(engine) == ["2", "3", "4", "5", "6", "7"]
     orders = set()
     for seed in range(8):
         engine = room(trigger, *boxes, seed=seed)
@@ -637,8 +637,8 @@ def test_context_variables_last_one_run() -> None:
     engine = room(
         box(1, "wf_var_context", 0, 0, variable="c"),
         box(2, "wf_trg_says_something", 1, 1, text="go"),
-        box(3, "wf_act_give_var", 1, 1, 9, variable="c", value=3),
-        box(4, "wf_act_log", 1, 1, 8, text="$(n)"),
+        box(3, "wf_act_give_var", 1, 1, 8, variable="c", value=3),
+        box(4, "wf_act_log", 1, 1, 9, text="$(n)"),
         box(5, "wf_xtra_text_output_variable", 1, 1, 10, placeholder="n", variable="c"),
         box(6, "wf_xtra_exec_in_order", 1, 1, 11),
     )
@@ -650,8 +650,8 @@ def test_context_variables_last_one_run() -> None:
 def test_placeholders_and_text_connector() -> None:
     engine = room(
         box(1, "wf_trg_says_something", 1, 1, text="go"),
-        box(2, "wf_act_give_var", 1, 1, 9, variable="item", value=3),
-        box(3, "wf_act_show_message", 1, 1, 8, text="$(user) has $(thing) $(unknown)"),
+        box(2, "wf_act_give_var", 1, 1, 8, variable="item", value=3),
+        box(3, "wf_act_show_message", 1, 1, 9, text="$(user) has $(thing) $(unknown)"),
         box(4, "wf_xtra_text_output_username", 1, 1, 10, placeholder="user"),
         box(5, "wf_xtra_text_output_variable", 1, 1, 11, placeholder="thing", variable="item"),
         box(6, "wf_xtra_var_text_connector", 1, 1, 12, variable="item", mapping="3=carrot\n4=pear"),
@@ -1399,3 +1399,66 @@ def test_a_value_set_by_hand_needs_an_existing_holder() -> None:
     engine = room()
     engine.apply_input({"type": "set_value", "variable": "nope", "key": "user:100", "value": "1"})
     assert "user:100" not in engine.variables["nope"]
+
+
+def test_negative_effects_run_only_when_conditions_fail() -> None:
+    def run(minimum: int) -> list[str]:
+        engine = room(
+            box(1, "wf_trg_says_something", 1, 1, text="go"),
+            box(2, "wf_cnd_user_count_in", 1, 1, 1, min=minimum, max=5),
+            box(3, "wf_act_log", 1, 1, 2, text="plain"),
+            box(4, "wf_act_neg_log", 1, 1, 3, text="negative"),
+        )
+        say(engine, "go")
+        engine.advance(500)
+        return [line for line in logs(engine) if line in ("plain", "negative")]
+
+    assert run(1) == ["plain"]
+    assert run(2) == ["negative"]
+
+
+def test_a_called_stack_runs_its_plain_effects_and_not_its_negative_ones() -> None:
+    engine = room(
+        box(1, "wf_trg_says_something", 1, 1, text="go"),
+        box(2, "wf_act_call_stacks", 1, 1, 1, furni=[4]),
+        box(3, "wf_trg_says_something", 3, 3, text="other"),
+        box(4, "wf_act_log", 3, 3, 1, text="plain"),
+        box(5, "wf_act_neg_log", 3, 3, 2, text="negative"),
+    )
+    say(engine, "go")
+    engine.advance(500)
+    assert "plain" in logs(engine)
+    assert "negative" not in logs(engine)
+
+
+def test_execute_in_order_runs_from_the_bottom_up() -> None:
+    engine = room(
+        box(1, "wf_var_room", 5, 5, variable="v"),
+        box(2, "wf_trg_says_something", 1, 1, text="go"),
+        box(3, "wf_xtra_exec_in_order", 1, 1, 1),
+        box(4, "wf_act_change_var_val", 1, 1, 2, variable="v", operation="set", value=3),
+        box(5, "wf_act_change_var_val", 1, 1, 3, variable="v", operation="set", value=9),
+    )
+    say(engine, "go")
+    engine.advance(500)
+    assert engine.variables["v"]["global"].value == 9
+
+
+def test_walking_to_furni_needs_furni_a_user_can_stand_on() -> None:
+    def run(not_standable: set[str]) -> int:
+        document = {
+            "room": {"width": 20, "height": 20},
+            "furni": [
+                box(1, "wf_trg_says_something", 1, 1, text="go"),
+                box(2, "wf_act_user_to_furni", 1, 1, 1, furni=[50]),
+                box(50, "candle", 5, 5),
+            ],
+            "avatars": [user(100, "Ann", 9, 9)],
+        }
+        engine = Engine(document, not_standable=not_standable)
+        say(engine, "go")
+        engine.advance(500)
+        return engine.users[100]["x"]
+
+    assert run(set()) == 5
+    assert run({"candle"}) == 9

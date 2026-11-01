@@ -336,6 +336,18 @@ The **glittering effect** is not identified yet and needs an example or in-game 
 `seconds`, `on_duty`, `last_duty` and `tmp`, with signals, an antenna and Execute in Order. It
 also covers the 10-second worst-case loss when a user leaves without standing up.
 
+### Projectile add-on, seen in a real room (2026-11-01)
+
+Not simulated yet. A test moved arrows 3 tiles with `wf_xtra_rotate_to_dir` in the stack, using one setting per arrow:
+
+- Its first option on: the furni's rotation changes to its direction of travel and stays there. Off: it keeps its rotation.
+- The shooter turns to face the direction of travel, unless the "change shooter direction" option is off.
+- Time per tile applies when custom animation time is on. 500 per tile took about 1.3 s of visible movement for 3 tiles.
+- Trajectory height 0 is a straight line. The curve grew with height, about 10 pixels at 50 and 19 at 100.
+- A rotation offset of 2 faces the furni 90 degrees from its direction of travel.
+- Flying past the target is animation only. The furni still ended 3 tiles along, but the view is hard to read from a recording.
+- With the internal variables mask on, the furni gained `@projectile.animation.*` variables, including tiles and position.
+
 ## 7. Build phases
 
 | Phase | Work | Done when |

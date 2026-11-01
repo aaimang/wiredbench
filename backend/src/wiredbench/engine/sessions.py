@@ -49,8 +49,14 @@ class RunRegistry:
         seed: int,
         tick_ms: int = TICK_MS,
         furni_states: dict[str, list[int]] | None = None,
+        not_standable: set[str] | None = None,
     ) -> Run:
-        run = Run(Engine(document, seed=seed, tick_ms=tick_ms, furni_states=furni_states), threading.Lock())
+        run = Run(
+            Engine(
+                document, seed=seed, tick_ms=tick_ms, furni_states=furni_states, not_standable=not_standable
+            ),
+            threading.Lock(),
+        )
         with self._lock:
             self._runs[sandbox_id] = run
             self._runs.move_to_end(sandbox_id)
