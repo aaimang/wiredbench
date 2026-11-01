@@ -87,6 +87,21 @@ AREA = (
     {"name": "area_width", "kind": "number", "label": "Area width in tiles", "default": 0, "min": 0},
     {"name": "area_height", "kind": "number", "label": "Area height in tiles", "default": 0, "min": 0},
 )
+COMPASS = {
+    "y-": "y - 1",
+    "x+y-": "x + 1, y - 1",
+    "x+": "x + 1",
+    "x+y+": "x + 1, y + 1",
+    "y+": "y + 1",
+    "x-y+": "x - 1, y + 1",
+    "x-": "x - 1",
+    "x-y-": "x - 1, y - 1",
+}
+MOVERS = {
+    **FURNI_SOURCE,
+    "label": "Furni to move",
+    "options": ["default", "trigger", "signal", "selector"],
+}
 AMOUNT = {"name": "amount", "kind": "number", "label": "How many", "default": 10, "min": 0}
 ANTENNA = {"name": "antenna", "kind": "furni", "label": "Antenna", "default": []}
 SECONDS = {"name": "seconds", "kind": "number", "label": "Seconds", "default": 10, "min": 0, "step": 0.5}
@@ -438,6 +453,62 @@ BOXES: dict[str, dict[str, Any]] = {
         FURNI,
         USER_SOURCE,
     ),
+    "wf_act_rel_mov": _effect(
+        ASSUMED,
+        FURNI,
+        FURNI_SOURCE,
+        {"name": "move_x", "kind": "number", "label": "Tiles along x", "default": 0, "min": -20, "max": 20},
+        {"name": "move_y", "kind": "number", "label": "Tiles along y", "default": 0, "min": -20, "max": 20},
+    ),
+    "wf_act_set_altitude": _effect(
+        ASSUMED,
+        FURNI,
+        FURNI_SOURCE,
+        {
+            "name": "altitude",
+            "kind": "number",
+            "label": "Height in tiles",
+            "default": 0,
+            "min": 0,
+            "max": 80,
+            "step": 0.01,
+        },
+        {
+            "name": "altitude_change",
+            "kind": "select",
+            "label": "Change",
+            "options": ["raise", "lower", "set"],
+            "labels": {"raise": "Raise by", "lower": "Lower by", "set": "Set to"},
+            "default": "raise",
+        },
+    ),
+    "wf_act_furni_to_user": _effect(ASSUMED, FURNI, FURNI_SOURCE, USER_SOURCE),
+    "wf_act_furni_to_furni": _effect(ASSUMED, {**FURNI, "label": "Move onto"}, MOVERS),
+    "wf_act_move_rotate_user": _effect(
+        ASSUMED,
+        USER_SOURCE,
+        {
+            "name": "user_move",
+            "kind": "select",
+            "label": "Move",
+            "options": ["none", *COMPASS],
+            "labels": {"none": "Don't move", **COMPASS},
+            "default": "none",
+        },
+        {
+            "name": "user_turn",
+            "kind": "select",
+            "label": "Turn",
+            "options": ["none", *COMPASS, "clockwise", "counterclockwise"],
+            "labels": {
+                "none": "Don't turn",
+                **{name: f"Face {label}" for name, label in COMPASS.items()},
+                "clockwise": "One step clockwise",
+                "counterclockwise": "One step counterclockwise",
+            },
+            "default": "none",
+        },
+    ),
     "wf_act_move_rotate": _effect(
         DOCUMENTED,
         FURNI,
@@ -446,7 +517,14 @@ BOXES: dict[str, dict[str, Any]] = {
             "name": "direction",
             "kind": "select",
             "label": "Move",
-            "options": ["none", "x+", "x-", "y+", "y-"],
+            "options": ["none", *COMPASS, "random", "random_x", "random_y"],
+            "labels": {
+                "none": "Don't move",
+                **COMPASS,
+                "random": "Any random way",
+                "random_x": "Randomly along x",
+                "random_y": "Randomly along y",
+            },
             "default": "none",
         },
         {

@@ -951,3 +951,77 @@ def test_random_rotation_turns_furni_and_replays() -> None:
     assert run(4) == run(4)
     assert len(set(run(4))) > 1
     assert set(run(4)) <= {0, 2, 4, 6}
+
+
+def moved(
+    effect: dict[str, Any], *extra: dict[str, Any], users: list[dict[str, Any]] | None = None
+) -> Engine:
+    engine = room(box(1, "wf_trg_says_something", 1, 1, text="go"), effect, *extra, users=users)
+    say(engine, "go", users[0]["id"] if users else 100)
+    engine.advance(1000)
+    return engine
+
+
+def test_relative_move_stops_at_the_edge_and_at_users() -> None:
+    lamp = box(50, "lamp", 5, 5)
+    engine = moved(box(2, "wf_act_rel_mov", 1, 1, 1, furni=[50], move_x=3, move_y=-2), lamp)
+    assert (engine.furni[50]["x"], engine.furni[50]["y"]) == (8, 3)
+    engine = moved(box(2, "wf_act_rel_mov", 1, 1, 1, furni=[50], move_x=-9), lamp)
+    assert engine.furni[50]["x"] == 5, "off the room"
+    engine = moved(
+        box(2, "wf_act_rel_mov", 1, 1, 1, furni=[50], move_x=1), lamp, users=[user(100, "Ann", 6, 5)]
+    )
+    assert engine.furni[50]["x"] == 5, "a user is in the way"
+
+
+def test_move_rotate_takes_diagonals() -> None:
+    engine = moved(box(2, "wf_act_move_rotate", 1, 1, 1, furni=[50], direction="x+y-"), box(50, "lamp", 5, 5))
+    assert (engine.furni[50]["x"], engine.furni[50]["y"]) == (6, 4)
+
+
+@pytest.mark.parametrize(("change", "expected"), [("raise", 2.5), ("lower", 0.5), ("set", 1.0)])
+def test_set_altitude(change: str, expected: float) -> None:
+    effect = box(2, "wf_act_set_altitude", 1, 1, 1, furni=[50], altitude=1, altitude_change=change)
+    assert moved(effect, box(50, "lamp", 5, 5, 1.5)).furni[50]["z"] == expected
+
+
+def test_altitude_stays_within_the_room() -> None:
+    effect = box(2, "wf_act_set_altitude", 1, 1, 1, furni=[50], altitude=80)
+    assert moved(effect, box(50, "lamp", 5, 5, 1)).furni[50]["z"] == 80
+
+
+def test_bad_altitude_settings_never_raise() -> None:
+    effect = box(2, "wf_act_set_altitude", 1, 1, 1, furni=[50], altitude=[], altitude_change=[])
+    assert moved(effect, box(50, "lamp", 5, 5, 1)).furni[50]["z"] == 1
+
+
+def test_furni_to_user_uses_the_first_user() -> None:
+    engine = moved(
+        box(2, "wf_act_furni_to_user", 1, 1, 1, furni=[50]),
+        box(50, "lamp", 5, 5),
+        users=[user(100, "Ann", 7, 8)],
+    )
+    assert (engine.furni[50]["x"], engine.furni[50]["y"]) == (7, 8)
+
+
+def test_furni_to_furni_moves_the_triggering_furni_onto_the_target() -> None:
+    engine = room(
+        box(1, "wf_trg_state_changed", 1, 1, furni=[50]),
+        box(2, "wf_act_furni_to_furni", 1, 1, 1, furni=[51]),
+        box(50, "ball", 5, 5),
+        box(51, "spot", 9, 9),
+    )
+    engine._start(engine.stacks[0], Context(trigger=None, furni=50))
+    engine.advance(1000)
+    assert (engine.furni[50]["x"], engine.furni[50]["y"]) == (9, 9)
+
+
+def test_move_user_walks_and_turns() -> None:
+    effect = box(2, "wf_act_move_rotate_user", 1, 1, 1, user_move="x+", user_turn="clockwise")
+    engine = moved(effect, users=[user(100, "Ann", 4, 4)])
+    assert (engine.users[100]["x"], engine.users[100]["y"]) == (5, 4)
+    assert engine.users[100]["dir"] == 3
+    effect = box(2, "wf_act_move_rotate_user", 1, 1, 1, user_move="x-", user_turn="y+")
+    engine = moved(effect, users=[user(100, "Ann", 0, 4)])
+    assert engine.users[100]["x"] == 0, "off the room"
+    assert engine.users[100]["dir"] == 4

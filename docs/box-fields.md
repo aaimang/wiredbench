@@ -8,7 +8,7 @@ it, and a named position is still unverified until a box is changed and read aga
 
 No reply from: `wf_contract_payment`, `wf_contract_reward`, `wf_contract_trade`. The cause is unconfirmed.
 
-Named positions: 50. Unnamed positions: 532.
+Named positions: 57. Unnamed positions: 525.
 
 | Box | Section | Default numbers | Named positions | Unnamed positions |
 |---|---|---|---|---|
@@ -42,21 +42,21 @@ Named positions: 50. Unnamed positions: 532.
 | `wf_act_log` | effect | `[0]` | 0: level |  |
 | `wf_act_match_to_sshot` | effect | `[0, 0, 0, 0, 1]` |  | 0, 1, 2, 3, 4 |
 | `wf_act_move_furni_as_group` | effect | `[1, 0, 0]` |  | 0, 1, 2 |
-| `wf_act_move_rotate` | effect | `[0, 0, 1]` | 1: rotation | 0, 2 |
-| `wf_act_move_rotate_user` | effect | `[-1, -1]` |  | 0, 1 |
+| `wf_act_move_rotate` | effect | `[0, 0, 1]` | 0: direction, 1: rotation | 2 |
+| `wf_act_move_rotate_user` | effect | `[-1, -1]` | 0: user_move, 1: user_turn |  |
 | `wf_act_move_to_dir` | effect | `[0, 0, 1]` |  | 0, 1, 2 |
 | `wf_act_neg_call_stacks` | effect | `[]` |  |  |
 | `wf_act_neg_log` | effect | `[0]` |  | 0 |
 | `wf_act_neg_send_signal` | effect | `[0, 0]` |  | 0, 1 |
 | `wf_act_place_furni` | effect | `[0, 0, 0, 0, 0, 0, 0, 0, 0, -20]` |  | 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 |
-| `wf_act_rel_mov` | effect | `[0, 0]` |  | 0, 1 |
+| `wf_act_rel_mov` | effect | `[0, 0]` | 0: move_x, 1: move_y |  |
 | `wf_act_remove_furni` | effect | `[]` |  |  |
 | `wf_act_remove_var` | effect | `[1]` |  | 0 |
 | `wf_act_reset_timers` | effect | `[]` |  |  |
 | `wf_act_send_dataframe` | effect | `[0, 0, 0, -20, 0, 0, -20, 0, 0, -20, 0, 0, -20, 0, 0, -20, 0, 0, -20, 0, 0, -20, 0, 0, -20, 0, 0, -20, 0, 0, -20, 0, 0, -20, 0, 0, -20]` |  | 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36 |
 | `wf_act_send_message` | effect | `[0]` |  | 0 |
 | `wf_act_send_signal` | effect | `[0, 0]` |  | 0, 1 |
-| `wf_act_set_altitude` | effect | `[0, 0]` |  | 0, 1 |
+| `wf_act_set_altitude` | effect | `[0, 0]` | 0: altitude, 1: altitude_change |  |
 | `wf_act_set_highlight` | effect | `[0, 0, 100, 16771584, 0, 4, 0]` |  | 0, 1, 2, 3, 4, 5, 6 |
 | `wf_act_set_visibility` | effect | `[0, 100, 0, 4, 0]` |  | 0, 1, 2, 3, 4 |
 | `wf_act_show_message` | effect | `[0, 202, -1]` |  | 0, 1, 2 |

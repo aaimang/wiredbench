@@ -39,6 +39,7 @@ VARIABLE_SCOPES = {
     "wf_var_room": "global",
     "wf_var_context": "context",
 }
+COMPASS_NUMBERS = dict(enumerate(("y-", "x+y-", "x+", "x+y+", "y+", "x-y+", "x-", "x-y-")))
 AREA_FIELDS = [("area_x", 0, int), ("area_y", 1, int), ("area_width", 2, int), ("area_height", 3, int)]
 # A selector's two switches sit on the box itself. The file calls invert "inverse".
 SELECTOR_SWITCHES = {"filter": "filter", "invert": "inverse"}
@@ -52,7 +53,33 @@ OPTION_FIELDS: dict[str, list[tuple[str, int, Any]]] = {
     "wf_trg_period_short": [("seconds", 0, 0.05)],
     "wf_trg_period_long": [("seconds", 0, 5)],
     "wf_act_user_to_furni": [("walking", 0, ("closer", "keep", "stop"))],
-    "wf_act_move_rotate": [("rotation", 1, ("none", "clockwise", "counterclockwise", "random"))],
+    "wf_act_move_rotate": [
+        (
+            "direction",
+            0,
+            {
+                0: "none",
+                1: "random",
+                2: "random_x",
+                3: "random_y",
+                4: "y-",
+                5: "x+",
+                6: "y+",
+                7: "x-",
+                8: "x+y-",
+                9: "x+y+",
+                10: "x-y+",
+                11: "x-y-",
+            },
+        ),
+        ("rotation", 1, ("none", "clockwise", "counterclockwise", "random")),
+    ],
+    "wf_act_rel_mov": [("move_x", 0, int), ("move_y", 1, int)],
+    "wf_act_set_altitude": [("altitude", 0, 0.01), ("altitude_change", 1, ("raise", "lower", "set"))],
+    "wf_act_move_rotate_user": [
+        ("user_move", 0, {-1: "none", **COMPASS_NUMBERS}),
+        ("user_turn", 1, {-1: "none", **COMPASS_NUMBERS, 9: "clockwise", 10: "counterclockwise"}),
+    ],
     "wf_act_log": [("level", 0, ("0", "1", "2", "3"))],
     "wf_cnd_user_count_in": [("min", 0, int), ("max", 1, int)],
     "wf_cnd_not_user_count": [("min", 0, int), ("max", 1, int)],
