@@ -1,4 +1,4 @@
-import { get, post } from "../api";
+import { ApiFailure, get, post } from "../api";
 import { h, replace } from "../dom";
 import { t } from "../strings";
 import { errorMessage, toast } from "../ui";
@@ -221,6 +221,7 @@ class WbRoomView extends HTMLElement {
     try {
       this.apply(await post<ViewState>(this.query(`${this.url}/advance`), { ms: TICK_MS }));
     } catch (error) {
+      if (error instanceof ApiFailure && error.status === 429) return; // The next tick tries again.
       if (this.timer !== null) clearInterval(this.timer);
       toast(errorMessage(error), "error");
     }

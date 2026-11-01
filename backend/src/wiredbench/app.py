@@ -145,6 +145,7 @@ def create_app(settings: Settings | None = None, transport: httpx.BaseTransport 
         login_user_limiter=RateLimiter(settings.rate_limit_login * 4, 15 * 60),
         write_limiter=RateLimiter(settings.rate_limit_writes, 60),
         read_limiter=RateLimiter(settings.rate_limit_reads, 60),
+        tick_limiter=RateLimiter(settings.rate_limit_ticks, 60),
         mock_limiter=RateLimiter(mock_rate, 60),
         runs=RunRegistry(),
     )

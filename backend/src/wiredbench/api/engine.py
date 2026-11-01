@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, Query, Request
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from wiredbench.api.deps import Services, audit, get_db, get_services
+from wiredbench.api.deps import Services, audit, get_db, get_services, ticker
 from wiredbench.config import Hotel
 from wiredbench.engine import box_facts, coverage
 from wiredbench.engine.boxes import BOXES, catalogue
@@ -107,6 +107,7 @@ def get_run(
 
 
 @router.post("/sandboxes/{sandbox_id}/run/advance")
+@ticker
 def advance(
     sandbox_id: int,
     body: Advance,

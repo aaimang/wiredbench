@@ -246,6 +246,22 @@ def test_write_rate_limit(tmp_path: Path, settings: Settings, habbo: FakeHabbo) 
     assert statuses == [201, 201, 429, 429]
 
 
+def test_run_ticks_have_their_own_budget(settings: Settings, habbo: FakeHabbo) -> None:
+    settings.rate_limit_writes = 4
+    settings.rate_limit_ticks = 3
+    app = create_app(settings, transport=httpx.MockTransport(habbo))
+    with TestClient(app, base_url="http://testserver") as client:
+        api = Api(client)  # The login is the first write.
+        room = api.post("/api/sandboxes", json={"name": "room"}).json()["id"]
+        assert api.post(f"/api/sandboxes/{room}/run", json={"seed": 1}).status_code == 201
+        ticks = [
+            api.post(f"/api/sandboxes/{room}/run/advance", json={"ms": 250}).status_code for _ in range(4)
+        ]
+        assert ticks == [200, 200, 200, 429]
+        assert api.post("/api/folders", json={"name": "still allowed"}).status_code == 201
+        assert api.post("/api/folders", json={"name": "over"}).status_code == 429
+
+
 def test_read_rate_limit(settings: Settings, habbo: FakeHabbo) -> None:
     settings.rate_limit_reads = 2
     app = create_app(settings, transport=httpx.MockTransport(habbo))

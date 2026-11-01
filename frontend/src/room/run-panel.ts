@@ -1,5 +1,5 @@
 import { Pause, Play, Send, SkipForward, Square } from "lucide";
-import { get, post, request } from "../api";
+import { ApiFailure, get, post, request } from "../api";
 import { h, icon, replace } from "../dom";
 import { t } from "../strings";
 import { errorMessage, toast } from "../ui";
@@ -137,8 +137,9 @@ export class RunPanel {
 
   private async tick(): Promise<void> {
     if (this.busy || this.paused) return;
-    await this.call(() =>
-      post<RunState>(`${this.url}/advance?since=${this.cursor}`, { ms: TICK_MS }),
+    await this.call(
+      () => post<RunState>(`${this.url}/advance?since=${this.cursor}`, { ms: TICK_MS }),
+      true,
     );
   }
 
@@ -168,11 +169,16 @@ export class RunPanel {
     });
   }
 
-  private async call(run: () => Promise<RunState>): Promise<void> {
+  private async call(run: () => Promise<RunState>, background = false): Promise<void> {
     this.busy = true;
     try {
       this.apply(await run());
     } catch (error) {
+      // Being told to slow down is no reason to end the run. The next tick tries again.
+      if (error instanceof ApiFailure && error.status === 429) {
+        if (!background) toast(errorMessage(error), "error");
+        return;
+      }
       toast(errorMessage(error), "error");
       if (this.timer !== null) {
         clearInterval(this.timer);

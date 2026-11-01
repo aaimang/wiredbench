@@ -37,6 +37,12 @@ def viewer[F: Callable[..., Any]](endpoint: F) -> F:
     return endpoint
 
 
+def ticker[F: Callable[..., Any]](endpoint: F) -> F:
+    """Marks a route an open room polls on a timer, which must not use up the budget for edits."""
+    endpoint.__wb_ticker__ = True  # type: ignore[attr-defined]
+    return endpoint
+
+
 @dataclass
 class Services:
     settings: Settings
@@ -47,6 +53,7 @@ class Services:
     login_user_limiter: RateLimiter
     write_limiter: RateLimiter
     read_limiter: RateLimiter
+    tick_limiter: RateLimiter
     mock_limiter: RateLimiter
     runs: RunRegistry
 
@@ -69,8 +76,11 @@ def guard(
     request: Request, services: Services = Depends(get_services), db: Session = Depends(get_db)
 ) -> None:
     unsafe = request.method not in SAFE_METHODS
+    endpoint = request.scope.get("endpoint")
     if request.url.path.startswith("/api/public/"):
         limiter = services.mock_limiter
+    elif getattr(endpoint, "__wb_ticker__", False):
+        limiter = services.tick_limiter
     else:
         limiter = services.write_limiter if unsafe else services.read_limiter
     if retry := limiter.hit(client_ip(request)):
@@ -80,7 +90,6 @@ def guard(
     if unsafe and origin and not same_origin(origin, services.settings.public_url):
         raise ApiError(403, "bad_origin", "This request came from another site.")
 
-    endpoint = request.scope.get("endpoint")
     if getattr(endpoint, "__wb_public__", False):
         return
 

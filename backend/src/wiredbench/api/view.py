@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from wiredbench.api.deps import Services, audit, get_db, get_services, viewer
+from wiredbench.api.deps import Services, audit, get_db, get_services, ticker, viewer
 from wiredbench.api.engine import furni_states
 from wiredbench.engine.core import MAX_ADVANCE_MS
 from wiredbench.engine.sessions import Run
@@ -154,6 +154,7 @@ def enter_room(
 
 @router.post("/sandboxes/{sandbox_id}/run/advance")
 @viewer
+@ticker
 def advance_room(
     sandbox_id: int,
     body: ViewAdvance,
