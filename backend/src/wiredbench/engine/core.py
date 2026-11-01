@@ -262,6 +262,7 @@ class Engine:
         self.inputs: list[dict[str, Any]] = []
         self.metrics: dict[str, int] = defaultdict(int)
         self.limit_hits = 0
+        self.last_context: Context | None = None  # Only for the inspection window.
         self.actions_this_advance = 0
         self.messages: list[dict[str, Any]] = []
         self.box_runs: dict[int, int] = defaultdict(int)
@@ -695,6 +696,7 @@ class Engine:
     def _start(self, stack: Stack, context: Context, ignore_conditions: bool = False) -> None:
         if not self._limit_ok(stack):
             return
+        self.last_context = context
         self.metrics[f"stack:{stack.key}"] += 1
         self.stack_work[stack.key] += len(stack.boxes)
         if context.trigger:
@@ -1224,7 +1226,8 @@ class Engine:
         rows = []
         for row in internal.rows():
             if row["target"] == target:
-                holding = self._built_in(row["name"], target, holder, None)
+                ctx = self.last_context if target == "context" else None
+                holding = self._built_in(row["name"], target, holder, ctx)
                 if holding is not None:
                     rows.append(
                         {"name": row["name"], "value": str(holding.value), "can_write": row["can_write"]}

@@ -2,10 +2,13 @@ import { ApiFailure, get, post } from "../api";
 import { h, replace } from "../dom";
 import { t } from "../strings";
 import { errorMessage, toast } from "../ui";
+import { InspectWindow } from "./inspect";
 import {
   avatarExtras,
+  directionBetween,
   drawTile,
   type FurniInfo,
+  findPath,
   fitsInRoom,
   normaliseRoom,
   type RoomDocument,
@@ -17,6 +20,10 @@ import { RoomRenderer } from "./renderer";
 
 const T = t.viewAs;
 const TICK_MS = 1000;
+const SECONDS_PER_STEP = 0.5;
+const WALK_FRAMES_PER_SECOND = 8;
+const CHAT_LINES = 6;
+const WIRED_COMMAND = ":wired";
 
 interface ViewItem {
   revision?: number;
@@ -55,7 +62,15 @@ class WbRoomView extends HTMLElement {
   private user: number | null = null;
   private url = "";
   private log = h("ul", { class: "dashboard-problems", "data-testid": "view-messages" });
-  private seen = 0;
+  private seen = new Set<string>();
+  private stage = h("div", { class: "view-stage" });
+  private inspect: InspectWindow | null = null;
+  private walker: {
+    path: [number, number][];
+    from: [number, number, number];
+    elapsed: number;
+  } | null = null;
+  private walkClock = 0;
 
   connectedCallback(): void {
     const match = /^\/view\/(\d+)$/.exec(location.pathname);
@@ -111,27 +126,18 @@ class WbRoomView extends HTMLElement {
       this.user = this.room.avatars[0]?.id ?? null;
       const canvas = h("div", { class: "view-canvas", "data-testid": "view-canvas" });
       replace(
-        this,
+        this.stage,
+        canvas,
         h(
           "div",
-          { class: "view-room" },
-          h(
-            "div",
-            { class: "view-head" },
-            h("a", { href: "/view" }, T.back),
-            h("h1", {}, data.name),
-            this.avatarPicker(),
-          ),
-          canvas,
-          h(
-            "div",
-            { class: "view-foot" },
-            h("p", { class: "muted" }, T.help),
-            this.log,
-            this.sayForm(),
-          ),
+          { class: "view-head" },
+          h("a", { href: "/view" }, T.back),
+          h("h1", {}, data.name),
+          this.avatarPicker(),
         ),
+        h("div", { class: "view-foot" }, this.log, this.sayForm()),
       );
+      replace(this, this.stage);
       const renderer = new RoomRenderer();
       try {
         await renderer.init(canvas);
@@ -146,8 +152,9 @@ class WbRoomView extends HTMLElement {
           if (revision !== undefined) void renderer.loadFurni(name, revision);
         }
         this.bindPointer(renderer.app.canvas);
-        renderer.app.ticker.add(() => {
-          if (renderer.motionDue()) this.draw();
+        renderer.app.ticker.add((ticker) => {
+          if (this.walker) this.advanceWalk(ticker.deltaMS / 1000);
+          if (this.walker || renderer.motionDue()) this.draw();
         });
         this.draw(); // Clicks need tile positions, which exist once the room has been drawn.
       }
@@ -172,7 +179,8 @@ class WbRoomView extends HTMLElement {
     );
     select.addEventListener("change", () => {
       this.user = Number(select.value);
-      this.seen = 0;
+      this.walker = null;
+      this.seen.clear();
       replace(this.log);
     });
     return h("label", { for: "view-user" }, `${T.actingAs} `, select);
@@ -180,7 +188,7 @@ class WbRoomView extends HTMLElement {
 
   private sayForm(): HTMLElement {
     const input = h("input", {
-      placeholder: T.say,
+      placeholder: T.sayHint,
       "aria-label": T.say,
       maxlength: 500,
       "data-testid": "view-say",
@@ -196,9 +204,77 @@ class WbRoomView extends HTMLElement {
       const text = input.value.trim();
       if (!text) return;
       input.value = "";
+      if (text.toLowerCase() === WIRED_COMMAND) {
+        this.toggleInspect();
+        return;
+      }
+      const speaker = this.room?.avatars.find((a) => a.id === this.user);
+      this.addChat(speaker ? `${speaker.name}: ${text}` : text);
       void this.send({ type: "say", text });
     });
     return form;
+  }
+
+  private toggleInspect(): void {
+    if (this.inspect) {
+      this.inspect.element.remove();
+      this.inspect = null;
+      return;
+    }
+    this.inspect = new InspectWindow(`${this.url}/inspect`, () => this.toggleInspect());
+    this.stage.append(this.inspect.element);
+  }
+
+  private addChat(text: string): void {
+    this.log.append(h("li", {}, text));
+    while (this.log.children.length > CHAT_LINES) this.log.firstElementChild?.remove();
+  }
+
+  private walkTo(goal: [number, number]): void {
+    const room = this.room;
+    const avatar = room?.avatars.find((a) => a.id === this.user);
+    if (!room || !avatar) return;
+    const [next] = this.walker?.path ?? [];
+    const start: [number, number] = next ?? [avatar.x, avatar.y];
+    const occupied = new Set(
+      room.avatars.filter((a) => a.id !== avatar.id).map((a) => `${a.x},${a.y}`),
+    );
+    const path = findPath(room, this.lookup, start, goal, occupied);
+    if (path === null) return;
+    if (!next && path.length === 0) {
+      void this.send({ type: "move", x: goal[0], y: goal[1] });
+      return;
+    }
+    if (this.walker && next) this.walker.path = [next, ...path];
+    else this.walker = { path, from: [avatar.x, avatar.y, avatar.z], elapsed: 0 };
+    let from = start;
+    for (const step of path) {
+      this.renderer?.preloadWalk(avatar, directionBetween(from, step));
+      from = step;
+    }
+  }
+
+  private advanceWalk(seconds: number): void {
+    const walker = this.walker;
+    const avatar = this.room?.avatars.find((a) => a.id === this.user);
+    if (!walker || !avatar || !this.room) {
+      this.walker = null;
+      return;
+    }
+    this.walkClock += seconds;
+    walker.elapsed += seconds;
+    while (walker.elapsed >= SECONDS_PER_STEP) {
+      const next = walker.path.shift();
+      if (!next) break;
+      walker.elapsed -= SECONDS_PER_STEP;
+      const stand = standAt(this.room, this.lookup, next[0], next[1]);
+      avatar.dir = directionBetween([walker.from[0], walker.from[1]], next);
+      Object.assign(avatar, { x: next[0], y: next[1], z: stand.z, pose: stand.pose });
+      walker.from = [next[0], next[1], stand.z];
+      if (walker.path.length === 0) this.walker = null;
+      void this.send({ type: "move", x: next[0], y: next[1] });
+      if (!this.walker) return;
+    }
   }
 
   private bindPointer(canvas: HTMLCanvasElement): void {
@@ -207,12 +283,22 @@ class WbRoomView extends HTMLElement {
       const [x, y] = [event.clientX - rect.left, event.clientY - rect.top];
       const hit = this.renderer?.hitAt(x, y);
       if (hit?.kind === "furni") {
+        if (this.inspect?.tab === "furni") {
+          const item = this.room?.furni.find((f) => f.id === hit.id);
+          this.inspect.pickFurni(
+            hit.id,
+            (this.items[item?.classname ?? ""]?.data?.name as string) ??
+              item?.classname ??
+              String(hit.id),
+          );
+          return;
+        }
         void this.send({ type: "click", furni: hit.id });
         return;
       }
       const tile = this.renderer?.tileAt(x, y);
       if (tile && this.room && fitsInRoom(this.room, [tile])) {
-        void this.send({ type: "move", x: tile[0], y: tile[1] });
+        this.walkTo([tile[0], tile[1]]);
       }
     });
   }
@@ -246,7 +332,7 @@ class WbRoomView extends HTMLElement {
     room.avatars = room.avatars.filter((a) => state.users.some((u) => u.id === a.id));
     for (const user of state.users) {
       const avatar = room.avatars.find((a) => a.id === user.id);
-      if (avatar) {
+      if (avatar && !(this.walker && avatar.id === this.user)) {
         const stand = standAt(room, this.lookup, user.x, user.y);
         Object.assign(avatar, {
           x: user.x,
@@ -258,10 +344,13 @@ class WbRoomView extends HTMLElement {
         });
       }
     }
-    for (const message of state.messages.slice(this.seen)) {
-      this.log.append(h("li", {}, message.text));
+    // Only the latest messages are sent, so a count would stop finding new ones.
+    for (const message of state.messages) {
+      const key = `${message.at_ms}:${message.text}`;
+      if (!this.seen.has(key)) this.addChat(message.text);
+      this.seen.add(key);
     }
-    this.seen = state.messages.length;
+    void this.inspect?.refresh();
     this.draw();
   }
 
@@ -277,6 +366,27 @@ class WbRoomView extends HTMLElement {
       ghost: null,
       hover: null,
       avatarPose: (avatar) => {
+        const walker = avatar.id === this.user ? this.walker : null;
+        const [next] = walker?.path ?? [];
+        if (walker && next) {
+          const progress = Math.min(1, walker.elapsed / SECONDS_PER_STEP);
+          const [fromX, fromY, fromZ] = walker.from;
+          const target = standAt(room, this.lookup, next[0], next[1]);
+          const front = drawTile(room, this.lookup, next[0], next[1]);
+          const look = withFace(avatarExtras(avatar.details), avatar, true, performance.now());
+          return {
+            x: fromX + (next[0] - fromX) * progress,
+            y: fromY + (next[1] - fromY) * progress,
+            z: fromZ + (target.z - fromZ) * progress,
+            dir: directionBetween([fromX, fromY], next),
+            action: "wlk",
+            extra: look.extra,
+            gesture: look.gesture,
+            frame: Math.floor(this.walkClock * WALK_FRAMES_PER_SECOND) % 4,
+            frontX: Math.max(fromX, front[0]),
+            frontY: Math.max(fromY, front[1]),
+          };
+        }
         const [frontX, frontY] = drawTile(room, this.lookup, avatar.x, avatar.y);
         return {
           x: avatar.x,
