@@ -36,10 +36,11 @@ class Advance(BaseModel):
 
 
 class Input(BaseModel):
-    type: Literal["move", "say", "click", "use", "enter", "leave"]
+    type: Literal["move", "turn", "say", "click", "use", "enter", "leave"]
     user: Int | None = None
     x: int | None = Field(None, ge=0, le=64)
     y: int | None = Field(None, ge=0, le=64)
+    dir: int | None = Field(None, ge=0, le=7)
     furni: Int | None = None
     text: str | None = Field(None, max_length=500)
 

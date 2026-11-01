@@ -242,3 +242,23 @@ test("the run panel lists a variable before anything holds it", async ({ page })
   await expect(row).toContainText("Nobody yet");
   await page.screenshot({ path: process.env.WB_SHOT ?? "test-results/defined-variable.png" });
 });
+
+test("a running user can be moved and turned from the inspector", async ({ page }) => {
+  await login(page);
+  await page.getByRole("link", { name: "Guide" }).click();
+  await page
+    .getByTestId("tutorial-score-counter")
+    .getByRole("button", { name: "Add and open" })
+    .click();
+  await expect(page.getByTestId("room-canvas")).toBeVisible();
+  await page.getByRole("button", { name: "Run", exact: true }).click();
+  await page.locator(".avatar-row-pick").first().click();
+  const panel = page.getByTestId("avatar-debug");
+  await panel.getByLabel("Column").fill("3");
+  await panel.getByLabel("Row").fill("4");
+  await panel.getByLabel("Direction, 0 to 7").fill("5");
+  await panel.getByRole("button", { name: "Move this user" }).click();
+  await expect(page.getByTestId("avatar-position")).toContainText("3");
+  await expect(page.getByTestId("avatar-position")).toContainText("4");
+  await expect(panel.getByLabel("Direction, 0 to 7")).toHaveValue("5");
+});

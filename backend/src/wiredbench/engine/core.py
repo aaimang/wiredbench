@@ -38,6 +38,8 @@ MOVES = {
     "x-y-": (-1, -1),
 }
 MAX_ALTITUDE = 8000
+# A real room leaves these as they are when Toggle Furni State points at them.
+NOT_WIRED_TOGGLED = {"wf_floor_switch1", "wf_floor_switch2"}
 PLACEHOLDER = re.compile(r"\$\(([\w.-]{1,40})\)")
 
 
@@ -285,6 +287,9 @@ class Engine:
         user = entry.get("user")
         if kind == "move":
             self._move_user(_int(user), _int(entry.get("x")), _int(entry.get("y")))
+        elif kind == "turn":
+            if (who := self.users.get(_int(user))) is not None:
+                who["dir"] = _int(entry.get("dir")) % 8
         elif kind == "say":
             self._say(_int(user), str(entry.get("text", ""))[:500])
         elif kind == "click":
@@ -630,8 +635,7 @@ class Engine:
             return list(ctx.signal_users)
         if source == "selector":
             return list(ctx.users or [])
-        if ctx.users is not None:
-            return list(ctx.users)
+        # A real room's default is the triggering user, even with a selector in the stack.
         if ctx.user is not None:
             return [ctx.user]
         return list(ctx.signal_users)
@@ -647,7 +651,7 @@ class Engine:
             return list(ctx.signal_furni)
         if source == "selector":
             return list(ctx.selected_furni or [])
-        return ctx.selected_furni if ctx.selected_furni is not None else picks
+        return picks
 
     # --- Conditions ---
 
@@ -944,7 +948,8 @@ class Engine:
 
     def _do_toggle_state(self, box: Box, ctx: Context) -> None:
         for furni_id in self._furni_for(box, ctx):
-            self._set_state(furni_id, self._next_state(furni_id))
+            if self.furni[furni_id]["classname"] not in NOT_WIRED_TOGGLED:
+                self._set_state(furni_id, self._next_state(furni_id))
 
     def _do_toggle_to_rnd(self, box: Box, ctx: Context) -> None:
         for furni_id in self._furni_for(box, ctx):

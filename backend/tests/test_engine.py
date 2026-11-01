@@ -461,7 +461,7 @@ def test_selectors_and_filters() -> None:
     engine = room(
         box(1, "wf_trg_says_something", 1, 1, text="go"),
         box(2, "wf_slc_users_byname", 1, 1, 1, names="ann\nBob"),
-        box(3, "wf_act_give_var", 1, 1, 2, variable="v", value=1),
+        box(3, "wf_act_give_var", 1, 1, 2, variable="v", value=1, user_source="selector"),
         users=users,
     )
     say(engine, "go")
@@ -471,7 +471,7 @@ def test_selectors_and_filters() -> None:
         box(1, "wf_trg_says_something", 1, 1, text="go"),
         box(2, "wf_slc_users_byname", 1, 1, 1, names="ann\nbob\ncy"),
         box(3, "wf_xtra_filter_users", 1, 1, 2, amount=1),
-        box(4, "wf_act_give_var", 1, 1, 3, variable="v"),
+        box(4, "wf_act_give_var", 1, 1, 3, variable="v", user_source="selector"),
         users=users,
     )
     say(engine, "go")
@@ -488,7 +488,7 @@ def test_selectors_add_up_and_filters_narrow_wherever_they_stand() -> None:
         box(1, "wf_trg_says_something", 1, 1, text="go"),
         box(2, "wf_slc_users_byname", 1, 1, 1, names="ann"),
         box(3, "wf_slc_users_byname", 1, 1, 2, names="bob"),
-        box(4, "wf_act_give_var", 1, 1, 3, variable="v"),
+        box(4, "wf_act_give_var", 1, 1, 3, variable="v", user_source="selector"),
         users=users,
     )
     say(engine, "go")
@@ -499,7 +499,7 @@ def test_selectors_add_up_and_filters_narrow_wherever_they_stand() -> None:
             box(1, "wf_trg_says_something", 1, 1, text="go"),
             box(2, "wf_slc_users_byname", 1, 1, filter_height, names="bob\ncy", filter=True),
             box(3, "wf_slc_users_byname", 1, 1, pick_height, names="ann\nbob"),
-            box(4, "wf_act_give_var", 1, 1, 3, variable="v"),
+            box(4, "wf_act_give_var", 1, 1, 3, variable="v", user_source="selector"),
             users=users,
         )
         say(engine, "go")
@@ -510,7 +510,7 @@ def test_a_filter_alone_selects_nobody() -> None:
     engine = room(
         box(1, "wf_trg_says_something", 1, 1, text="go"),
         box(2, "wf_slc_users_byname", 1, 1, 1, names="ann", filter=True),
-        box(3, "wf_act_give_var", 1, 1, 2, variable="v"),
+        box(3, "wf_act_give_var", 1, 1, 2, variable="v", user_source="selector"),
     )
     say(engine, "go")
     assert holders(engine) == set()
@@ -520,7 +520,7 @@ def test_invert_selects_what_did_not_match() -> None:
     engine = room(
         box(1, "wf_trg_says_something", 1, 1, text="go"),
         box(2, "wf_slc_users_byname", 1, 1, 1, names="ann", invert=True),
-        box(3, "wf_act_give_var", 1, 1, 2, variable="v"),
+        box(3, "wf_act_give_var", 1, 1, 2, variable="v", user_source="selector"),
         users=[user(100, "Ann"), user(101, "Bob", x=1)],
     )
     say(engine, "go")
@@ -531,7 +531,7 @@ def test_area_selectors_cover_their_rectangle() -> None:
     engine = room(
         box(1, "wf_trg_says_something", 1, 1, text="go"),
         box(2, "wf_slc_users_area", 1, 1, 1, area_x=2, area_y=3, area_width=2, area_height=1),
-        box(3, "wf_act_give_var", 1, 1, 2, variable="v"),
+        box(3, "wf_act_give_var", 1, 1, 2, variable="v", user_source="selector"),
         users=[
             user(100, "Ann", x=2, y=3),
             user(101, "Bob", x=3, y=3),
@@ -584,7 +584,7 @@ def test_selector_with_no_match_affects_nobody_not_the_triggerer() -> None:
     engine = room(
         box(1, "wf_trg_says_something", 1, 1, text="go"),
         box(2, "wf_slc_users_with_var", 1, 1, 1, variable="nope"),
-        box(3, "wf_act_give_var", 1, 1, 2, variable="v"),
+        box(3, "wf_act_give_var", 1, 1, 2, variable="v", user_source="selector"),
     )
     say(engine, "go")
     assert engine.variables["v"] == {}
@@ -1025,3 +1025,34 @@ def test_move_user_walks_and_turns() -> None:
     engine = moved(effect, users=[user(100, "Ann", 0, 4)])
     assert engine.users[100]["x"] == 0, "off the room"
     assert engine.users[100]["dir"] == 4
+
+
+def test_default_user_source_ignores_a_selector() -> None:
+    corner = {"area_x": 0, "area_y": 0, "area_width": 1, "area_height": 1}
+    engine = room(
+        box(1, "wf_trg_says_something", 1, 1, text="go"),
+        box(2, "wf_slc_users_area", 1, 1, 1, **corner),
+        box(3, "wf_act_give_var", 1, 1, 2, variable="v"),
+        box(4, "wf_act_give_var", 1, 1, 3, variable="w", user_source="selector"),
+        users=[user(100, "Ann", 5, 5)],
+    )
+    say(engine, "go")
+    engine.advance(1000)
+    assert set(engine.variables["v"]) == {"user:100"}
+    assert engine.variables["w"] == {}
+
+
+def test_toggle_leaves_floor_switches_alone() -> None:
+    engine = moved(
+        box(2, "wf_act_toggle_state", 1, 1, 1, furni=[50, 51]),
+        box(50, "wf_floor_switch1", 5, 5),
+        box(51, "lamp", 6, 5),
+    )
+    assert engine.furni[50]["state"] == 0
+    assert engine.furni[51]["state"] == 1
+
+
+def test_turn_input_sets_direction() -> None:
+    engine = room(users=[user(100, "Ann")])
+    engine.apply_input({"type": "turn", "user": 100, "dir": 5})
+    assert engine.users[100]["dir"] == 5

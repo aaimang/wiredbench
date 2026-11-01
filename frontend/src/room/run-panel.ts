@@ -13,7 +13,7 @@ export interface RunState {
   paused: boolean;
   seed: number;
   furni: { id: number; x: number; y: number; z: number; rot: number; state: number }[];
-  users: { id: number; name: string; x: number; y: number }[];
+  users: { id: number; name: string; x: number; y: number; dir: number }[];
   variables: { variable: string; holder: string; value: string }[];
   defined_variables: { variable: string; scope: string }[];
   trace: { at_ms: number; kind: string; message: string }[];

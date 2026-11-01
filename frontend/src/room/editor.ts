@@ -1046,9 +1046,12 @@ class WbEditor extends HTMLElement {
     this.room.avatars = this.room.avatars.filter((a) => state.users.some((u) => u.id === a.id));
     for (const user of state.users) {
       const avatar = this.room.avatars.find((a) => a.id === user.id);
-      if (avatar && !this.walkers.has(user.id) && (avatar.x !== user.x || avatar.y !== user.y)) {
-        const stand = standAt(this.room, this.lookup, user.x, user.y);
-        Object.assign(avatar, { x: user.x, y: user.y, z: stand.z, pose: stand.pose });
+      if (avatar && !this.walkers.has(user.id)) {
+        if (avatar.x !== user.x || avatar.y !== user.y) {
+          const stand = standAt(this.room, this.lookup, user.x, user.y);
+          Object.assign(avatar, { x: user.x, y: user.y, z: stand.z, pose: stand.pose });
+        }
+        avatar.dir = user.dir;
       }
     }
     this.needsDraw = true;
@@ -1759,8 +1762,42 @@ class WbEditor extends HTMLElement {
         T.avatarAt(avatar.x, avatar.y, T.poses[avatar.pose] ?? avatar.pose),
       ),
       h("p", { class: "muted" }, this.mode === "play" ? T.clickToWalk : T.switchToPlay),
+      ...(this.run ? [this.avatarDebug(avatar)] : []),
       this.walkStatus,
     ];
+  }
+
+  /** Puts a user where a test needs them while the room runs. Height comes from what is on the tile. */
+  private avatarDebug(avatar: PlacedAvatar): HTMLElement {
+    const number = (label: string, value: number, max: number) =>
+      h("input", { type: "number", min: 0, max, value, "aria-label": label });
+    const x = number(T.debugX, avatar.x, this.room.room.width - 1);
+    const y = number(T.debugY, avatar.y, this.room.room.height - 1);
+    const dir = number(T.debugDir, avatar.dir, 7);
+    const apply = async () => {
+      const [toX, toY] = [Number(x.value), Number(y.value)];
+      if (toX !== avatar.x || toY !== avatar.y) {
+        await this.run?.input({ type: "move", user: avatar.id, x: toX, y: toY });
+      }
+      await this.run?.input({ type: "turn", user: avatar.id, dir: Number(dir.value) });
+      this.renderInspector();
+    };
+    return h(
+      "form",
+      {
+        class: "avatar-debug",
+        "data-testid": "avatar-debug",
+        onsubmit: (event: Event) => {
+          event.preventDefault();
+          void apply();
+        },
+      },
+      h("label", {}, T.debugX, x),
+      h("label", {}, T.debugY, y),
+      h("label", {}, T.debugDir, dir),
+      h("p", { class: "muted" }, T.debugHeight(avatar.z)),
+      h("button", { class: "btn", type: "submit" }, T.debugApply),
+    );
   }
 }
 
