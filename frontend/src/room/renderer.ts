@@ -77,6 +77,7 @@ export interface Scene {
 /** Matches ART_VERSION on the server. Furni art is cached for good, so a new shape needs a new address. */
 // Invisible is fully hidden, as in a real room. Only what the builder has selected stays findable.
 const SELECTED_INVISIBLE_OPACITY = 0.35;
+const SETTLED_MS = 3_600_000;
 const OUTLINE_OFFSETS = [
   [-1, -1],
   [0, -1],
@@ -278,9 +279,10 @@ export class RoomRenderer {
     const now = performance.now();
     const known = this.stateSince.get(key);
     if (known?.state === item.state) return now - known.since;
-    // A furni seen for the first time did not just change, so it plays no transition.
-    this.stateSince.set(key, { state: item.state, since: known ? now : Number.NEGATIVE_INFINITY });
-    return known ? 0 : Number.POSITIVE_INFINITY;
+    // A furni seen for the first time did not just change, so it starts long past any transition.
+    const elapsed = known ? 0 : SETTLED_MS;
+    this.stateSince.set(key, { state: item.state, since: now - elapsed });
+    return elapsed;
   }
 
   draw(scene: Scene): void {

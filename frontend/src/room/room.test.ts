@@ -308,6 +308,13 @@ describe("furni animation", () => {
     expect(furniParts(art, "lamp", 2, 0, 0).moving).toBe(false);
   });
 
+  it("never loses a looping layer, however long the furni has been there", () => {
+    for (const elapsed of [3_600_000, Number.POSITIVE_INFINITY]) {
+      const layer = furniParts(art, "lamp", 2, 1, elapsed).parts.find((p) => p.layer === 1);
+      expect(layer).toBeDefined();
+    }
+  });
+
   it("holds the last frame of an animation that does not loop", () => {
     const once = {
       ...art,

@@ -367,7 +367,9 @@ export function timeDigits(seconds: number, count: number): number[] {
 }
 
 function trackFrame(track: FurniTrack, elapsedMs: number): FurniPart | null {
-  const step = Math.floor(((elapsedMs / 1000) * FURNI_FPS) / track.repeat);
+  // Infinity would make a looping layer's frame not a number, and the layer would vanish.
+  const time = Number.isFinite(elapsedMs) ? elapsedMs : 0;
+  const step = Math.floor(((time / 1000) * FURNI_FPS) / track.repeat);
   const index = track.loop ? step % track.frames.length : Math.min(step, track.frames.length - 1);
   return track.frames[index] ?? null;
 }
