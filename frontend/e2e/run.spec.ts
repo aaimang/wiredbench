@@ -144,7 +144,7 @@ test("the guide lists boxes, filters them and adds an example room", async ({ pa
   await expect(list).toContainText("No boxes match");
   await page.getByLabel("Search boxes").fill("");
   await page.getByLabel("All statuses").selectOption("real_room");
-  await expect(list.getByRole("listitem")).toHaveCount(44);
+  await expect(list.getByRole("listitem")).toHaveCount(87);
   await page
     .getByTestId("tutorial-switch-flip")
     .getByRole("button", { name: "Add and open" })

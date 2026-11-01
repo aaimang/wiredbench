@@ -84,6 +84,20 @@ def furni_states(services: Services, sandbox: Sandbox) -> dict[str, list[int]]:
     return found
 
 
+def not_standable(services: Services, sandbox: Sandbox) -> set[str]:
+    """Furni in a room that the catalogue says nobody can stand or sit on."""
+    document = sandbox.document if isinstance(sandbox.document, dict) else {}
+    found: set[str] = set()
+    for classname in {item["classname"] for item in document.get("furni", [])}:
+        try:
+            data = services.catalog.item(sandbox.hotel, classname).get("data") or {}
+        except ApiError:
+            continue
+        if data.get("canstandon") is False and data.get("cansiton") is not True:
+            found.add(classname)
+    return found
+
+
 def _run(sandbox_id: int, services: Services) -> Run:
     run = services.runs.get(sandbox_id)
     if run is None:
@@ -111,7 +125,9 @@ def start_run(
     document = sandbox.document if isinstance(sandbox.document, dict) else {}
     seed = body.seed if body.seed is not None else secrets.randbelow(2**31)
     tick_ms = preferences.load(db, services.settings).tick_ms
-    run = services.runs.start(sandbox_id, document, seed, tick_ms, furni_states(services, sandbox))
+    run = services.runs.start(
+        sandbox_id, document, seed, tick_ms, furni_states(services, sandbox), not_standable(services, sandbox)
+    )
     audit(db, request, "run_start", sandbox.name)
     db.commit()
     return state(run, 0)

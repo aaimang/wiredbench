@@ -34,7 +34,8 @@
    "dump": true
   },
   "wf_act_call_stacks": {
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_act_cancel_transaction": {
    "dump": true
@@ -139,13 +140,15 @@
    "reference": true
   },
   "wf_act_neg_call_stacks": {
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_act_neg_log": {
    "dump": true
   },
   "wf_act_neg_send_signal": {
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_act_place_furni": {
    "dump": true
@@ -160,7 +163,8 @@
   },
   "wf_act_remove_var": {
    "preset": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_act_reset_timers": {
    "dump": true
@@ -176,7 +180,8 @@
   "wf_act_send_signal": {
    "preset": true,
    "reference": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_act_set_altitude": {
    "reference": true,
@@ -199,7 +204,8 @@
    "room": "2026-11-01"
   },
   "wf_act_teleport_to": {
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_act_teleport_to_room": {
    "dump": true
@@ -211,13 +217,15 @@
    "dump": true
   },
   "wf_act_toggle_to_rnd": {
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_act_unfreeze": {
    "dump": true
   },
   "wf_act_user_to_furni": {
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_antenna1": {},
   "wf_antenna2": {},
@@ -265,7 +273,8 @@
   },
   "wf_cnd_furnis_hv_avtrs": {
    "reference": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_cnd_has_altitude": {
    "reference": true,
@@ -273,7 +282,8 @@
   },
   "wf_cnd_has_furni_on": {
    "reference": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_cnd_has_handitem": {
    "reference": true,
@@ -281,7 +291,8 @@
   },
   "wf_cnd_has_var": {
    "reference": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_cnd_match_date": {
    "reference": true,
@@ -297,11 +308,13 @@
   },
   "wf_cnd_neg_has_var": {
    "reference": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_cnd_not_furni_on": {
    "reference": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_cnd_not_has_handitem": {
    "reference": true,
@@ -309,7 +322,8 @@
   },
   "wf_cnd_not_hv_avtrs": {
    "reference": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_cnd_not_in_group": {
    "reference": true,
@@ -326,14 +340,16 @@
    "dump": true
   },
   "wf_cnd_not_trggrer_on": {
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_cnd_not_triggerer_match": {
    "reference": true,
    "dump": true
   },
   "wf_cnd_not_user_count": {
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_cnd_not_user_performs_action": {
    "reference": true,
@@ -373,7 +389,8 @@
   },
   "wf_cnd_trggrer_on_frn": {
    "reference": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_cnd_triggerer_match": {
    "preset": true,
@@ -382,7 +399,8 @@
   },
   "wf_cnd_user_count_in": {
    "reference": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_cnd_user_performs_action": {
    "reference": true,
@@ -458,7 +476,8 @@
    "room": "2026-11-01"
   },
   "wf_slc_furni_bytype": {
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_slc_furni_neighborhood": {
    "preset": true,
@@ -477,7 +496,8 @@
   },
   "wf_slc_furni_with_var": {
    "preset": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_slc_remote": {
    "dump": true
@@ -506,7 +526,8 @@
    "dump": true
   },
   "wf_slc_users_onfurni": {
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_slc_users_signal": {
    "dump": true
@@ -517,7 +538,8 @@
   },
   "wf_slc_users_with_var": {
    "preset": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_slider": {},
   "wf_storage_coins1": {},
@@ -565,7 +587,8 @@
   },
   "wf_trg_click_furni": {
    "preset": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_trg_click_tile": {
    "dump": true
@@ -581,7 +604,8 @@
    "dump": true
   },
   "wf_trg_enter_room": {
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_trg_game_ends": {
    "dump": true,
@@ -592,17 +616,21 @@
    "room": "2026-11-01"
   },
   "wf_trg_leave_room": {
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_trg_period_long": {
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_trg_period_short": {
    "preset": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_trg_periodically": {
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_trg_receive_dataframe": {
    "reference": true,
@@ -614,7 +642,8 @@
   },
   "wf_trg_recv_signal": {
    "preset": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_trg_room_initializes": {
    "reference": true,
@@ -634,7 +663,8 @@
    "dump": true
   },
   "wf_trg_stuff_state": {
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_trg_transaction_complete": {
    "dump": true
@@ -647,13 +677,16 @@
   },
   "wf_trg_var_changed": {
    "preset": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_trg_walks_off_furni": {
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_trg_walks_on_furni": {
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_upcounter1": {
    "room": "2026-11-01"
@@ -713,15 +746,18 @@
   "wf_xtra_exec_in_order": {
    "preset": true,
    "reference": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_xtra_execution_limit": {
    "reference": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_xtra_filter_furni": {
    "reference": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_xtra_filter_furni_by_var": {
    "reference": true,
@@ -730,11 +766,13 @@
   "wf_xtra_filter_users": {
    "preset": true,
    "reference": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_xtra_filter_users_by_var": {
    "reference": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_xtra_link_speaker": {
    "reference": true,
@@ -759,11 +797,13 @@
   },
   "wf_xtra_or_eval": {
    "reference": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_xtra_random": {
    "reference": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_xtra_rotate_to_dir": {
    "dump": true
@@ -783,16 +823,19 @@
   "wf_xtra_text_output_username": {
    "preset": true,
    "reference": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_xtra_text_output_variable": {
    "preset": true,
    "reference": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_xtra_unseen": {
    "reference": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_xtra_var_import": {
    "reference": true,
