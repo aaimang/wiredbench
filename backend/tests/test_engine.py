@@ -1326,3 +1326,55 @@ def test_bad_box_edits_are_ignored(settings: Any) -> None:
     engine.apply_input({"type": "box_settings", "furni": 1, "settings": settings})
     engine.apply_input({"type": "box_settings", "furni": 999, "settings": {}})
     say(engine, "go")
+
+
+def fx_room(fx: dict[str, Any]) -> Engine:
+    return room(
+        box(1, "wf_var_user", 3, 3, variable="hp"),
+        {**box(2, fx.pop("classname"), 3, 3, 1, **fx)},
+        box(3, "wf_trg_says_something", 1, 1, text="go"),
+        box(4, "wf_act_give_var", 1, 1, 1, variable="hp", value=40),
+    )
+
+
+def test_variable_fx_shows_the_variable_on_its_tile_over_each_holder() -> None:
+    engine = fx_room({"classname": "wf_xtra_varfx_hp", "fx_max": 80})
+    assert engine.snapshot()["fx"] == [], "nobody holds it yet"
+    say(engine, "go")
+    engine.advance(500)
+    assert engine.snapshot()["fx"] == [
+        {"kind": "hp", "target": "user", "id": 100, "value": "40", "min": 0, "max": 80, "order": 0}
+    ]
+
+
+def test_variable_fx_show_modes() -> None:
+    engine = fx_room({"classname": "wf_xtra_varfx_number", "fx_show": "never"})
+    say(engine, "go")
+    engine.advance(500)
+    assert engine.snapshot()["fx"] == []
+
+    engine = fx_room({"classname": "wf_xtra_varfx_number", "fx_show": "changes", "fx_duration": 2000})
+    say(engine, "go")
+    engine.advance(500)
+    assert len(engine.snapshot()["fx"]) == 1
+    engine.advance(3000)
+    assert engine.snapshot()["fx"] == []
+
+
+def test_variable_fx_only_shows_over_its_kind_of_holder() -> None:
+    engine = fx_room({"classname": "wf_xtra_varfx_number", "fx_target": "furni"})
+    say(engine, "go")
+    engine.advance(500)
+    assert engine.snapshot()["fx"] == []
+
+
+def test_a_variable_box_draws_at_most_five_fx() -> None:
+    engine = room(
+        box(1, "wf_var_user", 3, 3, variable="hp"),
+        *[box(10 + i, "wf_xtra_varfx_number", 3, 3, i + 1) for i in range(6)],
+        box(2, "wf_trg_says_something", 1, 1, text="go"),
+        box(3, "wf_act_give_var", 1, 1, 1, variable="hp"),
+    )
+    say(engine, "go")
+    engine.advance(500)
+    assert len(engine.snapshot()["fx"]) == 5

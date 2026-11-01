@@ -90,7 +90,8 @@
   },
   "wf_act_give_var": {
    "preset": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_act_init_transaction": {
    "dump": true
@@ -671,7 +672,8 @@
   "wf_var_furni": {
    "preset": true,
    "reference": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_var_pointer": {
    "reference": true,
@@ -692,7 +694,8 @@
   "wf_var_user": {
    "preset": true,
    "reference": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_vu": {},
   "wf_wire1": {},
@@ -817,22 +820,28 @@
   },
   "wf_xtra_var_web_api": {},
   "wf_xtra_varfx_boss": {
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_xtra_varfx_hp": {
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_xtra_varfx_levelling": {
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_xtra_varfx_number": {
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_xtra_varfx_prog": {
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_xtra_varfx_status": {
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   }
  },
  "furnidata_checked_on": "2026-10-31",

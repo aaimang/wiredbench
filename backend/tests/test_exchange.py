@@ -719,3 +719,30 @@ def test_highlight_colour_is_one_a_real_room_accepts() -> None:
     assert colour(highlight_type="tint", color=2395391) == 2395391
     assert colour(highlight_type="brighten", color=255) == exchange.WHITE
     assert colour(highlight_type="darken", color=255) == 0
+
+
+def test_variable_fx_options_read_their_positions() -> None:
+    options = [0, 2, 1, 7, 0, 4000, 0, -1, -1, -1, 0, 5, 0, 90, 0, 0, 1, 1, 0, 0, 0, 0, 3]
+    assert exchange.friendly_settings("wf_xtra_varfx_hp", {"options": options}, {}) == {
+        "fx_target": "furni",
+        "fx_show": "changes",
+        "fx_duration": 4000,
+        "fx_order": 3,
+        "fx_min": 5,
+        "fx_max": 90,
+    }
+    assert "fx_min" not in exchange.friendly_settings("wf_xtra_varfx_number", {"options": options}, {})
+
+
+def test_picks_replace_a_triggering_furni_default() -> None:
+    def sources(classname: str, **wired: Any) -> list[int]:
+        furni = [{"id": 1, "classname": classname, "x": 1, "y": 1, "wired": wired}]
+        out = exchange.export_gpresets({"furni": furni})[0]["wired"]
+        return next(b for section in out.values() if isinstance(section, list) for b in section)[
+            "furniSources"
+        ]
+
+    assert sources("wf_act_give_var", variable="v", furni=[2]) == [100, 200]
+    assert sources("wf_act_give_var", variable="v") == [0, 200], "nothing picked"
+    assert sources("wf_act_give_var", variable="v", furni=[2], furni_source="trigger")[0] == 0
+    assert sources("wf_act_furni_to_furni", furni=[2]) == [0, 100], "picks are the target there"

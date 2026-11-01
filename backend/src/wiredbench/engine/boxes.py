@@ -157,6 +157,37 @@ TARGET_KIND = {
     "default": "furni",
 }
 EASING = {"name": "easing", "kind": "number", "label": "Easing, 0 to 4", "default": 4, "min": 0, "max": 4}
+FX_COMMON = (
+    {
+        "name": "fx_target",
+        "kind": "select",
+        "label": "Shows over",
+        "options": ["user", "furni"],
+        "labels": {"user": "Users", "furni": "Furni"},
+        "default": "user",
+    },
+    {
+        "name": "fx_show",
+        "kind": "select",
+        "label": "Show",
+        "options": ["always", "changes", "never"],
+        "labels": {"always": "Always", "changes": "When it changes", "never": "Never"},
+        "default": "always",
+    },
+    {
+        "name": "fx_duration",
+        "kind": "number",
+        "label": "Show for, in milliseconds",
+        "default": 3000,
+        "min": 1500,
+        "max": 20000,
+    },
+    {"name": "fx_order", "kind": "number", "label": "Order, higher sits lower", "default": 0},
+)
+FX_RANGE = (
+    {"name": "fx_min", "kind": "number", "label": "Lowest value", "default": 0},
+    {"name": "fx_max", "kind": "number", "label": "Highest value", "default": 100},
+)
 AMOUNT = {"name": "amount", "kind": "number", "label": "How many", "default": 10, "min": 0}
 ANTENNA = {"name": "antenna", "kind": "furni", "label": "Antenna", "default": []}
 SECONDS = {"name": "seconds", "kind": "number", "label": "Seconds", "default": 10, "min": 0, "step": 0.5}
@@ -406,6 +437,12 @@ BOXES: dict[str, dict[str, Any]] = {
             "step": 0.5,
         },
     ),
+    "wf_xtra_varfx_number": _box("addon", ASSUMED, *FX_COMMON),
+    "wf_xtra_varfx_levelling": _box("addon", ASSUMED, *FX_COMMON),
+    "wf_xtra_varfx_prog": _box("addon", ASSUMED, *FX_COMMON, *FX_RANGE),
+    "wf_xtra_varfx_status": _box("addon", ASSUMED, *FX_COMMON, *FX_RANGE),
+    "wf_xtra_varfx_hp": _box("addon", ASSUMED, *FX_COMMON, *FX_RANGE),
+    "wf_xtra_varfx_boss": _box("addon", ASSUMED, *FX_COMMON, *FX_RANGE),
     "wf_xtra_mov_carry_users": _box(
         "addon",
         ASSUMED,

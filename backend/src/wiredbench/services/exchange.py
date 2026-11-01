@@ -80,6 +80,16 @@ HIGHLIGHT_COLORS = (
     12291417,
 )
 BRIGHTEN_ON = 38  # The strength dropdown shows 76 and saves half of it.
+FX_FIELDS = [
+    ("fx_target", 0, {0: "furni", 1: "user"}),
+    ("fx_show", 2, ("always", "changes", "never")),
+    ("fx_duration", 5, int),
+    ("fx_order", 22, int),
+]
+FX_RANGE_FIELDS = [*FX_FIELDS, ("fx_min", 11, LONG), ("fx_max", 13, LONG)]
+PICKED_FURNI = 100
+# Here the first slot is the furni that moves, and the picks belong to the second.
+TWO_FURNI_SLOTS = {"wf_act_furni_to_furni"}
 AREA_FIELDS = [("area_x", 0, int), ("area_y", 1, int), ("area_width", 2, int), ("area_height", 3, int)]
 # A selector's two switches sit on the box itself. The file calls invert "inverse".
 SELECTOR_SWITCHES = {"filter": "filter", "invert": "inverse"}
@@ -139,6 +149,12 @@ OPTION_FIELDS: dict[str, list[tuple[str, int, Any]]] = {
         ("easing", 3, int),
         ("target", 4, ("furni", "users")),
     ],
+    "wf_xtra_varfx_number": FX_FIELDS,
+    "wf_xtra_varfx_levelling": FX_FIELDS,
+    "wf_xtra_varfx_prog": FX_RANGE_FIELDS,
+    "wf_xtra_varfx_status": FX_RANGE_FIELDS,
+    "wf_xtra_varfx_hp": FX_RANGE_FIELDS,
+    "wf_xtra_varfx_boss": FX_RANGE_FIELDS,
     "wf_xtra_mov_carry_users": [("carry", 0, ("furni", "tile"))],
     "wf_act_join_team": [
         ("team", 0, {1: "red", 2: "green", 3: "blue", 4: "yellow"}),
@@ -592,6 +608,7 @@ def _apply_settings(
             box["delay"] = value
         elif name in ("furni", "antenna"):
             box["items"] = value
+            _use_picks(box, classname, settings, value)
         elif name in ("text", "placeholder"):
             box["config"] = value
         elif name == "variable" and classname.startswith("wf_var_"):
@@ -609,6 +626,20 @@ def _apply_settings(
         not base or any(base.get(k) != v for k, v in settings.items())
     ):
         _fit_highlight(box, warnings)
+
+
+def _use_picks(box: dict[str, Any], classname: str, settings: dict[str, Any], picks: Any) -> None:
+    """A box whose default source is the triggering furni ignores its picks until told to use them."""
+    slots = box.get("furniSources")
+    explicit = settings.get("furni_source", "default") != "default"
+    if (
+        picks
+        and not explicit
+        and classname not in TWO_FURNI_SLOTS
+        and isinstance(slots, list)
+        and slots[:1] == [0]
+    ):
+        box["furniSources"] = [PICKED_FURNI, *slots[1:]]
 
 
 def _fit_highlight(box: dict[str, Any], warnings: list[str]) -> None:

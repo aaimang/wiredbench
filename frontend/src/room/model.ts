@@ -437,3 +437,20 @@ export function highlightTint(look: Highlight | undefined, nowMs: number): numbe
   if (look.type === "darken") return mixWithWhite(0x000000, lookAmount(look, nowMs));
   return look.type === "tint" ? mixWithWhite(look.color, lookAmount(look, nowMs)) : null;
 }
+
+export interface FxShown {
+  kind: string;
+  target: "user" | "furni";
+  id: number;
+  value: string;
+  min: number;
+  max: number;
+  order: number;
+}
+
+/** How full a bar is, from 0 to 1. A range with no width reads as empty, not as an error. */
+export function fxFill(fx: Pick<FxShown, "value" | "min" | "max">): number {
+  const span = fx.max - fx.min;
+  if (span <= 0) return 0;
+  return Math.max(0, Math.min((Number(fx.value) - fx.min) / span, 1));
+}
