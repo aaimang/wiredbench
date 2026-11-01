@@ -638,3 +638,11 @@ def test_sources_export_and_read_back() -> None:
     ][0]
     assert fresh["userSources"] == [0]
     assert "user_source" not in exchange.friendly_settings("wf_act_show_message", fresh, {})
+
+
+def test_a_new_file_always_has_the_sections_g_presets_needs() -> None:
+    furni = [{"id": 1, "classname": "wf_trg_says_something", "x": 1, "y": 1, "wired": {"text": "go"}}]
+    wired = exchange.export_gpresets({"furni": furni})[0]["wired"]
+    assert wired["conditions"] == []
+    assert wired["effects"] == []
+    assert len(wired["triggers"]) == 1
