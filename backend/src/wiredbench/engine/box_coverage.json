@@ -184,11 +184,13 @@
   },
   "wf_act_set_highlight": {
    "reference": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_act_set_visibility": {
    "reference": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_act_show_message": {
    "reference": true,
@@ -737,7 +739,8 @@
   },
   "wf_xtra_mov_carry_users": {
    "reference": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_xtra_mov_curve": {
    "reference": true,

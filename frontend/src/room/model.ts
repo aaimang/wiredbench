@@ -403,3 +403,35 @@ export function furniParts(
 function endOf(track: FurniTrack): number {
   return ((track.frames.length * track.repeat) / FURNI_FPS) * 1000;
 }
+
+export interface Highlight {
+  type: string;
+  strength: number;
+  color: number;
+  pulse: boolean;
+}
+
+export interface Look {
+  highlight?: Highlight;
+  invisible?: boolean;
+  click_through?: boolean;
+}
+
+function mixWithWhite(color: number, amount: number): number {
+  const part = (shift: number) => {
+    const value = (color >> shift) & 255;
+    return Math.round(255 + (value - 255) * amount) << shift;
+  };
+  return part(16) | part(8) | part(0);
+}
+
+/**
+ * A close stand-in for what the client draws: every look becomes a tint. Null means no change. An
+ * outline, a glow and a brighten cannot be told apart here, because they would need a shader.
+ */
+export function highlightTint(look: Highlight | undefined, nowMs: number): number | null {
+  if (!look || look.strength <= 0) return null;
+  const pulse = look.pulse ? 0.5 + 0.5 * Math.sin(nowMs / 200) : 1;
+  const amount = (look.strength / 100) * pulse;
+  return mixWithWhite(look.type === "darken" ? 0x000000 : look.color, amount);
+}

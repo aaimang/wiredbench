@@ -1259,3 +1259,47 @@ def test_team_has_score(compare: str, points: int, expected: bool) -> None:
     say(engine, "check")
     engine.advance(1000)
     assert bool(engine.variables["v"]) is expected
+
+
+def test_highlight_and_visibility_reach_furni_and_users() -> None:
+    engine = moved(
+        box(
+            2,
+            "wf_act_set_highlight",
+            1,
+            1,
+            1,
+            furni=[50],
+            audience="everyone",
+            highlight_type="tint",
+            color=255,
+        ),
+        box(3, "wf_act_set_visibility", 1, 1, 2, furni=[50], audience="everyone", click_through=True),
+        box(4, "wf_act_set_visibility", 1, 1, 3, target="users", audience="selected", user_source="trigger"),
+        box(50, "lamp", 5, 5),
+    )
+    state = engine.snapshot()
+    assert state["looks"]["furni"][50]["highlight"]["color"] == 255
+    assert state["looks"]["furni"][50]["invisible"] is True
+    assert state["looks"]["furni"][50]["click_through"] is True
+    assert state["looks"]["users"][100]["invisible"] is True
+
+
+def test_a_look_with_no_audience_does_nothing() -> None:
+    engine = moved(
+        box(2, "wf_act_set_visibility", 1, 1, 1, furni=[50], audience="selected", user_source="selector"),
+        box(50, "lamp", 5, 5),
+    )
+    assert engine.snapshot()["looks"]["furni"] == {}
+
+
+def test_carry_users_moves_who_stands_on_the_furni() -> None:
+    effect = box(2, "wf_act_rel_mov", 1, 1, 1, furni=[50], move_x=2)
+    carry = box(3, "wf_xtra_mov_carry_users", 1, 1, 2)
+    lamp = box(50, "lamp", 5, 5)
+    engine = moved(effect, carry, lamp, users=[user(100, "Ann", 5, 5), user(101, "Bob", 9, 9)])
+    assert engine.furni[50]["x"] == 7
+    assert (engine.users[100]["x"], engine.users[100]["y"]) == (7, 5)
+    assert engine.users[101]["x"] == 9
+    engine = moved(effect, lamp, users=[user(100, "Ann", 5, 5)])
+    assert engine.users[100]["x"] == 5, "without the add-on the user stays"

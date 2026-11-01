@@ -8,7 +8,7 @@ it, and a named position is still unverified until a box is changed and read aga
 
 No reply from: `wf_contract_payment`, `wf_contract_reward`, `wf_contract_trade`. The cause is unconfirmed.
 
-Named positions: 82. Unnamed positions: 500.
+Named positions: 95. Unnamed positions: 487.
 
 | Box | Section | Default numbers | Named positions | Unnamed positions |
 |---|---|---|---|---|
@@ -57,8 +57,8 @@ Named positions: 82. Unnamed positions: 500.
 | `wf_act_send_message` | effect | `[0]` |  | 0 |
 | `wf_act_send_signal` | effect | `[0, 0]` |  | 0, 1 |
 | `wf_act_set_altitude` | effect | `[0, 0]` | 0: altitude, 1: altitude_change |  |
-| `wf_act_set_highlight` | effect | `[0, 0, 100, 16771584, 0, 4, 0]` |  | 0, 1, 2, 3, 4, 5, 6 |
-| `wf_act_set_visibility` | effect | `[0, 100, 0, 4, 0]` |  | 0, 1, 2, 3, 4 |
+| `wf_act_set_highlight` | effect | `[0, 0, 100, 16771584, 0, 4, 0]` | 0: audience, 1: highlight_type, 2: strength, 3: color, 4: pulse, 5: easing, 6: target |  |
+| `wf_act_set_visibility` | effect | `[0, 100, 0, 4, 0]` | 0: audience, 1: visibility, 2: click_through, 3: easing, 4: target |  |
 | `wf_act_show_message` | effect | `[0, 202, -1]` |  | 0, 1, 2 |
 | `wf_act_teleport_to` | effect | `[0]` |  | 0 |
 | `wf_act_teleport_to_room` | effect | `[]` |  |  |
@@ -171,7 +171,7 @@ Named positions: 82. Unnamed positions: 500.
 | `wf_xtra_filter_users` | addon | `[10, 0, 1]` | 0: amount | 1, 2 |
 | `wf_xtra_filter_users_by_var` | addon | `[10, 0, 0, 1]` | 0: amount, 1: lowest | 2, 3 |
 | `wf_xtra_link_speaker` | addon | `[1, 1]` |  | 0, 1 |
-| `wf_xtra_mov_carry_users` | addon | `[0]` |  | 0 |
+| `wf_xtra_mov_carry_users` | addon | `[0]` | 0: carry |  |
 | `wf_xtra_mov_curve` | addon | `[0, 160, -20]` |  | 0, 1, 2 |
 | `wf_xtra_mov_no_animation` | addon | `[]` |  |  |
 | `wf_xtra_mov_physics` | addon | `[1, 0, 0, 0]` |  | 0, 1, 2, 3 |

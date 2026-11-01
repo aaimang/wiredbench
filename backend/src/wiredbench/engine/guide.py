@@ -193,6 +193,12 @@ GUIDE: dict[str, tuple[str, str]] = {
     "wf_cnd_counter_time_matches": ("Compares a counter's time.", "Only open a door in the first minute."),
     "wf_cnd_team_has_score": ("Compares a team's score.", "Open the prize room at 50 points."),
     "wf_trg_clock_counter": ("Runs when a counter counts up to a time.", "End the round at two minutes."),
+    "wf_act_set_highlight": ("Outlines, tints or darkens furni or users.", "Show which tile is safe."),
+    "wf_act_set_visibility": ("Makes furni or users invisible or visible.", "Hide a secret door."),
+    "wf_xtra_mov_carry_users": (
+        "Moves users along with the furni they stand on.",
+        "Build a moving platform.",
+    ),
     "wf_act_join_team": ("Puts users in a team.", "Sort players into red and blue."),
     "wf_act_leave_team": ("Takes users out of their team.", "Clear teams when a round ends."),
     "wf_act_give_score": (

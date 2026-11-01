@@ -15,7 +15,9 @@ import {
   footprint,
   footprintSize,
   furniParts,
+  highlightTint,
   type InfoLookup,
+  type Look,
   type PlacedAvatar,
   type PlacedFurni,
   type RoomDocument,
@@ -50,6 +52,7 @@ export interface AvatarPose {
 }
 
 export interface Scene {
+  looks?: { furni: Record<number, Look>; users: Record<number, Look> } | null;
   room: RoomDocument;
   lookup: InfoLookup;
   revisionOf: (classname: string) => number | null;
@@ -62,6 +65,8 @@ export interface Scene {
 }
 
 /** Matches ART_VERSION on the server. Furni art is cached for good, so a new shape needs a new address. */
+// Invisible things stay faintly drawn here, so a builder can still find what a stack hid.
+const INVISIBLE_OPACITY = 0.15;
 const ART_VERSION = 3;
 const AVATAR_ANCHOR = { x: 32, y: 96 };
 const AVATAR_SIZE = { w: 64, h: 110 };
@@ -340,9 +345,16 @@ export class RoomRenderer {
 
   private drawFurni(scene: Scene, item: PlacedFurni): void {
     const selected = scene.selected?.kind === "furni" && scene.selected.id === item.id;
-    const tint = selected ? SELECTED_TINT : scene.picked.has(item.id) ? PICKED_TINT : null;
-    const bounds = this.addFurniSprites(scene, item, tint, 1, depth);
-    if (bounds) {
+    const look = scene.looks?.furni[item.id];
+    if (look?.highlight?.pulse) this.animating = true;
+    const tint = selected
+      ? SELECTED_TINT
+      : scene.picked.has(item.id)
+        ? PICKED_TINT
+        : highlightTint(look?.highlight, performance.now());
+    const opacity = look?.invisible ? INVISIBLE_OPACITY : 1;
+    const bounds = this.addFurniSprites(scene, item, tint, opacity, depth);
+    if (bounds && !look?.click_through) {
       const [fx, fy] = this.front(scene, item);
       this.hits.push({
         hit: { kind: "furni", id: item.id },
@@ -497,6 +509,11 @@ export class RoomRenderer {
       const sprite = new Sprite(texture);
       sprite.position.set(left, top);
       sprite.zIndex = order;
+      const look = scene.looks?.users[avatar.id];
+      if (look?.highlight?.pulse) this.animating = true;
+      const tinted = highlightTint(look?.highlight, performance.now());
+      if (tinted !== null) sprite.tint = tinted;
+      if (look?.invisible) sprite.alpha = INVISIBLE_OPACITY;
       this.layer.addChild(sprite);
     } else {
       const stand = new Graphics()
@@ -505,6 +522,7 @@ export class RoomRenderer {
       stand.zIndex = order;
       this.layer.addChild(stand);
     }
+    if (scene.looks?.users[avatar.id]?.click_through) return;
     this.hits.push({
       hit: { kind: "avatar", id: avatar.id },
       bounds: new Rectangle(left + 12, top + 10, AVATAR_SIZE.w - 24, AVATAR_SIZE.h - 14),

@@ -56,6 +56,8 @@ def test_room_checks_have_dates_and_nothing_else_is_claimed() -> None:
         "wf_act_move_rotate_user",
         "wf_act_rel_mov",
         "wf_act_set_altitude",
+        "wf_act_set_highlight",
+        "wf_act_set_visibility",
         "wf_act_show_message",
         "wf_act_toggle_state",
         "wf_cnd_counter_time_matches",
@@ -75,6 +77,7 @@ def test_room_checks_have_dates_and_nothing_else_is_claimed() -> None:
         "wf_trg_says_something",
         "wf_trg_state_changed",
         "wf_upcounter1",
+        "wf_xtra_mov_carry_users",
         "wf_var_room",
     }
 
