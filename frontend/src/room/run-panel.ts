@@ -125,6 +125,12 @@ export class RunPanel {
             this.variables,
           ),
         ),
+        h(
+          "div",
+          { class: "run-built-ins" },
+          h("h4", {}, T.builtIns),
+          h("table", { class: "table", "data-testid": "run-built-ins" }, this.builtIns),
+        ),
       ),
       form,
     );
@@ -202,11 +208,32 @@ export class RunPanel {
     this.paused = state.paused;
     this.clock.textContent = runClock(state.now_ms);
     for (const line of state.trace) this.addLine(line.at_ms, line.kind, line.message);
+    void this.refreshBuiltIns();
     // The table is rebuilt on every tick, which would throw away a value being typed.
     if (!this.editingValue) this.renderVariables(state);
     this.game = state.game;
     this.renderControls();
     this.onState(state);
+  }
+
+  /** Which holder the built-in table shows. Null means the room itself. */
+  inspect(target: "furni" | "user" | null, holder: number | null): void {
+    this.inspected = target === null ? null : { target, holder };
+  }
+
+  private async refreshBuiltIns(): Promise<void> {
+    const shown = this.inspected;
+    const query = shown ? `target=${shown.target}&holder=${shown.holder}` : "target=global";
+    const rows = await get<{ name: string; value: string }[]>(
+      `${this.url}/built-ins?${query}`,
+    ).catch(() => null);
+    if (!rows || this.stopped) return;
+    replace(
+      this.builtIns,
+      ...rows.map((row) =>
+        h("tr", {}, h("td", {}, h("code", {}, row.name)), h("td", {}, row.value)),
+      ),
+    );
   }
 
   private renderVariables(state: RunState): void {
@@ -298,6 +325,8 @@ export class RunPanel {
 
   private game: RunState["game"] | null = null;
   private editingValue = false;
+  private inspected: { target: "furni" | "user"; holder: number | null } | null = null;
+  private builtIns = h("tbody");
   private stopped = false;
 
   private renderControls(): void {

@@ -1580,6 +1580,9 @@ class WbEditor extends HTMLElement {
   private renderInspector(): void {
     const furni = this.selectedFurni();
     const avatar = this.selectedAvatar();
+    if (furni) this.run?.inspect("furni", furni.id);
+    else if (avatar) this.run?.inspect("user", avatar.id);
+    else this.run?.inspect(null, null);
     if (furni) replace(this.inspector, ...this.furniInspector(furni));
     else if (avatar) replace(this.inspector, ...this.avatarInspector(avatar));
     else {

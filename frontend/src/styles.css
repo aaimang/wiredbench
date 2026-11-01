@@ -1876,6 +1876,11 @@ wb-editor {
   min-width: 6ch;
 }
 
+.run-built-ins {
+  max-height: 180px;
+  overflow: auto;
+}
+
 .run-vars th {
   padding-right: 8px;
   font-size: 13px;

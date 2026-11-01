@@ -1613,3 +1613,152 @@ def test_a_signal_forwards_the_selected_users_in_one_signal_unless_split() -> No
     say(engine, "go")
     engine.advance(500)
     assert logs(engine).count("received") == 1
+
+
+def reads(engine: Engine, name: str, on: str, holder: int | None = None) -> int | None:
+    holding = engine._holding(name, holder, None, on)
+    return holding.value if holding else None
+
+
+def test_built_ins_from_the_catalogue_and_room() -> None:
+    document = {
+        "room": {"width": 20, "height": 20},
+        "furni": [box(50, "wf_upcounter1", 5, 5), box(51, "lamp", 6, 5)],
+        "avatars": [user(100, "Ann")],
+    }
+    engine = Engine(
+        document,
+        furni_facts={
+            "lamp": {
+                "height": 0.65,
+                "xdim": 2,
+                "ydim": 1,
+                "can_stand": True,
+                "can_sit": False,
+                "can_lay": False,
+            }
+        },
+        clock_start_ms=1_700_000_000_123,
+        room_id=7,
+    )
+    assert reads(engine, "@height", "furni", 51) == 65
+    assert reads(engine, "@dimensions.x", "furni", 51) == 2
+    assert reads(engine, "@can_stand_on", "furni", 51) == 1
+    assert reads(engine, "@can_sit_on", "furni", 51) is None, "a flag exists only while true"
+    assert reads(engine, "~clock.state", "furni", 50) == 0
+    assert reads(engine, "~clock.state", "furni", 51) is None
+    assert reads(engine, "@room_id", "global") == 7
+    assert reads(engine, "@current_time", "global") == 1_700_000_000_123
+    assert reads(engine, "@current_time.day_of_week", "global") == 2
+    assert reads(engine, "@current_time.month_of_year", "global") == 11
+    assert reads(engine, "@user_id", "user", 100) == 100
+    assert reads(engine, "@type", "user", 100) == 1
+    assert any(row["name"] == "@height" for row in engine.view_built_ins("furni", 51))
+    assert all(row["name"] != "@can_sit_on" for row in engine.view_built_ins("furni", 51))
+
+
+def change(variable: str, value: int, on: str = "user", **extra: Any) -> dict[str, Any]:
+    return box(
+        2,
+        "wf_act_change_var_val",
+        1,
+        1,
+        1,
+        variable=variable,
+        variable_on=on,
+        value=value,
+        operation="set",
+        **extra,
+    )
+
+
+@pytest.mark.parametrize(
+    ("variable", "value", "on", "extra", "check"),
+    [
+        ("@direction", 5, "user", {}, lambda e: e.users[100]["dir"] == 5),
+        ("@position.x", 7, "user", {}, lambda e: e.users[100]["x"] == 7),
+        ("@rotation", 4, "furni", {"furni": [50]}, lambda e: e.furni[50]["rot"] == 4),
+        ("@altitude", 150, "furni", {"furni": [50]}, lambda e: e.furni[50]["z"] == 1.5),
+        ("@state", 1, "furni", {"furni": [50]}, lambda e: e.furni[50]["state"] == 1),
+        ("@position.y", 8, "furni", {"furni": [50]}, lambda e: e.furni[50]["y"] == 8),
+        ("@teams.red.score", 9, "user", {}, lambda e: e.team_scores["red"] == 9),
+    ],
+)
+def test_writable_built_ins_can_be_changed(
+    variable: str, value: int, on: str, extra: dict[str, Any], check: Any
+) -> None:
+    engine = moved(change(variable, value, on, **extra), box(50, "lamp", 5, 5))
+    assert check(engine)
+
+
+def test_read_only_built_ins_cannot_be_changed() -> None:
+    engine = moved(change("@user_count", 9), box(50, "lamp", 5, 5))
+    assert "@user_count cannot be changed" in logs(engine) or any(
+        "cannot be changed" in x for x in [e["message"] for e in engine.trace]
+    )
+
+
+def test_event_values_reach_stacks_set_off_by_a_change() -> None:
+    engine = room(
+        box(1, "wf_var_user", 9, 9, variable="v"),
+        box(2, "wf_trg_says_something", 1, 1, text="go"),
+        box(3, "wf_act_give_var", 1, 1, 1, variable="v", value=5),
+        box(4, "wf_trg_var_changed", 2, 2, variable="v"),
+        box(
+            5,
+            "wf_xtra_text_output_variable",
+            2,
+            2,
+            1,
+            placeholder="n",
+            variable="@event.variable_update.new_value",
+        ),
+        box(
+            6,
+            "wf_xtra_text_output_variable",
+            2,
+            2,
+            2,
+            placeholder="t",
+            variable="@event.variable_update.change_type",
+        ),
+        box(7, "wf_act_show_message", 2, 2, 3, text="$(t) to $(n)"),
+    )
+    say(engine, "go")
+    engine.advance(500)
+    assert [m["text"] for m in engine.messages] == ["0 to 5"]
+
+
+def test_a_new_variable_has_no_old_value_and_a_team_type_uses_real_numbers() -> None:
+    engine = room(
+        box(1, "wf_var_user", 9, 9, variable="v"),
+        box(2, "wf_trg_says_something", 1, 1, text="go"),
+        box(3, "wf_act_give_var", 1, 1, 1, variable="v", value=5),
+        box(4, "wf_trg_var_changed", 2, 2, variable="v"),
+        box(
+            5,
+            "wf_xtra_text_output_variable",
+            2,
+            2,
+            1,
+            placeholder="o",
+            variable="@event.variable_update.old_value",
+        ),
+        box(
+            6,
+            "wf_xtra_text_output_variable",
+            2,
+            2,
+            2,
+            placeholder="d",
+            variable="@event.variable_update.difference",
+        ),
+        box(7, "wf_act_show_message", 2, 2, 3, text="old $(o) diff $(d)"),
+    )
+    say(engine, "go")
+    engine.advance(500)
+    assert [m["text"] for m in engine.messages] == ["old null diff null"]
+
+    for kind, number in (("banzai", 0), ("freeze", 1), ("wired", 4)):
+        engine = moved(box(2, "wf_act_join_team", 1, 1, 1, team="red", team_type=kind))
+        assert reads(engine, "@team.type", "user", 100) == number

@@ -794,3 +794,16 @@ def test_a_variable_placeholder_says_who_holds_its_variable(
     ]
     box = exchange.export_gpresets({"furni": furni})[0]["wired"]["addons"][0]
     assert box["options"][1] == number
+
+
+def test_changing_a_built_in_keeps_its_holder_through_export_and_import() -> None:
+    wired = {"variable": "@altitude", "variable_on": "furni", "operation": "set", "value": 150, "furni": [2]}
+    furni = [
+        {"id": 1, "classname": "wf_act_change_var_val", "x": 1, "y": 1, "wired": wired},
+        {"id": 2, "classname": "lamp", "x": 2, "y": 2},
+    ]
+    preset = exchange.export_gpresets({"furni": furni})[0]
+    box = preset["wired"]["effects"][0]
+    assert box["variableIds"][0] == "-123"
+    document, _ = exchange.import_gpresets(preset)
+    assert next(f for f in document["furni"] if f["id"] == 1)["wired"]["variable_on"] == "furni"

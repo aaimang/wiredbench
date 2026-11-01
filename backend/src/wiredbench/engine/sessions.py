@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 import threading
+import time
 from collections import OrderedDict
 from dataclasses import dataclass
 from typing import Any
@@ -50,10 +51,18 @@ class RunRegistry:
         tick_ms: int = TICK_MS,
         furni_states: dict[str, list[int]] | None = None,
         not_standable: set[str] | None = None,
+        furni_facts: dict[str, dict[str, Any]] | None = None,
     ) -> Run:
         run = Run(
             Engine(
-                document, seed=seed, tick_ms=tick_ms, furni_states=furni_states, not_standable=not_standable
+                document,
+                seed=seed,
+                tick_ms=tick_ms,
+                furni_states=furni_states,
+                not_standable=not_standable,
+                furni_facts=furni_facts,
+                clock_start_ms=int(time.time() * 1000),
+                room_id=sandbox_id,
             ),
             threading.Lock(),
         )

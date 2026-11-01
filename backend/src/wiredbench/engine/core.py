@@ -13,6 +13,7 @@ import random
 import re
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from typing import Any
 
 from wiredbench.engine import internal, operations
@@ -41,6 +42,17 @@ MOVES = {
 MAX_ALTITUDE = 8000
 TEAMS = ("red", "green", "blue", "yellow")
 MAX_POINTS = 1000
+TEAM_TYPES = ("wired", "banzai", "freeze")
+TEAM_TYPE_NUMBERS = {"banzai": 0, "freeze": 1, "wired": 4}  # A real room read 0 for a Battle Banzai team.
+CHANGE_CREATED, CHANGE_VALUE, CHANGE_DELETED = 0, 1, 2
+ORIGIN_INSPECTION = 2
+FURNI_FACTS = {
+    "@dimensions.x": "xdim",
+    "@dimensions.y": "ydim",
+    "@can_stand_on": "can_stand",
+    "@can_sit_on": "can_sit",
+    "@can_lay_on": "can_lay",
+}
 DEFAULT_FLIGHT_MS = 500  # A real room took about this long for 3 tiles, with or without the add-on.
 MAX_FLIGHT_MS = 60_000
 NEGATIVE = "wf_act_neg_"
@@ -179,6 +191,7 @@ class Context:
     users: list[int] | None = None
     selected_furni: list[int] | None = None
     context_vars: dict[str, Holding] = field(default_factory=dict)
+    event: dict[str, int] = field(default_factory=dict)
 
 
 class Engine:
@@ -190,8 +203,14 @@ class Engine:
         tick_ms: int = TICK_MS,
         furni_states: dict[str, list[int]] | None = None,
         not_standable: set[str] | None = None,
+        furni_facts: dict[str, dict[str, Any]] | None = None,
+        clock_start_ms: int = 0,
+        room_id: int = 0,
     ) -> None:
         self.seed = seed
+        self.furni_facts = furni_facts or {}
+        self.clock_start_ms = clock_start_ms
+        self.room_id = room_id
         self.not_standable = not_standable or set()
         self.tick_ms = tick_ms
         self.furni_states = furni_states or {}
@@ -285,6 +304,7 @@ class Engine:
                 "y": raw["y"],
                 "dir": raw.get("dir", 2),
                 "team": None,
+                "team_type": "wired",
             }
         self._log("info", "Room started", seed=self.seed)
         self._fire("wf_trg_room_initializes")
@@ -370,10 +390,18 @@ class Engine:
         if key not in self.variables.get(name, {}):
             return
         value = max(INT64_MIN, min(_int(raw), INT64_MAX))
+        before = self.variables[name][key].value
         self._store(name, key, value)
         self._log("info", f"{name} was set to {value} by hand")
         holder, _, entity = key.partition(":")
-        self._changed(name, _int(entity) if holder in ("user", "furni") else None)
+        self._changed(
+            name,
+            _int(entity) if holder in ("user", "furni") else None,
+            before,
+            value,
+            CHANGE_VALUE,
+            ORIGIN_INSPECTION,
+        )
 
     def _store(self, name: str, key: str, value: int) -> None:
         holding = self.variables[name].get(key)
@@ -412,7 +440,7 @@ class Engine:
             else:
                 found = bool(keyword) and keyword in said
             if found:
-                self._start(stack, Context(trigger=box, user=user_id))
+                self._start(stack, Context(trigger=box, user=user_id, event={"@event.chat.type": 0}))
 
     def _click(self, user_id: int, furni_id: int) -> None:
         if furni_id in self.furni:
@@ -1007,7 +1035,10 @@ class Engine:
                 _, team, field = name.split(".")
                 size = sum(1 for u in self.users.values() if u["team"] == team)
                 return self.team_scores[team] if field == "score" else size
+            if name.startswith("@current_time"):
+                return self._current_time(name)
             return {
+                "@room_id": self.room_id or None,
                 "@furni_count": len(self.furni),
                 "@user_count": len(self.users),
                 "@wired_timer": (self.now_ms - self.timer_start_ms) // CLOCK_TICK_MS,
@@ -1015,6 +1046,8 @@ class Engine:
         if target == "context":
             if ctx is None:
                 return None
+            if name.startswith("@event."):
+                return ctx.event.get(name)
             return {
                 "@selector_furni_count": len(ctx.selected_furni or []),
                 "@selector_user_count": len(ctx.users or []),
@@ -1027,6 +1060,9 @@ class Engine:
                 return None
             team = user["team"]
             return {
+                "@type": 1,
+                "@user_id": user["id"],
+                "@team.type": TEAM_TYPE_NUMBERS[user["team_type"]] if team in TEAMS else None,
                 "@index": user["id"],
                 "@position.x": user["x"],
                 "@position.y": user["y"],
@@ -1044,6 +1080,14 @@ class Engine:
             return clock.half_seconds if clock else None
         if name == "~clock.is_game_aware":
             return int(clock.game_aware) if clock else None
+        if name == "~clock.state":
+            return None if clock is None else 1 if clock.running else 2 if clock.started else 0
+        facts = self.furni_facts.get(item["classname"], {})
+        if name in FURNI_FACTS:
+            known = facts.get(FURNI_FACTS[name])
+            return None if known is None else int(known)
+        if name == "@height":
+            return _hundredths(facts["height"]) if "height" in facts else None
         return {
             "@id": holder,
             "@state": _int(item["state"]),
@@ -1053,6 +1097,79 @@ class Engine:
             "@altitude": _hundredths(item["z"]),
             "@is_invisible": int(bool(self.furni_looks.get(holder, {}).get("invisible"))),
         }.get(name)
+
+    def _current_time(self, name: str) -> int | None:
+        """Unix milliseconds, and its parts in UTC. Day and month numbers start at 1, as in a real room."""
+        now_ms = self.clock_start_ms + self.now_ms
+        moment = datetime.fromtimestamp(now_ms / 1000, tz=UTC)
+        return {
+            "@current_time": now_ms,
+            "@current_time.milliseconds_of_seconds": now_ms % 1000,
+            "@current_time.seconds_of_minute": moment.second,
+            "@current_time.minute_of_hour": moment.minute,
+            "@current_time.hour_of_day": moment.hour,
+            "@current_time.day_of_week": moment.isoweekday(),
+            "@current_time.day_of_month": moment.day,
+            "@current_time.day_of_year": moment.timetuple().tm_yday,
+            "@current_time.week_of_year": moment.isocalendar().week,
+            "@current_time.month_of_year": moment.month,
+            "@current_time.year": moment.year,
+        }.get(name)
+
+    def _write_built_in(self, name: str, on: str, holder: int | None, value: int) -> bool:
+        """Changes a writable built-in variable. False if this one cannot be changed here."""
+        if name.startswith("@teams."):
+            _, team, _field = name.split(".")
+            self.team_scores[team] = max(0, value)
+            return True
+        if on == "user":
+            user = self.users.get(holder) if holder is not None else None
+            if user is None:
+                return False
+            match name:
+                case "@direction":
+                    user["dir"] = value % 8
+                case "@position.x":
+                    self._move_user(user["id"], value, user["y"])
+                case "@position.y":
+                    self._move_user(user["id"], user["x"], value)
+                case "@team.score" if user["team"] in TEAMS:
+                    self.team_scores[user["team"]] = max(0, value)
+                case _:
+                    return False
+            return True
+        item = self.furni.get(holder) if holder is not None else None
+        if item is None or holder is None:
+            return False
+        match name:
+            case "@state":
+                self._set_state(holder, value)
+            case "@position.x":
+                item["x"] = value
+            case "@position.y":
+                item["y"] = value
+            case "@rotation":
+                item["rot"] = value % 8
+            case "@altitude":
+                item["z"] = max(0, min(value, MAX_ALTITUDE)) / 100
+            case "~clock.pulse_count" if holder in self.clocks:
+                self.clocks[holder].half_seconds = max(0, value)
+                self._clock_show(holder, self.clocks[holder])
+            case _:
+                return False
+        return True
+
+    def view_built_ins(self, target: str, holder: int | None) -> list[dict[str, Any]]:
+        """Every built-in value this holder has right now, for the inspection panel."""
+        rows = []
+        for row in internal.rows():
+            if row["target"] == target:
+                holding = self._built_in(row["name"], target, holder, None)
+                if holding is not None:
+                    rows.append(
+                        {"name": row["name"], "value": str(holding.value), "can_write": row["can_write"]}
+                    )
+        return rows
 
     def _holding(
         self, name: str, user: int | None, ctx: Context | None = None, on: str | None = None
@@ -1071,13 +1188,42 @@ class Engine:
             return
         self.variables[name][self._key(name, user)] = holding
 
-    def _changed(self, name: str, holder: int | None) -> None:
+    def _changed(
+        self,
+        name: str,
+        holder: int | None,
+        before: int = 0,
+        after: int = 0,
+        change: int = 1,
+        origin: int = 0,
+    ) -> None:
+        source = next(
+            (
+                b.id
+                for s in self.stacks
+                for b in s.boxes
+                if b.classname.startswith("wf_var_") and b.get("variable") == name
+            ),
+            0,
+        )
+        event = {
+            "@event.variable_update.box_id": source,
+            "@event.variable_update.change_type": change,
+            "@event.variable_update.new_value": after,
+            "@event.variable_update.change_origin": origin,
+        }
+        # A new variable has no old value, and a real room printed null for both of these.
+        if change != CHANGE_CREATED:
+            event["@event.variable_update.old_value"] = before
+            event["@event.variable_update.difference"] = after - before
         for stack, box in self._triggers("wf_trg_var_changed"):
             if box.get("variable") == name:
                 is_furni = self.definitions.get(name, {}).get("scope") == "furni"
                 self._start(
                     stack,
-                    Context(trigger=box, furni=holder) if is_furni else Context(trigger=box, user=holder),
+                    Context(trigger=box, furni=holder, event=event)
+                    if is_furni
+                    else Context(trigger=box, user=holder, event=event),
                 )
 
     def _holder_label(self, name: str, holder: int | None) -> str:
@@ -1118,7 +1264,7 @@ class Engine:
             if amount is None:
                 continue
             self._write(name, user, Holding(_clamp(amount), self.now_ms, self.now_ms), ctx)
-            self._changed(name, user)
+            self._changed(name, user, 0, _clamp(amount), CHANGE_CREATED)
 
     def _do_remove_var(self, box: Box, ctx: Context) -> None:
         name = str(box.get("variable", "")).strip()
@@ -1129,8 +1275,10 @@ class Engine:
             if self.definitions.get(name, {}).get("scope") == "context":
                 ctx.context_vars.pop(name, None)
             else:
-                self.variables[name].pop(self._key(name, user), None)
-            self._changed(name, user)
+                gone = self.variables[name].pop(self._key(name, user), None)
+                self._changed(name, user, gone.value if gone else 0, 0, CHANGE_DELETED)
+                continue
+            self._changed(name, user, 0, 0, CHANGE_DELETED)
 
     def _operand(self, box: Box, user: int | None, ctx: Context) -> int | None:
         """The box's value, or what another variable holds for the same holder. None if it holds nothing."""
@@ -1145,10 +1293,25 @@ class Engine:
             return None
         return self._read(source, str(box.get("from_field", "value")))
 
+    def _change_built_in(self, box: Box, name: str, ctx: Context) -> None:
+        on = self._scope(box, name)
+        row = internal.row_for(name, on)
+        for holder in self._holders(box, name, ctx):
+            holding = self._holding(name, holder, ctx, on)
+            amount = self._operand(box, holder, ctx)
+            if row is None or not row["can_write"]:
+                self._log("error", f"{name} cannot be changed", box=box.id)
+                return
+            if holding is None or amount is None:
+                continue
+            value = operations.apply(str(box.get("operation", "set")), holding.value, amount, self.random)
+            if not self._write_built_in(name, on, holder, _clamp(value)):
+                self._log("stub", f"Changing {name} is not simulated yet", box=box.id)
+
     def _do_change_var_val(self, box: Box, ctx: Context) -> None:
         name = str(box.get("variable", "")).strip()
         if internal.targets(name):
-            self._log("stub", f"Writing to {name} is not simulated yet", box=box.id)
+            self._change_built_in(box, name, ctx)
             return
         for user in self._holders(box, name, ctx):
             holding = self._holding(name, user, ctx)
@@ -1163,9 +1326,10 @@ class Engine:
             if amount is None:
                 continue
             value = operations.apply(str(box.get("operation", "set")), holding.value, amount, self.random)
+            before = holding.value
             holding.value = _clamp(value)
             holding.updated_ms = self.now_ms
-            self._changed(name, user)
+            self._changed(name, user, before, holding.value, CHANGE_VALUE)
 
     def _send(self, box: Box, ctx: Context) -> None:
         """A real room forwards the selected users unless told otherwise, all in one signal unless split."""
@@ -1185,7 +1349,16 @@ class Engine:
         self._log("signal", f"Signal to antennas {antennas}", users=users)
         for stack, box in self._triggers("wf_trg_recv_signal"):
             if set(_ids(box.get("antenna", []))) & set(antennas):
-                self._start(stack, Context(trigger=box, signal_users=list(users), signal_furni=list(furni)))
+                hits = sorted(set(_ids(box.get("antenna", []))) & set(antennas))
+                self._start(
+                    stack,
+                    Context(
+                        trigger=box,
+                        signal_users=list(users),
+                        signal_furni=list(furni),
+                        event={"@event.signal.antenna_id": hits[0]},
+                    ),
+                )
 
     def _call(self, box: Box, ctx: Context) -> None:
         for furni_id in _ids(box.get("furni", [])):
@@ -1233,7 +1406,9 @@ class Engine:
                 name = str(addon.get("variable", ""))
                 on = self._scope(addon, name)
                 holding = self._holding(name, ctx.furni if on == "furni" else user, ctx, on)
-                values[str(addon.get("placeholder", name))] = self._connected(stack, name, holding)
+                shown = self._connected(stack, name, holding)
+                absent = holding is None and internal.targets(name)
+                values[str(addon.get("placeholder", name))] = "null" if absent else shown
         return PLACEHOLDER.sub(lambda m: values.get(m.group(1), m.group(0)), str(box.get("text", "")))
 
     def _connected(self, stack: Stack | None, name: str, holding: Holding | None) -> str:
@@ -1368,6 +1543,8 @@ class Engine:
             for user_id in self._users_for(box, ctx):
                 if user_id in self.users:
                     self.users[user_id]["team"] = team
+                    kind = box.get("team_type", "wired")
+                    self.users[user_id]["team_type"] = kind if kind in TEAM_TYPES else "wired"
                     self._log("info", f"{self._user_name(user_id)} joined the {team} team")
 
     def _do_leave_team(self, box: Box, ctx: Context) -> None:

@@ -290,6 +290,7 @@ BOXES: dict[str, dict[str, Any]] = {
         "condition",
         ASSUMED,
         VARIABLE,
+        VARIABLE_ON,
         {
             "name": "compare",
             "kind": "select",
@@ -581,11 +582,12 @@ BOXES: dict[str, dict[str, Any]] = {
     "wf_trg_game_starts": _box("trigger", ASSUMED),
     "wf_trg_game_ends": _box("trigger", ASSUMED),
     # Effects
-    "wf_act_give_var": _effect(ASSUMED, VARIABLE, VALUE, REFERENCE[0], OVERWRITE, *HOLDERS),
-    "wf_act_remove_var": _effect(DOCUMENTED, VARIABLE, *HOLDERS),
+    "wf_act_give_var": _effect(ASSUMED, VARIABLE, VARIABLE_ON, VALUE, REFERENCE[0], OVERWRITE, *HOLDERS),
+    "wf_act_remove_var": _effect(DOCUMENTED, VARIABLE, VARIABLE_ON, *HOLDERS),
     "wf_act_change_var_val": _effect(
         ASSUMED,
         VARIABLE,
+        VARIABLE_ON,
         {
             "name": "operation",
             "kind": "select",

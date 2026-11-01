@@ -98,6 +98,27 @@ def not_standable(services: Services, sandbox: Sandbox) -> set[str]:
     return found
 
 
+def furni_facts(services: Services, sandbox: Sandbox) -> dict[str, dict[str, Any]]:
+    """What the catalogue says about each furni in a room, for its built-in variables."""
+    document = sandbox.document if isinstance(sandbox.document, dict) else {}
+    found: dict[str, dict[str, Any]] = {}
+    for classname in {item["classname"] for item in document.get("furni", [])}:
+        try:
+            item = services.catalog.item(sandbox.hotel, classname)
+        except ApiError:
+            continue
+        data = item.get("data") or {}
+        found[classname] = {
+            "height": item.get("height") or 0,
+            "xdim": item.get("xdim") or 1,
+            "ydim": item.get("ydim") or 1,
+            "can_stand": bool(data.get("canstandon")),
+            "can_sit": bool(data.get("cansiton")),
+            "can_lay": bool(data.get("canlayon")),
+        }
+    return found
+
+
 def _run(sandbox_id: int, services: Services) -> Run:
     run = services.runs.get(sandbox_id)
     if run is None:
@@ -131,7 +152,13 @@ def start_run(
     seed = body.seed if body.seed is not None else secrets.randbelow(2**31)
     tick_ms = preferences.load(db, services.settings).tick_ms
     run = services.runs.start(
-        sandbox_id, document, seed, tick_ms, furni_states(services, sandbox), not_standable(services, sandbox)
+        sandbox_id,
+        document,
+        seed,
+        tick_ms,
+        furni_states(services, sandbox),
+        not_standable(services, sandbox),
+        furni_facts(services, sandbox),
     )
     audit(db, request, "run_start", sandbox.name)
     db.commit()
@@ -160,6 +187,18 @@ def advance(
         if not run.paused:
             run.engine.advance(body.ms)
         return state(run, since)
+
+
+@router.get("/sandboxes/{sandbox_id}/run/built-ins")
+def run_built_ins(
+    sandbox_id: int,
+    target: Literal["furni", "user", "global"] = Query("global"),
+    holder: Int | None = None,
+    services: Services = Depends(get_services),
+) -> list[dict[str, Any]]:
+    run = _run(sandbox_id, services)
+    with run.lock:
+        return run.engine.view_built_ins(target, holder)
 
 
 @router.post("/sandboxes/{sandbox_id}/run/input")

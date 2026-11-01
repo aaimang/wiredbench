@@ -246,6 +246,7 @@ running server.
 | GET | `/api/sandboxes/{sandbox_id}/run` | Admin |
 | POST | `/api/sandboxes/{sandbox_id}/run` | Admin |
 | POST | `/api/sandboxes/{sandbox_id}/run/advance` | Admin |
+| GET | `/api/sandboxes/{sandbox_id}/run/built-ins` | Admin |
 | POST | `/api/sandboxes/{sandbox_id}/run/command` | Admin |
 | POST | `/api/sandboxes/{sandbox_id}/run/input` | Admin |
 | GET | `/api/sandboxes/{sandbox_id}/versions` | Admin |
