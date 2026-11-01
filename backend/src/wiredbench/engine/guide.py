@@ -102,6 +102,16 @@ GUIDE: dict[str, tuple[str, str]] = {
         "Accept answers only in the first minute.",
     ),
     "wf_cnd_time_more_than": ("Passes if the room timer is past a time.", "Open an exit after a delay."),
+    "wf_slc_furni_area": ("Selects furni inside a rectangle of the room.", "Reset every tile in one zone."),
+    "wf_slc_users_area": ("Selects users inside a rectangle of the room.", "Message everyone in the lobby."),
+    "wf_slc_furni_altitude": (
+        "Selects furni by how high they stand.",
+        "Find everything stacked above a floor.",
+    ),
+    "wf_slc_furni_onfurni": (
+        "Selects furni by how they stack with picked furni.",
+        "Move what sits on a table.",
+    ),
     "wf_slc_furni_picks": ("Selects picked furni for the stack's effects.", "Target several lamps at once."),
     "wf_slc_furni_bytype": (
         "Selects furni of the same types as those picked.",

@@ -577,3 +577,33 @@ def test_furni_listed_with_no_box_settings_stay_that_way() -> None:
     document["furni"][0]["wired"] = {"text": "edited"}
     out = exchange.export_gpresets(document)[0]
     assert out["wired"]["effects"][0]["config"] == "edited"
+
+
+def test_selector_options_read_their_positions_and_switches() -> None:
+    area = exchange.friendly_settings(
+        "wf_slc_users_area", {"options": [3, 4, 5, 6], "filter": True, "inverse": False}, {}
+    )
+    assert area == {
+        "area_x": 3,
+        "area_y": 4,
+        "area_width": 5,
+        "area_height": 6,
+        "filter": True,
+        "invert": False,
+    }
+    height = exchange.friendly_settings("wf_slc_furni_altitude", {"options": [150, 2]}, {})
+    assert height == {"altitude": 1.5, "altitude_compare": "more"}
+    assert exchange.friendly_settings("wf_slc_furni_onfurni", {"options": [3]}, {})["stacking"] == "tile"
+
+
+def test_selector_settings_export_to_the_box() -> None:
+    wired = {"area_x": 3, "area_width": 2, "filter": True, "invert": True}
+    document = {
+        "room": {"width": 10, "height": 10},
+        "furni": [{"id": 1, "classname": "wf_slc_users_area", "x": 1, "y": 1, "wired": wired}],
+    }
+    out, warnings = exchange.export_gpresets(document)
+    box = out["wired"]["selectors"][0]
+    assert box["options"] == [3, 0, 2, 0]
+    assert (box["filter"], box["inverse"]) == (True, True)
+    assert warnings == []

@@ -74,6 +74,19 @@ COMPARE = {
     "options": ["=", "!=", ">", ">=", "<", "<="],
     "default": "=",
 }
+FILTER = {"name": "filter", "kind": "bool", "label": "Only narrow what is already selected", "default": False}
+INVERT = {
+    "name": "invert",
+    "kind": "bool",
+    "label": "Select everything that does not match",
+    "default": False,
+}
+AREA = (
+    {"name": "area_x", "kind": "number", "label": "Area starts at column", "default": 0, "min": 0},
+    {"name": "area_y", "kind": "number", "label": "Area starts at row", "default": 0, "min": 0},
+    {"name": "area_width", "kind": "number", "label": "Area width in tiles", "default": 0, "min": 0},
+    {"name": "area_height", "kind": "number", "label": "Area height in tiles", "default": 0, "min": 0},
+)
 AMOUNT = {"name": "amount", "kind": "number", "label": "How many", "default": 10, "min": 0}
 ANTENNA = {"name": "antenna", "kind": "furni", "label": "Antenna", "default": []}
 SECONDS = {"name": "seconds", "kind": "number", "label": "Seconds", "default": 10, "min": 0, "step": 0.5}
@@ -86,6 +99,10 @@ def _saved(field: dict[str, Any]) -> dict[str, Any]:
 
 def _box(kind: str, fidelity: str, *fields: dict[str, Any]) -> dict[str, Any]:
     return {"kind": kind, "fidelity": fidelity, "fields": list(fields)}
+
+
+def _selector(fidelity: str, *fields: dict[str, Any]) -> dict[str, Any]:
+    return _box("selector", fidelity, *fields, FILTER, INVERT)
 
 
 def _effect(fidelity: str, *fields: dict[str, Any]) -> dict[str, Any]:
@@ -223,15 +240,53 @@ BOXES: dict[str, dict[str, Any]] = {
     "wf_cnd_time_less_than": _box("condition", DOCUMENTED, SECONDS),
     "wf_cnd_time_more_than": _box("condition", DOCUMENTED, SECONDS),
     # Selectors
-    "wf_slc_furni_picks": _box("selector", DOCUMENTED, FURNI),
-    "wf_slc_furni_bytype": _box("selector", DOCUMENTED, FURNI),
-    "wf_slc_furni_signal": _box("selector", DOCUMENTED),
-    "wf_slc_furni_with_var": _box("selector", DOCUMENTED, VARIABLE),
-    "wf_slc_users_signal": _box("selector", DOCUMENTED),
-    "wf_slc_users_with_var": _box("selector", DOCUMENTED, VARIABLE),
-    "wf_slc_users_onfurni": _box("selector", DOCUMENTED, FURNI),
-    "wf_slc_users_byname": _box(
-        "selector",
+    "wf_slc_furni_area": _selector(ASSUMED, *AREA),
+    "wf_slc_users_area": _selector(ASSUMED, *AREA),
+    "wf_slc_furni_altitude": _selector(
+        ASSUMED,
+        {
+            "name": "altitude",
+            "kind": "number",
+            "label": "Height in tiles",
+            "default": 0,
+            "min": 0,
+            "max": 80,
+            "step": 0.01,
+        },
+        {
+            "name": "altitude_compare",
+            "kind": "select",
+            "label": "Comparison",
+            "options": ["less", "equal", "more"],
+            "labels": {"less": "Lower than", "equal": "Exactly", "more": "Higher than"},
+            "default": "less",
+        },
+    ),
+    "wf_slc_furni_onfurni": _selector(
+        ASSUMED,
+        FURNI,
+        {
+            "name": "stacking",
+            "kind": "select",
+            "label": "Select the furni",
+            "options": ["above", "below", "level", "tile"],
+            "labels": {
+                "above": "Above the picked furni",
+                "below": "Under the picked furni",
+                "level": "At the same height",
+                "tile": "Anywhere on the same tile",
+            },
+            "default": "above",
+        },
+    ),
+    "wf_slc_furni_picks": _selector(DOCUMENTED, FURNI),
+    "wf_slc_furni_bytype": _selector(DOCUMENTED, FURNI),
+    "wf_slc_furni_signal": _selector(DOCUMENTED),
+    "wf_slc_furni_with_var": _selector(DOCUMENTED, VARIABLE),
+    "wf_slc_users_signal": _selector(DOCUMENTED),
+    "wf_slc_users_with_var": _selector(DOCUMENTED, VARIABLE),
+    "wf_slc_users_onfurni": _selector(DOCUMENTED, FURNI),
+    "wf_slc_users_byname": _selector(
         DOCUMENTED,
         {"name": "names", "kind": "text", "label": "Names, one per line", "default": ""},
     ),
