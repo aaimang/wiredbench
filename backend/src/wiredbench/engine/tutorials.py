@@ -196,13 +196,13 @@ def _visitor(hotel: str) -> dict[str, Any]:
 
 
 def switch_flip(hotel: str = "sandbox") -> dict[str, Any]:
-    """The same room as the first preset that was tried in a real room."""
+    """A switch and a candle, because Toggle Furni State leaves floor switches as they are in a real room."""
     return {
         "schema": 1,
         "room": {"width": 10, "height": 10},
         "furni": [
             _plain(1, "wf_floor_switch1", 2, 4),
-            _plain(2, "wcandle", 6, 4),
+            _plain(2, "rela_candle1", 6, 4),
             _box(3, "wf_trg_state_changed", 4, 2, 0, {"furni": [1]}),
             _box(4, "wf_act_toggle_state", 4, 2, 0.65, {"furni": [2]}),
         ],
@@ -216,7 +216,7 @@ def signal_relay(hotel: str = "sandbox") -> dict[str, Any]:
         "room": {"width": 10, "height": 10},
         "furni": [
             _plain(1, "wf_floor_switch1", 2, 4),
-            _plain(2, "wcandle", 6, 4),
+            _plain(2, "rela_candle1", 6, 4),
             _plain(3, "wf_antenna1", 4, 0),
             _box(4, "wf_trg_state_changed", 2, 2, 0, {"furni": [1]}),
             _box(5, "wf_act_send_signal", 2, 2, 0.65, {"antenna": [3], "user_source": "trigger"}),

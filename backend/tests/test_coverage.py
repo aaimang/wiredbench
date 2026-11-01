@@ -40,7 +40,27 @@ def test_room_checks_have_dates_and_nothing_else_is_claimed() -> None:
         assert set(entry) <= {"reference", "preset", "dump", "room", "note"}, name
         if "room" in entry:
             assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", entry["room"]), name
-    assert coverage.room_checked() == {"wf_trg_state_changed", "wf_act_toggle_state", "wf_floor_switch1"}
+    assert coverage.room_checked() == {
+        "wf_act_change_var_val",
+        "wf_act_furni_to_user",
+        "wf_act_move_rotate",
+        "wf_act_move_rotate_user",
+        "wf_act_rel_mov",
+        "wf_act_set_altitude",
+        "wf_act_show_message",
+        "wf_act_toggle_state",
+        "wf_cnd_var_age_match",
+        "wf_cnd_var_val_match",
+        "wf_floor_switch1",
+        "wf_slc_furni_altitude",
+        "wf_slc_furni_area",
+        "wf_slc_furni_onfurni",
+        "wf_slc_furni_picks",
+        "wf_slc_users_area",
+        "wf_trg_says_something",
+        "wf_trg_state_changed",
+        "wf_var_room",
+    }
 
 
 def test_evidence_order() -> None:

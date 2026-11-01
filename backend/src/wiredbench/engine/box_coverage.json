@@ -40,7 +40,8 @@
   },
   "wf_act_change_var_val": {
    "preset": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_act_chase": {
    "dump": true
@@ -64,7 +65,8 @@
    "dump": true
   },
   "wf_act_furni_to_user": {
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_act_give_currency": {
    "dump": true
@@ -116,10 +118,12 @@
   },
   "wf_act_move_rotate": {
    "reference": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_act_move_rotate_user": {
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_act_move_to_dir": {
    "dump": true
@@ -141,7 +145,8 @@
   },
   "wf_act_progress_ach": {},
   "wf_act_rel_mov": {
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_act_remove_furni": {
    "dump": true
@@ -168,7 +173,8 @@
   },
   "wf_act_set_altitude": {
    "reference": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_act_set_highlight": {
    "reference": true,
@@ -180,7 +186,8 @@
   },
   "wf_act_show_message": {
    "reference": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_act_teleport_to": {
    "dump": true
@@ -374,12 +381,14 @@
   },
   "wf_cnd_var_age_match": {
    "reference": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_cnd_var_val_match": {
    "preset": true,
    "reference": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_cnd_wearing_badge": {
    "reference": true
@@ -425,11 +434,13 @@
   "wf_room_linker": {},
   "wf_screenseparator": {},
   "wf_slc_furni_altitude": {
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_slc_furni_area": {
    "preset": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_slc_furni_bytype": {
    "dump": true
@@ -439,10 +450,12 @@
    "dump": true
   },
   "wf_slc_furni_onfurni": {
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_slc_furni_picks": {
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_slc_furni_signal": {
    "dump": true
@@ -455,7 +468,8 @@
    "dump": true
   },
   "wf_slc_users_area": {
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_slc_users_byaction": {
    "dump": true
@@ -589,7 +603,8 @@
   },
   "wf_trg_says_something": {
    "preset": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_trg_score_achieved": {
    "dump": true
@@ -651,7 +666,8 @@
   "wf_var_room": {
    "preset": true,
    "reference": true,
-   "dump": true
+   "dump": true,
+   "room": "2026-11-01"
   },
   "wf_var_user": {
    "preset": true,
