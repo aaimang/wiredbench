@@ -355,7 +355,7 @@ class WbEditor extends HTMLElement {
         x: avatar.x,
         y: avatar.y,
         z: avatar.z,
-        dir: restingDir(this.room, this.lookup, avatar),
+        dir: this.run ? avatar.dir : restingDir(this.room, this.lookup, avatar),
         action: avatar.pose,
         ...look,
         frontX,
@@ -2029,7 +2029,7 @@ class WbEditor extends HTMLElement {
     };
     show(x, avatar.x);
     show(y, avatar.y);
-    show(dir, restingDir(this.room, this.lookup, avatar));
+    show(dir, this.run ? avatar.dir : restingDir(this.room, this.lookup, avatar));
     const held = this.heldDetails(avatar);
     for (const [name, input] of panel.details) {
       if (input instanceof HTMLInputElement && input.type === "checkbox") {
@@ -2288,13 +2288,13 @@ class WbEditor extends HTMLElement {
       this.syncAvatarPanel();
       return;
     }
-    // As in a real room, someone sitting or lying cannot turn away from the seat.
-    if (!moved && stand.dir !== undefined && dir !== stand.dir) {
+    // Someone sitting or lying faces the seat. In a run, the engine turns them back after a moment.
+    if (!this.run && !moved && stand.dir !== undefined && dir !== stand.dir) {
       this.walkStatus.textContent = T.facesSeat(avatar.name);
       this.syncAvatarPanel();
       return;
     }
-    dir = stand.dir ?? dir;
+    if (moved) dir = stand.dir ?? dir;
     if (moved) this.walkers.delete(avatar.id);
     if (this.run) {
       await this.run.input(

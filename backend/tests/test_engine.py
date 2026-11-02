@@ -4,7 +4,7 @@ from typing import Any
 
 import pytest
 
-from wiredbench.engine.core import INT64_MAX, Context, Engine, replay
+from wiredbench.engine.core import INT64_MAX, SEAT_TURN_BACK_MS, Context, Engine, replay
 from wiredbench.engine.tutorials import (
     ANTENNA_CALC,
     AVATAR,
@@ -762,8 +762,14 @@ def test_a_seated_user_faces_the_way_the_seat_is_turned() -> None:
     assert engine.users[101]["dir"] == 3, "off the end of the bed"
     say(engine, "turn")
     assert engine.users[100]["dir"] == 6, "turning the chair turns the user on it"
+    # A real room shows the turn for a moment, then turns a seated user back to the seat.
     engine.apply_input({"type": "turn", "user": 100, "dir": 1})
-    assert engine.users[100]["dir"] == 6, "a seated user cannot turn away from the seat"
+    assert engine.users[100]["dir"] == 1
+    engine.advance(SEAT_TURN_BACK_MS)
+    assert engine.users[100]["dir"] == 6
+    engine.apply_input({"type": "turn", "user": 101, "dir": 5})
+    engine.advance(SEAT_TURN_BACK_MS)
+    assert engine.users[101]["dir"] == 5, "someone not seated keeps the turn"
 
 
 def test_call_stacks_ignores_conditions_and_trigger() -> None:
