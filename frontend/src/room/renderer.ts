@@ -427,11 +427,20 @@ export class RoomRenderer {
 
   /** Set by a draw that showed something still moving, so the next frame must be drawn too. */
   animating = false;
+  /** Set by a draw that showed a furni sliding or flying, which moves on every frame like a walk. */
+  private travelling = false;
   private lastMotion = 0;
 
-  /** Furni move at 24 frames a second at most, so a room is not rebuilt on every screen refresh. */
+  /**
+   * Furni art animates at 24 frames a second at most, so a room is not rebuilt on every screen refresh.
+   * A furni travelling across the room is drawn every frame, or it would move in visible jumps.
+   */
   motionDue(): boolean {
     const now = performance.now();
+    if (this.travelling) {
+      this.lastMotion = now;
+      return true;
+    }
     if (!this.animating || now - this.lastMotion < 1000 / 24) return false;
     this.lastMotion = now;
     return true;
@@ -454,6 +463,7 @@ export class RoomRenderer {
   draw(scene: Scene): void {
     this.scene = scene;
     this.animating = false;
+    this.travelling = false;
     this.applyPan();
     const sizeKey = `${scene.room.room.width}x${scene.room.room.height}`;
     if (sizeKey !== this.drawnRoomSize) {
@@ -571,6 +581,7 @@ export class RoomRenderer {
     const progress = (now - began) / flight.ms;
     if (progress >= 1) return item;
     this.animating = true;
+    this.travelling = true;
     const at = flightAt(flight, progress);
     return { ...item, x: at.x, y: at.y, z: item.z + at.lift / Z_UNIT };
   }
