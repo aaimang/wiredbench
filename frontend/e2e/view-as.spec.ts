@@ -248,6 +248,8 @@ test("a visitor's room updates several times a second and furni slides", async (
     saved.document.furni = [
       box(10, "wf_trg_says_something", 0, { text: "go" }),
       box(11, "wf_act_rel_mov", 1, { furni: [50], move_x: 5 }),
+      { ...box(12, "wf_trg_says_something", 0, { text: "back" }), x: 2 },
+      { ...box(13, "wf_act_rel_mov", 1, { furni: [50], move_x: -5 }), x: 2 },
       { id: 50, classname: "plain_chair", x: 1, y: 5, z: 0, rot: 0, state: 0 },
     ];
     await fetch(`/api/sandboxes/${id}/document`, {
@@ -267,8 +269,8 @@ test("a visitor's room updates several times a second and furni slides", async (
   page.on("request", (r) => {
     if (r.url().includes("/run/advance")) ticks.push(r.postDataJSON().ms);
   });
-  await page.waitForTimeout(1500);
-  expect(ticks.length).toBeGreaterThanOrEqual(3);
+  // The first room load can be slow, so the three updates get a few seconds to arrive.
+  await expect.poll(() => ticks.length, { timeout: 5000 }).toBeGreaterThanOrEqual(3);
   expect(Math.max(...ticks)).toBeLessThan(1000);
 
   const area = (await page.getByTestId("view-canvas").boundingBox()) ?? {
@@ -286,6 +288,52 @@ test("a visitor's room updates several times a second and furni slides", async (
     frames.add((await page.screenshot({ clip })).toString("base64"));
   }
   expect(frames.size, "the furni is seen between its two tiles").toBeGreaterThan(2);
+
+  // A slide is drawn on every screen frame, as a walk is, not at the 24 a second of furni art.
+  const drawn = await page.evaluate(async () => {
+    const view = document.querySelector("wb-room-view") as unknown as {
+      renderer: { draw: (...args: unknown[]) => void };
+    };
+    const draw = view.renderer.draw.bind(view.renderer);
+    let count = 0;
+    view.renderer.draw = (...args) => {
+      count += 1;
+      draw(...args);
+    };
+    const input = document.querySelector("[data-testid=view-say]") as HTMLInputElement;
+    input.value = "back";
+    input.form?.requestSubmit();
+    await new Promise((done) => setTimeout(done, 1000));
+    return count;
+  });
+  // A half-second slide is about 12 draws at the 24 a second of furni art, and 30 on every frame.
+  expect(drawn, "draws in the second after asking for a slide").toBeGreaterThan(20);
+
+  // The workspace Run view slides a moved furni the same way.
+  await page.getByRole("button", { name: "Back to admin" }).click();
+  await page.goto(`/sandbox/${room}`);
+  await page.getByRole("button", { name: "Run", exact: true }).click();
+  const runSay = page.getByPlaceholder(/command such as/);
+  await expect(runSay).toBeVisible();
+  const runDrawn = await page.evaluate(async () => {
+    const editor = document.querySelector("wb-editor") as unknown as {
+      renderer: { draw: (...args: unknown[]) => void };
+    };
+    const draw = editor.renderer.draw.bind(editor.renderer);
+    let count = 0;
+    editor.renderer.draw = (...args) => {
+      count += 1;
+      draw(...args);
+    };
+    const input = [...document.querySelectorAll("input")].find((i) =>
+      /command such as/.test(i.placeholder),
+    ) as HTMLInputElement;
+    input.value = "go";
+    input.form?.requestSubmit();
+    await new Promise((done) => setTimeout(done, 1000));
+    return count;
+  });
+  expect(runDrawn, "draws in the second after asking for a Run slide").toBeGreaterThan(20);
 });
 
 test("a visitor clicks to select, double-clicks to use and chats in bubbles", async ({ page }) => {

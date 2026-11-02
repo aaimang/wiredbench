@@ -72,6 +72,8 @@ export interface AvatarPose {
 
 export interface Scene {
   flights?: Flight[] | null;
+  /** A furni moved by WIRED slides to its new tile. Off while building, where a move is instant. */
+  slides?: boolean;
   fx?: FxShown[] | null;
   looks?: { furni: Record<number, Look>; users: Record<number, Look> } | null;
   room: RoomDocument;
@@ -89,6 +91,8 @@ export interface Scene {
 // Invisible is fully hidden, as in a real room. Only what the builder has selected stays findable.
 const SELECTED_INVISIBLE_OPACITY = 0.35;
 const SETTLED_MS = 3_600_000;
+/** Assumed from the engine's half-second tick. Not measured in a real room. */
+const SLIDE_MS = 500;
 const OUTLINE_OFFSETS = [
   [-1, -1],
   [0, -1],
@@ -421,17 +425,31 @@ export class RoomRenderer {
 
   /** Set by a draw that showed something still moving, so the next frame must be drawn too. */
   animating = false;
+  /** Set by a draw that showed a furni sliding or flying, which moves on every frame like a walk. */
+  private travelling = false;
   private lastMotion = 0;
 
-  /** Furni move at 24 frames a second at most, so a room is not rebuilt on every screen refresh. */
+  /**
+   * Furni art animates at 24 frames a second at most, so a room is not rebuilt on every screen refresh.
+   * A furni travelling across the room is drawn every frame, or it would move in visible jumps.
+   */
   motionDue(): boolean {
     const now = performance.now();
+    if (this.travelling) {
+      this.lastMotion = now;
+      return true;
+    }
     if (!this.animating || now - this.lastMotion < 1000 / 24) return false;
     this.lastMotion = now;
     return true;
   }
 
   private flightStarts = new Map<string, number>();
+  private slides = new Map<
+    number,
+    { from: [number, number]; to: [number, number]; began: number }
+  >();
+  private drawnAt = new Map<number, [number, number]>();
   private stateSince = new Map<string, { state: number; since: number }>();
 
   private elapsedInState(item: { x: number; y: number; state: number; id?: number }): number {
@@ -448,6 +466,7 @@ export class RoomRenderer {
   draw(scene: Scene): void {
     this.scene = scene;
     this.animating = false;
+    this.travelling = false;
     this.applyPan();
     const sizeKey = `${scene.room.room.width}x${scene.room.room.height}`;
     if (sizeKey !== this.drawnRoomSize) {
@@ -554,19 +573,52 @@ export class RoomRenderer {
     return [item.x + width - 1, item.y + height - 1] as const;
   }
 
-  /** Moves a furni along its flight. Clocks start when the browser hears of a flight, so it is never cut short. */
+  /** Where a furni is drawn while it flies or slides, and where it ended up once it has. */
   private flown(scene: Scene, item: PlacedFurni): PlacedFurni {
-    const flight = scene.flights?.find((f) => f.id === item.id);
-    if (!flight) return item;
-    const key = `${flight.id}:${flight.start_ms}`;
+    const shown = this.travelled(scene, item);
+    this.drawnAt.set(item.id, [shown.x, shown.y]);
+    return shown;
+  }
+
+  /** Clocks start when the browser hears of a move, so it is never cut short. */
+  private travelled(scene: Scene, item: PlacedFurni): PlacedFurni {
     const now = performance.now();
-    const began = this.flightStarts.get(key) ?? now;
-    this.flightStarts.set(key, began);
-    const progress = (now - began) / flight.ms;
-    if (progress >= 1) return item;
+    // An older flight is kept for a while after landing, so only one that ends here is this move.
+    const flight = scene.flights?.find(
+      (f) => f.id === item.id && f.to[0] === item.x && f.to[1] === item.y,
+    );
+    if (flight) {
+      this.slides.delete(item.id);
+      const key = `${flight.id}:${flight.start_ms}`;
+      const began = this.flightStarts.get(key) ?? now;
+      this.flightStarts.set(key, began);
+      const progress = (now - began) / flight.ms;
+      if (progress >= 1) return item;
+      this.animating = true;
+      this.travelling = true;
+      const at = flightAt(flight, progress);
+      return { ...item, x: at.x, y: at.y, z: item.z + at.lift / Z_UNIT };
+    }
+    const last = this.drawnAt.get(item.id);
+    let slide = this.slides.get(item.id);
+    if (slide && (slide.to[0] !== item.x || slide.to[1] !== item.y)) slide = undefined;
+    if (!slide && scene.slides && last && (last[0] !== item.x || last[1] !== item.y)) {
+      slide = { from: last, to: [item.x, item.y], began: now };
+      this.slides.set(item.id, slide);
+    }
+    const progress = slide ? (now - slide.began) / SLIDE_MS : 1;
+    if (!slide || progress >= 1) {
+      this.slides.delete(item.id);
+      return item;
+    }
     this.animating = true;
-    const at = flightAt(flight, progress);
-    return { ...item, x: at.x, y: at.y, z: item.z + at.lift / Z_UNIT };
+    this.travelling = true;
+    const [fromX, fromY] = slide.from;
+    return {
+      ...item,
+      x: fromX + (item.x - fromX) * progress,
+      y: fromY + (item.y - fromY) * progress,
+    };
   }
 
   private drawFurni(scene: Scene, placed: PlacedFurni): void {

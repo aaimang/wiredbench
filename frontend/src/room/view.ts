@@ -29,8 +29,6 @@ const TICK_MS = 250;
 /** Time a tab lost while hidden is caught up, but a long sleep must not fast-forward the room. */
 const MAX_TICK_MS = 5000;
 const INSPECT_MS = 1000;
-/** Assumed from the engine's half-second tick. Not measured in a real room. */
-const FURNI_GLIDE_MS = 500;
 const SECONDS_PER_STEP = 0.5;
 const WALK_FRAMES_PER_SECOND = 8;
 const CHAT_LINES = 6;
@@ -114,9 +112,6 @@ class WbRoomView extends HTMLElement {
   private waiting = 0;
   private lastTick = 0;
   private lastInspect = 0;
-  private furniGlides = new Map<number, { flight: Flight; until: number }>();
-  private glideCount = 0;
-  private lastFlights = new Map<number, number>();
   private avatarGlides = new Map<
     number,
     { from: [number, number, number]; began: number; ms: number }
@@ -527,17 +522,9 @@ class WbRoomView extends HTMLElement {
     const room = this.room;
     if (!room) return;
     this.effects = state;
-    const thrown = new Set<number>();
-    for (const flight of state.flights) {
-      if (this.lastFlights.get(flight.id) !== flight.start_ms) thrown.add(flight.id);
-      this.lastFlights.set(flight.id, flight.start_ms);
-    }
     for (const item of state.furni) {
       const placed = room.furni.find((f) => f.id === item.id);
-      if (!placed) continue;
-      if (thrown.has(item.id)) this.furniGlides.delete(item.id);
-      else if (placed.x !== item.x || placed.y !== item.y) this.glideFurni(item.id, placed, item);
-      Object.assign(placed, item);
+      if (placed) Object.assign(placed, item);
     }
     room.avatars = room.avatars.filter((a) => state.users.some((u) => u.id === a.id));
     for (const user of state.users) {
@@ -571,23 +558,6 @@ class WbRoomView extends HTMLElement {
     this.draw();
   }
 
-  /** A plain move is drawn as a flight with no height, which is all a slide is. */
-  private glideFurni(id: number, from: Tile, to: Tile): void {
-    this.glideCount += 1;
-    this.furniGlides.set(id, {
-      flight: {
-        id,
-        start_ms: -this.glideCount,
-        ms: FURNI_GLIDE_MS,
-        from: [from.x, from.y],
-        to: [to.x, to.y],
-        height: 0,
-        past: 0,
-      },
-      until: performance.now() + FURNI_GLIDE_MS,
-    });
-  }
-
   private glideAvatar(avatar: PlacedAvatar, to: Tile): void {
     if (avatar.x === to.x && avatar.y === to.y) return;
     const steps = glideSteps([avatar.x, avatar.y], [to.x, to.y]);
@@ -601,18 +571,6 @@ class WbRoomView extends HTMLElement {
       ms: steps * SECONDS_PER_STEP * 1000,
     });
     this.renderer?.preloadWalk(avatar, directionBetween([avatar.x, avatar.y], [to.x, to.y]));
-  }
-
-  private flights(): Flight[] {
-    const now = performance.now();
-    for (const [id, glide] of this.furniGlides) {
-      if (glide.until <= now) this.furniGlides.delete(id);
-    }
-    // The renderer draws an item's first flight, and a slide is always newer than a landed throw.
-    return [
-      ...[...this.furniGlides.values()].map((glide) => glide.flight),
-      ...(this.effects?.flights ?? []),
-    ];
   }
 
   private walkingPose(
@@ -644,7 +602,8 @@ class WbRoomView extends HTMLElement {
     const room = this.room;
     if (!room || !this.renderer) return;
     this.renderer.draw({
-      flights: this.flights(),
+      flights: this.effects?.flights,
+      slides: true,
       fx: this.effects?.fx,
       looks: this.effects?.looks,
       room,
