@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.9.0](https://github.com/aaimang/wiredbench/compare/v0.8.0...v0.9.0) (2026-11-02)
+
+
+### Features
+
+* add avatar faces to the user panel ([#65](https://github.com/aaimang/wiredbench/issues/65)) ([3ddcf8f](https://github.com/aaimang/wiredbench/commit/3ddcf8fe6c7eeeeae88a206110c8addc4a17687f))
+* add room time zones and avatar details ([#58](https://github.com/aaimang/wiredbench/issues/58)) ([fedfd6a](https://github.com/aaimang/wiredbench/commit/fedfd6ad67785a7a4017ee6353ed7c0fc8f8d7e7))
+* add time zone list, default zone and hideable menu ([#62](https://github.com/aaimang/wiredbench/issues/62)) ([80b8a03](https://github.com/aaimang/wiredbench/commit/80b8a032eb1550bfc5137a0229c2d511e04b595a))
+* clean up view as user and add a :wired inspection window ([#68](https://github.com/aaimang/wiredbench/issues/68)) ([aeabffe](https://github.com/aaimang/wiredbench/commit/aeabffe9fbb5232a6a692b60119f5e52748d52cc))
+* draw avatar actions and signs from the user panel ([#63](https://github.com/aaimang/wiredbench/issues/63)) ([1f2b887](https://github.com/aaimang/wiredbench/commit/1f2b887ac5eeddc75ece6264d7be71ebad330533))
+
+
+### Bug Fixes
+
+* draw the right hand item in every direction and keep walking smooth ([#64](https://github.com/aaimang/wiredbench/issues/64)) ([b857a03](https://github.com/aaimang/wiredbench/commit/b857a03b71ef8c133e319c0d34692bab03979a74))
+* keep the avatar moving until a new action or face has loaded ([#66](https://github.com/aaimang/wiredbench/issues/66)) ([3635d2b](https://github.com/aaimang/wiredbench/commit/3635d2b941344cfafad4100b4dc86684562917c7))
+* keep the avatar stepping while a walking look loads ([#67](https://github.com/aaimang/wiredbench/issues/67)) ([7c6cc39](https://github.com/aaimang/wiredbench/commit/7c6cc39cbffe0340666c33bd4e8259d8650ad574))
+* keep walking direction and tidy the user panel ([#60](https://github.com/aaimang/wiredbench/issues/60)) ([d507f7e](https://github.com/aaimang/wiredbench/commit/d507f7e81860380ca4e6d0bbd88dd14996391bea))
+* stop run controls losing clicks ([#61](https://github.com/aaimang/wiredbench/issues/61)) ([382fe75](https://github.com/aaimang/wiredbench/commit/382fe75021b26f927962bf4ebfc9e5aaae969e59))
+
 ## [0.8.0](https://github.com/aaimang/wiredbench/compare/v0.7.0...v0.8.0) (2026-11-01)
 
 
