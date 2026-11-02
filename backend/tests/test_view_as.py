@@ -195,6 +195,24 @@ def test_icons_are_only_for_furni_shown_in_the_room(api: Api, habbo: FakeHabbo) 
     assert api.get(f"/api/view/sandboxes/{room}/icons/not_in_room").status_code == 404
 
 
+def test_a_visitor_reads_what_the_catalogue_says_about_furni(api: Api, habbo: FakeHabbo) -> None:
+    habbo.set(furnidata(furni("chair", cansiton=True, canputstuffon=False, height=1.0)), 'W/"v2"')
+    apply_update(api)
+    room = room_with_secrets(api)
+    document = api.get(f"/api/sandboxes/{room}").json()["document"]
+    document["furni"].append({"id": 903, "classname": "chair", "x": 3, "y": 9, "z": 0, "rot": 0, "state": 0})
+    revision = api.get(f"/api/sandboxes/{room}").json()["revision"]
+    saved = api.put(f"/api/sandboxes/{room}/document", json={"document": document, "base_revision": revision})
+    assert saved.status_code == 200, saved.text
+    api.post("/api/auth/view-as")
+    api.post(f"/api/view/sandboxes/{room}/run")  # The visitor starts the run, not an admin.
+    rows = api.get(f"/api/view/sandboxes/{room}/run/inspect", params={"target": "furni", "furni": 903}).json()
+    values = {row["name"]: row["value"] for row in rows}
+    assert values["@can_sit_on"] == "1"
+    assert values["@height"] == "100"
+    assert "@is_stackable" not in values, "a flag exists only while true"
+
+
 def test_inspection_shows_built_ins_only(api: Api) -> None:
     room = room_with_secrets(api)
     api.post(f"/api/sandboxes/{room}/run", json={"seed": 1})
