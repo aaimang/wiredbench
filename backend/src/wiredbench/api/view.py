@@ -41,6 +41,7 @@ class ViewInput(BaseModel):
     user: int = Field(ge=0, le=2**31)
     x: int | None = Field(None, ge=0, le=64)
     y: int | None = Field(None, ge=0, le=64)
+    dir: int | None = Field(None, ge=0, le=7)
     furni: int | None = Field(None, ge=0, le=2**31)
     text: str | None = Field(None, max_length=500)
 

@@ -438,7 +438,7 @@ class WbRoomView extends HTMLElement {
       Object.assign(avatar, { x: next[0], y: next[1], z: stand.z, pose: stand.pose });
       walker.from = [next[0], next[1], stand.z];
       if (walker.path.length === 0) this.walker = null;
-      void this.send({ type: "move", x: next[0], y: next[1] });
+      void this.send({ type: "move", x: next[0], y: next[1], dir: avatar.dir });
       if (!this.walker) return;
     }
   }

@@ -66,7 +66,10 @@ test("dashboard, mock API keys and view as user work from the browser", async ({
   const canvas = page.getByTestId("room-canvas");
   const box = await canvas.boundingBox();
   await canvas.click({ position: { x: (box?.width ?? 400) / 2, y: (box?.height ?? 300) / 2 } });
-  expect((await walked).status()).toBe(200);
+  const step = await walked;
+  expect(step.status()).toBe(200);
+  // Without the way it walked, the server would turn the avatar back to where it first faced.
+  expect(step.request().postDataJSON()).toMatchObject({ type: "move", dir: expect.any(Number) });
   await page.getByTestId("view-say").fill("hello");
   await page.getByRole("button", { name: "Send" }).click();
 

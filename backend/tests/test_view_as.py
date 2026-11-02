@@ -124,6 +124,15 @@ def test_view_shows_what_an_avatar_holds_and_no_other_details(api: Api) -> None:
     assert api.post(f"/api/view/sandboxes/{room}/run").json()["users"][0]["details"] == shown
 
 
+def test_a_step_keeps_the_direction_walked(api: Api) -> None:
+    room = api.post("/api/tutorials/visitor-view", json={}).json()["id"]
+    api.post("/api/auth/view-as")
+    user = api.post(f"/api/view/sandboxes/{room}/run").json()["users"][0]
+    step = {"type": "move", "user": user["id"], "x": user["x"], "y": user["y"] + 1, "dir": 4}
+    moved = api.post(f"/api/view/sandboxes/{room}/run/input", json=step).json()["users"][0]
+    assert moved["dir"] == 4
+
+
 def test_view_draws_wired_effects_but_not_on_hidden_boxes(api: Api) -> None:
     room = api.post("/api/tutorials/time-tracking", json={}).json()["id"]
     saved = api.get(f"/api/sandboxes/{room}").json()
