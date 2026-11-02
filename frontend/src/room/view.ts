@@ -18,6 +18,7 @@ import {
   normaliseRoom,
   type PlacedAvatar,
   type RoomDocument,
+  restingDir,
   standAt,
   UNKNOWN_FURNI,
   withFace,
@@ -435,10 +436,13 @@ class WbRoomView extends HTMLElement {
       if (!next) break;
       walker.elapsed -= SECONDS_PER_STEP;
       const stand = standAt(this.room, this.lookup, next[0], next[1]);
-      avatar.dir = directionBetween([walker.from[0], walker.from[1]], next);
+      const [after] = walker.path;
+      // Only the last step sits, so passing over a chair keeps the way the avatar walks.
+      const seated = after ? undefined : stand.dir;
+      avatar.dir = seated ?? directionBetween([walker.from[0], walker.from[1]], next);
       Object.assign(avatar, { x: next[0], y: next[1], z: stand.z, pose: stand.pose });
       walker.from = [next[0], next[1], stand.z];
-      if (walker.path.length === 0) this.walker = null;
+      if (!after) this.walker = null;
       void this.send({ type: "move", x: next[0], y: next[1], dir: avatar.dir });
       if (!this.walker) return;
     }
@@ -637,7 +641,7 @@ class WbRoomView extends HTMLElement {
           x: avatar.x,
           y: avatar.y,
           z: avatar.z,
-          dir: avatar.dir,
+          dir: restingDir(room, this.lookup, avatar),
           action: avatar.pose,
           ...withFace(avatarExtras(avatar.details), avatar, performance.now()),
           frontX,

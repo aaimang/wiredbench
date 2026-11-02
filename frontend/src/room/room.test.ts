@@ -30,6 +30,7 @@ import {
   type PlacedFurni,
   pickWalkLook,
   type RoomDocument,
+  restingDir,
   showsTime,
   stackHeight,
   standAt,
@@ -211,6 +212,12 @@ describe("standing", () => {
     expect(standAt(r, lookup, 1, 0)).toMatchObject({ walkable: true, z: 0.1, pose: "std" });
     expect(standAt(r, lookup, 2, 0)).toMatchObject({ pose: "sit", dir: 4, z: 1 });
     expect(standAt(r, lookup, 1, 4)).toMatchObject({ pose: "lay" });
+  });
+
+  it("faces the way a seat is turned, wherever the avatar was saved facing", () => {
+    const r = room(["chair", 2, 0, 0, 4], ["mat", 1, 0]);
+    expect(restingDir(r, lookup, { x: 2, y: 0, dir: 2 })).toBe(4);
+    expect(restingDir(r, lookup, { x: 1, y: 0, dir: 2 })).toBe(2);
   });
 });
 
