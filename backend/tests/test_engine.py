@@ -1662,6 +1662,7 @@ def test_built_ins_from_the_catalogue_and_room() -> None:
                 "can_stand": True,
                 "can_sit": False,
                 "can_lay": False,
+                "stackable": True,
             }
         },
         clock_start_ms=1_700_000_000_123,
@@ -1671,6 +1672,7 @@ def test_built_ins_from_the_catalogue_and_room() -> None:
     assert reads(engine, "@dimensions.x", "furni", 51) == 2
     assert reads(engine, "@can_stand_on", "furni", 51) == 1
     assert reads(engine, "@can_sit_on", "furni", 51) is None, "a flag exists only while true"
+    assert reads(engine, "@is_stackable", "furni", 51) == 1
     assert reads(engine, "~clock.state", "furni", 50) == 0
     assert reads(engine, "~clock.state", "furni", 51) is None
     assert reads(engine, "@room_id", "global") == 7

@@ -75,6 +75,7 @@ FURNI_FACTS = {
     "@can_stand_on": "can_stand",
     "@can_sit_on": "can_sit",
     "@can_lay_on": "can_lay",
+    "@is_stackable": "stackable",
 }
 DEFAULT_FLIGHT_MS = 500  # A real room took about this long for 3 tiles, with or without the add-on.
 MAX_FLIGHT_MS = 60_000
