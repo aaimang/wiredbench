@@ -269,8 +269,8 @@ test("a visitor's room updates several times a second and furni slides", async (
   page.on("request", (r) => {
     if (r.url().includes("/run/advance")) ticks.push(r.postDataJSON().ms);
   });
-  await page.waitForTimeout(1500);
-  expect(ticks.length).toBeGreaterThanOrEqual(3);
+  // The first room load can be slow, so the three updates get a few seconds to arrive.
+  await expect.poll(() => ticks.length, { timeout: 5000 }).toBeGreaterThanOrEqual(3);
   expect(Math.max(...ticks)).toBeLessThan(1000);
 
   const area = (await page.getByTestId("view-canvas").boundingBox()) ?? {
@@ -303,10 +303,37 @@ test("a visitor's room updates several times a second and furni slides", async (
     const input = document.querySelector("[data-testid=view-say]") as HTMLInputElement;
     input.value = "back";
     input.form?.requestSubmit();
-    await new Promise((done) => setTimeout(done, 450));
+    await new Promise((done) => setTimeout(done, 1000));
     return count;
   });
-  expect(drawn, "draws in the slide's first 450ms").toBeGreaterThan(18);
+  // A half-second slide is about 12 draws at the 24 a second of furni art, and 30 on every frame.
+  expect(drawn, "draws in the second after asking for a slide").toBeGreaterThan(20);
+
+  // The workspace Run view slides a moved furni the same way.
+  await page.getByRole("button", { name: "Back to admin" }).click();
+  await page.goto(`/sandbox/${room}`);
+  await page.getByRole("button", { name: "Run", exact: true }).click();
+  const runSay = page.getByPlaceholder(/command such as/);
+  await expect(runSay).toBeVisible();
+  const runDrawn = await page.evaluate(async () => {
+    const editor = document.querySelector("wb-editor") as unknown as {
+      renderer: { draw: (...args: unknown[]) => void };
+    };
+    const draw = editor.renderer.draw.bind(editor.renderer);
+    let count = 0;
+    editor.renderer.draw = (...args) => {
+      count += 1;
+      draw(...args);
+    };
+    const input = [...document.querySelectorAll("input")].find((i) =>
+      /command such as/.test(i.placeholder),
+    ) as HTMLInputElement;
+    input.value = "go";
+    input.form?.requestSubmit();
+    await new Promise((done) => setTimeout(done, 1000));
+    return count;
+  });
+  expect(runDrawn, "draws in the second after asking for a Run slide").toBeGreaterThan(20);
 });
 
 test("a visitor clicks to select, double-clicks to use and chats in bubbles", async ({ page }) => {

@@ -276,6 +276,7 @@ class WbEditor extends HTMLElement {
       looks: this.run ? this.looks : null,
       fx: this.run ? this.fx : null,
       flights: this.run ? this.flights : null,
+      slides: Boolean(this.run),
       room: this.room,
       lookup: this.lookup,
       revisionOf: (classname) => this.items.get(classname)?.revision ?? null,
