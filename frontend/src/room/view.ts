@@ -461,6 +461,9 @@ class WbRoomView extends HTMLElement {
         }
         this.choose(hit);
         void this.send({ type: "click", furni: hit.id });
+        // As in the hotel, clicking a chair or a box you can stand on walks there too.
+        const clicked = this.room?.furni.find((f) => f.id === hit.id);
+        if (clicked) this.walkTo([clicked.x, clicked.y]);
         return;
       }
       if (hit?.kind === "avatar") {

@@ -436,7 +436,20 @@ test("a visitor clicks to select, double-clicks to use and chats in bubbles", as
   await page.getByTestId("view-use").click();
   await expect.poll(() => sent.filter((body) => body.includes('"use"')).length).toBe(2);
 
-  const ann = tile(-3, 3);
+  // Clicking the chair also walked Ann to it, and she sits, as in the hotel.
+  const seated = () =>
+    page.evaluate(() => {
+      const view = document.querySelector("wb-room-view") as unknown as {
+        room: { avatars: { x: number; y: number; pose: string }[] };
+      };
+      const [only] = view.room.avatars;
+      return `${only?.x},${only?.y},${only?.pose}`;
+    });
+  await expect
+    .poll(seated, { timeout: 10_000 })
+    .toBe(`${Math.floor(width / 2) + 3},${Math.floor(height / 2) - 3},sit`);
+
+  const ann = chair;
   await canvas.click({ position: { x: ann.x, y: ann.y - 45 } });
   await expect(card).toContainText("Ann");
   await expect(card).toContainText("You are walking as this avatar.");
