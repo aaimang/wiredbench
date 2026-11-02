@@ -161,6 +161,7 @@ class WbRoomView extends HTMLElement {
       canStand: item.data?.canstandon === true,
       canSit: item.data?.cansiton === true,
       canLay: item.data?.canlayon === true,
+      canStack: item.data?.canputstuffon !== false,
     };
   };
 

@@ -44,6 +44,7 @@ export interface FurniInfo {
   canStand: boolean;
   canSit: boolean;
   canLay: boolean;
+  canStack: boolean;
 }
 
 export type InfoLookup = (classname: string) => FurniInfo;
@@ -56,6 +57,7 @@ export const UNKNOWN_FURNI: FurniInfo = {
   canStand: false,
   canSit: false,
   canLay: false,
+  canStack: true,
 };
 
 export function emptyRoom(): RoomDocument {
@@ -130,6 +132,19 @@ export function stackHeight(
     }
   }
   return Math.round(top * 100) / 100;
+}
+
+/** As in a real room, nothing can be put on furni whose top cannot hold things, such as a chair. */
+export function canStackOn(
+  room: RoomDocument,
+  lookup: InfoLookup,
+  tiles: [number, number][],
+  ignoreId?: number,
+): boolean {
+  return tiles.every(([x, y]) => {
+    const top = furniAt(room, lookup, x, y, ignoreId).at(-1);
+    return !top || lookup(top.classname).canStack;
+  });
 }
 
 export interface Stand {

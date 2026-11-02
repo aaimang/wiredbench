@@ -65,7 +65,7 @@ test("build a room, walk to a chair, sit, and find it all there after a reload",
       roomitemtypes: {
         furnitype: [
           furni("wf_act_show_message", "Show Message", { height: 0.65, canstandon: true }),
-          furni("test_chair", "Test Chair", { cansiton: true }),
+          furni("test_chair", "Test Chair", { cansiton: true, canputstuffon: false }),
           furni("test_wall", "Test Block"),
         ],
       },
@@ -105,6 +105,9 @@ test("build a room, walk to a chair, sit, and find it all there after a reload",
   );
   await clickTile(page, 1, 1);
   await clickTile(page, 1, 1);
+  // As in a real room, nothing goes on a chair.
+  await clickTile(page, 5, 2);
+  await expect(page.getByText("Nothing can be put on that furni.")).toBeVisible();
   await page.keyboard.press("Escape");
   let saved = await room(page);
   expect(saved.furni.map((f) => f.classname)).toEqual([

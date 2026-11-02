@@ -421,6 +421,7 @@ export const t = {
     shortcuts: "Shift+click turns, Ctrl+click moves, Ctrl+Shift+click picks up.",
     shortcutsNoPickUp: "Shift+click turns, Ctrl+click moves.",
     doesNotFit: "It does not fit there.",
+    cannotStack: "Nothing can be put on that furni.",
     wallNotYet: "Wall furni cannot be placed yet. Only floor furni can.",
     roomFull: "There is no free tile for an avatar.",
     addAvatarFirst: "Add an avatar first.",

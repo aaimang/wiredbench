@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { depth, screenToTile, tileCentre } from "./iso";
 import {
   avatarExtras,
+  canStackOn,
   directionBetween,
   drawTile,
   emptyRoom,
@@ -38,11 +39,51 @@ import {
 import { isDebugCommand, runClock } from "./run-panel";
 
 const INFO: Record<string, FurniInfo> = {
-  wall: { xdim: 1, ydim: 1, height: 1, canStand: false, canSit: false, canLay: false },
-  mat: { xdim: 1, ydim: 1, height: 0.1, canStand: true, canSit: false, canLay: false },
-  chair: { xdim: 1, ydim: 1, height: 1, canStand: false, canSit: true, canLay: false },
-  bed: { xdim: 2, ydim: 3, height: 1, canStand: false, canSit: false, canLay: true },
-  tower: { xdim: 1, ydim: 1, height: 3, canStand: true, canSit: false, canLay: false },
+  wall: {
+    xdim: 1,
+    ydim: 1,
+    height: 1,
+    canStand: false,
+    canSit: false,
+    canLay: false,
+    canStack: true,
+  },
+  mat: {
+    xdim: 1,
+    ydim: 1,
+    height: 0.1,
+    canStand: true,
+    canSit: false,
+    canLay: false,
+    canStack: true,
+  },
+  chair: {
+    xdim: 1,
+    ydim: 1,
+    height: 1,
+    canStand: false,
+    canSit: true,
+    canLay: false,
+    canStack: false,
+  },
+  bed: {
+    xdim: 2,
+    ydim: 3,
+    height: 1,
+    canStand: false,
+    canSit: false,
+    canLay: true,
+    canStack: false,
+  },
+  tower: {
+    xdim: 1,
+    ydim: 1,
+    height: 3,
+    canStand: true,
+    canSit: false,
+    canLay: false,
+    canStack: true,
+  },
 };
 const lookup = (name: string) => INFO[name] as FurniInfo;
 
@@ -116,6 +157,19 @@ describe("placement", () => {
       ]),
     ).toBe(3);
     expect(stackHeight(r, lookup, [[2, 1]], 2)).toBe(0);
+  });
+
+  it("puts nothing on a chair, but on a mat, the floor or the chair's own tile when moving it", () => {
+    const r = room(["mat", 1, 1], ["chair", 2, 1]);
+    expect(canStackOn(r, lookup, [[0, 0]])).toBe(true);
+    expect(canStackOn(r, lookup, [[1, 1]])).toBe(true);
+    expect(
+      canStackOn(r, lookup, [
+        [1, 1],
+        [2, 1],
+      ]),
+    ).toBe(false);
+    expect(canStackOn(r, lookup, [[2, 1]], 2)).toBe(true);
   });
 
   it("lists furni on a tile from the bottom up, including large furni", () => {
