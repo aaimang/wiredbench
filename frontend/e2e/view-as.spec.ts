@@ -1,3 +1,5 @@
+import { writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { expect, type Page, test } from "@playwright/test";
 
 async function login(page: Page): Promise<void> {
@@ -284,4 +286,128 @@ test("a visitor's room updates several times a second and furni slides", async (
     frames.add((await page.screenshot({ clip })).toString("base64"));
   }
   expect(frames.size, "the furni is seen between its two tiles").toBeGreaterThan(2);
+});
+
+test("a visitor clicks to select, double-clicks to use and chats in bubbles", async ({ page }) => {
+  writeFileSync(
+    join(process.env.WB_E2E_DIR as string, "furnidata.json"),
+    JSON.stringify({
+      roomitemtypes: {
+        furnitype: [
+          {
+            id: 11,
+            classname: "chair_norja",
+            revision: 100,
+            name: "Norja chair",
+            description: "A chair to test the card.",
+            offerid: 5,
+            bc: true,
+            xdim: 1,
+            ydim: 1,
+            height: 1,
+            cansiton: true,
+          },
+        ],
+      },
+      wallitemtypes: { furnitype: [] },
+    }),
+  );
+  await login(page);
+  await page.getByTestId("download-button").or(page.getByTestId("update-button")).first().click();
+  await page
+    .getByTestId("update-dialog")
+    .getByRole("button", { name: /Use this catalogue|Apply update/ })
+    .click();
+  await expect(page.getByTestId("furni-list")).toBeVisible();
+  const {
+    id: room,
+    width,
+    height,
+  } = await page.evaluate(async () => {
+    const me = await (await fetch("/api/auth/me")).json();
+    const headers = { "Content-Type": "application/json", "X-CSRF-Token": me.csrf_token };
+    const res = await fetch("/api/tutorials/time-tracking", {
+      method: "POST",
+      headers,
+      body: "{}",
+    });
+    const id = (await res.json()).id as number;
+    const saved = await (await fetch(`/api/sandboxes/${id}`)).json();
+    const { width, height } = saved.document.room;
+    const [x, y] = [Math.floor(width / 2), Math.floor(height / 2)];
+    saved.document.avatars = [
+      { id: 1, name: "Ann", hotel: "com", figure: "hd-180-1", x: x - 3, y: y + 3, z: 0, dir: 2 },
+    ];
+    saved.document.furni = [
+      { id: 700, classname: "chair_norja", x: x + 3, y: y - 3, z: 0, rot: 0, state: 0 },
+    ];
+    await fetch(`/api/sandboxes/${id}/document`, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify({ document: saved.document, base_revision: saved.revision }),
+    });
+    return { id, width: width as number, height: height as number };
+  });
+  await page.getByTestId("view-as").click();
+  await expect(page.getByTestId("view-banner")).toBeVisible();
+  await page.locator(`a[href="/view/${room}"]`).click();
+  const say = page.getByTestId("view-say");
+  await expect(say).toBeVisible();
+  await page.waitForTimeout(500);
+
+  const sent: string[] = [];
+  page.on("request", (r) => {
+    if (r.url().endsWith("/run/input")) sent.push(r.postData() ?? "");
+  });
+  const canvas = page.getByTestId("room-canvas");
+  const box = (await canvas.boundingBox()) ?? { x: 0, y: 0, width: 800, height: 600 };
+  // Where a tile's centre is drawn, measured from the canvas.
+  const tile = (dx: number, dy: number) => ({
+    x: box.width / 2 + (dx - dy) * 32 - ((width % 2) - (height % 2)) * 16,
+    y: box.height / 2 + (dx + dy) * 16 + 16 - ((width % 2) + (height % 2)) * 8,
+  });
+  const chair = tile(3, -3);
+  const card = page.getByTestId("view-card");
+
+  await canvas.click({ position: { x: chair.x, y: chair.y - 10 } });
+  await expect(card).toContainText("Norja chair");
+  await expect(card).toContainText("A chair to test the card.");
+  const picture = page.getByTestId("view-card-icon");
+  await expect(picture).toHaveAttribute("src", `/api/view/sandboxes/${room}/icons/chair_norja`);
+  await expect
+    .poll(() => picture.evaluate((img: HTMLImageElement) => img.naturalWidth))
+    .toBeGreaterThan(0);
+  await expect.poll(() => sent.filter((body) => body.includes('"click"')).length).toBe(1);
+  expect(sent.join(), "one click does not use it").not.toContain('"use"');
+
+  await canvas.dblclick({ position: { x: chair.x, y: chair.y - 10 } });
+  await expect.poll(() => sent.filter((body) => body.includes('"use"')).length).toBe(1);
+  await page.getByTestId("view-use").click();
+  await expect.poll(() => sent.filter((body) => body.includes('"use"')).length).toBe(2);
+
+  const ann = tile(-3, 3);
+  await canvas.click({ position: { x: ann.x, y: ann.y - 45 } });
+  await expect(card).toContainText("Ann");
+  await expect(card).toContainText("You are walking as this avatar.");
+  await page.keyboard.press("Escape");
+  await expect(card).toBeHidden();
+
+  // Typing anywhere goes to the chat box, as in a client.
+  await page.locator("body").click({ position: { x: 5, y: 5 } });
+  await page.keyboard.type("hi");
+  await expect(say).toBeFocused();
+  await expect(say).toHaveValue("hi");
+  await page.keyboard.press("Enter");
+  const bubbles = page.locator(".view-bubble");
+  await expect(bubbles).toHaveCount(1);
+  const first = await bubbles.first().boundingBox();
+  expect(first?.y ?? 0, "the bubble is over the speaker").toBeLessThan(box.y + ann.y - 45);
+  expect(Math.abs((first?.x ?? 0) + (first?.width ?? 0) / 2 - (box.x + ann.x))).toBeLessThan(8);
+
+  await say.fill("again");
+  await say.press("Enter");
+  await expect(bubbles).toHaveCount(2);
+  await expect
+    .poll(async () => (await bubbles.first().boundingBox())?.y ?? 0, { message: "pushed up" })
+    .toBeLessThan((first?.y ?? 0) - 10);
 });

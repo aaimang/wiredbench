@@ -1,5 +1,6 @@
+import { Box, X } from "lucide";
 import { ApiFailure, get, post } from "../api";
-import { h, replace } from "../dom";
+import { h, icon, replace } from "../dom";
 import { t } from "../strings";
 import { errorMessage, toast } from "../ui";
 import { InspectWindow } from "./inspect";
@@ -21,7 +22,7 @@ import {
   UNKNOWN_FURNI,
   withFace,
 } from "./model";
-import { type AvatarPose, RoomRenderer } from "./renderer";
+import { type AvatarPose, type Hit, RoomRenderer } from "./renderer";
 
 const T = t.viewAs;
 const TICK_MS = 250;
@@ -33,6 +34,11 @@ const FURNI_GLIDE_MS = 500;
 const SECONDS_PER_STEP = 0.5;
 const WALK_FRAMES_PER_SECOND = 8;
 const CHAT_LINES = 6;
+const BUBBLE_MS = 12_000;
+const BUBBLE_FADE_MS = 400;
+const BUBBLE_GAP = 4;
+/** How far above an avatar's feet its bubbles start, which is about its head. */
+const BUBBLE_RISE = 110;
 const WIRED_COMMAND = ":wired";
 
 interface ViewItem {
@@ -79,7 +85,19 @@ class WbRoomView extends HTMLElement {
   private items: Record<string, ViewItem> = {};
   private user: number | null = null;
   private url = "";
-  private log = h("ul", { class: "dashboard-problems", "data-testid": "view-messages" });
+  private roomId = 0;
+  private bubbles = h("div", {
+    class: "view-bubbles",
+    "data-testid": "view-messages",
+    "aria-live": "polite",
+  });
+  private card = h("div", {
+    class: "furni-card view-card",
+    "data-testid": "view-card",
+    hidden: true,
+  });
+  private selected: Hit | null = null;
+  private say: HTMLInputElement | null = null;
   private seen = new Set<string>();
   private stage = h("div", { class: "view-stage" });
   private inspect: InspectWindow | null = null;
@@ -103,11 +121,13 @@ class WbRoomView extends HTMLElement {
   >();
 
   connectedCallback(): void {
+    document.addEventListener("keydown", this.onKey);
     const match = /^\/view\/(\d+)$/.exec(location.pathname);
     void (match ? this.showRoom(Number(match[1])) : this.showList());
   }
 
   disconnectedCallback(): void {
+    document.removeEventListener("keydown", this.onKey);
     if (this.timer !== null) clearInterval(this.timer);
     this.renderer?.destroy();
   }
@@ -150,6 +170,7 @@ class WbRoomView extends HTMLElement {
   private async showRoom(id: number): Promise<void> {
     try {
       const data = await get<ViewRoom>(`/api/view/sandboxes/${id}`);
+      this.roomId = id;
       this.url = `/api/view/sandboxes/${id}/run`;
       this.room = normaliseRoom(data.document);
       this.items = data.items;
@@ -165,7 +186,9 @@ class WbRoomView extends HTMLElement {
           h("h1", {}, data.name),
           this.avatarPicker(),
         ),
-        h("div", { class: "view-foot" }, this.log, this.sayForm()),
+        this.bubbles,
+        this.card,
+        h("div", { class: "view-foot" }, this.sayForm()),
       );
       replace(this, this.stage);
       const renderer = new RoomRenderer();
@@ -213,7 +236,8 @@ class WbRoomView extends HTMLElement {
       this.user = Number(select.value);
       this.walker = null;
       this.seen.clear();
-      replace(this.log);
+      replace(this.bubbles);
+      this.renderCard();
     });
     return h("label", { for: "view-user" }, `${T.actingAs} `, select);
   }
@@ -225,6 +249,7 @@ class WbRoomView extends HTMLElement {
       maxlength: 500,
       "data-testid": "view-say",
     });
+    this.say = input;
     const form = h(
       "form",
       { class: "run-form" },
@@ -241,7 +266,7 @@ class WbRoomView extends HTMLElement {
         return;
       }
       const speaker = this.room?.avatars.find((a) => a.id === this.user);
-      this.addChat(speaker ? `${speaker.name}: ${text}` : text);
+      this.addChat(speaker ? `${speaker.name}: ${text}` : text, this.user);
       void this.send({ type: "say", text });
     });
     return form;
@@ -257,9 +282,120 @@ class WbRoomView extends HTMLElement {
     this.stage.append(this.inspect.element);
   }
 
-  private addChat(text: string): void {
-    this.log.append(h("li", {}, text));
-    while (this.log.children.length > CHAT_LINES) this.log.firstElementChild?.remove();
+  /** Typing anywhere in the room goes to the chat box, as in a client. */
+  private onKey = (event: KeyboardEvent): void => {
+    const target = event.target as HTMLElement | null;
+    if (target?.closest("input, textarea, select, [contenteditable]")) return;
+    if (event.ctrlKey || event.metaKey || event.altKey || !this.say) return;
+    if (event.key === "Escape") {
+      this.choose(null);
+      return;
+    }
+    if (event.key === "Enter") event.preventDefault();
+    else if (event.key.length !== 1) return;
+    this.say.focus(); // Focused before the key lands, so the typed letter goes into the box.
+  };
+
+  /** A bubble starts over its speaker, and pushes the older ones up. */
+  private addChat(text: string, speaker: number | null): void {
+    const bubble = h("p", { class: "view-bubble" }, text);
+    this.bubbles.append(bubble);
+    const area = this.stage.getBoundingClientRect();
+    const avatar = this.room?.avatars.find((a) => a.id === speaker);
+    const at =
+      avatar && this.renderer ? this.renderer.tileOnPage(avatar.x, avatar.y, avatar.z) : null;
+    const width = bubble.offsetWidth;
+    const height = bubble.offsetHeight;
+    const centre = at ? at.x - area.left : area.width / 2;
+    const left = Math.max(8, Math.min(centre - width / 2, area.width - width - 8));
+    const top = at ? at.y - area.top - BUBBLE_RISE - height : area.height / 2;
+    for (const older of this.bubbles.children) {
+      if (older === bubble || !(older instanceof HTMLElement)) continue;
+      older.style.top = `${Number.parseFloat(older.style.top) - height - BUBBLE_GAP}px`;
+    }
+    Object.assign(bubble.style, { left: `${left}px`, top: `${Math.max(0, top)}px` });
+    while (this.bubbles.children.length > CHAT_LINES) this.bubbles.firstElementChild?.remove();
+    setTimeout(() => {
+      bubble.classList.add("view-bubble-gone");
+      setTimeout(() => bubble.remove(), BUBBLE_FADE_MS);
+    }, BUBBLE_MS);
+  }
+
+  private choose(hit: Hit | null): void {
+    this.selected = hit;
+    this.renderCard();
+    this.draw();
+  }
+
+  private furniIcon(classname: string): HTMLElement {
+    const picture = h("span", { class: "furni-icon" });
+    const image = h("img", {
+      src: `/api/view/sandboxes/${this.roomId}/icons/${encodeURIComponent(classname)}`,
+      alt: "",
+      "data-testid": "view-card-icon",
+    });
+    image.addEventListener("error", () => replace(picture, icon(Box, 16)));
+    picture.append(image);
+    return picture;
+  }
+
+  /** What a click on a furni or avatar shows. Only what the room itself would tell a visitor. */
+  private renderCard(): void {
+    const hit = this.selected;
+    const furni = hit?.kind === "furni" ? this.room?.furni.find((f) => f.id === hit.id) : null;
+    const avatar = hit?.kind === "avatar" ? this.room?.avatars.find((a) => a.id === hit.id) : null;
+    if (!furni && !avatar) {
+      this.selected = null;
+      this.card.hidden = true;
+      return;
+    }
+    const data = furni ? (this.items[furni.classname]?.data ?? {}) : {};
+    const name = avatar?.name ?? (typeof data.name === "string" ? data.name : "");
+    const about = avatar
+      ? avatar.id === this.user
+        ? T.card.you
+        : ""
+      : typeof data.description === "string"
+        ? data.description
+        : "";
+    replace(
+      this.card,
+      h(
+        "div",
+        { class: "furni-card-head view-card-head" },
+        ...(furni ? [this.furniIcon(furni.classname)] : []),
+        h("h2", {}, name || furni?.classname || ""),
+        h(
+          "button",
+          {
+            class: "btn btn-quiet btn-icon",
+            "aria-label": T.card.close,
+            title: T.card.close,
+            onclick: () => this.choose(null),
+          },
+          icon(X),
+        ),
+      ),
+      ...(about ? [h("p", {}, about)] : []),
+      ...(furni
+        ? [
+            h(
+              "div",
+              { class: "furni-card-actions" },
+              h(
+                "button",
+                {
+                  class: "btn btn-small",
+                  "data-testid": "view-use",
+                  onclick: () => void this.send({ type: "use", furni: furni.id }),
+                },
+                T.card.use,
+              ),
+            ),
+          ]
+        : []),
+    );
+    this.card.hidden = false;
   }
 
   private walkTo(goal: [number, number]): void {
@@ -325,12 +461,26 @@ class WbRoomView extends HTMLElement {
           );
           return;
         }
+        this.choose(hit);
         void this.send({ type: "click", furni: hit.id });
         return;
       }
+      if (hit?.kind === "avatar") {
+        this.choose(hit);
+        return;
+      }
+      this.choose(null);
       const tile = this.renderer?.tileAt(x, y);
       if (tile && this.room && fitsInRoom(this.room, [tile])) {
         this.walkTo([tile[0], tile[1]]);
+      }
+    });
+    // A double-click is two clicks first, and each one is a click in the room too.
+    canvas.addEventListener("dblclick", (event) => {
+      const rect = canvas.getBoundingClientRect();
+      const hit = this.renderer?.hitAt(event.clientX - rect.left, event.clientY - rect.top);
+      if (hit?.kind === "furni" && this.inspect?.tab !== "furni") {
+        void this.send({ type: "use", furni: hit.id });
       }
     });
   }
@@ -406,7 +556,7 @@ class WbRoomView extends HTMLElement {
     // Only the latest messages are sent, so a count would stop finding new ones.
     for (const message of state.messages) {
       const key = `${message.at_ms}:${message.text}`;
-      if (!this.seen.has(key)) this.addChat(message.text);
+      if (!this.seen.has(key)) this.addChat(message.text, message.user);
       this.seen.add(key);
     }
     const now = performance.now();
@@ -496,7 +646,7 @@ class WbRoomView extends HTMLElement {
       room,
       lookup: this.lookup,
       revisionOf: (classname) => this.items[classname]?.revision ?? null,
-      selected: null,
+      selected: this.selected,
       picked: new Set(),
       ghost: null,
       hover: null,

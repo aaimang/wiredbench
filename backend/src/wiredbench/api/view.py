@@ -6,6 +6,7 @@ import secrets
 from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, Query, Request
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -19,6 +20,7 @@ from wiredbench.errors import ApiError, not_found
 from wiredbench.models import Sandbox
 from wiredbench.services import preferences
 from wiredbench.services import workspace as ws
+from wiredbench.services.upstream import UpstreamError
 
 router = APIRouter(prefix="/api/view", tags=["view"])
 
@@ -159,6 +161,30 @@ def get_room(
     sandbox_id: int, services: Services = Depends(get_services), db: Session = Depends(get_db)
 ) -> dict[str, Any]:
     return _public_room(services, _sandbox(db, sandbox_id))
+
+
+@router.get("/sandboxes/{sandbox_id}/icons/{classname}")
+@viewer
+def room_icon(
+    sandbox_id: int,
+    classname: str,
+    services: Services = Depends(get_services),
+    db: Session = Depends(get_db),
+) -> FileResponse:
+    """A furni's catalogue icon, only for furni a visitor can see in this room."""
+    room = _public_room(services, _sandbox(db, sandbox_id))
+    revision = room["items"].get(classname, {}).get("revision")
+    if revision is None:
+        raise not_found("Icon")
+    try:
+        path = services.assets.icon(revision, classname)
+    except UpstreamError as exc:
+        raise ApiError(502, "upstream_unavailable", "Could not download this icon.") from exc
+    if path is None:
+        raise not_found("Icon")
+    return FileResponse(
+        path, media_type="image/png", headers={"Cache-Control": "private, max-age=31536000, immutable"}
+    )
 
 
 @router.post("/sandboxes/{sandbox_id}/run", status_code=201)

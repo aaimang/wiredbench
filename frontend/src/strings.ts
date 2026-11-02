@@ -43,6 +43,11 @@ export const t = {
       noValue: "No value",
     },
     noWebgl: "This browser cannot draw the room, because WebGL is not available.",
+    card: {
+      use: "Use",
+      close: "Close",
+      you: "You are walking as this avatar.",
+    },
   },
 
   guide: {

@@ -261,6 +261,7 @@ running server.
 | POST | `/api/tutorials/{slug}` | Admin |
 | GET | `/api/view/sandboxes` | Admin |
 | GET | `/api/view/sandboxes/{sandbox_id}` | Admin |
+| GET | `/api/view/sandboxes/{sandbox_id}/icons/{classname}` | Admin |
 | POST | `/api/view/sandboxes/{sandbox_id}/run` | Admin |
 | POST | `/api/view/sandboxes/{sandbox_id}/run/advance` | Admin |
 | POST | `/api/view/sandboxes/{sandbox_id}/run/input` | Admin |
