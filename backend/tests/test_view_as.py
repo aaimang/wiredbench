@@ -123,6 +123,50 @@ def test_view_shows_what_an_avatar_holds_and_no_other_details(api: Api) -> None:
     assert api.post(f"/api/view/sandboxes/{room}/run").json()["users"][0]["details"] == shown
 
 
+def test_view_draws_wired_effects_but_not_on_hidden_boxes(api: Api) -> None:
+    room = api.post("/api/tutorials/time-tracking", json={}).json()["id"]
+    saved = api.get(f"/api/sandboxes/{room}").json()
+    document = saved["document"]
+
+    def box(id_: int, classname: str, x: int, y: int, z: int, **wired: object) -> dict[str, object]:
+        return {
+            "id": id_,
+            "classname": classname,
+            "x": x,
+            "y": y,
+            "z": z,
+            "rot": 0,
+            "state": 0,
+            "wired": wired,
+        }
+
+    document["avatars"] = [{"id": 1, "name": "A", "hotel": "com", "figure": "hd-180-1", "x": 2, "y": 2}]
+    document["furni"] = [
+        {"id": 50, "classname": "chair", "x": 5, "y": 5, "z": 0, "rot": 0, "state": 0},
+        box(10, "wf_trg_says_something", 1, 1, 0, text="go"),
+        box(11, "wf_act_rel_mov", 1, 1, 1, furni=[50], move_x=2),
+        box(12, "wf_xtra_rotate_to_dir", 1, 1, 2),
+        box(13, "wf_act_set_highlight", 1, 1, 3, furni=[50, 10], audience="everyone", color=255),
+        box(14, "wf_act_give_var", 1, 1, 4, variable=SECRET, value=40),
+        box(20, "wf_var_user", 3, 3, 0, variable=SECRET),
+        box(21, "wf_xtra_varfx_number", 3, 3, 1),
+    ]
+    res = api.put(
+        f"/api/sandboxes/{room}/document",
+        json={"document": document, "base_revision": saved["revision"]},
+    )
+    assert res.status_code == 200, res.text
+    api.post("/api/auth/view-as")
+    api.post(f"/api/view/sandboxes/{room}/run")
+    api.post(f"/api/view/sandboxes/{room}/run/input", json={"type": "say", "user": 1, "text": "go"})
+    state = api.post(f"/api/view/sandboxes/{room}/run/advance", json={"ms": 100}).json()
+    assert [flight["id"] for flight in state["flights"]] == [50]
+    assert state["fx"][0]["id"] == 1 and state["fx"][0]["value"] == "40"
+    assert list(state["looks"]["furni"]) == ["50"]
+    assert state["looks"]["furni"]["50"]["highlight"]["color"] == 255
+    assert SECRET not in json.dumps(state)
+
+
 def test_inspection_shows_built_ins_only(api: Api) -> None:
     room = room_with_secrets(api)
     api.post(f"/api/sandboxes/{room}/run", json={"seed": 1})

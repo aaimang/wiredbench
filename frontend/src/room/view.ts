@@ -7,9 +7,12 @@ import {
   avatarExtras,
   directionBetween,
   drawTile,
+  type Flight,
   type FurniInfo,
+  type FxShown,
   findPath,
   fitsInRoom,
+  type Look,
   normaliseRoom,
   type RoomDocument,
   standAt,
@@ -51,6 +54,9 @@ interface ViewState {
     details?: Record<string, number>;
   }[];
   messages: { at_ms: number; user: number; text: string }[];
+  flights: Flight[];
+  fx: FxShown[];
+  looks: { furni: Record<number, Look>; users: Record<number, Look> };
 }
 
 /** A room as a visitor sees it. Everything here comes from /api/view, which has no WIRED config. */
@@ -71,6 +77,7 @@ class WbRoomView extends HTMLElement {
     elapsed: number;
   } | null = null;
   private walkClock = 0;
+  private effects: Pick<ViewState, "flights" | "fx" | "looks"> | null = null;
 
   connectedCallback(): void {
     const match = /^\/view\/(\d+)$/.exec(location.pathname);
@@ -325,6 +332,7 @@ class WbRoomView extends HTMLElement {
   private apply(state: ViewState): void {
     const room = this.room;
     if (!room) return;
+    this.effects = state;
     for (const item of state.furni) {
       const placed = room.furni.find((f) => f.id === item.id);
       if (placed) Object.assign(placed, item);
@@ -358,6 +366,9 @@ class WbRoomView extends HTMLElement {
     const room = this.room;
     if (!room || !this.renderer) return;
     this.renderer.draw({
+      flights: this.effects?.flights,
+      fx: this.effects?.fx,
+      looks: this.effects?.looks,
       room,
       lookup: this.lookup,
       revisionOf: (classname) => this.items[classname]?.revision ?? null,

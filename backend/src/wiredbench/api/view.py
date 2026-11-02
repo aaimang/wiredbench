@@ -28,6 +28,7 @@ FURNI_FIELDS = ("id", "classname", "x", "y", "z", "rot", "state")
 AVATAR_FIELDS = ("id", "name", "hotel", "figure", "x", "y", "z", "dir", "pose", "face")
 VISIBLE_DETAILS = ("@handitem", "@sign", "@is_idle")
 ITEM_FIELDS = ("classname", "revision", "xdim", "ydim", "height", "data")
+LOOK_FIELDS = ("highlight", "invisible", "click_through")
 MESSAGES_SHOWN = 20
 # These carry the value of a room's own variable, which a visitor must not read.
 PRIVATE_BUILT_INS = "@event.variable_update."
@@ -117,7 +118,21 @@ def _public_state(run: Run, hidden: set[int], user: int | None) -> dict[str, Any
             for u in snapshot["users"]
         ],
         "messages": [m for m in engine.messages if m.get("user") == user][-MESSAGES_SHOWN:],
+        "flights": [f for f in snapshot["flights"] if f["id"] not in hidden],
+        "fx": [f for f in snapshot["fx"] if not (f["target"] == "furni" and f["id"] in hidden)],
+        "looks": {
+            "furni": {
+                furni: _visible_look(look)
+                for furni, look in snapshot["looks"]["furni"].items()
+                if furni not in hidden
+            },
+            "users": {u: _visible_look(look) for u, look in snapshot["looks"]["users"].items()},
+        },
     }
+
+
+def _visible_look(look: dict[str, Any]) -> dict[str, Any]:
+    return {key: look[key] for key in LOOK_FIELDS if key in look}
 
 
 def _sandbox(db: Session, sandbox_id: int) -> Sandbox:

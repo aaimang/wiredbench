@@ -154,3 +154,66 @@ test(":wired opens an inspection window with live values and is never said aloud
   await say.press("Enter");
   await expect(page.getByTestId("inspect")).toHaveCount(0);
 });
+
+test("a visitor sees a WIRED effect drawn in the room", async ({ page }) => {
+  await login(page);
+  const room = await page.evaluate(async () => {
+    const me = await (await fetch("/api/auth/me")).json();
+    const headers = { "Content-Type": "application/json", "X-CSRF-Token": me.csrf_token };
+    const res = await fetch("/api/tutorials/time-tracking", {
+      method: "POST",
+      headers,
+      body: "{}",
+    });
+    const id = (await res.json()).id as number;
+    const saved = await (await fetch(`/api/sandboxes/${id}`)).json();
+    const box = (id: number, classname: string, x: number, z: number, wired: object) => ({
+      id,
+      classname,
+      x,
+      y: 1,
+      z,
+      rot: 0,
+      state: 0,
+      wired,
+    });
+    saved.document.avatars = [
+      { id: 1, name: "A", hotel: "com", figure: "hd-180-1", x: 3, y: 3, z: 0, dir: 2 },
+    ];
+    saved.document.furni = [
+      box(10, "wf_trg_says_something", 1, 0, { text: "go" }),
+      box(11, "wf_act_give_var", 1, 1, { variable: "hp", value: 40 }),
+      box(20, "wf_var_user", 2, 0, { variable: "hp" }),
+      box(21, "wf_xtra_varfx_number", 2, 1, {}),
+    ];
+    await fetch(`/api/sandboxes/${id}/document`, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify({ document: saved.document, base_revision: saved.revision }),
+    });
+    return id;
+  });
+  await page.getByTestId("view-as").click();
+  await expect(page.getByTestId("view-banner")).toBeVisible();
+  await page.locator(`a[href="/view/${room}"]`).click();
+  const say = page.getByTestId("view-say");
+  await expect(say).toBeVisible();
+  const canvas = page.getByTestId("view-canvas");
+  const answer = page.waitForResponse((r) => r.url().endsWith("/run/input"));
+  await page.waitForTimeout(500);
+  // Only the room's middle, because chat and the focused input also change the page.
+  const area = (await canvas.boundingBox()) ?? { x: 0, y: 0, width: 1280, height: 720 };
+  const clip = {
+    x: area.x + area.width * 0.4,
+    y: area.y + 80,
+    width: area.width * 0.2,
+    height: area.height * 0.6,
+  };
+  const before = await page.screenshot({ clip });
+
+  await say.fill("go");
+  await say.press("Enter");
+  const state = await (await answer).json();
+  expect(state.fx[0]).toMatchObject({ id: 1, value: "40" });
+  await expect.poll(async () => (await page.screenshot({ clip })).equals(before)).toBe(false);
+});
