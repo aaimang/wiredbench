@@ -1,4 +1,4 @@
-import { X } from "lucide";
+import { Box, X } from "lucide";
 import { ApiFailure, get, post } from "../api";
 import { h, icon, replace } from "../dom";
 import { t } from "../strings";
@@ -85,6 +85,7 @@ class WbRoomView extends HTMLElement {
   private items: Record<string, ViewItem> = {};
   private user: number | null = null;
   private url = "";
+  private roomId = 0;
   private bubbles = h("div", {
     class: "view-bubbles",
     "data-testid": "view-messages",
@@ -169,6 +170,7 @@ class WbRoomView extends HTMLElement {
   private async showRoom(id: number): Promise<void> {
     try {
       const data = await get<ViewRoom>(`/api/view/sandboxes/${id}`);
+      this.roomId = id;
       this.url = `/api/view/sandboxes/${id}/run`;
       this.room = normaliseRoom(data.document);
       this.items = data.items;
@@ -325,6 +327,18 @@ class WbRoomView extends HTMLElement {
     this.draw();
   }
 
+  private furniIcon(classname: string): HTMLElement {
+    const picture = h("span", { class: "furni-icon" });
+    const image = h("img", {
+      src: `/api/view/sandboxes/${this.roomId}/icons/${encodeURIComponent(classname)}`,
+      alt: "",
+      "data-testid": "view-card-icon",
+    });
+    image.addEventListener("error", () => replace(picture, icon(Box, 16)));
+    picture.append(image);
+    return picture;
+  }
+
   /** What a click on a furni or avatar shows. Only what the room itself would tell a visitor. */
   private renderCard(): void {
     const hit = this.selected;
@@ -349,6 +363,7 @@ class WbRoomView extends HTMLElement {
       h(
         "div",
         { class: "furni-card-head view-card-head" },
+        ...(furni ? [this.furniIcon(furni.classname)] : []),
         h("h2", {}, name || furni?.classname || ""),
         h(
           "button",

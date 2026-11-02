@@ -1454,6 +1454,10 @@ wb-room-view {
   grid-template-columns: minmax(0, 1fr) auto;
 }
 
+.furni-card-head.view-card-head:has(.furni-icon) {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
 .inspect {
   top: 12px;
   right: 12px;

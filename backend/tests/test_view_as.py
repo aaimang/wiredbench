@@ -6,7 +6,7 @@ import json
 
 from fastapi.routing import APIRoute
 
-from conftest import Api, FakeHabbo, apply_update, furni, furnidata
+from conftest import PNG, Api, FakeHabbo, apply_update, furni, furnidata
 from wiredbench.api import ROUTERS
 
 ALLOWED = {
@@ -20,6 +20,7 @@ ALLOWED = {
     ("POST", "/api/view/sandboxes/{sandbox_id}/run/advance"),
     ("POST", "/api/view/sandboxes/{sandbox_id}/run/input"),
     ("GET", "/api/view/sandboxes/{sandbox_id}/run/inspect"),
+    ("GET", "/api/view/sandboxes/{sandbox_id}/icons/{classname}"),
     ("GET", "/api/furni/{revision}/{classname}/manifest"),
     ("GET", "/api/furni/{revision}/{classname}/atlas"),
     ("GET", "/api/avatars/{hotel}/lookup"),
@@ -165,6 +166,24 @@ def test_view_draws_wired_effects_but_not_on_hidden_boxes(api: Api) -> None:
     assert list(state["looks"]["furni"]) == ["50"]
     assert state["looks"]["furni"]["50"]["highlight"]["color"] == 255
     assert SECRET not in json.dumps(state)
+
+
+def test_icons_are_only_for_furni_shown_in_the_room(api: Api, habbo: FakeHabbo) -> None:
+    habbo.set(furnidata(furni("chair"), furni("wf_trg_staff_only", offerid=-1, bc=False)), 'W/"v2"')
+    apply_update(api)
+    habbo.icons["chair_icon.png"] = PNG
+    room = room_with_secrets(api)
+    document = api.get(f"/api/sandboxes/{room}").json()["document"]
+    document["furni"].append({"id": 903, "classname": "chair", "x": 3, "y": 9, "z": 0, "rot": 0, "state": 0})
+    revision = api.get(f"/api/sandboxes/{room}").json()["revision"]
+    saved = api.put(f"/api/sandboxes/{room}/document", json={"document": document, "base_revision": revision})
+    assert saved.status_code == 200, saved.text
+    api.post("/api/auth/view-as")
+    shown = api.get(f"/api/view/sandboxes/{room}/icons/chair")
+    assert shown.status_code == 200
+    assert shown.headers["content-type"] == "image/png"
+    assert api.get(f"/api/view/sandboxes/{room}/icons/wf_trg_staff_only").status_code == 404
+    assert api.get(f"/api/view/sandboxes/{room}/icons/not_in_room").status_code == 404
 
 
 def test_inspection_shows_built_ins_only(api: Api) -> None:

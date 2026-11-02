@@ -1,3 +1,5 @@
+import { writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { expect, type Page, test } from "@playwright/test";
 
 async function login(page: Page): Promise<void> {
@@ -287,7 +289,36 @@ test("a visitor's room updates several times a second and furni slides", async (
 });
 
 test("a visitor clicks to select, double-clicks to use and chats in bubbles", async ({ page }) => {
+  writeFileSync(
+    join(process.env.WB_E2E_DIR as string, "furnidata.json"),
+    JSON.stringify({
+      roomitemtypes: {
+        furnitype: [
+          {
+            id: 11,
+            classname: "chair_norja",
+            revision: 100,
+            name: "Norja chair",
+            description: "A chair to test the card.",
+            offerid: 5,
+            bc: true,
+            xdim: 1,
+            ydim: 1,
+            height: 1,
+            cansiton: true,
+          },
+        ],
+      },
+      wallitemtypes: { furnitype: [] },
+    }),
+  );
   await login(page);
+  await page.getByTestId("download-button").or(page.getByTestId("update-button")).first().click();
+  await page
+    .getByTestId("update-dialog")
+    .getByRole("button", { name: /Use this catalogue|Apply update/ })
+    .click();
+  await expect(page.getByTestId("furni-list")).toBeVisible();
   const {
     id: room,
     width,
@@ -308,7 +339,7 @@ test("a visitor clicks to select, double-clicks to use and chats in bubbles", as
       { id: 1, name: "Ann", hotel: "com", figure: "hd-180-1", x: x - 3, y: y + 3, z: 0, dir: 2 },
     ];
     saved.document.furni = [
-      { id: 700, classname: "plain_chair", x: x + 3, y: y - 3, z: 0, rot: 0, state: 0 },
+      { id: 700, classname: "chair_norja", x: x + 3, y: y - 3, z: 0, rot: 0, state: 0 },
     ];
     await fetch(`/api/sandboxes/${id}/document`, {
       method: "PUT",
@@ -339,7 +370,13 @@ test("a visitor clicks to select, double-clicks to use and chats in bubbles", as
   const card = page.getByTestId("view-card");
 
   await canvas.click({ position: { x: chair.x, y: chair.y - 10 } });
-  await expect(card).toContainText("plain_chair");
+  await expect(card).toContainText("Norja chair");
+  await expect(card).toContainText("A chair to test the card.");
+  const picture = page.getByTestId("view-card-icon");
+  await expect(picture).toHaveAttribute("src", `/api/view/sandboxes/${room}/icons/chair_norja`);
+  await expect
+    .poll(() => picture.evaluate((img: HTMLImageElement) => img.naturalWidth))
+    .toBeGreaterThan(0);
   await expect.poll(() => sent.filter((body) => body.includes('"click"')).length).toBe(1);
   expect(sent.join(), "one click does not use it").not.toContain('"use"');
 
