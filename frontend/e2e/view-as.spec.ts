@@ -390,7 +390,7 @@ test("a visitor clicks to select, double-clicks to use and chats in bubbles", as
       { id: 1, name: "Ann", hotel: "com", figure: "hd-180-1", x: x - 3, y: y + 3, z: 0, dir: 2 },
     ];
     saved.document.furni = [
-      { id: 700, classname: "chair_norja", x: x + 3, y: y - 3, z: 0, rot: 0, state: 0 },
+      { id: 700, classname: "chair_norja", x: x + 3, y: y - 3, z: 0, rot: 4, state: 0 },
     ];
     await fetch(`/api/sandboxes/${id}/document`, {
       method: "PUT",
@@ -440,14 +440,15 @@ test("a visitor clicks to select, double-clicks to use and chats in bubbles", as
   const seated = () =>
     page.evaluate(() => {
       const view = document.querySelector("wb-room-view") as unknown as {
-        room: { avatars: { x: number; y: number; pose: string }[] };
+        room: { avatars: { x: number; y: number; pose: string; dir: number }[] };
       };
       const [only] = view.room.avatars;
-      return `${only?.x},${only?.y},${only?.pose}`;
+      return `${only?.x},${only?.y},${only?.pose},${only?.dir}`;
     });
+  // She faces the way the chair is turned, not the way she walked to it.
   await expect
     .poll(seated, { timeout: 10_000 })
-    .toBe(`${Math.floor(width / 2) + 3},${Math.floor(height / 2) - 3},sit`);
+    .toBe(`${Math.floor(width / 2) + 3},${Math.floor(height / 2) - 3},sit,4`);
 
   const ann = chair;
   await canvas.click({ position: { x: ann.x, y: ann.y - 45 } });

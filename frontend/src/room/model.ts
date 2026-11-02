@@ -175,6 +175,15 @@ export function standAt(room: RoomDocument, lookup: InfoLookup, x: number, y: nu
   return { walkable: false, z, pose: "std" };
 }
 
+/** Where an avatar at rest faces: the way its seat or bed is turned, or its own direction. */
+export function restingDir(
+  room: RoomDocument,
+  lookup: InfoLookup,
+  avatar: { x: number; y: number; dir: number },
+): number {
+  return standAt(room, lookup, avatar.x, avatar.y).dir ?? avatar.dir;
+}
+
 /**
  * The tile that decides an avatar's draw order. On large furni it is that furni's front tile, or the
  * furni, which draws from its own front tile, would cover an avatar sitting or standing on it.

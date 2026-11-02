@@ -341,6 +341,7 @@ class Engine:
                 "team_type": "wired",
                 "details": dict(raw["details"]) if isinstance(raw.get("details"), dict) else {},
             }
+        self._seat_users()
         self._log("info", "Room started", seed=self.seed)
         self._fire("wf_trg_room_initializes")
 
@@ -410,6 +411,7 @@ class Engine:
         elif kind == "turn":
             if (who := self.users.get(_int(user))) is not None:
                 who["dir"] = _int(entry.get("dir")) % 8
+                self._seat_users()
         elif kind == "say":
             self._say(_int(user), str(entry.get("text", ""))[:500])
         elif kind == "click":
@@ -462,12 +464,36 @@ class Engine:
     def _furni_on_tile(self, x: int, y: int) -> list[int]:
         return [i for i, f in self.furni.items() if f["x"] == x and f["y"] == y]
 
+    def _seat_rotation(self, x: int, y: int) -> int | None:
+        """The rotation of the seat or bed on top of a tile, which a user on it faces."""
+        top: dict[str, Any] | None = None
+        for item in self.furni.values():
+            facts = self.furni_facts.get(item["classname"], {})
+            width, depth = facts.get("xdim", 1), facts.get("ydim", 1)
+            if item["rot"] in (2, 6):
+                width, depth = depth, width
+            covers = item["x"] <= x < item["x"] + width and item["y"] <= y < item["y"] + depth
+            if covers and (top is None or item["z"] >= top["z"]):
+                top = item
+        if top is None:
+            return None
+        facts = self.furni_facts.get(top["classname"], {})
+        return _int(top["rot"]) % 8 if facts.get("can_sit") or facts.get("can_lay") else None
+
+    def _seat_users(self) -> None:
+        """A user sitting or lying faces the way the furni is turned, as in a real room."""
+        for user in self.users.values():
+            seat = self._seat_rotation(user["x"], user["y"])
+            if seat is not None:
+                user["dir"] = seat
+
     def _move_user(self, user_id: int, x: int, y: int) -> None:
         user = self.users.get(user_id)
         if not user:
             return
         left = self._furni_on_tile(user["x"], user["y"])
         user["x"], user["y"] = x, y
+        self._seat_users()
         for furni in left:
             self._fire("wf_trg_walks_off_furni", user=user_id, furni=furni)
         for furni in self._furni_on_tile(x, y):
@@ -1190,6 +1216,7 @@ class Engine:
             match name:
                 case "@direction":
                     user["dir"] = value % 8
+                    self._seat_users()
                 case "@position.x":
                     self._move_user(user["id"], value, user["y"])
                 case "@position.y":
@@ -1213,6 +1240,7 @@ class Engine:
                 item["y"] = value
             case "@rotation":
                 item["rot"] = value % 8
+                self._seat_users()
             case "@altitude":
                 item["z"] = max(0, min(value, MAX_ALTITUDE)) / 100
             case "~clock.pulse_count" if holder in self.clocks:
@@ -1705,6 +1733,7 @@ class Engine:
             for user in self._users_for(addon, ctx):
                 if user in self.users:
                     self.users[user]["dir"] = facing
+        self._seat_users()
         tiles = max(abs(dx), abs(dy))
         if _int(addon.get("proj_variables")):
             self.projectile_values[furni_id] = {
@@ -1755,6 +1784,7 @@ class Engine:
             if rotation == "random":
                 turn = self.random.choice((0, 2, 4, 6))
             item["rot"] = (item["rot"] + turn) % 8
+        self._seat_users()
 
     def _do_rel_mov(self, box: Box, ctx: Context) -> None:
         dx, dy = _int(box.get("move_x")), _int(box.get("move_y"))
@@ -1808,6 +1838,7 @@ class Engine:
                 user["dir"] = list(MOVES).index(turn)
             elif turn in ("clockwise", "counterclockwise"):
                 user["dir"] = (_int(user["dir"]) + (1 if turn == "clockwise" else -1)) % 8
+        self._seat_users()
 
     # --- Inspection ---
 

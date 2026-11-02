@@ -156,6 +156,14 @@ test("build a room, walk to a chair, sit, and find it all there after a reload",
   });
   const sitting = (await room(page)).avatars[0];
   expect(sitting).toMatchObject({ x: 5, y: 2, pose: "sit", z: 1 });
+  // Sitting faces the way the chair is turned, and cannot be turned away from it.
+  const seat = (await room(page)).furni.find((f) => f.classname === "test_chair")?.rot ?? -1;
+  expect(sitting?.dir).toBe(seat);
+  await expect(place.getByLabel("Direction")).toHaveValue(String(seat));
+  await place.getByLabel("Direction").selectOption(String((seat + 4) % 8));
+  await expect(page.getByTestId("walk-status")).toContainText("faces the way the seat is turned");
+  await expect(place.getByLabel("Direction")).toHaveValue(String(seat));
+  expect((await room(page)).avatars[0]?.dir).toBe(seat);
 
   // A blocked tile cannot be walked to.
   await clickTile(page, 3, 2);

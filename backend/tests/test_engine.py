@@ -738,6 +738,34 @@ def test_teleport_and_move() -> None:
     assert (engine.furni[50]["x"], engine.furni[50]["rot"]) == (6, 2)
 
 
+def test_a_seated_user_faces_the_way_the_seat_is_turned() -> None:
+    seat = {"height": 1, "xdim": 1, "ydim": 1, "can_stand": False, "can_sit": True, "can_lay": False}
+    bed = {**seat, "xdim": 2, "ydim": 3, "can_sit": False, "can_lay": True}
+    document = {
+        "room": {"width": 20, "height": 20},
+        "furni": [
+            {**plain(50, x=5, y=6), "rot": 4},  # Sat on from the start, saved facing elsewhere.
+            {**plain(51, x=8, y=8), "rot": 6},
+            {**plain(52, "bed", x=12, y=2), "rot": 2},  # Turned, so 3 wide and 2 deep.
+            box(1, "wf_trg_says_something", 1, 1, text="turn"),
+            box(2, "wf_act_move_rotate", 1, 1, 1, furni=[50], rotation="clockwise"),
+        ],
+        "avatars": [{**user(), "x": 5, "y": 6, "dir": 2}, user(101, "Bo", x=0, y=0)],
+    }
+    engine = Engine(document, furni_facts={"chair": seat, "bed": bed})
+    assert engine.users[100]["dir"] == 4
+    engine.apply_input({"type": "move", "user": 101, "x": 8, "y": 8, "dir": 3})
+    assert engine.users[101]["dir"] == 6, "the seat wins over the way the user walked"
+    engine.apply_input({"type": "move", "user": 101, "x": 14, "y": 3, "dir": 3})
+    assert engine.users[101]["dir"] == 2, "any tile of a bed"
+    engine.apply_input({"type": "move", "user": 101, "x": 15, "y": 3, "dir": 3})
+    assert engine.users[101]["dir"] == 3, "off the end of the bed"
+    say(engine, "turn")
+    assert engine.users[100]["dir"] == 6, "turning the chair turns the user on it"
+    engine.apply_input({"type": "turn", "user": 100, "dir": 1})
+    assert engine.users[100]["dir"] == 6, "a seated user cannot turn away from the seat"
+
+
 def test_call_stacks_ignores_conditions_and_trigger() -> None:
     engine = room(
         box(1, "wf_trg_says_something", 1, 1, text="go"),

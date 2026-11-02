@@ -454,6 +454,7 @@ export const t = {
     arrived: (name: string, pose: string, x: number, y: number) =>
       `${name} ${pose === "sit" ? "sat down" : pose === "lay" ? "lay down" : "stopped"} at ${x}, ${y}`,
     noWay: (name: string) => `${name} cannot get there.`,
+    facesSeat: (name: string) => `${name} faces the way the seat is turned.`,
   },
 
   run: {
