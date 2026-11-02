@@ -217,3 +217,71 @@ test("a visitor sees a WIRED effect drawn in the room", async ({ page }) => {
   expect(state.fx[0]).toMatchObject({ id: 1, value: "40" });
   await expect.poll(async () => (await page.screenshot({ clip })).equals(before)).toBe(false);
 });
+
+test("a visitor's room updates several times a second and furni slides", async ({ page }) => {
+  await login(page);
+  const room = await page.evaluate(async () => {
+    const me = await (await fetch("/api/auth/me")).json();
+    const headers = { "Content-Type": "application/json", "X-CSRF-Token": me.csrf_token };
+    const res = await fetch("/api/tutorials/time-tracking", {
+      method: "POST",
+      headers,
+      body: "{}",
+    });
+    const id = (await res.json()).id as number;
+    const saved = await (await fetch(`/api/sandboxes/${id}`)).json();
+    const box = (id: number, classname: string, z: number, wired: object) => ({
+      id,
+      classname,
+      x: 1,
+      y: 1,
+      z,
+      rot: 0,
+      state: 0,
+      wired,
+    });
+    saved.document.avatars = [
+      { id: 1, name: "A", hotel: "com", figure: "hd-180-1", x: 8, y: 8, z: 0, dir: 2 },
+    ];
+    saved.document.furni = [
+      box(10, "wf_trg_says_something", 0, { text: "go" }),
+      box(11, "wf_act_rel_mov", 1, { furni: [50], move_x: 5 }),
+      { id: 50, classname: "plain_chair", x: 1, y: 5, z: 0, rot: 0, state: 0 },
+    ];
+    await fetch(`/api/sandboxes/${id}/document`, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify({ document: saved.document, base_revision: saved.revision }),
+    });
+    return id;
+  });
+  await page.getByTestId("view-as").click();
+  await expect(page.getByTestId("view-banner")).toBeVisible();
+  await page.locator(`a[href="/view/${room}"]`).click();
+  const say = page.getByTestId("view-say");
+  await expect(say).toBeVisible();
+
+  const ticks: number[] = [];
+  page.on("request", (r) => {
+    if (r.url().includes("/run/advance")) ticks.push(r.postDataJSON().ms);
+  });
+  await page.waitForTimeout(1500);
+  expect(ticks.length).toBeGreaterThanOrEqual(3);
+  expect(Math.max(...ticks)).toBeLessThan(1000);
+
+  const area = (await page.getByTestId("view-canvas").boundingBox()) ?? {
+    x: 0,
+    y: 0,
+    width: 1280,
+    height: 720,
+  };
+  const clip = { x: area.x, y: area.y + 80, width: area.width, height: area.height * 0.6 };
+  await say.fill("go");
+  await say.press("Enter");
+  const frames = new Set<string>();
+  const end = Date.now() + 1500;
+  while (Date.now() < end) {
+    frames.add((await page.screenshot({ clip })).toString("base64"));
+  }
+  expect(frames.size, "the furni is seen between its two tiles").toBeGreaterThan(2);
+});
