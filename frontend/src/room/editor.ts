@@ -34,6 +34,7 @@ import {
   ACTION_MS,
   type AvatarAction,
   avatarExtras,
+  canStackOn,
   DEFAULT_TIMEZONE,
   directionBetween,
   drawTile,
@@ -299,6 +300,7 @@ class WbEditor extends HTMLElement {
       canStand: data.canstandon === true,
       canSit: data.cansiton === true,
       canLay: data.canlayon === true,
+      canStack: data.canputstuffon !== false,
     };
   };
 
@@ -315,7 +317,7 @@ class WbEditor extends HTMLElement {
       y,
       rot,
       z: stackHeight(this.room, this.lookup, tiles, moved?.id),
-      valid: fitsInRoom(this.room, tiles),
+      valid: fitsInRoom(this.room, tiles) && canStackOn(this.room, this.lookup, tiles, moved?.id),
     };
   }
 
@@ -629,12 +631,9 @@ class WbEditor extends HTMLElement {
   private moveTo(tile: [number, number]): void {
     const item = this.movingFurni();
     if (!item) return;
-    const [dx, dy] = [tile[0] - item.x, tile[1] - item.y];
-    if (!this.canMove(item, dx, dy)) {
-      toast(T.doesNotFit, "error");
-      return;
-    }
-    this.moveFurni(item, dx, dy);
+    const tiles = footprint({ x: tile[0], y: tile[1] }, this.lookup(item.classname), item.rot);
+    if (!this.fits(tiles, item.id)) return;
+    this.moveFurni(item, tile[0] - item.x, tile[1] - item.y);
     this.stopPlacing();
   }
 
@@ -799,10 +798,7 @@ class WbEditor extends HTMLElement {
     if (!placing) return;
     const { classname, rot } = placing;
     const tiles = footprint({ x: tile[0], y: tile[1] }, this.lookup(classname), rot);
-    if (!fitsInRoom(this.room, tiles)) {
-      toast(T.doesNotFit, "error");
-      return;
-    }
+    if (!this.fits(tiles)) return;
     const z = stackHeight(this.room, this.lookup, tiles);
     this.change(() => {
       this.room.furni.push({
@@ -817,13 +813,26 @@ class WbEditor extends HTMLElement {
     });
   }
 
+  /** Says why when the tiles cannot take the furni. */
+  private fits(tiles: [number, number][], ignoreId?: number): boolean {
+    if (!fitsInRoom(this.room, tiles)) {
+      toast(T.doesNotFit, "error");
+      return false;
+    }
+    if (!canStackOn(this.room, this.lookup, tiles, ignoreId)) {
+      toast(T.cannotStack, "error");
+      return false;
+    }
+    return true;
+  }
+
   private canMove(item: PlacedFurni, dx: number, dy: number): boolean {
     const tiles = footprint(
       { x: item.x + dx, y: item.y + dy },
       this.lookup(item.classname),
       item.rot,
     );
-    return fitsInRoom(this.room, tiles);
+    return fitsInRoom(this.room, tiles) && canStackOn(this.room, this.lookup, tiles, item.id);
   }
 
   private moveFurni(item: PlacedFurni, dx: number, dy: number): void {
@@ -847,10 +856,7 @@ class WbEditor extends HTMLElement {
     const directions = art?.manifest.directions ?? [0, 2, 4, 6];
     const rot = nextDirection(directions, item.rot);
     const tiles = footprint(item, this.lookup(item.classname), rot);
-    if (!fitsInRoom(this.room, tiles)) {
-      toast(T.doesNotFit, "error");
-      return;
-    }
+    if (!this.fits(tiles, item.id)) return;
     this.change(() => {
       item.rot = rot;
     });
@@ -1873,8 +1879,7 @@ class WbEditor extends HTMLElement {
     if (key !== "z") {
       const moved = { x: item.x, y: item.y, [key]: Math.floor(value) };
       const tiles = footprint(moved, this.lookup(item.classname), item.rot);
-      if (!fitsInRoom(this.room, tiles)) {
-        toast(T.doesNotFit, "error");
+      if (!this.fits(tiles, item.id)) {
         this.renderInspector();
         return;
       }
