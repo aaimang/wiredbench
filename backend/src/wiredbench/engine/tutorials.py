@@ -247,6 +247,51 @@ def score_counter(hotel: str = "sandbox") -> dict[str, Any]:
     }
 
 
+def visitor_view(hotel: str = "sandbox") -> dict[str, Any]:
+    """One keyword per effect a visitor should see, so View as user can be checked by eye."""
+    everyone = {"audience": "everyone"}
+
+    def said(stack: int, text: str, *effects: tuple[str, dict[str, Any]]) -> list[dict[str, Any]]:
+        boxes = [
+            _box(100 + stack * 10, "wf_trg_says_something", stack, 0, 0, {"text": text, "match": "exact"})
+        ]
+        for n, (classname, settings) in enumerate(effects, 1):
+            boxes.append(_box(100 + stack * 10 + n, classname, stack, 0, round(0.65 * n, 2), settings))
+        return boxes
+
+    throw: tuple[str, dict[str, Any]] = ("wf_xtra_rotate_to_dir", {})
+    step: tuple[str, dict[str, Any]] = ("wf_act_move_rotate_user", {"user_move": "x+"})
+    return {
+        "schema": 1,
+        "room": {"width": 12, "height": 12},
+        "furni": [
+            _plain(1, "chair_norja", 1, 4),
+            _plain(2, "chair_norja", 1, 7),
+            _plain(3, "rela_candle1", 9, 4),
+            _plain(4, "wf_floor_switch1", 9, 7),
+            *said(0, "throw", ("wf_act_rel_mov", {"furni": [1], "move_x": 4}), throw),
+            *said(1, "throw back", ("wf_act_rel_mov", {"furni": [1], "move_x": -4}), throw),
+            *said(2, "slide", ("wf_act_rel_mov", {"furni": [2], "move_x": 2})),
+            *said(3, "slide back", ("wf_act_rel_mov", {"furni": [2], "move_x": -2})),
+            *said(4, "glow", ("wf_act_set_highlight", {"furni": [3], **everyone})),
+            *said(
+                5, "hide", ("wf_act_set_visibility", {"furni": [3], "visibility": "invisible", **everyone})
+            ),
+            *said(6, "show", ("wf_act_set_visibility", {"furni": [3], "visibility": "visible", **everyone})),
+            *said(7, "hp", ("wf_act_give_var", {"variable": "hp", "value": 40, "user_source": "trigger"})),
+            *said(8, "step", step),
+            *said(9, "jump", step, step, step),
+            _box(200, "wf_trg_click_furni", 10, 0, 0, {"furni": [4]}),
+            _box(201, "wf_act_show_message", 10, 0, 0.65, {"text": "You clicked the switch."}),
+            _box(210, "wf_trg_state_changed", 11, 0, 0, {"furni": [4]}),
+            _box(211, "wf_act_toggle_state", 11, 0, 0.65, {"furni": [3]}),
+            _box(220, "wf_var_user", 0, 2, 0, {"variable": "hp"}),
+            _box(221, "wf_xtra_varfx_number", 0, 2, 0.65, {}),
+        ],
+        "avatars": [_visitor(hotel)],
+    }
+
+
 TUTORIALS: dict[str, dict[str, Any]] = {
     "switch-flip": {
         "title": "Switch flips a switch",
@@ -265,6 +310,15 @@ TUTORIALS: dict[str, dict[str, Any]] = {
         "description": "A user variable that goes up each time someone says a keyword.",
         "try": "Press Run, say point, and watch score in the variables table.",
         "build": score_counter,
+    },
+    "visitor-view": {
+        "title": "Visitor view test",
+        "description": "One keyword per effect a visitor should see: throws, slides, highlights, hiding and numbers.",
+        "try": (
+            "Open it in View as user and say throw, throw back, slide, slide back, glow, hide, show, hp, "
+            "step or jump. Click the switch for a message, and double-click it to light the candle."
+        ),
+        "build": visitor_view,
     },
     "time-tracking": {
         "title": "Time tracking example",

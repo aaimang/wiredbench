@@ -5,7 +5,15 @@ from typing import Any
 import pytest
 
 from wiredbench.engine.core import INT64_MAX, Context, Engine, replay
-from wiredbench.engine.tutorials import ANTENNA_CALC, AVATAR, KEYWORD, SEAT, SYNC_SECONDS, time_tracking
+from wiredbench.engine.tutorials import (
+    ANTENNA_CALC,
+    AVATAR,
+    KEYWORD,
+    SEAT,
+    SYNC_SECONDS,
+    time_tracking,
+    visitor_view,
+)
 
 SECOND = 1000
 
@@ -1845,3 +1853,34 @@ def test_give_and_remove_variable_add_a_hand_item_by_hand() -> None:
     remove = box(2, "wf_act_remove_var", 1, 1, 1, variable="@handitem", variable_on="user")
     ann = {**user(100, "Ann", 4, 4), "details": {"@handitem": 3}}
     assert reads(moved(remove, users=[ann]), "@handitem", "user", 100) is None
+
+
+def test_visitor_view_example_shows_each_effect() -> None:
+    engine = Engine(visitor_view("sandbox"))
+
+    def said(text: str) -> dict[str, Any]:
+        engine.apply_input({"type": "say", "user": AVATAR, "text": text})
+        engine.advance(100)
+        return engine.snapshot()
+
+    assert said("throw")["flights"][0]["id"] == 1
+    assert engine.furni[1]["x"] == 5
+    said("throw back")
+    assert engine.furni[1]["x"] == 1
+    said("slide")
+    assert engine.furni[2]["x"] == 3
+    assert said("glow")["looks"]["furni"][3]["highlight"]
+    assert said("hide")["looks"]["furni"][3]["invisible"] is True
+    assert said("show")["looks"]["furni"][3]["invisible"] is False
+    assert said("hp")["fx"][0]["value"] == "40"
+    x = engine.users[AVATAR]["x"]
+    said("step")
+    assert engine.users[AVATAR]["x"] == x + 1
+    said("jump")
+    assert engine.users[AVATAR]["x"] == x + 4
+    engine.apply_input({"type": "click", "user": AVATAR, "furni": 4})
+    engine.advance(100)
+    assert engine.messages[-1]["text"] == "You clicked the switch."
+    engine.apply_input({"type": "use", "user": AVATAR, "furni": 4})
+    engine.advance(100)
+    assert engine.furni[3]["state"] == 1
