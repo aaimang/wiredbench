@@ -18,7 +18,6 @@ import {
   normaliseRoom,
   type PlacedAvatar,
   type RoomDocument,
-  restingDir,
   standAt,
   UNKNOWN_FURNI,
   withFace,
@@ -641,7 +640,8 @@ class WbRoomView extends HTMLElement {
           x: avatar.x,
           y: avatar.y,
           z: avatar.z,
-          dir: restingDir(room, this.lookup, avatar),
+          // The server turns a seated visitor back to the seat after a moment, as a real room does.
+          dir: avatar.dir,
           action: avatar.pose,
           ...withFace(avatarExtras(avatar.details), avatar, performance.now()),
           frontX,

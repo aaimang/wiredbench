@@ -65,6 +65,9 @@ USER_DETAILS = {
 }
 ADDABLE_DETAILS = {"@handitem", "@habbicon"}  # The two a real room lets Give Variable create.
 SIGN_MS = 5000  # A real room holds a sign for a few seconds. The exact length is assumed.
+SEAT_TURN_BACK_MS = (
+    500  # A real room turns a seated user back within about a second. The exact length is assumed.
+)
 TEAM_TYPES = ("wired", "banzai", "freeze")
 TEAM_TYPE_NUMBERS = {"banzai": 0, "freeze": 1, "wired": 4}  # A real room read 0 for a Battle Banzai team.
 CHANGE_CREATED, CHANGE_VALUE, CHANGE_DELETED = 0, 1, 2
@@ -411,7 +414,7 @@ class Engine:
         elif kind == "turn":
             if (who := self.users.get(_int(user))) is not None:
                 who["dir"] = _int(entry.get("dir")) % 8
-                self._seat_users()
+                self._turn_back_later()
         elif kind == "say":
             self._say(_int(user), str(entry.get("text", ""))[:500])
         elif kind == "click":
@@ -486,6 +489,14 @@ class Engine:
             seat = self._seat_rotation(user["x"], user["y"])
             if seat is not None:
                 user["dir"] = seat
+
+    def _turn_back_later(self) -> None:
+        """A real room lets a seated user turn for a moment, then turns them back to the seat."""
+        if any(
+            (seat := self._seat_rotation(user["x"], user["y"])) is not None and user["dir"] != seat
+            for user in self.users.values()
+        ):
+            self._push(self.now_ms + SEAT_TURN_BACK_MS, "seat_turn_back", {})
 
     def _move_user(self, user_id: int, x: int, y: int) -> None:
         user = self.users.get(user_id)
@@ -679,6 +690,8 @@ class Engine:
                 self._clock_tick(payload["furni"], payload["run"])
             elif action == "game_timer":
                 self._game_timer_tick(payload["furni"], payload["run"])
+            elif action == "seat_turn_back":
+                self._seat_users()
             elif action == "sign_end":
                 # A newer sign keeps its own time.
                 if self.sign_turns.get(payload["user"]) == payload["turn"] and payload["user"] in self.users:
@@ -1216,7 +1229,7 @@ class Engine:
             match name:
                 case "@direction":
                     user["dir"] = value % 8
-                    self._seat_users()
+                    self._turn_back_later()
                 case "@position.x":
                     self._move_user(user["id"], value, user["y"])
                 case "@position.y":
@@ -1729,11 +1742,12 @@ class Engine:
         facing = round(math.atan2(dx, -dy) / (math.pi / 4)) % 8
         if addon.get("proj_rotate", True):
             item["rot"] = (facing + _int(addon.get("proj_offset"))) % 8
+            self._seat_users()
         if addon.get("proj_shooter", True):
             for user in self._users_for(addon, ctx):
                 if user in self.users:
                     self.users[user]["dir"] = facing
-        self._seat_users()
+            self._turn_back_later()
         tiles = max(abs(dx), abs(dy))
         if _int(addon.get("proj_variables")):
             self.projectile_values[furni_id] = {
@@ -1838,7 +1852,7 @@ class Engine:
                 user["dir"] = list(MOVES).index(turn)
             elif turn in ("clockwise", "counterclockwise"):
                 user["dir"] = (_int(user["dir"]) + (1 if turn == "clockwise" else -1)) % 8
-        self._seat_users()
+        self._turn_back_later()
 
     # --- Inspection ---
 
