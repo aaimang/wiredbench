@@ -1417,23 +1417,41 @@ wb-room-view {
   min-width: 0;
 }
 
-.view-foot .dashboard-problems {
-  display: grid;
-  gap: 4px;
-  justify-items: center;
-  width: min(100%, 60ch);
-  margin: 0;
-  padding: 0;
-  list-style: none;
+.view-bubbles {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
 }
 
-.view-foot .dashboard-problems li {
-  max-width: 100%;
+.view-bubble {
+  position: absolute;
+  max-width: min(40ch, calc(100% - 16px));
+  margin: 0;
   padding: 3px 10px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--line-strong);
   border-radius: 6px;
   background: var(--raised);
   overflow-wrap: anywhere;
+  transition:
+    top 0.2s ease-out,
+    opacity 0.4s;
+}
+
+.view-bubble-gone {
+  opacity: 0;
+}
+
+.furni-card.view-card {
+  z-index: 1;
+  top: auto;
+  bottom: 64px;
+  align-content: start;
+}
+
+.furni-card-head.view-card-head {
+  grid-template-columns: minmax(0, 1fr) auto;
 }
 
 .inspect {
