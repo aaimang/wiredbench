@@ -177,6 +177,14 @@ export function drawTile(
 }
 
 /** Direction numbers: 0 is -y, then clockwise on screen, so 2 is +x and 4 is +y. */
+const MAX_GLIDE_STEPS = 2;
+
+/** How many tiles an avatar walks to get there, or null when it is too far and simply appears. */
+export function glideSteps(from: [number, number], to: [number, number]): number | null {
+  const steps = Math.max(Math.abs(to[0] - from[0]), Math.abs(to[1] - from[1]));
+  return steps > MAX_GLIDE_STEPS ? null : steps;
+}
+
 export function directionBetween(from: [number, number], to: [number, number]): number {
   const dx = Math.sign(to[0] - from[0]);
   const dy = Math.sign(to[1] - from[1]);

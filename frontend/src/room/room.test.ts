@@ -18,6 +18,7 @@ import {
   furniAt,
   furniParts,
   fxFill,
+  glideSteps,
   History,
   highlightTint,
   type InfoLookup,
@@ -488,5 +489,13 @@ describe("walking looks", () => {
     const ready = new Set(["old", "plain"]);
     expect(pickWalkLook(["new", "old", "plain"], (look) => ready.has(look))).toBe("old");
     expect(pickWalkLook(["new"], (look) => ready.has(look))).toBeNull();
+  });
+});
+
+describe("glideSteps", () => {
+  it("walks a short move and lets a long one appear", () => {
+    expect(glideSteps([1, 1], [2, 2])).toBe(1);
+    expect(glideSteps([1, 1], [3, 1])).toBe(2);
+    expect(glideSteps([1, 1], [4, 1])).toBeNull();
   });
 });
