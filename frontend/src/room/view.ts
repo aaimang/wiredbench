@@ -99,6 +99,8 @@ class WbRoomView extends HTMLElement {
   private selected: Hit | null = null;
   private say: HTMLInputElement | null = null;
   private seen = new Set<string>();
+  /** Messages already there on entering were sent before this visit, so they are not shown. */
+  private entering = true;
   private stage = h("div", { class: "view-stage" });
   private inspect: InspectWindow | null = null;
   private walker: {
@@ -236,6 +238,7 @@ class WbRoomView extends HTMLElement {
       this.user = Number(select.value);
       this.walker = null;
       this.seen.clear();
+      this.entering = true;
       replace(this.bubbles);
       this.renderCard();
     });
@@ -556,9 +559,10 @@ class WbRoomView extends HTMLElement {
     // Only the latest messages are sent, so a count would stop finding new ones.
     for (const message of state.messages) {
       const key = `${message.at_ms}:${message.text}`;
-      if (!this.seen.has(key)) this.addChat(message.text, message.user);
+      if (!this.seen.has(key) && !this.entering) this.addChat(message.text, message.user);
       this.seen.add(key);
     }
+    this.entering = false;
     const now = performance.now();
     if (now - this.lastInspect >= INSPECT_MS) {
       this.lastInspect = now;
@@ -621,7 +625,7 @@ class WbRoomView extends HTMLElement {
     const [fromX, fromY, fromZ] = from;
     const target = standAt(room, this.lookup, next[0], next[1]);
     const front = drawTile(room, this.lookup, next[0], next[1]);
-    const look = withFace(avatarExtras(avatar.details), avatar, true, performance.now());
+    const look = withFace(avatarExtras(avatar.details), avatar, performance.now());
     return {
       x: fromX + (next[0] - fromX) * progress,
       y: fromY + (next[1] - fromY) * progress,
@@ -672,7 +676,7 @@ class WbRoomView extends HTMLElement {
           z: avatar.z,
           dir: avatar.dir,
           action: avatar.pose,
-          ...withFace(avatarExtras(avatar.details), avatar, false, performance.now()),
+          ...withFace(avatarExtras(avatar.details), avatar, performance.now()),
           frontX,
           frontY,
         };

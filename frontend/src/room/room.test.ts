@@ -457,29 +457,28 @@ describe("avatar faces", () => {
   const standing = { face: "happy", pose: "std" as const };
 
   it("keeps the default look with no face or an unknown one", () => {
-    expect(withFace(look, { face: null, pose: "std" }, false, 0)).toEqual(look);
-    expect(withFace(look, { face: "nope", pose: "std" }, false, 0)).toEqual(look);
+    expect(withFace(look, { face: null, pose: "std" }, 0)).toEqual(look);
+    expect(withFace(look, { face: "nope", pose: "std" }, 0)).toEqual(look);
   });
 
-  it("keeps a still face at any time and while walking", () => {
-    expect(withFace(look, standing, false, 99999).gesture).toBe("sml");
-    expect(withFace(look, standing, true, 99999).gesture).toBe("sml");
+  it("keeps a still face at any time", () => {
+    expect(withFace(look, standing, 0).gesture).toBe("sml");
+    expect(withFace(look, standing, 99999).gesture).toBe("sml");
   });
 
   it("moves a speaking face between its frames", () => {
     const speaking = { face: "speaking", pose: "std" as const };
-    expect(withFace(look, speaking, false, 0).gesture).toBe("spk");
-    expect(withFace(look, speaking, false, 200).gesture).toBe("std");
+    expect(withFace(look, speaking, 0).gesture).toBe("spk");
+    expect(withFace(look, speaking, 200).gesture).toBe("std");
     expect(faceIsAnimated("speaking")).toBe(true);
     expect(faceIsAnimated("happy")).toBe(false);
   });
 
-  it("only uses the laugh image when it would not stop a walk or a seat", () => {
+  it("laughs with an open mouth and a smile, never Habbo's broken laugh image", () => {
     const laughing = { face: "laughing", pose: "std" as const };
-    expect(withFace(look, laughing, false, 0).extra).toEqual(["lgh"]);
-    expect(withFace(look, laughing, true, 0)).toMatchObject({ extra: [], gesture: "spk" });
-    expect(withFace(look, { ...laughing, pose: "sit" }, false, 0).extra).toEqual([]);
-    expect(withFace({ ...look, extra: ["sig=6"] }, laughing, false, 0).extra).toEqual(["sig=6"]);
+    expect(withFace(look, laughing, 0)).toMatchObject({ extra: [], gesture: "spk" });
+    expect(withFace(look, laughing, 350)).toMatchObject({ extra: [], gesture: "sml" });
+    expect(withFace({ ...look, extra: ["sig=6"] }, laughing, 0).extra).toEqual(["sig=6"]);
     expect(faceGestures("laughing")).toEqual(["spk", "sml"]);
   });
 });

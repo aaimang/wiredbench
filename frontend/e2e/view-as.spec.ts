@@ -432,3 +432,58 @@ test("a visitor clicks to select, double-clicks to use and chats in bubbles", as
     .poll(async () => (await bubbles.first().boundingBox())?.y ?? 0, { message: "pushed up" })
     .toBeLessThan((first?.y ?? 0) - 10);
 });
+
+test("a room's earlier WIRED messages are not shown again on coming back", async ({ page }) => {
+  await login(page);
+  const room = await page.evaluate(async () => {
+    const me = await (await fetch("/api/auth/me")).json();
+    const headers = { "Content-Type": "application/json", "X-CSRF-Token": me.csrf_token };
+    const res = await fetch("/api/tutorials/time-tracking", {
+      method: "POST",
+      headers,
+      body: "{}",
+    });
+    const id = (await res.json()).id as number;
+    const saved = await (await fetch(`/api/sandboxes/${id}`)).json();
+    const box = (id: number, classname: string, z: number, wired: object) => ({
+      id,
+      classname,
+      x: 1,
+      y: 1,
+      z,
+      rot: 0,
+      state: 0,
+      wired,
+    });
+    saved.document.avatars = [
+      { id: 1, name: "A", hotel: "com", figure: "hd-180-1", x: 4, y: 4, z: 0, dir: 2 },
+    ];
+    saved.document.furni = [
+      box(10, "wf_trg_says_something", 0, { text: "ping" }),
+      box(11, "wf_act_show_message", 1, { text: "pong" }),
+    ];
+    await fetch(`/api/sandboxes/${id}/document`, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify({ document: saved.document, base_revision: saved.revision }),
+    });
+    return id;
+  });
+  await page.getByTestId("view-as").click();
+  await expect(page.getByTestId("view-banner")).toBeVisible();
+  await page.locator(`a[href="/view/${room}"]`).click();
+  const say = page.getByTestId("view-say");
+  const bubbles = page.locator(".view-bubble");
+  await expect(say).toBeVisible();
+  await say.fill("ping");
+  await say.press("Enter");
+  await expect(bubbles.filter({ hasText: "pong" })).toHaveCount(1);
+
+  await page.reload();
+  await expect(say).toBeVisible();
+  await page.waitForTimeout(1500);
+  await expect(bubbles).toHaveCount(0);
+  await say.fill("ping");
+  await say.press("Enter");
+  await expect(bubbles.filter({ hasText: "pong" })).toHaveCount(1);
+});

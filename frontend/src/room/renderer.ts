@@ -21,7 +21,6 @@ import {
   type FurniArtData,
   type FxShown,
   faceGestures,
-  faceHasLaugh,
   faceIsAnimated,
   figureAction,
   flightAt,
@@ -293,17 +292,12 @@ export class RoomRenderer {
   }
 
   private faceUrls(avatar: PlacedAvatar, pose: AvatarPose): string[] {
-    const extra = (pose.extra ?? []).filter((part) => part !== "lgh");
-    const action = figureAction(pose.action, extra);
+    const action = figureAction(pose.action, pose.extra ?? []);
     const frames = pose.action === "wlk" ? [0, 1, 2, 3] : [pose.frame];
     const gestures = faceGestures(avatar.face);
-    const urls = (gestures.length ? gestures : ["std"]).flatMap((gesture) =>
+    return (gestures.length ? gestures : ["std"]).flatMap((gesture) =>
       frames.map((frame) => avatarUrl(avatar, action, pose.dir, frame, gesture)),
     );
-    if (faceHasLaugh(avatar.face) && pose.action === "std" && extra.length === 0) {
-      urls.push(avatarUrl(avatar, "lgh", pose.dir, 0, "std"));
-    }
-    return urls;
   }
 
   /** Settles once all of this avatar's chosen face can be shown in this pose. */

@@ -337,7 +337,6 @@ class WbEditor extends HTMLElement {
         playing ? performance.now() - playing.started : 0,
       ),
       waiting ? { ...avatar, face: waiting.shown } : avatar,
-      this.walkers.has(avatar.id),
       performance.now(),
     );
   }
@@ -2049,7 +2048,7 @@ class WbEditor extends HTMLElement {
         T.avatarSigns.length,
       );
     }
-    const { extra, gesture } = withFace(avatarExtras(this.heldDetails(avatar)), avatar, false, 0);
+    const { extra, gesture } = withFace(avatarExtras(this.heldDetails(avatar)), avatar, 0);
     const src = avatarUrl(avatar, figureAction(avatar.pose, extra), avatar.dir, 0, gesture);
     if (preview.getAttribute("src") !== src) preview.src = src;
   }
