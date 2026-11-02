@@ -20,8 +20,7 @@ export const t = {
   },
 
   viewAs: {
-    banner:
-      "Viewing as a normal user. WIRED settings are hidden and the server refuses everything else.",
+    banner: "Viewing as a normal user. WIRED settings stay hidden.",
     stop: "Back to admin",
     title: "Rooms",
     noRooms: "There are no rooms to visit.",
@@ -29,8 +28,20 @@ export const t = {
     actingAs: "Walk as",
     noAvatars: "This room has no avatars to walk as.",
     say: "Say something",
+    sayHint: "Say something, or type :wired to inspect",
     send: "Send",
-    help: "Click a tile to walk there, or a furni to use it.",
+    inspect: {
+      title: "WIRED inspection",
+      close: "Close inspection",
+      tabs: { global: "Global", context: "Context", furni: "Furni" },
+      notes: {
+        global: "Live values for the whole room.",
+        context: "From the last box stack that started. Empty until one has run.",
+      } as Record<string, string>,
+      furniHelp: "Click a furni in the room to see its values.",
+      furniPicked: (name: string) => `Values for ${name}.`,
+      noValue: "No value",
+    },
     noWebgl: "This browser cannot draw the room, because WebGL is not available.",
   },
 

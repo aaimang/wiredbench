@@ -19,6 +19,7 @@ ALLOWED = {
     ("POST", "/api/view/sandboxes/{sandbox_id}/run"),
     ("POST", "/api/view/sandboxes/{sandbox_id}/run/advance"),
     ("POST", "/api/view/sandboxes/{sandbox_id}/run/input"),
+    ("GET", "/api/view/sandboxes/{sandbox_id}/run/inspect"),
     ("GET", "/api/furni/{revision}/{classname}/manifest"),
     ("GET", "/api/furni/{revision}/{classname}/atlas"),
     ("GET", "/api/avatars/{hotel}/lookup"),
@@ -71,12 +72,16 @@ def test_view_routes_never_send_config(api: Api, habbo: FakeHabbo) -> None:
     api.post(f"/api/sandboxes/{room}/run", json={"seed": 1})
     api.post(f"/api/sandboxes/{room}/run/command", json={"text": f":set global x {SECRET} 3"})
     api.post("/api/auth/view-as")
+    visible = api.post(f"/api/view/sandboxes/{room}/run").json()["furni"][0]["id"]
 
     answers = [
         api.get(f"/api/view/sandboxes/{room}"),
         api.post(f"/api/view/sandboxes/{room}/run"),
         api.post(f"/api/view/sandboxes/{room}/run/advance", json={"ms": 500}),
         api.post(f"/api/view/sandboxes/{room}/run/input", json={"type": "say", "user": 1, "text": "hi"}),
+        api.get(f"/api/view/sandboxes/{room}/run/inspect"),
+        api.get(f"/api/view/sandboxes/{room}/run/inspect?target=context"),
+        api.get(f"/api/view/sandboxes/{room}/run/inspect?target=furni&furni={visible}"),
     ]
     for res in answers:
         assert res.status_code in (200, 201), res.text
@@ -116,6 +121,21 @@ def test_view_shows_what_an_avatar_holds_and_no_other_details(api: Api) -> None:
     shown = {"@handitem": 1000, "@sign": 6}
     assert api.get(f"/api/view/sandboxes/{room}").json()["document"]["avatars"][0]["details"] == shown
     assert api.post(f"/api/view/sandboxes/{room}/run").json()["users"][0]["details"] == shown
+
+
+def test_inspection_shows_built_ins_only(api: Api) -> None:
+    room = room_with_secrets(api)
+    api.post(f"/api/sandboxes/{room}/run", json={"seed": 1})
+    api.post("/api/auth/view-as")
+    base = f"/api/view/sandboxes/{room}/run/inspect"
+    rows = api.get(base).json()
+    assert rows and all(row["name"].startswith("@") for row in rows)
+    assert {"name", "value"} == set(rows[0])
+    context = api.get(f"{base}?target=context").json()
+    assert context and not any(r["name"].startswith("@event.variable_update.") for r in context)
+    assert api.get(f"{base}?target=furni&furni=902").status_code == 404, "hidden boxes stay hidden"
+    furni_count = next(r["value"] for r in rows if r["name"] == "@furni_count")
+    assert int(furni_count) == len(api.post(f"/api/view/sandboxes/{room}/run").json()["furni"])
 
 
 def test_view_input_cannot_use_debug_or_api_writes(api: Api) -> None:

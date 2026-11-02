@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from wiredbench.api.deps import Services, audit, get_db, get_services, ticker, viewer
 from wiredbench.api.engine import furni_states
+from wiredbench.engine import internal
 from wiredbench.engine.core import MAX_ADVANCE_MS
 from wiredbench.engine.sessions import Run
 from wiredbench.errors import ApiError, not_found
@@ -28,6 +29,8 @@ AVATAR_FIELDS = ("id", "name", "hotel", "figure", "x", "y", "z", "dir", "pose", 
 VISIBLE_DETAILS = ("@handitem", "@sign", "@is_idle")
 ITEM_FIELDS = ("classname", "revision", "xdim", "ydim", "height", "data")
 MESSAGES_SHOWN = 20
+# These carry the value of a room's own variable, which a visitor must not read.
+PRIVATE_BUILT_INS = "@event.variable_update."
 
 
 class ViewInput(BaseModel):
@@ -184,6 +187,35 @@ def advance_room(
         if not run.paused:
             run.engine.advance(body.ms)
         return _public_state(run, hidden, user)
+
+
+@router.get("/sandboxes/{sandbox_id}/run/inspect")
+@viewer
+@ticker
+def inspect_room(
+    sandbox_id: int,
+    target: Literal["global", "context", "furni"] = Query("global"),
+    furni: int | None = Query(None, ge=0, le=2**31),
+    services: Services = Depends(get_services),
+    db: Session = Depends(get_db),
+) -> list[dict[str, Any]]:
+    """Built-in values only, as :wired shows them. A room's own variables and boxes stay private."""
+    sandbox = _sandbox(db, sandbox_id)
+    run = _run(sandbox_id, services)
+    hidden, _ = _hidden_ids(services, sandbox)
+    if furni is not None and furni in hidden:
+        raise not_found("Furni")
+    with run.lock:
+        values = {row["name"]: row["value"] for row in run.engine.view_built_ins(target, furni)}
+    if "@furni_count" in values:
+        values["@furni_count"] = str(int(values["@furni_count"]) - len(hidden))
+    if target == "context":  # Every name is listed, because most have no value outside a stack.
+        names = [row["name"] for row in internal.rows() if row["target"] == "context"]
+    else:
+        names = list(values)
+    return [
+        {"name": name, "value": values.get(name)} for name in names if not name.startswith(PRIVATE_BUILT_INS)
+    ]
 
 
 @router.post("/sandboxes/{sandbox_id}/run/input")

@@ -28,8 +28,9 @@ Wiredbench is not affiliated with, endorsed, sponsored, or specifically approved
   its own read and write keys, which you generate on the dashboard and which are stored hashed.
 - **Dashboard:** runs per box, busiest stacks, signals, errors and limit hits for running rooms. These are
   simulated counts, not hotel performance.
-- **View as user:** walk and chat in a room as a visitor. WIRED settings, the trace and variables never
-  leave the server, boxes with no catalogue offer are hidden, and every other route is refused.
+- **View as user:** walk and chat in a room as a visitor, and type `:wired` to see built-in values for
+  global, context and furni. WIRED settings, the trace and a room's own variables never leave the
+  server, boxes with no catalogue offer are hidden, and every other route is refused.
 - **Import and export:** bring in a G-Presets JSON file, and export it again with unknown fields untouched.
   Export also makes a furni list and warns about boxes that may be hard to get. A small exported file has
   worked in a real room, and larger setups are still unproven. A Wiredbench file backs up a room exactly.
@@ -263,6 +264,7 @@ running server.
 | POST | `/api/view/sandboxes/{sandbox_id}/run` | Admin |
 | POST | `/api/view/sandboxes/{sandbox_id}/run/advance` | Admin |
 | POST | `/api/view/sandboxes/{sandbox_id}/run/input` | Admin |
+| GET | `/api/view/sandboxes/{sandbox_id}/run/inspect` | Admin |
 | GET | `/api/workspace/tree` | Admin |
 | GET | `/healthz` | Public |
 <!-- /generated:api -->
