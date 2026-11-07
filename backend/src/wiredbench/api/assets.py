@@ -110,15 +110,19 @@ async def avatar_image(
     action: str = Query("std", pattern=ACTION, max_length=40),
     gesture: Gesture = "std",
     direction: int = Query(2, ge=0, le=7),
-    frame: int = Query(0, ge=0, le=3),
+    frame: int = Query(0, ge=0, le=999),
     drawn_by: Literal["habbo", "wiredbench"] = "habbo",
+    effect: int | None = Query(None, ge=1, le=100_000),
     services: Services = Depends(get_services),
 ) -> FileResponse:
     if not FIGURE.fullmatch(figure):
         raise ApiError(422, "invalid_request", "That is not a valid avatar look.")
+    # Habbo's image service has 4 frames at most. An effect drawn here can have many more.
+    if frame > 3 and effect is None:
+        raise ApiError(422, "invalid_request", "That frame is out of range.")
     try:
         path = await run_in_threadpool(
-            services.assets.avatar, hotel, figure, action, gesture, direction, frame, drawn_by
+            services.assets.avatar, hotel, figure, action, gesture, direction, frame, drawn_by, effect
         )
     except UpstreamError as exc:
         raise ApiError(502, "upstream_unavailable", "Could not download this avatar.") from exc

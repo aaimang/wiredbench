@@ -17,6 +17,7 @@ import { depth, screenToTile, TILE_HEIGHT, TILE_WIDTH, tileCentre, Z_UNIT } from
 import {
   type AvatarAction,
   avatarExtras,
+  EFFECT_FRAME_MS,
   type EffectManifest,
   effectLayers,
   FACE_NAMES,
@@ -113,6 +114,8 @@ const FX_RISE_FURNI = 40;
 const ART_VERSION = 3;
 const AVATAR_ANCHOR = { x: 32, y: 96 };
 const AVATAR_SIZE = { w: 64, h: 110 };
+/** Room the server leaves around an avatar drawn with an effect, matching EFFECT_MARGIN there. */
+const EFFECT_MARGIN = { x: 16, top: 90 };
 const SELECTED_TINT = 0xfff0a0;
 const PICKED_TINT = 0xb28ad8;
 /** How far a pose sits below the top of its furni, in height units. Matched by eye to real furni. */
@@ -142,6 +145,7 @@ export function avatarUrl(
   dir: number,
   frame: number,
   gesture = "std",
+  effect?: number,
 ): string {
   // The choice is part of the address, so switching it never shows an image cached the other way.
   const drawnBy = state.settings?.avatar_drawing === "wiredbench" ? { drawn_by: "wiredbench" } : {};
@@ -152,6 +156,7 @@ export function avatarUrl(
     direction: dir,
     frame,
     ...drawnBy,
+    ...(effect ? { effect } : {}),
   });
 }
 
@@ -174,10 +179,12 @@ export class RoomRenderer {
   private warmLoading = 0;
   private parts = new Map<string, Texture>();
   /** Undefined while loading, null when the effect cannot be drawn. */
+  /** Undefined while loading, null when unknown. A body-changing effect has no atlas. */
   private effects = new Map<
     string,
-    { manifest: EffectManifest; atlas: Texture } | null | undefined
+    { manifest: EffectManifest; atlas: Texture | null } | null | undefined
   >();
+  private effectShown = new Map<number, Texture>();
   private hits: { hit: Hit; bounds: Rectangle; order: number }[] = [];
   private scene: Scene | null = null;
   private drawnRoomSize = "";
@@ -208,7 +215,7 @@ export class RoomRenderer {
     this.app.destroy({ removeView: true }, { children: true });
   }
 
-  /** Fetches an effect's layers once. Null means it cannot be drawn, so the avatar shows without it. */
+  /** Fetches an effect's layers once. Null means it is unknown, so the avatar shows without it. */
   private loadEffect(hotel: string, effect: number): void {
     const key = `${hotel}/${effect}`;
     if (this.effects.has(key)) return;
@@ -216,7 +223,7 @@ export class RoomRenderer {
     void (async () => {
       try {
         const manifest = await get<EffectManifest>(`/api/effects/${hotel}/${effect}/manifest`);
-        if (!manifest.drawable) return null;
+        if (!manifest.drawable) return { manifest, atlas: null };
         const atlas = await loadTexture(`/api/effects/${hotel}/${effect}/atlas`);
         return { manifest, atlas };
       } catch {
@@ -237,7 +244,7 @@ export class RoomRenderer {
       this.loadEffect(avatar.hotel, effect);
       return;
     }
-    if (!art) return;
+    if (!art?.atlas) return;
     if ((art.manifest.frames?.length ?? 0) > 1) this.animating = true;
     for (const layer of effectLayers(art.manifest, dir, performance.now())) {
       const sprite = new Sprite(this.partTexture(art.atlas, layer.image));
@@ -932,6 +939,35 @@ export class RoomRenderer {
       void this.loadAvatar(this.walkUrl(avatar, extra, gesture, dir, frame));
   }
 
+  /**
+   * An effect that changes the body, such as a hoverboard, drawn by the server one frame at a time. Only
+   * with Wiredbench's own avatar drawing, because Habbo's image service draws no effects. Null otherwise.
+   */
+  private bodyEffectTexture(
+    avatar: PlacedAvatar,
+    pose: AvatarPose,
+  ): { texture: Texture | null } | null {
+    if (state.settings?.avatar_drawing !== "wiredbench") return null;
+    const effect = (avatar.details as Record<string, number> | undefined)?.["@effect"] ?? 0;
+    if (effect <= 0) return null;
+    const art = this.effects.get(`${avatar.hotel}/${effect}`);
+    if (art === undefined) this.loadEffect(avatar.hotel, effect);
+    const count = art?.manifest.drawable === false ? (art.manifest.frame_count ?? 0) : 0;
+    if (!count) return null;
+    if (count > 1) this.animating = true;
+    const step = Math.floor(performance.now() / EFFECT_FRAME_MS);
+    const action = figureAction(pose.action, pose.extra ?? []);
+    const url = (frame: number) =>
+      avatarUrl(avatar, action, pose.dir, frame % count, pose.gesture, effect);
+    const loaded = this.avatars.get(url(step));
+    if (loaded === undefined) void this.loadAvatar(url(step));
+    this.warm([url(step + 1), url(step + 2)]);
+    // The last frame stays up while the next loads, so the effect never flickers.
+    const texture = loaded ?? this.effectShown.get(avatar.id) ?? null;
+    if (loaded) this.effectShown.set(avatar.id, loaded);
+    return { texture };
+  }
+
   private drawAvatar(scene: Scene, avatar: PlacedAvatar): void {
     const pose = scene.avatarPose(avatar);
     const centre = tileCentre(pose.x, pose.y, pose.z - (POSE_DROP[pose.action] ?? 0));
@@ -939,10 +975,14 @@ export class RoomRenderer {
     const top = centre.y - AVATAR_ANCHOR.y;
     const selected = scene.selected?.kind === "avatar" && scene.selected.id === avatar.id;
     const order = depth(pose.frontX, pose.frontY, pose.z, 900);
+    const changed = this.bodyEffectTexture(avatar, pose);
     const texture =
-      pose.action === "wlk"
-        ? this.walkingTexture(avatar, pose)
-        : this.standingTexture(avatar, pose);
+      changed?.texture ??
+      (changed
+        ? null
+        : pose.action === "wlk"
+          ? this.walkingTexture(avatar, pose)
+          : this.standingTexture(avatar, pose));
     if (faceIsAnimated(avatar.face)) this.animating = true;
     void this.loadFace(avatar, pose);
     if (selected) {
@@ -954,7 +994,10 @@ export class RoomRenderer {
     }
     if (texture) {
       const sprite = new Sprite(texture);
-      sprite.position.set(left, top);
+      sprite.position.set(
+        left - (changed ? EFFECT_MARGIN.x : 0),
+        top - (changed ? EFFECT_MARGIN.top : 0),
+      );
       sprite.zIndex = order;
       const look = scene.looks?.users[avatar.id];
       if (look?.highlight?.pulse) this.animating = true;
@@ -963,7 +1006,7 @@ export class RoomRenderer {
       if (look?.invisible) sprite.alpha = selected ? SELECTED_INVISIBLE_OPACITY : 0;
       this.layer.addChild(sprite);
       if (look?.highlight && !look.invisible) this.addLook([sprite], look.highlight);
-      if (!look?.invisible) this.drawEffect(avatar, pose.dir, left, top, order);
+      if (!look?.invisible && !changed) this.drawEffect(avatar, pose.dir, left, top, order);
     } else {
       const stand = new Graphics()
         .ellipse(centre.x, centre.y - 30, 12, 30)

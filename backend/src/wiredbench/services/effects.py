@@ -34,7 +34,7 @@ BODY_CHANGES = {"add", "remove", "override", "avatar", "direction"}
 INK_ADD = "33"
 MAX_FRAMES = 2000
 # Raised when the manifest's shape changes, so effects built before are built again.
-EFFECT_VERSION = 1
+EFFECT_VERSION = 2
 
 
 def facts() -> dict[str, Any]:
@@ -94,7 +94,8 @@ def build(data: bytes, lib: str) -> tuple[dict[str, Any], bytes | None]:
     if not sprites:
         why.add("no sprites")
     if why:
-        return {"drawable": False, "why": sorted(why)}, None
+        # The frame count lets the room play a body-changing effect drawn from its parts.
+        return {"drawable": False, "why": sorted(why), "frame_count": max(1, len(frames))}, None
     if len(frames) > MAX_FRAMES:
         return {"drawable": False, "why": ["too many frames"]}, None
 

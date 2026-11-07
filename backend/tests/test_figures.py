@@ -215,3 +215,78 @@ def test_the_setting_is_saved(api: Api, tmp_path: Path) -> None:
         == "wiredbench"
     )
     assert api.patch("/api/settings", json={"avatar_drawing": "evil"}).status_code == 422
+
+
+BOARD = """<animation name="fx.2">
+  <sprite id="avatar"/>
+  <add id="fx1_1" align="torso"/>
+  <remove id="hd"/>
+  <frame>
+    <fx id="avatar" frame="0" dy="-20"/>
+    <fx id="fx1_1" frame="0"/>
+    <bodypart id="torso" action="Default" frame="0"/>
+    <bodypart id="head"><item id="ey" base="fx1_1"/></bodypart>
+  </frame>
+  <frame repeats="2"><fx id="avatar" frame="0" dy="-10"/><fx id="fx1_1" frame="1"/></frame>
+</animation>"""
+
+
+def test_an_effect_lifts_the_avatar_adds_and_swaps_parts_and_removes_others(parts: tuple) -> None:
+    from swf_builder import effect_swf
+
+    rules, data, mapping = parts
+    parsed = figures.parse_effect(effect_swf("Board", BOARD), "Board")
+    assert parsed is not None
+    art, animation = parsed
+    assert len(animation.frames) == 3, "a repeated frame counts twice for playing"
+    looks = figures.resolve("hd-180-7", data, mapping)
+    assert looks is not None
+    image = figures.compose_effect(
+        rules,
+        looks,
+        {"lib_a": library(), "Board": art},
+        2,
+        2,
+        figures.Pose("vertical", [], [], 0),
+        animation,
+        0,
+    )
+    margin_x, margin_top, margin_bottom = figures.EFFECT_MARGIN
+    assert image.size == (64 + 2 * margin_x, 110 + margin_top + margin_bottom)
+    body = image.getpixel((margin_x + 10, margin_top + 10 - 20))
+    assert body == (255, 0, 0, 255), "the body is drawn 20 pixels higher"
+    assert image.getpixel((margin_x + 20, margin_top + 20 - 20))[3] == 0, "the head is removed"
+    added = image.getpixel((margin_x + 10, margin_top + 100 - 80 - 20))
+    assert added[3] == 255, "the effect's own part is drawn on the torso"
+
+
+def test_recolouring_shades_between_two_colours() -> None:
+    white = Image.new("RGBA", (2, 1), (255, 255, 255, 255))
+    white.putpixel((1, 0), (0, 0, 0, 255))
+    shaded = figures.recolour(white, 4, "#00FFFF", "#FFFFFF")
+    assert shaded.getpixel((0, 0)) == (0, 255, 255, 255), "light art takes the foreground"
+    assert shaded.getpixel((1, 0)) == (255, 255, 255, 255), "dark art takes the background"
+    assert figures.recolour(white, 37, "FFFFFFFF", "66000000").getpixel((0, 0))[3] == 127, (
+        "ink 37 halves opacity"
+    )
+
+
+def test_effects_are_only_drawn_by_wiredbench(
+    api: Api, habbo: FakeHabbo, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import io
+
+    out = io.BytesIO()
+    Image.new("RGBA", (96, 210), (1, 2, 3, 255)).save(out, "PNG")
+    calls: list[object] = []
+
+    def fake(self: figures.Figures, *args: object) -> bytes:
+        calls.append(args[-1])
+        return out.getvalue()
+
+    monkeypatch.setattr(figures.Figures, "draw", fake)
+    params = {"figure": "hd-180-1", "effect": 2, "frame": 12}
+    assert api.get("/api/avatars/com/image", params=params).status_code == 404, "Habbo draws no effects"
+    drawn = api.get("/api/avatars/com/image", params={**params, "drawn_by": "wiredbench"})
+    assert drawn.status_code == 200 and calls == [2]
+    assert api.get("/api/avatars/com/image", params={"figure": "hd-180-1", "frame": 12}).status_code == 422
