@@ -1,5 +1,46 @@
 # Changelog
 
+## [0.9.0](https://github.com/aaimang/wiredbench/compare/v0.8.0...v0.9.0) (2026-11-07)
+
+
+### Features
+
+* add a visitor view test example room ([#72](https://github.com/aaimang/wiredbench/issues/72)) ([5251392](https://github.com/aaimang/wiredbench/commit/5251392291984ed0232ce43dccde6b79b914c64b))
+* add avatar faces to the user panel ([#65](https://github.com/aaimang/wiredbench/issues/65)) ([3ddcf8f](https://github.com/aaimang/wiredbench/commit/3ddcf8fe6c7eeeeae88a206110c8addc4a17687f))
+* add room time zones and avatar details ([#58](https://github.com/aaimang/wiredbench/issues/58)) ([fedfd6a](https://github.com/aaimang/wiredbench/commit/fedfd6ad67785a7a4017ee6353ed7c0fc8f8d7e7))
+* add time zone list, default zone and hideable menu ([#62](https://github.com/aaimang/wiredbench/issues/62)) ([80b8a03](https://github.com/aaimang/wiredbench/commit/80b8a032eb1550bfc5137a0229c2d511e04b595a))
+* clean up view as user and add a :wired inspection window ([#68](https://github.com/aaimang/wiredbench/issues/68)) ([aeabffe](https://github.com/aaimang/wiredbench/commit/aeabffe9fbb5232a6a692b60119f5e52748d52cc))
+* draw avatar actions and signs from the user panel ([#63](https://github.com/aaimang/wiredbench/issues/63)) ([1f2b887](https://github.com/aaimang/wiredbench/commit/1f2b887ac5eeddc75ece6264d7be71ebad330533))
+* draw avatar effects that add layers around the avatar ([#81](https://github.com/aaimang/wiredbench/issues/81)) ([bd93820](https://github.com/aaimang/wiredbench/commit/bd938206eea91e0feea77255d967de783947f775))
+* draw effects that change the body, frame by frame ([#86](https://github.com/aaimang/wiredbench/issues/86)) ([b21fa05](https://github.com/aaimang/wiredbench/commit/b21fa05e33a633708f7ae87442f20b74255a6aaa))
+* draw every avatar pose and action from its parts ([#85](https://github.com/aaimang/wiredbench/issues/85)) ([440f37d](https://github.com/aaimang/wiredbench/commit/440f37d3182c1edac5e4117bbf63e57cf1a47452))
+* draw sliding and thrown furni on every frame ([#74](https://github.com/aaimang/wiredbench/issues/74)) ([ad9501a](https://github.com/aaimang/wiredbench/commit/ad9501acb716483a243e9c0dcb849cd63af494ee))
+* draw still avatars from their parts using Habbo's client rules ([#84](https://github.com/aaimang/wiredbench/issues/84)) ([3efd9b0](https://github.com/aaimang/wiredbench/commit/3efd9b0dfd3624448eab1a1b5ea0b9abd253ff80))
+* mark avatar effects the room cannot draw ([#83](https://github.com/aaimang/wiredbench/issues/83)) ([062215c](https://github.com/aaimang/wiredbench/commit/062215c4f73f0834c854115cf4de851d91773284))
+* put nothing on furni that cannot hold things, such as a chair ([#78](https://github.com/aaimang/wiredbench/issues/78)) ([f765b38](https://github.com/aaimang/wiredbench/commit/f765b38835fe6cc5d2f00260cf54e0edbc4b2ce7))
+* select, use and chat in view as user as a client does ([#71](https://github.com/aaimang/wiredbench/issues/71)) ([352a4c2](https://github.com/aaimang/wiredbench/commit/352a4c2e75f571f5c0fdf046eefe7108dd488983))
+* show WIRED effects to visitors in view as user ([#69](https://github.com/aaimang/wiredbench/issues/69)) ([3de7220](https://github.com/aaimang/wiredbench/commit/3de722056618977328a50cee152df82fcee1f5db))
+* update view as user four times a second and animate moves ([#70](https://github.com/aaimang/wiredbench/issues/70)) ([894ba12](https://github.com/aaimang/wiredbench/commit/894ba121b286b180db1b17dacfc1dd9d176de8aa))
+
+
+### Bug Fixes
+
+* a sitting or lying avatar faces the way its seat is turned ([#79](https://github.com/aaimang/wiredbench/issues/79)) ([fdb911f](https://github.com/aaimang/wiredbench/commit/fdb911f921f2fafe1d2c5dc79fa21c8345bafd9f))
+* draw laughing without Habbo's broken laugh image and skip old messages on entry ([#73](https://github.com/aaimang/wiredbench/issues/73)) ([4d94aab](https://github.com/aaimang/wiredbench/commit/4d94aabf3362d5570a500266c968127667b47787))
+* draw the right hand item in every direction and keep walking smooth ([#64](https://github.com/aaimang/wiredbench/issues/64)) ([b857a03](https://github.com/aaimang/wiredbench/commit/b857a03b71ef8c133e319c0d34692bab03979a74))
+* give View as user the catalogue's furni facts, and add [@is](https://github.com/is)_stackable ([#77](https://github.com/aaimang/wiredbench/issues/77)) ([31f9ba0](https://github.com/aaimang/wiredbench/commit/31f9ba03cb9209626631d5b13e6b8393bc687f64))
+* Habbo's timing for respect, kiss while walking, effects that block a kiss and lift skates ([#88](https://github.com/aaimang/wiredbench/issues/88)) ([789dcfd](https://github.com/aaimang/wiredbench/commit/789dcfde3d43fc851621d0d07aea23061d92e066))
+* keep the avatar moving until a new action or face has loaded ([#66](https://github.com/aaimang/wiredbench/issues/66)) ([3635d2b](https://github.com/aaimang/wiredbench/commit/3635d2b941344cfafad4100b4dc86684562917c7))
+* keep the avatar stepping while a walking look loads ([#67](https://github.com/aaimang/wiredbench/issues/67)) ([7c6cc39](https://github.com/aaimang/wiredbench/commit/7c6cc39cbffe0340666c33bd4e8259d8650ad574))
+* keep the direction a visitor walked in View as user ([#75](https://github.com/aaimang/wiredbench/issues/75)) ([066f112](https://github.com/aaimang/wiredbench/commit/066f1124a1696c6fd52bfae0df0eb2745fc983c8))
+* keep walking direction and tidy the user panel ([#60](https://github.com/aaimang/wiredbench/issues/60)) ([d507f7e](https://github.com/aaimang/wiredbench/commit/d507f7e81860380ca4e6d0bbd88dd14996391bea))
+* let a seated user turn for a moment before facing the seat again ([#80](https://github.com/aaimang/wiredbench/issues/80)) ([237a4c5](https://github.com/aaimang/wiredbench/commit/237a4c5b0a3f7f80805e7090a83b73c318e63caf))
+* stand up when the seat is moved away in Build, facing the same way ([#89](https://github.com/aaimang/wiredbench/issues/89)) ([ff156b9](https://github.com/aaimang/wiredbench/commit/ff156b9e74f899a4adfe936f2bf45d5af441f40c))
+* stop run controls losing clicks ([#61](https://github.com/aaimang/wiredbench/issues/61)) ([382fe75](https://github.com/aaimang/wiredbench/commit/382fe75021b26f927962bf4ebfc9e5aaae969e59))
+* update the Python base image for the apt security fix ([#82](https://github.com/aaimang/wiredbench/issues/82)) ([85f825a](https://github.com/aaimang/wiredbench/commit/85f825a9536ef41908066cacf9b6e91518d0d227))
+* walk onto a clicked chair or box in View as user ([#76](https://github.com/aaimang/wiredbench/issues/76)) ([d352279](https://github.com/aaimang/wiredbench/commit/d35227923fa2d0b89e25ae3f0837d546826d5cc7))
+* walk with a body effect, one blow kiss, effect overrides and shadows ([#87](https://github.com/aaimang/wiredbench/issues/87)) ([2157f54](https://github.com/aaimang/wiredbench/commit/2157f5415ce7f43d4efb08747dde7e104a5172b4))
+
 ## [0.8.0](https://github.com/aaimang/wiredbench/compare/v0.7.0...v0.8.0) (2026-11-01)
 
 
