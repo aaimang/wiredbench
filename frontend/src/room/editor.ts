@@ -56,8 +56,10 @@ import {
   type RoomDocument,
   restingDir,
   SIGN_MS,
+  seatedFacing,
   stackHeight,
   standAt,
+  standUpOffSeats,
   UNKNOWN_FURNI,
   withFace,
 } from "./model";
@@ -200,6 +202,8 @@ class WbEditor extends HTMLElement {
       }
       this.savedAt = this.sandbox.updated_at;
       await this.loadItems(this.room.furni.map((f) => f.classname));
+      // Rooms saved before seats stood people up can hold someone sitting on nothing.
+      standUpOffSeats(this.room, this.lookup);
     } catch (error) {
       replace(
         this,
@@ -697,7 +701,10 @@ class WbEditor extends HTMLElement {
 
   private change(apply: () => void): void {
     this.history.record(this.room);
+    const facing = seatedFacing(this.room, this.lookup);
     apply();
+    // A chair moved or picked up from under someone stands them up, as in a real room, facing the same way.
+    standUpOffSeats(this.room, this.lookup, facing);
     this.markDirty();
     this.renderPanels();
   }
