@@ -170,6 +170,15 @@ export function avatarUrl(
   });
 }
 
+/** Habbo's floor shadow for an avatar's pose: standing (and walking) or sitting. Lying has none. */
+export function shadowUrl(
+  avatar: Pick<PlacedAvatar, "hotel">,
+  pose: Pick<AvatarPose, "action" | "dir">,
+): string {
+  const kind = pose.action === "sit" || pose.action === "lay" ? pose.action : "std";
+  return withQuery(`/api/avatars/${avatar.hotel}/shadow`, { pose: kind, direction: pose.dir });
+}
+
 /**
  * The image of an avatar with a body-changing effect at a moment. The pose keeps its own frame, such
  * as a step of the walk, and the effect plays on its own clock, so walking still moves the legs.
@@ -1073,6 +1082,32 @@ export class RoomRenderer {
     return { texture: loaded ?? shown.get(key) ?? shown.get("last") ?? null };
   }
 
+  /**
+   * The floor shadow Habbo's client draws under every avatar. It stays on the floor when an effect lifts
+   * the avatar, and is left out when the effect removes it or draws its own.
+   */
+  private drawShadow(
+    avatar: PlacedAvatar,
+    pose: AvatarPose,
+    left: number,
+    top: number,
+    order: number,
+  ) {
+    const effect = (avatar.details as Record<string, number> | undefined)?.["@effect"] ?? 0;
+    const art = effect > 0 ? this.effects.get(`${avatar.hotel}/${effect}`) : undefined;
+    const drawsBody =
+      state.settings?.avatar_drawing === "wiredbench" && art?.manifest.drawable === false;
+    if (drawsBody && art?.manifest.shadow !== undefined && art.manifest.shadow !== "plain") return;
+    const url = shadowUrl(avatar, pose);
+    const texture = this.avatars.get(url);
+    if (texture === undefined) void this.loadAvatar(url);
+    if (!texture) return;
+    const sprite = new Sprite(texture);
+    sprite.position.set(left, top);
+    sprite.zIndex = order - 0.5;
+    this.layer.addChild(sprite);
+  }
+
   private drawAvatar(scene: Scene, avatar: PlacedAvatar): void {
     const pose = scene.avatarPose(avatar);
     const centre = tileCentre(pose.x, pose.y, pose.z - (POSE_DROP[pose.action] ?? 0));
@@ -1097,6 +1132,8 @@ export class RoomRenderer {
       ring.zIndex = order - 1;
       this.layer.addChild(ring);
     }
+    const look = scene.looks?.users[avatar.id];
+    if (texture && !look?.invisible) this.drawShadow(avatar, pose, left, top, order);
     if (texture) {
       const sprite = new Sprite(texture);
       sprite.position.set(
@@ -1104,7 +1141,6 @@ export class RoomRenderer {
         top - (changed ? EFFECT_MARGIN.top : 0),
       );
       sprite.zIndex = order;
-      const look = scene.looks?.users[avatar.id];
       if (look?.highlight?.pulse) this.animating = true;
       const tinted = highlightTint(look?.highlight, performance.now());
       if (tinted !== null) sprite.tint = tinted;

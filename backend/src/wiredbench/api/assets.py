@@ -103,6 +103,24 @@ async def avatar_lookup(
     return found
 
 
+@router.get("/avatars/{hotel}/shadow")
+@viewer
+async def avatar_shadow(
+    hotel: Hotel,
+    pose: Literal["std", "sit", "lay"] = "std",
+    direction: int = Query(2, ge=0, le=7),
+    services: Services = Depends(get_services),
+) -> FileResponse:
+    """The floor shadow Habbo's client draws under an avatar. Lying has none."""
+    try:
+        path = await run_in_threadpool(services.assets.avatar_shadow, hotel, pose, direction)
+    except UpstreamError as exc:
+        raise ApiError(502, "upstream_unavailable", "Could not download the shadow.") from exc
+    if path is None:
+        raise not_found("Shadow")
+    return FileResponse(path, media_type="image/png", headers=IMMUTABLE)
+
+
 @router.get("/avatars/{hotel}/image")
 @viewer
 async def avatar_image(

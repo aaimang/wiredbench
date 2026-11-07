@@ -59,7 +59,7 @@ WALK_STATE = "mv"
 BODY_LIBRARY = "hh_human_body"
 MAX_ALIAS_HOPS = 6
 # Raised when drawing changes, so avatars drawn before are drawn again.
-FIGURE_RULES_VERSION = 6
+FIGURE_RULES_VERSION = 7
 
 
 @dataclass
@@ -737,6 +737,38 @@ def as_light(image: Image.Image) -> Image.Image:
     return Image.merge("RGBA", (*rgb, alpha))
 
 
+def compose_shadow(body: Library, pose_name: str, direction: int) -> Image.Image | None:
+    """The floor shadow Habbo's client draws under an avatar, on the plain avatar's canvas.
+
+    The art is in the body library: one for standing and one for sitting. Lying has none. A direction
+    without its own art uses its mirror, then the art for direction 0, which is round. Habbo draws it
+    see-through, measured in a real room at about SHADOW_ALPHA.
+    """
+    if pose_name not in ("std", "sit"):
+        return None
+    if pose_name == "sit" and direction % 2:
+        direction = 4  # As the avatar itself: a diagonal seat is drawn facing 4.
+    size, origin = CANVASES["sitting" if pose_name == "sit" else "vertical"]
+    stem = f"h_{pose_name}_sd_1"
+    found, flip = body.find(f"{stem}_{direction}", 0), False
+    if not found and direction in MIRRORED:
+        found, flip = body.find(f"{stem}_{MIRRORED[direction]}", 0), True
+    if not found:
+        found, flip = body.find(f"{stem}_0", 0), False
+    if not found:
+        return None
+    image, (offset_x, offset_y) = found
+    left, top = origin[0] - offset_x, origin[1] - offset_y
+    if flip:
+        image = image.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
+        left = size[0] - left - image.width
+    image = image.copy()
+    image.putalpha(image.getchannel("A").point(lambda v: v * SHADOW_ALPHA // 255))
+    canvas = Image.new("RGBA", size, (0, 0, 0, 0))
+    paste(canvas, image, left, top)
+    return canvas
+
+
 def compose_effect(
     rules: Rules,
     looks: list[Look],
@@ -902,6 +934,31 @@ class Figures:
                     self._libraries[name], found = parsed
             self._effects[effect] = found
         return self._effects[effect]
+
+    def shadow(self, hotel: str, pose_name: str, direction: int) -> bytes | None:
+        """A PNG of the floor shadow under an avatar in a pose, or None when Habbo draws none."""
+        with self._lock:
+            try:
+                client = self._client(hotel)
+                if client is None:
+                    return None
+                base, build = client
+                if BODY_LIBRARY not in self._libraries:
+                    data = self._cached(
+                        self.root / build / f"{BODY_LIBRARY}.swf",
+                        f"{base}{BODY_LIBRARY}.swf",
+                        MAX_LIBRARY_BYTES,
+                    )
+                    self._libraries[BODY_LIBRARY] = parse_library(data, BODY_LIBRARY)
+                image = compose_shadow(self._libraries[BODY_LIBRARY], pose_name, direction)
+            except (UpstreamError, ValueError, KeyError, ET.ParseError, swf.SwfError, OSError) as exc:
+                log.warning("Could not draw the avatar shadow: %s", exc)
+                return None
+        if image is None:
+            return None
+        out = io.BytesIO()
+        image.save(out, "PNG")
+        return out.getvalue()
 
     def draw(
         self,

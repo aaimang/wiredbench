@@ -57,6 +57,7 @@ def test_an_effect_that_changes_the_body_is_not_drawn() -> None:
         "why": ["add", "avatar", "bodypart"],
         "frame_count": 1,
         "lift": 0,
+        "shadow": "plain",
     }
 
 
@@ -146,3 +147,19 @@ def test_skates_count_their_raise_in_every_direction() -> None:
     </animation>"""
     manifest, _ = effects.build(effect_swf("Skates", skates), "Skates")
     assert manifest["lift"] == 10
+
+
+def test_a_body_effect_says_what_happens_to_the_floor_shadow() -> None:
+    def shadow_of(animation: str, shadow: str = "") -> str:
+        manifest, _ = effects.build(effect_swf("Fx", animation, shadow=shadow), "Fx")
+        return str(manifest["shadow"])
+
+    plain = (
+        '<animation name="fx.1"><sprite id="avatar"/><frame><fx id="avatar" frame="0"/></frame></animation>'
+    )
+    assert shadow_of(plain) == "plain", "a broom keeps Habbo's own floor shadow"
+    removes = plain.replace('<sprite id="avatar"/>', '<sprite id="avatar"/><remove id="sd"/>')
+    assert shadow_of(removes) == "none", "a duck removes it"
+    own = plain.replace('<sprite id="avatar"/>', '<sprite id="avatar"/><shadow id="std_fx1_sd_0"/>')
+    assert shadow_of(own, shadow="std_fx1_sd_0") == "own", "a barrel draws its own"
+    assert shadow_of(own) == "plain", "a shadow named without art keeps the plain one"

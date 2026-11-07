@@ -354,6 +354,7 @@ export const t = {
       respect: "Thumbs up",
       sixty_seven: "67",
     } as Record<string, string>,
+    actionBlockedByEffect: "Not with an effect on, as in Habbo.",
     notDrawn: " (needs Wiredbench drawing)",
     avatarNotDrawn:
       "Dance changes the value only. Effects marked as needing Wiredbench drawing change the body, such as hoverboards. Choose Wiredbench under Avatar drawing in Settings to see them.",

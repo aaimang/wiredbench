@@ -25,6 +25,7 @@ ALLOWED = {
     ("GET", "/api/furni/{revision}/{classname}/atlas"),
     ("GET", "/api/avatars/{hotel}/lookup"),
     ("GET", "/api/avatars/{hotel}/image"),
+    ("GET", "/api/avatars/{hotel}/shadow"),
     ("GET", "/api/effects/{hotel}/{effect}/manifest"),
     ("GET", "/api/effects/{hotel}/{effect}/atlas"),
 }

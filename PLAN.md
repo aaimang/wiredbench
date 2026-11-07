@@ -338,7 +338,11 @@ also covers the 10-second worst-case loss when a user leaves without standing up
 
 ### Projectile add-on, seen in a real room (2026-11-01)
 
-Not simulated yet. A test moved arrows 3 tiles with `wf_xtra_rotate_to_dir` in the stack, using one setting per arrow:
+Simulated since #54. On 2026-11-08 the sandbox matched every row of the `room-batch-e` comparison (arrow
+position and `@rotation`, the shooter's `@direction`, flight time and height, flying past, and the
+`@projectile.animation.*` values), and `e8`'s rotation offset was read in a real room: `@rotation` 0 to 4.
+Only the shape of the curve has not been compared by eye. The real-room test moved arrows 3 tiles with
+`wf_xtra_rotate_to_dir` in the stack, using one setting per arrow:
 
 - Its first option on: the furni's rotation changes to its direction of travel and stays there. Off: it keeps its rotation.
 - The shooter turns to face the direction of travel, unless the "change shooter direction" option is off.
