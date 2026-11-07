@@ -159,7 +159,9 @@ class WbEditor extends HTMLElement {
   /** Effects that change the body, which the room cannot draw. An effect added since the list was made is not marked. */
   private effectsNotDrawn = new Set<number>();
 
+  /** With Wiredbench's own avatar drawing, effects that change the body are drawn too. */
   private notDrawn(name: string, value: string): boolean {
+    if (state.settings?.avatar_drawing === "wiredbench") return false;
     return name === "@effect" && this.effectsNotDrawn.has(Number(value));
   }
   private runEdits = new Map<number, string>();

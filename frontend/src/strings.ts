@@ -354,9 +354,9 @@ export const t = {
       respect: "Thumbs up",
       sixty_seven: "67",
     } as Record<string, string>,
-    notDrawn: " (not drawn)",
+    notDrawn: " (needs Wiredbench drawing)",
     avatarNotDrawn:
-      "Dance changes the value only. Effects marked not drawn change the body, such as hoverboards, so they hold a value without showing.",
+      "Dance changes the value only. Effects marked as needing Wiredbench drawing change the body, such as hoverboards. Choose Wiredbench under Avatar drawing in Settings to see them.",
     avatarGender: "Gender",
     avatarGenders: ["Male", "Female"],
     avatarLists: {

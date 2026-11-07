@@ -24,10 +24,11 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from defusedxml.ElementTree import fromstring as safe_fromstring
-from PIL import Image
+from PIL import Image, ImageChops
 
 from wiredbench.config import HOTELS
 from wiredbench.services import swf
+from wiredbench.services.effects import parse_map
 from wiredbench.services.handitems import CHECK_SECONDS, RETRY_SECONDS, client_folder
 from wiredbench.services.upstream import Upstream, UpstreamError
 
@@ -56,7 +57,7 @@ UNTINTED = {"ey"}
 BODY_LIBRARY = "hh_human_body"
 MAX_ALIAS_HOPS = 6
 # Raised when drawing changes, so avatars drawn before are drawn again.
-FIGURE_RULES_VERSION = 2
+FIGURE_RULES_VERSION = 3
 
 
 @dataclass
@@ -93,6 +94,18 @@ class Rules:
     @property
     def parts(self) -> BodyParts:
         return self.types["vertical"]
+
+    def posed(self, action_id: str, kind: str, frame: int) -> tuple[str, int] | None:
+        """A part's art in another action, as an effect frame asks for a body part, such as "Sit"."""
+        action = next((found for found in self.actions.values() if found.id == action_id), None)
+        if action is None:
+            return None
+        frames = self.frames.get(action_id, {}).get(kind)
+        if frames:
+            number, asset = frames[frame % len(frames)]
+            asset = action.asset if asset is None else asset
+            return (asset, number) if asset else None
+        return action.asset, 0
 
     def order(self, direction: int, head_direction: int, geometry: str = "vertical") -> list[str]:
         """Body parts from back to front."""
@@ -295,12 +308,16 @@ def parse_library(data: bytes, name: str) -> Library:
         if name == BODY_LIBRARY:
             image = image.point([255 if v == 254 else v for v in range(256)] * 3 + list(range(256)))
         images[key] = image
-    offsets, aliases = {}, {}
+    offsets: dict[str, tuple[int, int]] = {}
+    aliases: dict[str, str] = {}
     for binary in parsed.binaries.values():
         if b"<manifest" not in binary[:400]:
             continue
         manifest = safe_fromstring(binary)
         for asset in manifest.iter("asset"):
+            offsets.setdefault(
+                asset.get("name", ""), (0, 0)
+            )  # Art listed without an offset sits at the origin.
             for param in asset.iter("param"):
                 if param.get("key") == "offset":
                     x, _, y = param.get("value", "").partition(",")
@@ -310,6 +327,150 @@ def parse_library(data: bytes, name: str) -> Library:
             if alias.get("fliph", "0") == "0" and alias.get("flipv", "0") == "0":
                 aliases[alias.get("name", "")] = alias.get("link", "")
     return Library(images, offsets, aliases)
+
+
+@dataclass
+class EffectFrame:
+    """What one frame of an effect does to the avatar."""
+
+    library: str
+    removes: set[str]
+    # Body part ID to (action ID or None, frame, dx, dy, direction change).
+    body: dict[str, tuple[str | None, int, int, int, int]]
+    # Added part: (part type, body part it attaches to, frame, dx, dy, effect art name or "").
+    adds: list[tuple[str, str, int, int, int, str]]
+    # Part type to the effect art drawn in its place, such as a helmet for a hat.
+    swaps: dict[str, str] = field(default_factory=dict)
+
+
+@dataclass
+class EffectSprite:
+    member: str
+    add: bool
+    turns: bool
+    # Direction to (dz, dx, dy).
+    directions: dict[int, tuple[int, int, int]]
+
+
+@dataclass
+class EffectAnimation:
+    """An effect from its own file: parts it removes or adds, sprites, recolouring and frames."""
+
+    library: str
+    removes: set[str]
+    # Added part ID to (body part it attaches to, effect art name or "").
+    adds: dict[str, tuple[str, str]]
+    sprites: dict[str, EffectSprite]
+    lifts: bool
+    turn: int
+    recolour: tuple[int, str, str] | None
+    # Each frame: sprite or add ID to (frame, dx, dy, direction change), and body parts.
+    frames: list[
+        tuple[
+            dict[str, tuple[int, int, int, int]],
+            dict[str, tuple[str | None, int, int, int, int]],
+            dict[str, str],
+        ]
+    ]
+
+    def frame(self, number: int) -> EffectFrame:
+        sprites, body, swaps = self.frames[number % len(self.frames)] if self.frames else ({}, {}, {})
+        adds = [
+            (kind, align, *sprites.get(base or kind, sprites.get(kind, (0, 0, 0, 0)))[:3], base)
+            for kind, (align, base) in self.adds.items()
+        ]
+        return EffectFrame(self.library, self.removes, body, adds, swaps)
+
+    def sprite_frames(self, number: int) -> dict[str, tuple[int, int, int, int]]:
+        if self.frames:
+            return self.frames[number % len(self.frames)][0]
+        return dict.fromkeys(self.sprites, (0, 0, 0, 0))
+
+
+def parse_effect(data: bytes, name: str) -> tuple[Library, EffectAnimation] | None:
+    """An effect's art and animation, or None for a file without one."""
+    library = parse_library(data, name)
+    animation = next(
+        (
+            safe_fromstring(binary)
+            for binary in swf.parse(data).binaries.values()
+            if b"<animation" in binary[:400]
+        ),
+        None,
+    )
+    if animation is None:
+        return None
+    if animation.tag != "animation":
+        animation = next(animation.iter("animation"), animation)
+
+    def number(element: ET.Element, key: str) -> int:
+        try:
+            return int(element.get(key, "0") or 0)
+        except ValueError:
+            return 0
+
+    sprites = {}
+    lifts = False
+    for sprite in animation.findall("sprite"):
+        if sprite.get("id") == "avatar":
+            lifts = True
+            continue
+        sprites[sprite.get("id", "")] = EffectSprite(
+            sprite.get("member", ""),
+            sprite.get("ink") == "33",
+            sprite.get("directions") == "1",
+            {
+                number(direction, "id"): (
+                    number(direction, "dz"),
+                    number(direction, "dx"),
+                    number(direction, "dy"),
+                )
+                for direction in sprite.findall("direction")
+            },
+        )
+    recolour = None
+    avatar = animation.find("avatar")
+    if avatar is not None:
+        recolour = (number(avatar, "ink"), avatar.get("foreground", ""), avatar.get("background", ""))
+    turn = next((number(direction, "offset") for direction in animation.findall("direction")), 0)
+    frames = []
+    for frame in animation.iter("frame"):
+        shown = {
+            part.get("id", ""): (
+                number(part, "frame"),
+                number(part, "dx"),
+                number(part, "dy"),
+                number(part, "dd"),
+            )
+            for part in frame.findall("fx")
+        }
+        body = {
+            part.get("id", ""): (
+                part.get("action"),
+                number(part, "frame"),
+                number(part, "dx"),
+                number(part, "dy"),
+                number(part, "dd"),
+            )
+            for part in frame.findall("bodypart")
+        }
+        swaps = {
+            item.get("id", ""): item.get("base", "")
+            for part in frame.findall("bodypart")
+            for item in part.findall("item")
+            if item.get("base")
+        }
+        frames.extend([(shown, body, swaps)] * max(1, number(frame, "repeats")))
+    return library, EffectAnimation(
+        name,
+        {remove.get("id", "") for remove in animation.findall("remove")},
+        {add.get("id", ""): (add.get("align", ""), add.get("base", "")) for add in animation.findall("add")},
+        sprites,
+        lifts,
+        turn,
+        recolour,
+        frames,
+    )
 
 
 @dataclass
@@ -369,8 +530,12 @@ def compose(
     direction: int,
     head_direction: int,
     shown: Pose | None = None,
+    effect: EffectFrame | None = None,
 ) -> Image.Image:
-    """The avatar in a pose, on the same canvas as Habbo's image service. Standing still by default."""
+    """The avatar in a pose, on the same canvas as Habbo's image service. Standing still by default.
+
+    An effect frame can remove parts, add its own parts, and pose, move or turn whole body parts.
+    """
     shown = shown or pose(rules, "std", "std", 0) or Pose("vertical", [], [], 0)
     # Measured against Habbo's images: lying only faces 2 or 4, and sitting only straight. The image
     # service draws a lying avatar facing any other way as facing 4, and sits a diagonal one facing 4.
@@ -380,39 +545,67 @@ def compose(
         direction, head_direction = 4, 5 if head_direction in (1, 5) else head_direction
     size, origin = CANVASES.get(shown.geometry, CANVASES["vertical"])
     hidden = {kind for look in looks for kind in look.hidden}
-    worn: dict[str, list[tuple[str, str, str | None]]] = {}
+    # Part type to (library, part ID, colour, name its art goes by when it is not the part type).
+    worn: dict[str, list[tuple[str, str, str | None, str]]] = {}
     for look in looks:
         for kind, part_id, color, library_name in look.parts:
             if kind not in hidden and library_name:
-                worn.setdefault(kind, []).append((library_name, part_id, color))
+                worn.setdefault(kind, []).append((library_name, part_id, color, ""))
     for kind, item_id in shown.items:
-        worn.setdefault(kind, []).append((ITEM_LIBRARY, item_id, None))
+        worn.setdefault(kind, []).append((ITEM_LIBRARY, item_id, None, ""))
     for kind, removed in rules.removes.items():
         if kind in worn:
             worn.pop(removed, None)
-    parts = rules.types.get(shown.geometry, rules.parts)
+    parts = dict(rules.types.get(shown.geometry, rules.parts))
+    if effect:
+        for kind in effect.removes:
+            worn.pop(kind, None)
+        for kind, body_part, *_, base in effect.adds:
+            if body_part in parts:
+                x, z, radius, items = parts[body_part]
+                if all(item != kind for item, _ in items):
+                    parts[body_part] = (x, z, radius, [*items, (kind, 1.0)])  # On top within its body part.
+                worn[kind] = [(effect.library, "1", None, base)]
+        for kind, base in effect.swaps.items():
+            worn[kind] = [(effect.library, "1", None, base)]
     canvas = Image.new("RGBA", size, (0, 0, 0, 0))
     for body_part in rules.order(direction, head_direction, shown.geometry):
+        if body_part not in parts:
+            continue
         facing = head_direction if body_part in rules.head_parts else direction
+        moved = effect.body.get(body_part) if effect else None
+        shift_x = shift_y = 0
+        if moved:
+            facing = (facing + moved[4]) % 8
+            shift_x, shift_y = moved[2], moved[3]
         mirrored = facing in MIRRORED
         art_direction = MIRRORED.get(facing, facing)
         # Parts drawn later are nearer: a larger radius is nearer the camera.
         for kind, _ in sorted(parts[body_part][3], key=lambda item: item[1]):
             art = shown.shows(rules, kind) if rules.actions else ("std", 0)
+            added = next((add for add in effect.adds if add[0] == kind), None) if effect else None
+            if added:
+                art = ("std", added[2])
+                shift_x, shift_y = (moved[2], moved[3]) if moved else (0, 0)
+                shift_x, shift_y = shift_x + added[3], shift_y + added[4]
+            elif moved and moved[0] is not None:
+                art = rules.posed(moved[0], kind, moved[1]) or art
             if art is None:
                 continue
             asset, number = art
-            for library_name, part_id, color in worn.get(kind, []):
+            for library_name, part_id, color, base in worn.get(kind, []):
+                if base:  # Effect art, which has no pose or action art of its own.
+                    asset, number = "std", added[2] if added else 0
                 lib = library.get(library_name)
                 if lib is None:
                     continue
                 flip = mirrored
                 # Art made for this very direction is used as it is. Actions and items have some.
-                found = mirrored and lib.find(f"h_{asset}_{kind}_{part_id}_{facing}", number)
+                found = mirrored and lib.find(f"h_{asset}_{base or kind}_{part_id}_{facing}", number)
                 if found:
                     flip = False
                 else:
-                    named = rules.flipped.get(kind, kind) if mirrored else kind
+                    named = base or (rules.flipped.get(kind, kind) if mirrored else kind)
                     found = lib.find(f"h_{asset}_{named}_{part_id}_{art_direction}", number)
                     # An action without art for a part, such as the head while blowing a kiss, shows it
                     # standing.
@@ -423,13 +616,120 @@ def compose(
                 image, (offset_x, offset_y) = found
                 if color and kind not in UNTINTED and color.upper() != "FFFFFF":
                     image = tint(image, color)
-                left, top = origin[0] - offset_x, origin[1] - offset_y
+                left, top = origin[0] - offset_x, origin[1] - offset_y + shift_y
                 if flip:
                     image = image.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
-                    left = size[0] - left - image.width
+                    left = size[0] - left - image.width - shift_x
+                else:
+                    left += shift_x
                 layer = Image.new("RGBA", size, (0, 0, 0, 0))
                 layer.paste(image, (left, top))
                 canvas = Image.alpha_composite(canvas, layer)
+    return canvas
+
+
+# Room around a plain avatar for what an effect adds: lifts of up to 75 pixels, wide boards and wings.
+EFFECT_MARGIN = (16, 90, 10)
+
+
+def recolour(image: Image.Image, ink: int, foreground: str, background: str) -> Image.Image:
+    """Turns the avatar into shades between two colours, as Ice and Ghost do. Not checked in a room yet.
+
+    Dark art takes the background colour and light art the foreground. Ink 37 also halves the opacity.
+    """
+
+    def colour(text: str) -> tuple[int, int, int, int | None]:
+        text = text.lstrip("#")
+        alpha = int(text[:2], 16) if len(text) == 8 else None
+        rgb = int(text[-6:], 16) if text else 0
+        return (rgb >> 16) & 255, (rgb >> 8) & 255, rgb & 255, alpha
+
+    try:
+        fr, fg, fb, fa = colour(foreground)
+        br, bg, bb, ba = colour(background)
+    except ValueError:
+        return image
+    gray = image.convert("L")
+    red = gray.point([round(br + (fr - br) * v / 255) for v in range(256)])
+    green = gray.point([round(bg + (fg - bg) * v / 255) for v in range(256)])
+    blue = gray.point([round(bb + (fb - bb) * v / 255) for v in range(256)])
+    alpha = image.getchannel("A")
+    if fa is not None and ba is not None:
+        scale = gray.point([round(ba + (fa - ba) * v / 255) for v in range(256)])
+        alpha = Image.composite(scale, alpha, alpha.point(lambda v: 255 if v else 0))
+    if ink == 37:
+        alpha = alpha.point(lambda v: v // 2)
+    return Image.merge("RGBA", (red, green, blue, alpha))
+
+
+def as_light(image: Image.Image) -> Image.Image:
+    """A sprite drawn with ink 33, which adds its light, made see-through where it is dark.
+
+    Such art often sits on black, which adds nothing in Habbo but would show as black on a clear canvas.
+    """
+    rgba = image.convert("RGBA")
+    premultiplied = [ImageChops.multiply(band, rgba.getchannel("A")) for band in rgba.convert("RGB").split()]
+    alpha = ImageChops.lighter(ImageChops.lighter(premultiplied[0], premultiplied[1]), premultiplied[2])
+    rgb = []
+    for band in premultiplied:
+        pixels = [
+            min(255, round(value * 255 / level)) if level else 0
+            for value, level in zip(band.getdata(), alpha.getdata(), strict=True)
+        ]
+        out = Image.new("L", band.size)
+        out.putdata(pixels)
+        rgb.append(out)
+    return Image.merge("RGBA", (*rgb, alpha))
+
+
+def compose_effect(
+    rules: Rules,
+    looks: list[Look],
+    library: dict[str, Library],
+    direction: int,
+    head_direction: int,
+    shown: Pose,
+    animation: EffectAnimation,
+    frame: int,
+) -> Image.Image:
+    """An avatar with an effect, on a canvas with EFFECT_MARGIN added around the plain avatar's."""
+    turned, turned_head = (direction + animation.turn) % 8, (head_direction + animation.turn) % 8
+    effect = animation.frame(frame)
+    avatar = compose(rules, looks, library, turned, turned_head, shown, effect)
+    if animation.recolour:
+        avatar = recolour(avatar, *animation.recolour)
+    margin_x, margin_top, margin_bottom = EFFECT_MARGIN
+    width, height = avatar.size
+    canvas = Image.new("RGBA", (width + 2 * margin_x, height + margin_top + margin_bottom), (0, 0, 0, 0))
+    origin = CANVASES.get(shown.geometry, CANVASES["vertical"])[1]
+    shown_sprites = animation.sprite_frames(frame)
+    lift = shown_sprites.get("avatar", (0, 0, 0, 0)) if animation.lifts else (0, 0, 0, 0)
+    layers: list[tuple[int, Image.Image, int, int, bool]] = []
+    effect_art = library[animation.library]
+    for sprite_id, (number, dx, dy, dd) in shown_sprites.items():
+        sprite = animation.sprites.get(sprite_id)
+        if sprite is None:
+            continue
+        facing = (turned + dd) % 8 if sprite.turns else 0
+        dz, sx, sy = sprite.directions.get(facing, (0, 0, 0))
+        found = effect_art.find(f"h_{sprite.member}_{facing}", number)
+        flip = False
+        if not found and facing in MIRRORED:
+            found, flip = effect_art.find(f"h_{sprite.member}_{MIRRORED[facing]}", number), True
+        if not found:
+            continue
+        image, (offset_x, offset_y) = found
+        left = origin[0] - offset_x + sx + dx
+        if flip:
+            image = image.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
+            left = width - left - image.width
+        layers.append((dz, image, margin_x + left, margin_top + origin[1] - offset_y + sy + dy, sprite.add))
+    layers.append((0, avatar, margin_x + lift[1], margin_top + lift[2], False))
+    # Sprites with a negative depth are behind the avatar. The avatar comes before sprites at depth 0.
+    for _, image, left, top, light in sorted(layers, key=lambda layer: (layer[0], layer[1] is not avatar)):
+        if light:
+            image = as_light(image)
+        canvas.alpha_composite(image, (max(0, left), max(0, top)), (max(0, -left), max(0, -top)))
     return canvas
 
 
@@ -443,6 +743,8 @@ class Figures:
         self._rules_checked = 0.0
         self._data: dict[str, tuple[FigureData, dict[tuple[str, str], str]]] = {}
         self._libraries: dict[str, Library] = {}
+        self._effects: dict[int, EffectAnimation | None] = {}
+        self._effect_map: dict[int, str] = {}
 
     def _fetch(self, url: str, limit: int) -> bytes:
         fetched = self.upstream.get(url, limit)
@@ -508,6 +810,19 @@ class Figures:
         temp.replace(path)
         return body
 
+    def _effect(self, base: str, build: str, effect: int) -> EffectAnimation | None:
+        """An effect's animation, with its art added to the libraries. None when Habbo has no such effect."""
+        if effect not in self._effects:
+            name = self._effect_map.get(effect)
+            found = None
+            if name:
+                data = self._cached(self.root / build / f"{name}.swf", f"{base}{name}.swf", MAX_LIBRARY_BYTES)
+                parsed = parse_effect(data, name)
+                if parsed:
+                    self._libraries[name], found = parsed
+            self._effects[effect] = found
+        return self._effects[effect]
+
     def draw(
         self,
         hotel: str,
@@ -517,8 +832,12 @@ class Figures:
         action: str = "std",
         gesture: str = "std",
         frame: int = 0,
+        effect: int | None = None,
     ) -> bytes | None:
-        """A PNG of the avatar, or None when it cannot be drawn here."""
+        """A PNG of the avatar, or None when it cannot be drawn here.
+
+        With an effect, frame is the effect's frame, and the canvas has EFFECT_MARGIN around it.
+        """
         with self._lock:
             try:
                 client = self._client(hotel)
@@ -540,6 +859,12 @@ class Figures:
                     )
                     self._data = {build: (data, mapping)}
                     self._libraries = {}
+                    self._effects = {}
+                    self._effect_map = parse_map(
+                        self._cached(
+                            self.root / build / "effectmap.xml", f"{base}effectmap.xml", MAX_DATA_BYTES
+                        )
+                    )
                     rules.actions = {}
                 if not rules.actions:
                     add_actions(
@@ -563,7 +888,17 @@ class Figures:
                         self.root / build / f"{name}.swf", f"{base}{name}.swf", MAX_LIBRARY_BYTES
                     )
                     self._libraries[name] = parse_library(swf_data, name)
-                image = compose(rules, looks, self._libraries, direction, head_direction, shown)
+                animation = None
+                if effect is not None:
+                    animation = self._effect(base, build, effect)
+                    if animation is None:
+                        return None
+                if animation:
+                    image = compose_effect(
+                        rules, looks, self._libraries, direction, head_direction, shown, animation, frame
+                    )
+                else:
+                    image = compose(rules, looks, self._libraries, direction, head_direction, shown)
             except (
                 UpstreamError,
                 ValueError,

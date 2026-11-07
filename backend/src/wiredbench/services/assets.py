@@ -137,6 +137,7 @@ class AssetCache:
         direction: int,
         frame: int,
         drawn_by: str = "habbo",
+        effect: int | None = None,
     ) -> Path | None:
         """One cached avatar frame. All values must already be validated by the route.
 
@@ -144,6 +145,11 @@ class AssetCache:
         be drawn here still comes from Habbo's image service.
         """
         action, art = self._translate_hand_item(hotel, action)
+        if effect is not None:
+            # Only drawn here, because Habbo's image service draws no effects.
+            if drawn_by != "wiredbench":
+                return None
+            return self._drawn_avatar(hotel, figure, action, gesture, direction, frame, effect)
         if drawn_by == "wiredbench":
             drawn = self._drawn_avatar(hotel, figure, action, gesture, direction, frame)
             if drawn is not None:
@@ -183,21 +189,30 @@ class AssetCache:
         return path
 
     def _drawn_avatar(
-        self, hotel: str, figure: str, action: str, gesture: str, direction: int, frame: int
+        self,
+        hotel: str,
+        figure: str,
+        action: str,
+        gesture: str,
+        direction: int,
+        frame: int,
+        effect: int | None = None,
     ) -> Path | None:
-        query = {
+        query: dict[str, str | int] = {
             "figure": figure,
             "action": action,
             "gesture": gesture,
             "direction": direction,
             "frame": frame,
         }
+        if effect is not None:
+            query["effect"] = effect
         text = urlencode({**query, "drawn_by": "wiredbench", "rules": FIGURE_RULES_VERSION})
         path = self.avatar_root / hotel / f"{hashlib.sha256(text.encode()).hexdigest()}.png"
         if path.exists():
             os.utime(path)
             return path
-        body = self.figures.draw(hotel, figure, direction, direction, action, gesture, frame)
+        body = self.figures.draw(hotel, figure, direction, direction, action, gesture, frame, effect)
         if body is None:
             return None
         path.parent.mkdir(parents=True, exist_ok=True)

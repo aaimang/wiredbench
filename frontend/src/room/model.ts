@@ -614,6 +614,8 @@ export function figureAction(pose: string, extra: string[]): string {
 /** An effect's layers, from Habbo's own effect file. Effects that change the body are not drawn. */
 export interface EffectManifest {
   drawable: boolean;
+  /** Frames of an effect that changes the body, which only Wiredbench's own avatar drawing shows. */
+  frame_count?: number;
   sprites?: {
     id: string;
     member: string;

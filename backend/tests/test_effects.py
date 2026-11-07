@@ -52,7 +52,7 @@ def test_an_overlay_effect_is_built_into_a_sprite_sheet() -> None:
 def test_an_effect_that_changes_the_body_is_not_drawn() -> None:
     manifest, sheet = effects.build(effect_swf("Board", BODY), "Board")
     assert sheet is None
-    assert manifest == {"drawable": False, "why": ["add", "avatar", "bodypart"]}
+    assert manifest == {"drawable": False, "why": ["add", "avatar", "bodypart"], "frame_count": 1}
 
 
 @pytest.fixture
