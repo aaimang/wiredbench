@@ -533,6 +533,12 @@ export type AvatarAction = "wave" | "blow" | "respect" | "sixty_seven";
 
 export const ACTION_MS = 2500;
 const ACTION_FRAME_MS = 250;
+/**
+ * Habbo's animation file holds each blow kiss frame for 10 ticks: the hand at the mouth, then the
+ * hand out with the eyes shut and the lips pursed. At the walk's 8 ticks a second that is 1.25 seconds
+ * each, one kiss over the whole action, not a hand flapping between the two.
+ */
+const BLOW_FRAME_MS = ACTION_MS / 2;
 export const SIXTY_SEVEN_MS = 400;
 export const SIGN_MAX = 17;
 /** A real room holds a sign for a few seconds. The exact length is assumed, and matches the engine. */
@@ -553,7 +559,7 @@ export function avatarExtras(
     extra.push(`sig=${Math.floor(elapsedMs / SIXTY_SEVEN_MS) % 2 ? 7 : 6}`);
   } else if (action) {
     extra.push({ wave: "wav", blow: "blw", respect: "respect" }[action]);
-    frame = step % 2;
+    frame = action === "blow" ? Math.min(1, Math.floor(elapsedMs / BLOW_FRAME_MS)) : step % 2;
   } else if (sign !== undefined && sign >= 0 && sign <= SIGN_MAX) {
     extra.push(`sig=${sign}`);
   }

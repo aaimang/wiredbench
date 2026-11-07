@@ -98,3 +98,29 @@ def test_the_list_of_drawable_effects_is_served(api: Api) -> None:
     assert set(found["drawn"]) <= set(found["checked"])
     assert 4 in found["drawn"], "Twinkle only adds sparkles"
     assert 2 not in found["drawn"], "a hoverboard changes the body"
+
+
+DUCK = """<animation name="fx.170">
+  <remove id="hd"/>
+  <override name="mv_duck" override="mv">
+    <frame><bodypart id="head"/></frame>
+    <frame repeats="3"><bodypart id="head"/></frame>
+  </override>
+</animation>"""
+
+
+def test_frames_played_only_while_walking_are_counted() -> None:
+    manifest, _ = effects.build(effect_swf("Duck", DUCK), "Duck")
+    assert manifest["frame_count"] == 4, "a duck has frames only for walking"
+
+
+def test_an_effect_file_is_downloaded_once_for_layers_and_drawing(api: Api, fx: FakeHabbo) -> None:
+    services = api.services
+    assert services.assets.figures.effects is services.assets.effects
+    assert api.get("/api/effects/com/2/manifest").status_code == 200
+    base, build = services.assets.effects._client("com")
+    services.assets.figures.effects.library(base, build, "Board")
+    board = [request for request in fx.requests if request.url.path.endswith("/Board.swf")]
+    assert len(board) == 1
+    with pytest.raises(ValueError):
+        services.assets.effects.library(base, build, "../evil")

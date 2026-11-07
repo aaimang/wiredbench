@@ -281,12 +281,123 @@ def test_effects_are_only_drawn_by_wiredbench(
     calls: list[object] = []
 
     def fake(self: figures.Figures, *args: object) -> bytes:
-        calls.append(args[-1])
+        calls.append(args[-1])  # The effect's own frame.
         return out.getvalue()
 
     monkeypatch.setattr(figures.Figures, "draw", fake)
-    params = {"figure": "hd-180-1", "effect": 2, "frame": 12}
+    params = {"figure": "hd-180-1", "effect": 2, "effect_frame": 12}
     assert api.get("/api/avatars/com/image", params=params).status_code == 404, "Habbo draws no effects"
     drawn = api.get("/api/avatars/com/image", params={**params, "drawn_by": "wiredbench"})
-    assert drawn.status_code == 200 and calls == [2]
+    assert drawn.status_code == 200 and calls == [12]
     assert api.get("/api/avatars/com/image", params={"figure": "hd-180-1", "frame": 12}).status_code == 422
+    no_effect = {"figure": "hd-180-1", "effect_frame": 3, "drawn_by": "wiredbench"}
+    assert api.get("/api/avatars/com/image", params=no_effect).status_code == 422
+
+
+def test_walking_with_an_effect_keeps_the_steps_apart_from_the_effects_frame(
+    api: Api, habbo: FakeHabbo, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import io
+
+    out = io.BytesIO()
+    Image.new("RGBA", (96, 210), (1, 2, 3, 255)).save(out, "PNG")
+    calls: list[tuple[object, ...]] = []
+
+    def fake(self: figures.Figures, *args: object) -> bytes:
+        calls.append(args)
+        return out.getvalue()
+
+    monkeypatch.setattr(figures.Figures, "draw", fake)
+    base = {"figure": "hd-180-1", "action": "wlk", "effect": 27, "drawn_by": "wiredbench"}
+    for step in range(4):
+        assert api.get("/api/avatars/com/image", params={**base, "frame": step}).status_code == 200
+    # Before, one frame value served both, so an effect with one frame held the legs still.
+    # Gesture, the walk's step, the effect, and the effect's own frame.
+    assert [call[5:9] for call in calls] == [("std", step, 27, 0) for step in range(4)]
+    api.get("/api/avatars/com/image", params={**base, "frame": 1, "direction": 6, "effect_frame": 5})
+    assert calls[-1][2:4] == (6, 6) and calls[-1][6:] == (1, 27, 5), "a turn and a later effect frame"
+
+
+OVERRIDDEN = """<animation name="fx.38">
+  <sprite id="avatar"/>
+  <shadow id="std_fx1_sd_0"/>
+  <frame><fx id="avatar" frame="0" dy="-20"/></frame>
+  <override name="skate" override="mv">
+    <frame><fx id="avatar" frame="0" dy="-10"/></frame>
+    <frame repeats="2"><fx id="avatar" frame="0" dy="-5"/></frame>
+  </override>
+</animation>"""
+
+
+def move(state: str) -> figures.Action:
+    return figures.Action(state, "wlk" if state == "mv" else "std", 600, "vertical", "walk", False, state)
+
+
+def test_an_override_plays_instead_while_the_avatar_does_its_action(parts: tuple) -> None:
+    from swf_builder import effect_swf
+
+    rules, data, mapping = parts
+    parsed = figures.parse_effect(effect_swf("Skate", OVERRIDDEN, shadow="std_fx1_sd_0"), "Skate")
+    assert parsed is not None
+    art, animation = parsed
+    assert len(animation.frames) == 1, "an override's frames are not played after the effect's own"
+    assert len(animation.overrides["mv"]) == 3
+    looks = figures.resolve("hd-180-7", data, mapping)
+    assert looks is not None
+    margin_x, margin_top, _ = figures.EFFECT_MARGIN
+
+    def lifted(*actions: figures.Action, frame: int = 0) -> int:
+        shown = figures.Pose("vertical", list(actions), [], 0)
+        image = figures.compose_effect(
+            rules, looks, {"lib_a": library(), "Skate": art}, 2, 2, shown, animation, frame
+        )
+        column = [image.getpixel((margin_x + 10, y)) for y in range(image.height)]
+        return margin_top + 10 - next(y for y, pixel in enumerate(column) if pixel == (255, 0, 0, 255))
+
+    assert lifted(move("std")) == 20, "standing plays the effect's own frames"
+    assert lifted(move("mv"), move("std")) == 10, "walking plays the override"
+    assert lifted(move("mv"), move("std"), frame=2) == 5, "the override's frames repeat as listed"
+
+
+def test_an_effects_shadow_stays_on_the_floor(parts: tuple) -> None:
+    from swf_builder import effect_swf
+
+    rules, data, mapping = parts
+    parsed = figures.parse_effect(effect_swf("Skate", OVERRIDDEN, shadow="std_fx1_sd_0"), "Skate")
+    assert parsed is not None
+    art, animation = parsed
+    assert animation.shadow == "std_fx1_sd_0"
+    looks = figures.resolve("hd-180-7", data, mapping)
+    assert looks is not None
+    image = figures.compose_effect(
+        rules,
+        looks,
+        {"lib_a": library(), "Skate": art},
+        2,
+        2,
+        figures.Pose("vertical", [], [], 0),
+        animation,
+        0,
+    )
+    margin_x, margin_top, _ = figures.EFFECT_MARGIN
+    # Art without an offset sits at the origin, which a lift of 20 does not move.
+    assert image.getpixel((margin_x + 1, margin_top + 101)) == (0, 0, 0, figures.SHADOW_ALPHA)
+    plain = figures.parse_effect(effect_swf("Skate", OVERRIDDEN), "Skate")
+    assert plain is not None
+    without = figures.compose_effect(
+        rules,
+        looks,
+        {"lib_a": library(), "Skate": plain[0]},
+        2,
+        2,
+        figures.Pose("vertical", [], [], 0),
+        plain[1],
+        0,
+    )
+    assert without.getpixel((margin_x + 1, margin_top + 101))[3] == 0, "no shadow art, no shadow"
+
+
+def test_effect_actions_are_found_by_id_or_state() -> None:
+    rules = figures.parse_rules(GEOMETRY, PART_SETS, actions=ACTIONS)
+    assert rules.posed("Sit", "bd", 0) == ("sit", 0)
+    assert rules.posed("std", "bd", 0) == ("std", 0), "some effects name the default action by its state"

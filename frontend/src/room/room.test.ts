@@ -40,6 +40,7 @@ import {
   timeDigits,
   withFace,
 } from "./model";
+import { bodyEffectUrl } from "./renderer";
 import { isDebugCommand, runClock } from "./run-panel";
 
 const INFO: Record<string, FurniInfo> = {
@@ -504,7 +505,12 @@ describe("avatar actions", () => {
 
   it("swaps frames while an action plays, and an action covers a held sign", () => {
     expect(avatarExtras({ "@sign": 6 }, "wave", 0)).toMatchObject({ extra: ["wav"], frame: 0 });
-    expect(avatarExtras({}, "blow", 250).frame).toBe(1);
+    // One kiss over the whole action, as Habbo holds each blow kiss frame for 10 ticks.
+    expect(avatarExtras({}, "blow", 250).frame).toBe(0);
+    expect(avatarExtras({}, "blow", 1249).frame).toBe(0);
+    expect(avatarExtras({}, "blow", 1250).frame).toBe(1);
+    expect(avatarExtras({}, "blow", 2499).frame).toBe(1);
+    expect(avatarExtras({}, "wave", 250).frame).toBe(1);
     expect(avatarExtras({}, "sixty_seven", 0).extra).toEqual(["sig=6"]);
     expect(avatarExtras({}, "sixty_seven", 400).extra).toEqual(["sig=7"]);
   });
@@ -599,5 +605,30 @@ describe("avatar effects", () => {
 
   it("skips a direction the effect has no art for", () => {
     expect(effectLayers(manifest, 4, 0)).toHaveLength(1);
+  });
+});
+
+describe("body-changing effects", () => {
+  const avatar = { hotel: "com", figure: "hd-180-1" };
+  const query = (url: string) => new URL(url, "http://localhost").searchParams;
+
+  it("keep the walk's step and direction apart from the effect's own frame", () => {
+    const walking = { action: "wlk", extra: [], gesture: "std" };
+    const steps = [0, 1, 2, 3].map((frame) =>
+      query(bodyEffectUrl(avatar, { ...walking, dir: 2, frame }, 3, 1, 5000)),
+    );
+    // Before, the effect's frame took the walk's place, so a one-frame effect froze the legs.
+    expect(steps.map((found) => found.get("frame"))).toEqual(["0", "1", "2", "3"]);
+    expect(steps.every((found) => found.get("effect_frame") === "0")).toBe(true);
+    const turned = query(bodyEffectUrl(avatar, { ...walking, dir: 6, frame: 1 }, 3, 1, 5000));
+    expect(turned.get("direction")).toBe("6");
+  });
+
+  it("play the effect on its own clock", () => {
+    const standing = { action: "std", extra: [], gesture: "std", dir: 2, frame: 0 };
+    const later = query(bodyEffectUrl(avatar, standing, 27, 10, 83 * 13));
+    expect(later.get("effect")).toBe("27");
+    expect(later.get("effect_frame")).toBe("3");
+    expect(later.get("frame")).toBe("0");
   });
 });
