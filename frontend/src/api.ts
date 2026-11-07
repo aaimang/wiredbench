@@ -185,6 +185,7 @@ export interface Settings {
   audit_days: number;
   click_outside_cancels: boolean;
   pickup_shortcut: boolean;
+  avatar_drawing: "habbo" | "wiredbench";
   hotels: string[];
   version: string;
 }

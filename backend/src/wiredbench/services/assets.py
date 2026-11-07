@@ -21,6 +21,7 @@ from PIL import Image
 from wiredbench.config import HOTELS
 from wiredbench.services import swf
 from wiredbench.services.effects import Effects
+from wiredbench.services.figures import Figures
 from wiredbench.services.handitems import HandItems
 from wiredbench.services.upstream import IMAGE_HOST, Upstream, UpstreamError, icon_url
 
@@ -57,6 +58,7 @@ class AssetCache:
         self._downloads = threading.Semaphore(4)  # A page of icons must not flood Habbo.
         self.hand_items = HandItems(root.parent / "handitems", upstream)
         self.effects = Effects(root.parent / "effects", upstream)
+        self.figures = Figures(root.parent / "figures", upstream)
         self._service_has_art: dict[int, bool] = {}
 
     def _folder(self, revision: int, classname: str) -> Path:
@@ -127,9 +129,24 @@ class AssetCache:
         return manifest, atlas
 
     def avatar(
-        self, hotel: str, figure: str, action: str, gesture: str, direction: int, frame: int
+        self,
+        hotel: str,
+        figure: str,
+        action: str,
+        gesture: str,
+        direction: int,
+        frame: int,
+        drawn_by: str = "habbo",
     ) -> Path | None:
-        """One cached avatar frame. All values must already be validated by the route."""
+        """One cached avatar frame. All values must already be validated by the route.
+
+        With drawn_by "wiredbench", an avatar standing still is drawn here from its parts. Anything else,
+        or a look that cannot be drawn here, still comes from Habbo's image service.
+        """
+        if drawn_by == "wiredbench" and action == "std" and gesture == "std":
+            drawn = self._drawn_avatar(hotel, figure, direction)
+            if drawn is not None:
+                return drawn
         action, art = self._translate_hand_item(hotel, action)
         query = {
             "figure": figure,
@@ -162,6 +179,19 @@ class AssetCache:
             self.hand_items.draw(hotel, image, art, direction).save(out, "PNG")
             body = out.getvalue()
         folder.mkdir(parents=True, exist_ok=True)
+        _write_atomic(path, body)
+        return path
+
+    def _drawn_avatar(self, hotel: str, figure: str, direction: int) -> Path | None:
+        text = urlencode({"figure": figure, "direction": direction, "drawn_by": "wiredbench"})
+        path = self.avatar_root / hotel / f"{hashlib.sha256(text.encode()).hexdigest()}.png"
+        if path.exists():
+            os.utime(path)
+            return path
+        body = self.figures.draw(hotel, figure, direction, direction)
+        if body is None:
+            return None
+        path.parent.mkdir(parents=True, exist_ok=True)
         _write_atomic(path, body)
         return path
 

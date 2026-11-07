@@ -28,6 +28,7 @@ class PreferencesUpdate(BaseModel):
     audit_days: int | None = Field(None, ge=1, le=3650)
     click_outside_cancels: bool | None = None
     pickup_shortcut: bool | None = None
+    avatar_drawing: Literal["habbo", "wiredbench"] | None = None
 
 
 @router.api_route("/healthz", methods=["GET", "HEAD"])

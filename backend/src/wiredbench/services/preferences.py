@@ -25,6 +25,7 @@ class Preferences(BaseModel):
     audit_days: int = Field(ge=1, le=3650)
     click_outside_cancels: bool = True
     pickup_shortcut: bool = True
+    avatar_drawing: Literal["habbo", "wiredbench"] = "habbo"
 
 
 def load(db: Session, settings: Settings) -> Preferences:

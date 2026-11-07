@@ -11,6 +11,7 @@ import {
   TextureStyle,
 } from "pixi.js";
 import { get, withQuery } from "../api";
+import { state } from "../state";
 import { fxArt, fxHeight } from "./fx-art";
 import { depth, screenToTile, TILE_HEIGHT, TILE_WIDTH, tileCentre, Z_UNIT } from "./iso";
 import {
@@ -142,12 +143,15 @@ export function avatarUrl(
   frame: number,
   gesture = "std",
 ): string {
+  // The choice is part of the address, so switching it never shows an image cached the other way.
+  const drawnBy = state.settings?.avatar_drawing === "wiredbench" ? { drawn_by: "wiredbench" } : {};
   return withQuery(`/api/avatars/${avatar.hotel}/image`, {
     figure: avatar.figure,
     action,
     gesture,
     direction: dir,
     frame,
+    ...drawnBy,
   });
 }
 

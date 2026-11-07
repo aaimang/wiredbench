@@ -101,3 +101,19 @@ def effect_swf(lib: str, animation: str, extra_aliases: str = "") -> bytes:
         )
     )
     return wrap(tags)
+
+
+def figure_library(lib: str, assets: dict[str, tuple[int, int, bytes, tuple[int, int]]]) -> bytes:
+    """A figure part library: each asset is a solid block of one ARGB colour at a manifest offset."""
+    rows = "".join(
+        f'<asset name="{name}" mimeType="image/png"><param key="offset" value="{ox},{oy}"/></asset>'
+        for name, (_, _, _, (ox, oy)) in assets.items()
+    )
+    manifest = (
+        f'<?xml version="1.0"?><manifest><library id="{lib}"><assets>{rows}</assets></library></manifest>'
+    )
+    tags = b"".join(_image(key, w, h, argb) for key, (w, h, argb, _) in enumerate(assets.values(), 1))
+    symbols = {key: [f"{lib}_{name}"] for key, name in enumerate(assets, 1)}
+    manifest_key = len(assets) + 1
+    symbols[manifest_key] = [f"{lib}_manifest"]
+    return wrap(tags + _binary(manifest_key, manifest) + _symbols(symbols))

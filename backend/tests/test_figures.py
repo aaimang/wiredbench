@@ -1,0 +1,155 @@
+from __future__ import annotations
+
+from pathlib import Path
+
+import pytest
+from PIL import Image
+
+from conftest import PNG, Api, FakeHabbo
+from swf_builder import figure_library
+from wiredbench.services import figures
+
+GEOMETRY = b"""<geometry><camera><x>0</x><y>0</y><z>10</z></camera>
+  <avatarset id="full">
+    <avatarset id="body" main="1"><bodypart id="torso"/><bodypart id="rightarm"/></avatarset>
+    <avatarset id="head"><bodypart id="head"/></avatarset>
+  </avatarset>
+  <type id="vertical">
+    <bodypart id="torso" x="0" y="0" z="0" radius="0.4">
+      <item id="bd" radius="0.01"/><item id="ch" radius="0.04"/>
+    </bodypart>
+    <bodypart id="rightarm" x="1" y="0" z="-0.51" radius="0.5">
+      <item id="rh" radius="0.01"/><item id="rs" radius="0.04"/>
+    </bodypart>
+    <bodypart id="head" x="0" y="0" z="0" radius="0.5">
+      <item id="hd" radius="0.01"/><item id="ey" radius="0.03"/><item id="hr" radius="0.05"/>
+      <item id="hrb" radius="0.06"/>
+    </bodypart>
+  </type>
+</geometry>"""
+PART_SETS = b"""<partSets><partSet>
+  <part set-type="rh" flipped-set-type="lh"/><part set-type="lh" flipped-set-type="rh"/>
+  <part set-type="hrb" remove-set-type="hr"/>
+</partSet></partSets>"""
+FIGUREDATA = b"""<figuredata><colors>
+  <palette id="1"><color id="7">FF0000</color><color id="8">00FF00</color></palette>
+</colors><sets>
+  <settype type="hd" paletteid="1"><set id="180">
+    <part id="1" type="bd" colorable="1" colorindex="1"/><part id="1" type="hd" colorable="1" colorindex="1"/>
+    <part id="1" type="ey" colorable="1" colorindex="1"/><part id="1" type="rh" colorable="1" colorindex="1"/>
+  </set></settype>
+  <settype type="hr" paletteid="1">
+    <set id="100"><part id="5" type="hr" colorable="1" colorindex="1"/></set>
+    <set id="200"><part id="5" type="hr" colorable="1" colorindex="1"/><part id="9" type="hrb" colorable="0"/></set>
+  </settype>
+  <settype type="ha" paletteid="1"><set id="1"><part id="3" type="ha" colorable="0"/>
+    <hiddenlayers><layer parttype="hrb"/></hiddenlayers></set></settype>
+</sets></figuredata>"""
+FIGUREMAP = b"""<map><lib id="lib_a" revision="1">
+  <part id="1" type="bd"/><part id="1" type="hd"/><part id="1" type="ey"/><part id="1" type="rh"/>
+  <part id="5" type="hr"/><part id="3" type="ha"/>
+</lib></map>"""
+WHITE = b"\xff\xff\xff\xff"
+
+
+def library() -> figures.Library:
+    blocks = {
+        "h_std_bd_1_2_0": (4, 4, WHITE, (-10, 90)),
+        "h_std_hd_1_2_0": (2, 2, WHITE, (-20, 80)),
+        "h_std_ey_1_2_0": (1, 1, WHITE, (-21, 79)),
+        "h_std_rh_1_2_0": (2, 2, WHITE, (-30, 60)),
+        "h_std_lh_1_2_0": (2, 2, WHITE, (-40, 60)),
+        "h_std_hr_5_2_0": (3, 3, WHITE, (-20, 82)),
+        "h_std_hrb_9_2_0": (3, 3, b"\xff\xff\x00\x00", (-20, 82)),
+    }
+    return figures.parse_library(figure_library("lib_a", blocks), "lib_a")
+
+
+@pytest.fixture
+def parts() -> tuple[figures.Rules, figures.FigureData, dict[tuple[str, str], str]]:
+    return (
+        figures.parse_rules(GEOMETRY, PART_SETS),
+        figures.parse_figuredata(FIGUREDATA),
+        figures.parse_figuremap(FIGUREMAP),
+    )
+
+
+def draw(parts: tuple, figure: str, direction: int = 2) -> Image.Image:
+    rules, data, mapping = parts
+    looks = figures.resolve(figure, data, mapping)
+    assert looks is not None
+    return figures.compose(rules, looks, {"lib_a": library()}, direction, direction)
+
+
+def test_parts_land_at_habbos_offsets_with_their_colour(parts: tuple) -> None:
+    image = draw(parts, "hd-180-7")
+    assert image.size == (64, 110)
+    assert image.getpixel((10, 10)) == (255, 0, 0, 255), "the body, tinted, at (-x, 100 - y)"
+    assert image.getpixel((21, 21)) == (255, 255, 255, 255), "eyes are never tinted"
+
+
+def test_a_mirrored_direction_uses_the_other_hand_flipped(parts: tuple) -> None:
+    image = draw(parts, "hd-180-7", direction=4)
+    # rh at direction 4 is lh's direction 2 art (left 40), mirrored: 64 - 40 - 2 = 22.
+    assert image.getpixel((22, 40))[3] == 255
+    assert image.getpixel((30, 40))[3] == 0
+
+
+def test_draw_order_follows_the_client_geometry(parts: tuple) -> None:
+    rules = parts[0]
+    assert rules.order(2, 2)[-1] == "rightarm", "the near arm is drawn last"
+    assert rules.order(6, 6)[0] == "rightarm", "and first when the avatar faces the other way"
+
+
+def test_hidden_layers_and_removed_parts(parts: tuple) -> None:
+    alone = draw(parts, "hd-180-7.hr-200-8")
+    assert alone.getpixel((20, 18)) == (255, 0, 0, 255), "the back hair replaces the hair"
+    hatted = draw(parts, "hd-180-7.hr-200-8.ha-1")
+    assert hatted.getpixel((20, 18)) == (0, 255, 0, 255), "a hat hides the back hair, so the hair stays"
+
+
+def test_unknown_sets_are_not_drawn(parts: tuple) -> None:
+    rules, data, mapping = parts
+    assert figures.resolve("hd-999-7", data, mapping) is None
+    assert figures.resolve("zz-1", data, mapping) is None
+
+
+def test_the_route_falls_back_to_habbo_when_it_cannot_draw(
+    api: Api, habbo: FakeHabbo, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    drawn = Image.new("RGBA", (64, 110), (1, 2, 3, 255))
+    calls: list[str] = []
+
+    def fake(self: figures.Figures, hotel: str, figure: str, direction: int, head: int) -> bytes | None:
+        calls.append(figure)
+        if figure == "hd-9-1":
+            return None
+        import io
+
+        out = io.BytesIO()
+        drawn.save(out, "PNG")
+        return out.getvalue()
+
+    monkeypatch.setattr(figures.Figures, "draw", fake)
+    ours = api.get("/api/avatars/com/image", params={"figure": "hd-180-1", "drawn_by": "wiredbench"})
+    assert ours.status_code == 200 and ours.content != PNG
+    fallback = api.get("/api/avatars/com/image", params={"figure": "hd-9-1", "drawn_by": "wiredbench"})
+    assert fallback.content == PNG
+    waving = api.get(
+        "/api/avatars/com/image", params={"figure": "hd-180-1", "drawn_by": "wiredbench", "action": "wav"}
+    )
+    assert waving.content == PNG, "only still standing avatars are drawn here"
+    assert calls == ["hd-180-1", "hd-9-1"]
+    assert (
+        api.get("/api/avatars/com/image", params={"figure": "hd-180-1", "drawn_by": "evil"}).status_code
+        == 422
+    )
+
+
+def test_the_setting_is_saved(api: Api, tmp_path: Path) -> None:
+    assert api.get("/api/settings").json()["avatar_drawing"] == "habbo"
+    assert (
+        api.patch("/api/settings", json={"avatar_drawing": "wiredbench"}).json()["avatar_drawing"]
+        == "wiredbench"
+    )
+    assert api.patch("/api/settings", json={"avatar_drawing": "evil"}).status_code == 422
