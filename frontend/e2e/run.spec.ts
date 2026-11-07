@@ -549,6 +549,9 @@ test("the user panel draws signs, hand items and actions, and values stay curren
   await actions.getByLabel("Sign").selectOption({ label: "None" });
   await page.getByTestId("avatar-details").locator("summary").click();
   const hand = page.getByTestId("avatar-details").getByLabel("Hand item");
+  const effect = page.getByTestId("avatar-details").getByLabel("Effect");
+  await expect(effect.locator('option[value="2"]')).toContainText("(not drawn)");
+  await expect(effect.locator('option[value="4"]')).not.toContainText("(not drawn)");
   await hand.selectOption("3");
   await asked("crr=3");
   await expect(page.getByTestId("run-built-ins")).toContainText("3");

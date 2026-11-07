@@ -91,3 +91,10 @@ def test_unreachable_habbo_is_a_clear_error(tmp_path: Path, fx: FakeHabbo) -> No
     with pytest.raises(effects.UpstreamError):
         service.files("com", 1)
     assert not json.dumps([str(p) for p in tmp_path.rglob("*")]).count(".json")
+
+
+def test_the_list_of_drawable_effects_is_served(api: Api) -> None:
+    found = api.get("/api/engine/effects").json()
+    assert set(found["drawn"]) <= set(found["checked"])
+    assert 4 in found["drawn"], "Twinkle only adds sparkles"
+    assert 2 not in found["drawn"], "a hoverboard changes the body"

@@ -156,6 +156,12 @@ class WbEditor extends HTMLElement {
   private builtIns: string[] = [];
   /** What a built-in value stands for, such as hand item 3 being a carrot. */
   private valueNames: Record<string, Record<string, string>> = {};
+  /** Effects that change the body, which the room cannot draw. An effect added since the list was made is not marked. */
+  private effectsNotDrawn = new Set<number>();
+
+  private notDrawn(name: string, value: string): boolean {
+    return name === "@effect" && this.effectsNotDrawn.has(Number(value));
+  }
   private runEdits = new Map<number, string>();
   private faceEdited = false;
   private looks: RunState["looks"] | null = null;
@@ -215,6 +221,12 @@ class WbEditor extends HTMLElement {
     const builtInRows = get<
       { name: string; target: string; text_connector?: Record<string, string> }[]
     >("/api/engine/built-in-variables");
+    void get<{ checked: number[]; drawn: number[] }>("/api/engine/effects")
+      .then((found) => {
+        const drawn = new Set(found.drawn);
+        this.effectsNotDrawn = new Set(found.checked.filter((effect) => !drawn.has(effect)));
+      })
+      .catch(() => {});
     void builtInRows
       .then((rows) => {
         for (const row of rows) {
@@ -2181,7 +2193,9 @@ class WbEditor extends HTMLElement {
         "select",
         { "aria-label": label },
         h("option", { value: NOT_HELD }, T.avatarNoSign),
-        ...names.map(([value, text]) => h("option", { value }, `${value} ${text}`)),
+        ...names.map(([value, text]) =>
+          h("option", { value }, `${value} ${text}${this.notDrawn(name, value) ? T.notDrawn : ""}`),
+        ),
       ) as HTMLSelectElement;
       input.addEventListener("change", () => {
         const value = Number(input.value);

@@ -354,8 +354,9 @@ export const t = {
       respect: "Thumbs up",
       sixty_seven: "67",
     } as Record<string, string>,
+    notDrawn: " (not drawn)",
     avatarNotDrawn:
-      "Dance changes the value only. Effects that only add something around the avatar are drawn, but ones that change the body, such as hoverboards, are not.",
+      "Dance changes the value only. Effects marked not drawn change the body, such as hoverboards, so they hold a value without showing.",
     avatarGender: "Gender",
     avatarGenders: ["Male", "Female"],
     avatarLists: {

@@ -18,7 +18,7 @@ from wiredbench.engine.sessions import Run, run_command, state
 from wiredbench.engine.tutorials import TUTORIALS
 from wiredbench.errors import ApiError, not_found
 from wiredbench.models import Sandbox
-from wiredbench.services import preferences
+from wiredbench.services import effects, preferences
 from wiredbench.services import workspace as ws
 from wiredbench.services.room import with_timezone
 
@@ -129,6 +129,11 @@ def _run(sandbox_id: int, services: Services) -> Run:
     if run is None:
         raise ApiError(409, "not_running", "This room is not running. Press Run first.")
     return run
+
+
+@router.get("/engine/effects")
+def effect_facts() -> dict[str, Any]:
+    return effects.facts()
 
 
 @router.get("/engine/built-in-variables")
