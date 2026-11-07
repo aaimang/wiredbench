@@ -1,5 +1,47 @@
 # Changelog
 
+## [0.9.0](https://github.com/aaimang/wiredbench/compare/v0.8.0...v0.9.0) (2026-11-08)
+
+Wiredbench can now draw avatars itself, from Habbo's own client files, including avatar effects. View as user works much more like a real client, and rooms get time zones, avatar details, faces and actions.
+
+### Avatars drawn by Wiredbench (beta)
+
+Turn it on in **Settings → Avatar drawing**. Anything it cannot draw still comes from Habbo's image service.
+
+* Draw avatars from their parts using Habbo's client rules: standing, walking, sitting, lying, actions, signs, faces and hand items ([#84](https://github.com/aaimang/wiredbench/pull/84), [#85](https://github.com/aaimang/wiredbench/pull/85))
+* Draw avatar effects: ones that add layers around the avatar ([#81](https://github.com/aaimang/wiredbench/pull/81)), and ones that change the body, frame by frame ([#86](https://github.com/aaimang/wiredbench/pull/86)). Effects the room cannot draw are marked ([#83](https://github.com/aaimang/wiredbench/pull/83))
+* Walking with an effect moves the legs and turns as it should, effects play their walking and sitting frames, and effect shadows are drawn ([#87](https://github.com/aaimang/wiredbench/pull/87))
+* The Enchanted Broomstick draws in every direction without freezing, and variable displays sit just above the head ([#87](https://github.com/aaimang/wiredbench/pull/87))
+* Blow kiss and respect play once at Habbo's own speed, keep their pace while walking, and an effect blocks a blow kiss. Skates and boards lift the avatar ([#87](https://github.com/aaimang/wiredbench/pull/87), [#88](https://github.com/aaimang/wiredbench/pull/88))
+
+### View as user
+
+* Select, use and chat as a client does, and walk onto a clicked chair or box ([#71](https://github.com/aaimang/wiredbench/pull/71), [#76](https://github.com/aaimang/wiredbench/pull/76))
+* Show WIRED effects to visitors, update four times a second and animate moves ([#69](https://github.com/aaimang/wiredbench/pull/69), [#70](https://github.com/aaimang/wiredbench/pull/70))
+* A `:wired` inspection window ([#68](https://github.com/aaimang/wiredbench/pull/68)), and the catalogue's furni facts, with `@is_stackable` ([#77](https://github.com/aaimang/wiredbench/pull/77))
+* Keep the direction a visitor walked in, and skip old messages on entry ([#75](https://github.com/aaimang/wiredbench/pull/75), [#73](https://github.com/aaimang/wiredbench/pull/73))
+* A visitor view test example room ([#72](https://github.com/aaimang/wiredbench/pull/72))
+
+### Rooms and avatars
+
+* Room time zones, with a list and a default zone, and a menu you can hide ([#58](https://github.com/aaimang/wiredbench/pull/58), [#62](https://github.com/aaimang/wiredbench/pull/62))
+* Avatar details, actions, signs and faces in the user panel ([#58](https://github.com/aaimang/wiredbench/pull/58), [#63](https://github.com/aaimang/wiredbench/pull/63), [#65](https://github.com/aaimang/wiredbench/pull/65))
+* Sliding and thrown furni are drawn on every frame ([#74](https://github.com/aaimang/wiredbench/pull/74))
+* Nothing can be put on furni that cannot hold things, such as a chair ([#78](https://github.com/aaimang/wiredbench/pull/78))
+
+### Fixes
+
+* A sitting or lying avatar faces the way its seat is turned, and can turn for a moment before facing it again ([#79](https://github.com/aaimang/wiredbench/pull/79), [#80](https://github.com/aaimang/wiredbench/pull/80))
+* Moving a seat away in Build stands the avatar up, facing the same way ([#89](https://github.com/aaimang/wiredbench/pull/89))
+* Avatars keep moving and stepping while a new look, action or face loads ([#66](https://github.com/aaimang/wiredbench/pull/66), [#67](https://github.com/aaimang/wiredbench/pull/67))
+* Hand items draw in every direction, and walking keeps its direction ([#64](https://github.com/aaimang/wiredbench/pull/64), [#60](https://github.com/aaimang/wiredbench/pull/60))
+* Laughing no longer uses Habbo's broken laugh image ([#73](https://github.com/aaimang/wiredbench/pull/73))
+* Run controls no longer lose clicks ([#61](https://github.com/aaimang/wiredbench/pull/61))
+
+### Security
+
+* Update the Python base image for an apt security fix ([#82](https://github.com/aaimang/wiredbench/pull/82))
+
 ## [0.8.0](https://github.com/aaimang/wiredbench/compare/v0.7.0...v0.8.0) (2026-11-01)
 
 
