@@ -76,11 +76,16 @@ def furni_swf(base: str, width: int = 40, height: int = 50, compressed: bool = T
     return wrap(tags, compressed)
 
 
-def effect_swf(lib: str, animation: str, extra_aliases: str = "") -> bytes:
-    """An effect library: one sprite drawn for direction 0, with frames 0 and 1."""
+def effect_swf(lib: str, animation: str, extra_aliases: str = "", shadow: str = "") -> bytes:
+    """An effect library: one sprite drawn for direction 0, with frames 0 and 1.
+
+    With a shadow name, the library also has that shadow as a black block without an offset.
+    """
+    shadow_asset = f'<asset name="h_{shadow}_0" mimeType="image/png"/>' if shadow else ""
     manifest = f"""<?xml version="1.0"?><manifest><library id="{lib}"><assets>
       <asset name="h_std_fx1_1_1_0_0" mimeType="image/png"><param key="offset" value="-10,80"/></asset>
       <asset name="h_std_fx1_1_1_0_1" mimeType="image/png"><param key="offset" value="-12,70"/></asset>
+      {shadow_asset}
     </assets><aliases>
       <alias name="h_std_fx1_1_1_2_0" link="h_std_fx1_1_1_0_0" fliph="0" flipv="0"/>
       <alias name="h_std_fx1_1_1_4_0" link="h_std_fx1_1_1_0_0" fliph="1" flipv="0"/>
@@ -91,12 +96,14 @@ def effect_swf(lib: str, animation: str, extra_aliases: str = "") -> bytes:
         + _image(2, 5, 7, b"\xff\x00\xff\xff")
         + _binary(3, manifest)
         + _binary(4, animation)
+        + (_image(5, 6, 3, b"\xff\x00\x00\x00") if shadow else b"")
         + _symbols(
             {
                 1: [f"{lib}_h_std_fx1_1_1_0_0"],
                 2: [f"{lib}_h_std_fx1_1_1_0_1"],
                 3: [f"{lib}_manifest"],
                 4: [f"{lib}_animation"],
+                **({5: [f"{lib}_h_{shadow}_0"]} if shadow else {}),
             }
         )
     )

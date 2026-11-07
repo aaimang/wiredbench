@@ -12,6 +12,7 @@ from wiredbench.api.deps import Services, get_services, viewer
 from wiredbench.config import Hotel
 from wiredbench.errors import ApiError, not_found
 from wiredbench.services.assets import FIGURE, HABBO_NAME
+from wiredbench.services.effects import MAX_FRAMES
 from wiredbench.services.upstream import UpstreamError
 
 router = APIRouter(prefix="/api", tags=["assets"])
@@ -110,19 +111,30 @@ async def avatar_image(
     action: str = Query("std", pattern=ACTION, max_length=40),
     gesture: Gesture = "std",
     direction: int = Query(2, ge=0, le=7),
-    frame: int = Query(0, ge=0, le=999),
+    # Habbo's image service has 4 frames at most, such as the steps of a walk.
+    frame: int = Query(0, ge=0, le=3),
     drawn_by: Literal["habbo", "wiredbench"] = "habbo",
     effect: int | None = Query(None, ge=1, le=100_000),
+    # An effect plays on its own clock, beside the pose's frame, and can have many more frames.
+    effect_frame: int = Query(0, ge=0, le=MAX_FRAMES - 1),
     services: Services = Depends(get_services),
 ) -> FileResponse:
     if not FIGURE.fullmatch(figure):
         raise ApiError(422, "invalid_request", "That is not a valid avatar look.")
-    # Habbo's image service has 4 frames at most. An effect drawn here can have many more.
-    if frame > 3 and effect is None:
-        raise ApiError(422, "invalid_request", "That frame is out of range.")
+    if effect_frame and effect is None:
+        raise ApiError(422, "invalid_request", "An effect frame needs an effect.")
     try:
         path = await run_in_threadpool(
-            services.assets.avatar, hotel, figure, action, gesture, direction, frame, drawn_by, effect
+            services.assets.avatar,
+            hotel,
+            figure,
+            action,
+            gesture,
+            direction,
+            frame,
+            drawn_by,
+            effect,
+            effect_frame,
         )
     except UpstreamError as exc:
         raise ApiError(502, "upstream_unavailable", "Could not download this avatar.") from exc

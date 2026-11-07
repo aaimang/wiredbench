@@ -28,7 +28,7 @@ from PIL import Image, ImageChops
 
 from wiredbench.config import HOTELS
 from wiredbench.services import swf
-from wiredbench.services.effects import parse_map
+from wiredbench.services.effects import Effects, parse_map
 from wiredbench.services.handitems import CHECK_SECONDS, RETRY_SECONDS, client_folder
 from wiredbench.services.upstream import Upstream, UpstreamError
 
@@ -57,7 +57,7 @@ UNTINTED = {"ey"}
 BODY_LIBRARY = "hh_human_body"
 MAX_ALIAS_HOPS = 6
 # Raised when drawing changes, so avatars drawn before are drawn again.
-FIGURE_RULES_VERSION = 3
+FIGURE_RULES_VERSION = 5
 
 
 @dataclass
@@ -70,6 +70,8 @@ class Action:
     geometry: str
     parts: str
     main: bool
+    # The state an effect's override answers to, such as "mv" for walking.
+    state: str = ""
 
 
 # Body part ID to (x, z, radius, item types with their radius).
@@ -97,7 +99,10 @@ class Rules:
 
     def posed(self, action_id: str, kind: str, frame: int) -> tuple[str, int] | None:
         """A part's art in another action, as an effect frame asks for a body part, such as "Sit"."""
-        action = next((found for found in self.actions.values() if found.id == action_id), None)
+        # Effect files name an action by its ID, such as "Move", or now and then by its state, such as "std".
+        action = next((found for found in self.actions.values() if found.id == action_id), None) or next(
+            (found for found in self.actions.values() if found.state == action_id), None
+        )
         if action is None:
             return None
         frames = self.frames.get(action_id, {}).get(kind)
@@ -200,6 +205,7 @@ def add_actions(rules: Rules, body: bytes) -> None:
             action.get("geometrytype", "vertical"),
             action.get("activepartset", ""),
             action.get("main") == "1",
+            action.get("state", ""),
         )
         # The image service names an action by its art. Several actions reuse "std" art, so the
         # default action alone answers to "std".
@@ -352,6 +358,14 @@ class EffectSprite:
     directions: dict[int, tuple[int, int, int]]
 
 
+# One effect frame: sprite or add ID to (frame, dx, dy, direction change), body parts, and swapped parts.
+FrameData = tuple[
+    dict[str, tuple[int, int, int, int]],
+    dict[str, tuple[str | None, int, int, int, int]],
+    dict[str, str],
+]
+
+
 @dataclass
 class EffectAnimation:
     """An effect from its own file: parts it removes or adds, sprites, recolouring and frames."""
@@ -364,26 +378,32 @@ class EffectAnimation:
     lifts: bool
     turn: int
     recolour: tuple[int, str, str] | None
-    # Each frame: sprite or add ID to (frame, dx, dy, direction change), and body parts.
-    frames: list[
-        tuple[
-            dict[str, tuple[int, int, int, int]],
-            dict[str, tuple[str | None, int, int, int, int]],
-            dict[str, str],
-        ]
-    ]
+    frames: list[FrameData]
+    # Action state, such as "mv" for walking, to the frames played instead while the avatar does it.
+    overrides: dict[str, list[FrameData]] = field(default_factory=dict)
+    # The effect's own art for the avatar's shadow, named without its direction and frame.
+    shadow: str = ""
 
-    def frame(self, number: int) -> EffectFrame:
-        sprites, body, swaps = self.frames[number % len(self.frames)] if self.frames else ({}, {}, {})
+    def playing(self, shown: Pose | None = None) -> list[FrameData]:
+        """The frames for what the avatar is doing: those of the first of its actions an override names."""
+        for action in shown.actions if shown else []:
+            if action.state in self.overrides:
+                return self.overrides[action.state]
+        return self.frames
+
+    def frame(self, number: int, shown: Pose | None = None) -> EffectFrame:
+        frames = self.playing(shown)
+        sprites, body, swaps = frames[number % len(frames)] if frames else ({}, {}, {})
         adds = [
             (kind, align, *sprites.get(base or kind, sprites.get(kind, (0, 0, 0, 0)))[:3], base)
             for kind, (align, base) in self.adds.items()
         ]
         return EffectFrame(self.library, self.removes, body, adds, swaps)
 
-    def sprite_frames(self, number: int) -> dict[str, tuple[int, int, int, int]]:
-        if self.frames:
-            return self.frames[number % len(self.frames)][0]
+    def sprite_frames(self, number: int, shown: Pose | None = None) -> dict[str, tuple[int, int, int, int]]:
+        frames = self.playing(shown)
+        if frames:
+            return frames[number % len(frames)][0]
         return dict.fromkeys(self.sprites, (0, 0, 0, 0))
 
 
@@ -433,34 +453,40 @@ def parse_effect(data: bytes, name: str) -> tuple[Library, EffectAnimation] | No
     if avatar is not None:
         recolour = (number(avatar, "ink"), avatar.get("foreground", ""), avatar.get("background", ""))
     turn = next((number(direction, "offset") for direction in animation.findall("direction")), 0)
-    frames = []
-    for frame in animation.iter("frame"):
-        shown = {
-            part.get("id", ""): (
-                number(part, "frame"),
-                number(part, "dx"),
-                number(part, "dy"),
-                number(part, "dd"),
-            )
-            for part in frame.findall("fx")
-        }
-        body = {
-            part.get("id", ""): (
-                part.get("action"),
-                number(part, "frame"),
-                number(part, "dx"),
-                number(part, "dy"),
-                number(part, "dd"),
-            )
-            for part in frame.findall("bodypart")
-        }
-        swaps = {
-            item.get("id", ""): item.get("base", "")
-            for part in frame.findall("bodypart")
-            for item in part.findall("item")
-            if item.get("base")
-        }
-        frames.extend([(shown, body, swaps)] * max(1, number(frame, "repeats")))
+
+    def read_frames(parent: ET.Element) -> list[FrameData]:
+        # Only the parent's own frames: an override's frames are played instead of these, not after.
+        frames: list[FrameData] = []
+        for frame in parent.findall("frame"):
+            shown = {
+                part.get("id", ""): (
+                    number(part, "frame"),
+                    number(part, "dx"),
+                    number(part, "dy"),
+                    number(part, "dd"),
+                )
+                for part in frame.findall("fx")
+            }
+            body = {
+                part.get("id", ""): (
+                    part.get("action"),
+                    number(part, "frame"),
+                    number(part, "dx"),
+                    number(part, "dy"),
+                    number(part, "dd"),
+                )
+                for part in frame.findall("bodypart")
+            }
+            swaps = {
+                item.get("id", ""): item.get("base", "")
+                for part in frame.findall("bodypart")
+                for item in part.findall("item")
+                if item.get("base")
+            }
+            frames.extend([(shown, body, swaps)] * max(1, number(frame, "repeats")))
+        return frames
+
+    shadow = animation.find("shadow")
     return library, EffectAnimation(
         name,
         {remove.get("id", "") for remove in animation.findall("remove")},
@@ -469,7 +495,13 @@ def parse_effect(data: bytes, name: str) -> tuple[Library, EffectAnimation] | No
         lifts,
         turn,
         recolour,
-        frames,
+        read_frames(animation),
+        {
+            override.get("override", ""): read_frames(override)
+            for override in animation.findall("override")
+            if override.get("override")
+        },
+        shadow.get("id", "") if shadow is not None else "",
     )
 
 
@@ -629,7 +661,12 @@ def compose(
 
 
 # Room around a plain avatar for what an effect adds: lifts of up to 75 pixels, wide boards and wings.
-EFFECT_MARGIN = (16, 90, 10)
+# Measured on Habbo's effect files: airplanes reach 47 pixels left and 51 right, a broom 24 left.
+EFFECT_MARGIN = (52, 90, 40)
+# An effect's shadow art is solid black. Habbo draws shadows see-through. This strength is assumed, not
+# measured in a room yet.
+SHADOW_ALPHA = 50
+SHADOW_DEPTH = -1000
 
 
 def recolour(image: Image.Image, ink: int, foreground: str, background: str) -> Image.Image:
@@ -694,7 +731,7 @@ def compose_effect(
 ) -> Image.Image:
     """An avatar with an effect, on a canvas with EFFECT_MARGIN added around the plain avatar's."""
     turned, turned_head = (direction + animation.turn) % 8, (head_direction + animation.turn) % 8
-    effect = animation.frame(frame)
+    effect = animation.frame(frame, shown)
     avatar = compose(rules, looks, library, turned, turned_head, shown, effect)
     if animation.recolour:
         avatar = recolour(avatar, *animation.recolour)
@@ -702,10 +739,20 @@ def compose_effect(
     width, height = avatar.size
     canvas = Image.new("RGBA", (width + 2 * margin_x, height + margin_top + margin_bottom), (0, 0, 0, 0))
     origin = CANVASES.get(shown.geometry, CANVASES["vertical"])[1]
-    shown_sprites = animation.sprite_frames(frame)
+    shown_sprites = animation.sprite_frames(frame, shown)
     lift = shown_sprites.get("avatar", (0, 0, 0, 0)) if animation.lifts else (0, 0, 0, 0)
     layers: list[tuple[int, Image.Image, int, int, bool]] = []
     effect_art = library[animation.library]
+    # The effect's own shadow stays on the floor, under everything, however high the avatar is lifted.
+    found_shadow = animation.shadow and (
+        effect_art.asset(f"h_{animation.shadow}_0") or effect_art.asset(f"h_{animation.shadow}_0_0")
+    )
+    if found_shadow:
+        image, (offset_x, offset_y) = found_shadow
+        image = image.copy()
+        image.putalpha(image.getchannel("A").point(lambda v: v * SHADOW_ALPHA // 255))
+        left, top = origin[0] - offset_x, origin[1] - offset_y
+        layers.append((SHADOW_DEPTH, image, margin_x + left, margin_top + top, False))
     for sprite_id, (number, dx, dy, dd) in shown_sprites.items():
         sprite = animation.sprites.get(sprite_id)
         if sprite is None:
@@ -725,18 +772,33 @@ def compose_effect(
             left = width - left - image.width
         layers.append((dz, image, margin_x + left, margin_top + origin[1] - offset_y + sy + dy, sprite.add))
     layers.append((0, avatar, margin_x + lift[1], margin_top + lift[2], False))
-    # Sprites with a negative depth are behind the avatar. The avatar comes before sprites at depth 0.
-    for _, image, left, top, light in sorted(layers, key=lambda layer: (layer[0], layer[1] is not avatar)):
+    # Sprites with a negative depth are behind the avatar. The avatar comes before sprites at depth 0, so
+    # a staff held in the hand is in front. An effect that removes the body draws a body of its own at
+    # depth 0, such as a broom rider's cloak, and what is left of the avatar, the head, goes on top.
+    on_top = "bd" in animation.removes
+    for _, image, left, top, light in sorted(
+        layers, key=lambda layer: (layer[0], (layer[1] is avatar) == on_top)
+    ):
         if light:
             image = as_light(image)
-        canvas.alpha_composite(image, (max(0, left), max(0, top)), (max(0, -left), max(0, -top)))
+        paste(canvas, image, left, top)
     return canvas
 
 
+def paste(canvas: Image.Image, image: Image.Image, left: int, top: int) -> None:
+    """Draws the part of an image that lands on the canvas. Art wholly off the canvas draws nothing."""
+    x0, y0 = max(0, -left), max(0, -top)
+    x1, y1 = min(image.width, canvas.width - left), min(image.height, canvas.height - top)
+    if x1 > x0 and y1 > y0:
+        canvas.alpha_composite(image.crop((x0, y0, x1, y1)), (left + x0, top + y0))
+
+
 class Figures:
-    def __init__(self, root: Path, upstream: Upstream) -> None:
+    def __init__(self, root: Path, upstream: Upstream, effects: Effects | None = None) -> None:
         self.root = root
         self.upstream = upstream
+        # Effect files are shared with the room's effect layers, so each is downloaded once.
+        self.effects = effects or Effects(root / "effects", upstream)
         self._lock = threading.Lock()
         self._hotels: dict[str, tuple[float, tuple[str, str] | None]] = {}
         self._rules: tuple[str, Rules] | None = None
@@ -816,8 +878,7 @@ class Figures:
             name = self._effect_map.get(effect)
             found = None
             if name:
-                data = self._cached(self.root / build / f"{name}.swf", f"{base}{name}.swf", MAX_LIBRARY_BYTES)
-                parsed = parse_effect(data, name)
+                parsed = parse_effect(self.effects.library(base, build, name), name)
                 if parsed:
                     self._libraries[name], found = parsed
             self._effects[effect] = found
@@ -833,10 +894,12 @@ class Figures:
         gesture: str = "std",
         frame: int = 0,
         effect: int | None = None,
+        effect_frame: int = 0,
     ) -> bytes | None:
         """A PNG of the avatar, or None when it cannot be drawn here.
 
-        With an effect, frame is the effect's frame, and the canvas has EFFECT_MARGIN around it.
+        frame is the pose's own frame, such as a step of the walk. An effect plays on its own clock, so
+        it has a frame of its own. With an effect, the canvas has EFFECT_MARGIN around it.
         """
         with self._lock:
             try:
@@ -895,7 +958,14 @@ class Figures:
                         return None
                 if animation:
                     image = compose_effect(
-                        rules, looks, self._libraries, direction, head_direction, shown, animation, frame
+                        rules,
+                        looks,
+                        self._libraries,
+                        direction,
+                        head_direction,
+                        shown,
+                        animation,
+                        effect_frame,
                     )
                 else:
                     image = compose(rules, looks, self._libraries, direction, head_direction, shown)

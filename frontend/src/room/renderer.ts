@@ -109,19 +109,23 @@ const OUTLINE_OFFSETS = [
 ];
 const GLOW_OFFSETS = [...OUTLINE_OFFSETS, [-2, 0], [2, 0], [0, -2], [0, 2]];
 const GLOW_OPACITY = 0.8;
-const FX_RISE_USER = 100;
+/** The top of an avatar's head, above its tile, measured on Habbo's standing images: 96 - 23. */
+const HEAD_TOP = 73;
+/** Space between the head and the first variable shown over it. */
+const FX_GAP_USER = 8;
 const FX_RISE_FURNI = 40;
 const ART_VERSION = 3;
 const AVATAR_ANCHOR = { x: 32, y: 96 };
 const AVATAR_SIZE = { w: 64, h: 110 };
 /** Room the server leaves around an avatar drawn with an effect, matching EFFECT_MARGIN there. */
-const EFFECT_MARGIN = { x: 16, top: 90 };
+const EFFECT_MARGIN = { x: 52, top: 90 };
 const SELECTED_TINT = 0xfff0a0;
 const PICKED_TINT = 0xb28ad8;
 /** How far a pose sits below the top of its furni, in height units. Matched by eye to real furni. */
 const POSE_DROP: Record<string, number> = { sit: 0.5, lay: 0.5 };
 /** Habbo gets four downloads at a time, and this leaves two for images already on screen. */
 const WARM_DOWNLOADS = 2;
+const MAX_WARM_QUEUE = 512;
 const WALK_FRAMES = [0, 1, 2, 3];
 const ALL_DIRECTIONS = [0, 1, 2, 3, 4, 5, 6, 7];
 
@@ -146,6 +150,7 @@ export function avatarUrl(
   frame: number,
   gesture = "std",
   effect?: number,
+  effectFrame = 0,
 ): string {
   // The choice is part of the address, so switching it never shows an image cached the other way.
   const drawnBy = state.settings?.avatar_drawing === "wiredbench" ? { drawn_by: "wiredbench" } : {};
@@ -156,8 +161,31 @@ export function avatarUrl(
     direction: dir,
     frame,
     ...drawnBy,
-    ...(effect ? { effect } : {}),
+    ...(effect ? { effect, effect_frame: effectFrame } : {}),
   });
+}
+
+/**
+ * The image of an avatar with a body-changing effect at a moment. The pose keeps its own frame, such
+ * as a step of the walk, and the effect plays on its own clock, so walking still moves the legs.
+ */
+export function bodyEffectUrl(
+  avatar: Pick<PlacedAvatar, "hotel" | "figure">,
+  pose: Pick<AvatarPose, "action" | "extra" | "dir" | "frame" | "gesture">,
+  effect: number,
+  frameCount: number,
+  nowMs: number,
+): string {
+  const step = Math.floor(nowMs / EFFECT_FRAME_MS);
+  return avatarUrl(
+    avatar,
+    figureAction(pose.action, pose.extra ?? []),
+    pose.dir,
+    pose.frame,
+    pose.gesture,
+    effect,
+    frameCount > 1 ? step % frameCount : 0,
+  );
 }
 
 /** Draws the room. It holds no room state of its own: each draw takes a complete Scene. */
@@ -184,7 +212,8 @@ export class RoomRenderer {
     string,
     { manifest: EffectManifest; atlas: Texture | null } | null | undefined
   >();
-  private effectShown = new Map<number, Texture>();
+  /** Per avatar, the last effect image shown for each way of facing and step, and overall. */
+  private effectShown = new Map<number, Map<string, Texture>>();
   private hits: { hit: Hit; bounds: Rectangle; order: number }[] = [];
   private scene: Scene | null = null;
   private drawnRoomSize = "";
@@ -320,7 +349,8 @@ export class RoomRenderer {
   private warm(urls: string[]): void {
     const wanted = urls.filter((url) => !this.avatars.has(url));
     // The latest request goes first, because it is what the avatar is doing now.
-    this.warmQueue = [...new Set([...wanted, ...this.warmQueue])];
+    // An effect asks for new frames all the time, so the oldest requests are let go.
+    this.warmQueue = [...new Set([...wanted, ...this.warmQueue])].slice(0, MAX_WARM_QUEUE);
     while (this.warmLoading < WARM_DOWNLOADS) {
       const url = this.warmQueue.shift();
       if (!url) return;
@@ -555,13 +585,33 @@ export class RoomRenderer {
       const below = used.get(key) ?? 0;
       const height = fxHeight(fx.kind);
       used.set(key, below + height);
-      const centre = tileCentre(holder.x, holder.y, holder.z);
-      const rise = fx.target === "user" ? FX_RISE_USER : FX_RISE_FURNI;
+      const { centre, rise } =
+        fx.target === "user"
+          ? this.overHead(scene, holder as PlacedAvatar)
+          : { centre: tileCentre(holder.x, holder.y, holder.z), rise: FX_RISE_FURNI };
       const art = fxArt(fx);
       art.position.set(centre.x, centre.y - rise - below - height / 2);
       art.zIndex = Number.MAX_SAFE_INTEGER;
       this.layer.addChild(art);
     }
+  }
+
+  /**
+   * Where a user's variables start: just over the head as drawn, so they follow a walk, drop with a
+   * seat, and rise with an effect that lifts the avatar, such as a broom.
+   */
+  private overHead(
+    scene: Scene,
+    avatar: PlacedAvatar,
+  ): { centre: { x: number; y: number }; rise: number } {
+    const pose = scene.avatarPose(avatar);
+    const centre = tileCentre(pose.x, pose.y, pose.z - (POSE_DROP[pose.action] ?? 0));
+    const effect = (avatar.details as Record<string, number> | undefined)?.["@effect"] ?? 0;
+    const art = effect > 0 ? this.effects.get(`${avatar.hotel}/${effect}`) : undefined;
+    const drawsBody =
+      state.settings?.avatar_drawing === "wiredbench" && art?.manifest.drawable === false;
+    const lift = drawsBody ? (art?.manifest.lift ?? 0) : 0;
+    return { centre, rise: HEAD_TOP + FX_GAP_USER + lift };
   }
 
   private drawFloor(scene: Scene): void {
@@ -955,17 +1005,30 @@ export class RoomRenderer {
     const count = art?.manifest.drawable === false ? (art.manifest.frame_count ?? 0) : 0;
     if (!count) return null;
     if (count > 1) this.animating = true;
-    const step = Math.floor(performance.now() / EFFECT_FRAME_MS);
-    const action = figureAction(pose.action, pose.extra ?? []);
-    const url = (frame: number) =>
-      avatarUrl(avatar, action, pose.dir, frame % count, pose.gesture, effect);
-    const loaded = this.avatars.get(url(step));
-    if (loaded === undefined) void this.loadAvatar(url(step));
-    this.warm([url(step + 1), url(step + 2)]);
-    // The last frame stays up while the next loads, so the effect never flickers.
-    const texture = loaded ?? this.effectShown.get(avatar.id) ?? null;
-    if (loaded) this.effectShown.set(avatar.id, loaded);
-    return { texture };
+    const now = performance.now();
+    const at = (ms: number, step = pose.frame) =>
+      bodyEffectUrl(avatar, { ...pose, frame: step }, effect, count, ms);
+    const url = at(now);
+    const loaded = this.avatars.get(url);
+    if (loaded === undefined) void this.loadAvatar(url);
+    // The server could not draw this one. The plain avatar keeps walking and turning, where holding the
+    // last effect image would look frozen.
+    if (loaded === null) return null;
+    // The next effect frames, and every step of a walk, so a step never waits on an image.
+    const steps = pose.action === "wlk" ? WALK_FRAMES : [pose.frame];
+    this.warm(
+      [1, 2].flatMap((ahead) => steps.map((step) => at(now + ahead * EFFECT_FRAME_MS, step))),
+    );
+    // While this one loads, the last image shown facing this way and at this step keeps the legs
+    // moving and the turn shown. Only with nothing like it does the last image stay up.
+    const shown = this.effectShown.get(avatar.id) ?? new Map<string, Texture>();
+    const key = `${effect}/${pose.dir}/${pose.frame}/${pose.action}`;
+    if (loaded) {
+      shown.set(key, loaded);
+      shown.set("last", loaded);
+      this.effectShown.set(avatar.id, shown);
+    }
+    return { texture: loaded ?? shown.get(key) ?? shown.get("last") ?? null };
   }
 
   private drawAvatar(scene: Scene, avatar: PlacedAvatar): void {

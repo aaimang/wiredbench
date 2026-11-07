@@ -52,7 +52,12 @@ def test_an_overlay_effect_is_built_into_a_sprite_sheet() -> None:
 def test_an_effect_that_changes_the_body_is_not_drawn() -> None:
     manifest, sheet = effects.build(effect_swf("Board", BODY), "Board")
     assert sheet is None
-    assert manifest == {"drawable": False, "why": ["add", "avatar", "bodypart"], "frame_count": 1}
+    assert manifest == {
+        "drawable": False,
+        "why": ["add", "avatar", "bodypart"],
+        "frame_count": 1,
+        "lift": 0,
+    }
 
 
 @pytest.fixture
@@ -98,3 +103,38 @@ def test_the_list_of_drawable_effects_is_served(api: Api) -> None:
     assert set(found["drawn"]) <= set(found["checked"])
     assert 4 in found["drawn"], "Twinkle only adds sparkles"
     assert 2 not in found["drawn"], "a hoverboard changes the body"
+
+
+DUCK = """<animation name="fx.170">
+  <remove id="hd"/>
+  <override name="mv_duck" override="mv">
+    <frame><bodypart id="head"/></frame>
+    <frame repeats="3"><bodypart id="head"/></frame>
+  </override>
+</animation>"""
+
+
+def test_frames_played_only_while_walking_are_counted() -> None:
+    manifest, _ = effects.build(effect_swf("Duck", DUCK), "Duck")
+    assert manifest["frame_count"] == 4, "a duck has frames only for walking"
+
+
+def test_an_effect_file_is_downloaded_once_for_layers_and_drawing(api: Api, fx: FakeHabbo) -> None:
+    services = api.services
+    assert services.assets.figures.effects is services.assets.effects
+    assert api.get("/api/effects/com/2/manifest").status_code == 200
+    base, build = services.assets.effects._client("com")
+    services.assets.figures.effects.library(base, build, "Board")
+    board = [request for request in fx.requests if request.url.path.endswith("/Board.swf")]
+    assert len(board) == 1
+    with pytest.raises(ValueError):
+        services.assets.effects.library(base, build, "../evil")
+
+
+def test_a_body_effect_says_how_high_it_lifts_the_avatar() -> None:
+    lifting = """<animation name="fx.247"><sprite id="avatar"/><remove id="bd"/>
+      <frame><fx id="avatar" frame="0" dy="-23"/></frame>
+      <frame><fx id="avatar" frame="0" dy="-25"/></frame>
+    </animation>"""
+    manifest, _ = effects.build(effect_swf("Broom", lifting), "Broom")
+    assert manifest["lift"] == 25, "the highest the avatar goes, so labels stay clear of the head"

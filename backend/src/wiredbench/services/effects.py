@@ -34,7 +34,7 @@ BODY_CHANGES = {"add", "remove", "override", "avatar", "direction"}
 INK_ADD = "33"
 MAX_FRAMES = 2000
 # Raised when the manifest's shape changes, so effects built before are built again.
-EFFECT_VERSION = 2
+EFFECT_VERSION = 4
 
 
 def facts() -> dict[str, Any]:
@@ -94,8 +94,25 @@ def build(data: bytes, lib: str) -> tuple[dict[str, Any], bytes | None]:
     if not sprites:
         why.add("no sprites")
     if why:
-        # The frame count lets the room play a body-changing effect drawn from its parts.
-        return {"drawable": False, "why": sorted(why), "frame_count": max(1, len(frames))}, None
+        # The frame count lets the room play a body-changing effect drawn from its parts. Some effects
+        # play only frames that stand in for an action, such as a duck that walks, so those count too.
+        played = [len(frames)] + [
+            sum(max(1, _int(frame, "repeats")) for frame in override.findall("frame"))
+            for override in animation.findall("override")
+        ]
+        # How high the effect lifts the avatar at most, so the room can keep its labels clear of the head.
+        lifts = [
+            -_int(part, "dy")
+            for frame in animation.iter("frame")
+            for part in frame.findall("fx")
+            if part.get("id") == "avatar"
+        ]
+        return {
+            "drawable": False,
+            "why": sorted(why),
+            "frame_count": max(1, *played),
+            "lift": max(0, *lifts) if lifts else 0,
+        }, None
     if len(frames) > MAX_FRAMES:
         return {"drawable": False, "why": ["too many frames"]}, None
 
@@ -167,6 +184,22 @@ class Effects:
         self._lock = threading.Lock()
         self._hotels: dict[str, tuple[float, tuple[str, str] | None]] = {}
         self._maps: dict[str, dict[int, str]] = {}
+        self._file_lock = threading.Lock()
+
+    def library(self, base: str, build_name: str, lib: str) -> bytes:
+        """An effect's file, downloaded once and kept for both the room's layers and avatar drawing."""
+        if not LIBRARY.fullmatch(lib):
+            raise ValueError("Unexpected effect file name.")
+        path = self.root / build_name / f"{lib}.swf"
+        with self._file_lock:
+            if path.exists():
+                return path.read_bytes()
+            body = self._fetch(f"{base}{lib}.swf", MAX_EFFECT_BYTES)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            temp = path.with_suffix(".tmp")
+            temp.write_bytes(body)
+            temp.replace(path)
+            return body
 
     def _fetch(self, url: str, limit: int) -> bytes:
         fetched = self.upstream.get(url, limit)
@@ -209,7 +242,7 @@ class Effects:
             )
             if not manifest.exists():
                 try:
-                    built, sheet = build(self._fetch(f"{base}{lib}.swf", MAX_EFFECT_BYTES), lib)
+                    built, sheet = build(self.library(base, build_name, lib), lib)
                 except (swf.SwfError, ET.ParseError) as exc:
                     log.warning("Effect %s could not be read: %s", lib, exc)
                     built, sheet = {"drawable": False, "why": ["unreadable"]}, None
