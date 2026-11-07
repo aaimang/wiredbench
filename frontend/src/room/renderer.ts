@@ -16,6 +16,8 @@ import { depth, screenToTile, TILE_HEIGHT, TILE_WIDTH, tileCentre, Z_UNIT } from
 import {
   type AvatarAction,
   avatarExtras,
+  type EffectManifest,
+  effectLayers,
   FACE_NAMES,
   type Flight,
   type FurniArtData,
@@ -167,6 +169,11 @@ export class RoomRenderer {
   private warmQueue: string[] = [];
   private warmLoading = 0;
   private parts = new Map<string, Texture>();
+  /** Undefined while loading, null when the effect cannot be drawn. */
+  private effects = new Map<
+    string,
+    { manifest: EffectManifest; atlas: Texture } | null | undefined
+  >();
   private hits: { hit: Hit; bounds: Rectangle; order: number }[] = [];
   private scene: Scene | null = null;
   private drawnRoomSize = "";
@@ -195,6 +202,47 @@ export class RoomRenderer {
 
   destroy(): void {
     this.app.destroy({ removeView: true }, { children: true });
+  }
+
+  /** Fetches an effect's layers once. Null means it cannot be drawn, so the avatar shows without it. */
+  private loadEffect(hotel: string, effect: number): void {
+    const key = `${hotel}/${effect}`;
+    if (this.effects.has(key)) return;
+    this.effects.set(key, undefined);
+    void (async () => {
+      try {
+        const manifest = await get<EffectManifest>(`/api/effects/${hotel}/${effect}/manifest`);
+        if (!manifest.drawable) return null;
+        const atlas = await loadTexture(`/api/effects/${hotel}/${effect}/atlas`);
+        return { manifest, atlas };
+      } catch {
+        return null;
+      }
+    })().then((art) => {
+      this.effects.set(key, art);
+      this.onChange();
+    });
+  }
+
+  /** Draws an avatar's effect around its image, in front of it or behind it. */
+  private drawEffect(avatar: PlacedAvatar, dir: number, left: number, top: number, order: number) {
+    const effect = (avatar.details as Record<string, number> | undefined)?.["@effect"] ?? 0;
+    if (effect <= 0) return;
+    const art = this.effects.get(`${avatar.hotel}/${effect}`);
+    if (art === undefined) {
+      this.loadEffect(avatar.hotel, effect);
+      return;
+    }
+    if (!art) return;
+    if ((art.manifest.frames?.length ?? 0) > 1) this.animating = true;
+    for (const layer of effectLayers(art.manifest, dir, performance.now())) {
+      const sprite = new Sprite(this.partTexture(art.atlas, layer.image));
+      sprite.position.set(left + layer.x, top + layer.y);
+      // Layers keep their own order around the avatar without passing anything else in the room.
+      sprite.zIndex = order + (layer.front ? 0.0001 : -0.0001) * (1 + Math.abs(layer.dz));
+      if (layer.add) sprite.blendMode = "add";
+      this.layer.addChild(sprite);
+    }
   }
 
   /** Fetches a furni's art once. Null means Habbo has none, and a placeholder is drawn. */
@@ -911,6 +959,7 @@ export class RoomRenderer {
       if (look?.invisible) sprite.alpha = selected ? SELECTED_INVISIBLE_OPACITY : 0;
       this.layer.addChild(sprite);
       if (look?.highlight && !look.invisible) this.addLook([sprite], look.highlight);
+      if (!look?.invisible) this.drawEffect(avatar, pose.dir, left, top, order);
     } else {
       const stand = new Graphics()
         .ellipse(centre.x, centre.y - 30, 12, 30)

@@ -204,6 +204,8 @@ running server.
 | GET | `/api/catalog/status` | Admin |
 | POST | `/api/catalog/sync` | Admin |
 | GET | `/api/dashboard` | Admin |
+| GET | `/api/effects/{hotel}/{effect}/atlas` | Admin |
+| GET | `/api/effects/{hotel}/{effect}/manifest` | Admin |
 | GET | `/api/engine/boxes` | Admin |
 | GET | `/api/engine/built-in-variables` | Admin |
 | POST | `/api/folders` | Admin |

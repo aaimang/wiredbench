@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Literal
 
 from fastapi import APIRouter, Depends, Query
+from fastapi import Path as FastPath
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse
 
@@ -14,6 +16,8 @@ from wiredbench.services.upstream import UpstreamError
 
 router = APIRouter(prefix="/api", tags=["assets"])
 
+# An effect file changes with each new client build.
+DAILY = {"Cache-Control": "private, max-age=86400"}
 IMMUTABLE = {"Cache-Control": "private, max-age=31536000, immutable"}
 # A pose with what the avatar is doing on top, such as sit,sig=6 or wlk,crr=1.
 ACTION_PART = r"(?:std|wlk|sit|lay|wav|blw|lgh|respect|crr(?:=\d{1,4})?|drk(?:=\d{1,4})?|sig(?:=\d{1,2})?)"
@@ -50,6 +54,36 @@ async def furni_atlas(
 ) -> FileResponse:
     _, atlas = await _furni(revision, classname, services)
     return FileResponse(atlas, media_type="image/png", headers=IMMUTABLE)
+
+
+async def _effect(hotel: Hotel, effect: int, services: Services) -> tuple[Path, Path | None]:
+    try:
+        found = await run_in_threadpool(services.assets.effects.files, hotel, effect)
+    except UpstreamError as exc:
+        raise ApiError(502, "upstream_unavailable", "Could not download this effect.") from exc
+    if found is None:
+        raise not_found("Effect")
+    return found
+
+
+@router.get("/effects/{hotel}/{effect}/manifest")
+@viewer
+async def effect_manifest(
+    hotel: Hotel, effect: int = FastPath(ge=1, le=100_000), services: Services = Depends(get_services)
+) -> FileResponse:
+    manifest, _ = await _effect(hotel, effect, services)
+    return FileResponse(manifest, media_type="application/json", headers=DAILY)
+
+
+@router.get("/effects/{hotel}/{effect}/atlas")
+@viewer
+async def effect_atlas(
+    hotel: Hotel, effect: int = FastPath(ge=1, le=100_000), services: Services = Depends(get_services)
+) -> FileResponse:
+    _, atlas = await _effect(hotel, effect, services)
+    if atlas is None:
+        raise not_found("Effect images")
+    return FileResponse(atlas, media_type="image/png", headers=DAILY)
 
 
 @router.get("/avatars/{hotel}/lookup")

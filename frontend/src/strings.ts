@@ -355,7 +355,7 @@ export const t = {
       sixty_seven: "67",
     } as Record<string, string>,
     avatarNotDrawn:
-      "Effect and dance change the value only, because the avatar images have no art for them.",
+      "Dance changes the value only. Effects that only add something around the avatar are drawn, but ones that change the body, such as hoverboards, are not.",
     avatarGender: "Gender",
     avatarGenders: ["Male", "Female"],
     avatarLists: {
