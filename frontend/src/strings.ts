@@ -521,7 +521,7 @@ export const t = {
       wiredbench: "Wiredbench, from Habbo's files (beta)",
     } as Record<string, string>,
     avatarDrawingHelp:
-      "Wiredbench draws avatars standing still from their parts, which allows more effects later. Other poses still come from Habbo's image service.",
+      "Wiredbench draws avatars from their parts, including walking, sitting, lying, actions, faces and hand items. Anything it cannot draw still comes from Habbo's image service.",
     defaultTimezoneHelp: "New sandboxes start in this zone. Existing ones keep theirs.",
     theme: "Theme",
     themes: { system: "Match system", light: "Light", dark: "Dark" } as Record<string, string>,
