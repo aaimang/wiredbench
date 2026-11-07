@@ -34,7 +34,7 @@ BODY_CHANGES = {"add", "remove", "override", "avatar", "direction"}
 INK_ADD = "33"
 MAX_FRAMES = 2000
 # Raised when the manifest's shape changes, so effects built before are built again.
-EFFECT_VERSION = 3
+EFFECT_VERSION = 4
 
 
 def facts() -> dict[str, Any]:
@@ -100,7 +100,19 @@ def build(data: bytes, lib: str) -> tuple[dict[str, Any], bytes | None]:
             sum(max(1, _int(frame, "repeats")) for frame in override.findall("frame"))
             for override in animation.findall("override")
         ]
-        return {"drawable": False, "why": sorted(why), "frame_count": max(1, *played)}, None
+        # How high the effect lifts the avatar at most, so the room can keep its labels clear of the head.
+        lifts = [
+            -_int(part, "dy")
+            for frame in animation.iter("frame")
+            for part in frame.findall("fx")
+            if part.get("id") == "avatar"
+        ]
+        return {
+            "drawable": False,
+            "why": sorted(why),
+            "frame_count": max(1, *played),
+            "lift": max(0, *lifts) if lifts else 0,
+        }, None
     if len(frames) > MAX_FRAMES:
         return {"drawable": False, "why": ["too many frames"]}, None
 

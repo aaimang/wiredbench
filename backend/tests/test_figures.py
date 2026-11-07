@@ -401,3 +401,47 @@ def test_effect_actions_are_found_by_id_or_state() -> None:
     rules = figures.parse_rules(GEOMETRY, PART_SETS, actions=ACTIONS)
     assert rules.posed("Sit", "bd", 0) == ("sit", 0)
     assert rules.posed("std", "bd", 0) == ("std", 0), "some effects name the default action by its state"
+
+
+def held_or_worn(removes: str) -> str:
+    return f"""<animation name="fx.247">{removes}
+  <sprite id="fx1_1" member="std_fx1_1_1"><direction id="0" dz="0"/></sprite>
+  <frame><fx id="fx1_1" frame="0" dx="10"/></frame>
+</animation>"""
+
+
+def test_the_head_goes_over_a_body_the_effect_draws_itself(parts: tuple) -> None:
+    from swf_builder import effect_swf
+
+    rules, data, mapping = parts
+    looks = figures.resolve("hd-180-7", data, mapping)
+    assert looks is not None
+    margin_x, margin_top, _ = figures.EFFECT_MARGIN
+
+    def at_head(removes: str) -> tuple[int, ...]:
+        art, animation = figures.parse_effect(effect_swf("Fx", held_or_worn(removes)), "Fx") or (None, None)
+        assert art and animation
+        image = figures.compose_effect(
+            rules,
+            looks,
+            {"lib_a": library(), "Fx": art},
+            2,
+            2,
+            figures.Pose("vertical", [], [], 0),
+            animation,
+            0,
+        )
+        return image.getpixel((margin_x + 20, margin_top + 20))
+
+    assert at_head("") == (255, 255, 0, 255), "a held item at depth 0 is in front, as a staff in the hand"
+    assert at_head('<remove id="bd"/>') == (255, 0, 0, 255), "a broom rider's cloak goes under the head"
+
+
+def test_art_off_the_canvas_draws_nothing_and_never_fails() -> None:
+    canvas = Image.new("RGBA", (10, 10))
+    dot = Image.new("RGBA", (1, 1), (255, 0, 0, 255))
+    for left, top in ((-8, 0), (0, -8), (12, 0), (0, 12)):
+        figures.paste(canvas, dot, left, top)
+    assert canvas.getbbox() is None
+    figures.paste(canvas, Image.new("RGBA", (4, 4), (255, 0, 0, 255)), -2, 8)
+    assert canvas.getbbox() == (0, 8, 2, 10), "only the part on the canvas"

@@ -52,7 +52,12 @@ def test_an_overlay_effect_is_built_into_a_sprite_sheet() -> None:
 def test_an_effect_that_changes_the_body_is_not_drawn() -> None:
     manifest, sheet = effects.build(effect_swf("Board", BODY), "Board")
     assert sheet is None
-    assert manifest == {"drawable": False, "why": ["add", "avatar", "bodypart"], "frame_count": 1}
+    assert manifest == {
+        "drawable": False,
+        "why": ["add", "avatar", "bodypart"],
+        "frame_count": 1,
+        "lift": 0,
+    }
 
 
 @pytest.fixture
@@ -124,3 +129,12 @@ def test_an_effect_file_is_downloaded_once_for_layers_and_drawing(api: Api, fx: 
     assert len(board) == 1
     with pytest.raises(ValueError):
         services.assets.effects.library(base, build, "../evil")
+
+
+def test_a_body_effect_says_how_high_it_lifts_the_avatar() -> None:
+    lifting = """<animation name="fx.247"><sprite id="avatar"/><remove id="bd"/>
+      <frame><fx id="avatar" frame="0" dy="-23"/></frame>
+      <frame><fx id="avatar" frame="0" dy="-25"/></frame>
+    </animation>"""
+    manifest, _ = effects.build(effect_swf("Broom", lifting), "Broom")
+    assert manifest["lift"] == 25, "the highest the avatar goes, so labels stay clear of the head"

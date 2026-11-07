@@ -109,13 +109,16 @@ const OUTLINE_OFFSETS = [
 ];
 const GLOW_OFFSETS = [...OUTLINE_OFFSETS, [-2, 0], [2, 0], [0, -2], [0, 2]];
 const GLOW_OPACITY = 0.8;
-const FX_RISE_USER = 100;
+/** The top of an avatar's head, above its tile, measured on Habbo's standing images: 96 - 23. */
+const HEAD_TOP = 73;
+/** Space between the head and the first variable shown over it. */
+const FX_GAP_USER = 8;
 const FX_RISE_FURNI = 40;
 const ART_VERSION = 3;
 const AVATAR_ANCHOR = { x: 32, y: 96 };
 const AVATAR_SIZE = { w: 64, h: 110 };
 /** Room the server leaves around an avatar drawn with an effect, matching EFFECT_MARGIN there. */
-const EFFECT_MARGIN = { x: 16, top: 90 };
+const EFFECT_MARGIN = { x: 52, top: 90 };
 const SELECTED_TINT = 0xfff0a0;
 const PICKED_TINT = 0xb28ad8;
 /** How far a pose sits below the top of its furni, in height units. Matched by eye to real furni. */
@@ -582,13 +585,33 @@ export class RoomRenderer {
       const below = used.get(key) ?? 0;
       const height = fxHeight(fx.kind);
       used.set(key, below + height);
-      const centre = tileCentre(holder.x, holder.y, holder.z);
-      const rise = fx.target === "user" ? FX_RISE_USER : FX_RISE_FURNI;
+      const { centre, rise } =
+        fx.target === "user"
+          ? this.overHead(scene, holder as PlacedAvatar)
+          : { centre: tileCentre(holder.x, holder.y, holder.z), rise: FX_RISE_FURNI };
       const art = fxArt(fx);
       art.position.set(centre.x, centre.y - rise - below - height / 2);
       art.zIndex = Number.MAX_SAFE_INTEGER;
       this.layer.addChild(art);
     }
+  }
+
+  /**
+   * Where a user's variables start: just over the head as drawn, so they follow a walk, drop with a
+   * seat, and rise with an effect that lifts the avatar, such as a broom.
+   */
+  private overHead(
+    scene: Scene,
+    avatar: PlacedAvatar,
+  ): { centre: { x: number; y: number }; rise: number } {
+    const pose = scene.avatarPose(avatar);
+    const centre = tileCentre(pose.x, pose.y, pose.z - (POSE_DROP[pose.action] ?? 0));
+    const effect = (avatar.details as Record<string, number> | undefined)?.["@effect"] ?? 0;
+    const art = effect > 0 ? this.effects.get(`${avatar.hotel}/${effect}`) : undefined;
+    const drawsBody =
+      state.settings?.avatar_drawing === "wiredbench" && art?.manifest.drawable === false;
+    const lift = drawsBody ? (art?.manifest.lift ?? 0) : 0;
+    return { centre, rise: HEAD_TOP + FX_GAP_USER + lift };
   }
 
   private drawFloor(scene: Scene): void {
@@ -988,6 +1011,9 @@ export class RoomRenderer {
     const url = at(now);
     const loaded = this.avatars.get(url);
     if (loaded === undefined) void this.loadAvatar(url);
+    // The server could not draw this one. The plain avatar keeps walking and turning, where holding the
+    // last effect image would look frozen.
+    if (loaded === null) return null;
     // The next effect frames, and every step of a walk, so a step never waits on an image.
     const steps = pose.action === "wlk" ? WALK_FRAMES : [pose.frame];
     this.warm(

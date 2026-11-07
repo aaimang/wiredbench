@@ -57,7 +57,7 @@ UNTINTED = {"ey"}
 BODY_LIBRARY = "hh_human_body"
 MAX_ALIAS_HOPS = 6
 # Raised when drawing changes, so avatars drawn before are drawn again.
-FIGURE_RULES_VERSION = 4
+FIGURE_RULES_VERSION = 5
 
 
 @dataclass
@@ -661,7 +661,8 @@ def compose(
 
 
 # Room around a plain avatar for what an effect adds: lifts of up to 75 pixels, wide boards and wings.
-EFFECT_MARGIN = (16, 90, 10)
+# Measured on Habbo's effect files: airplanes reach 47 pixels left and 51 right, a broom 24 left.
+EFFECT_MARGIN = (52, 90, 40)
 # An effect's shadow art is solid black. Habbo draws shadows see-through. This strength is assumed, not
 # measured in a room yet.
 SHADOW_ALPHA = 50
@@ -771,12 +772,25 @@ def compose_effect(
             left = width - left - image.width
         layers.append((dz, image, margin_x + left, margin_top + origin[1] - offset_y + sy + dy, sprite.add))
     layers.append((0, avatar, margin_x + lift[1], margin_top + lift[2], False))
-    # Sprites with a negative depth are behind the avatar. The avatar comes before sprites at depth 0.
-    for _, image, left, top, light in sorted(layers, key=lambda layer: (layer[0], layer[1] is not avatar)):
+    # Sprites with a negative depth are behind the avatar. The avatar comes before sprites at depth 0, so
+    # a staff held in the hand is in front. An effect that removes the body draws a body of its own at
+    # depth 0, such as a broom rider's cloak, and what is left of the avatar, the head, goes on top.
+    on_top = "bd" in animation.removes
+    for _, image, left, top, light in sorted(
+        layers, key=lambda layer: (layer[0], (layer[1] is avatar) == on_top)
+    ):
         if light:
             image = as_light(image)
-        canvas.alpha_composite(image, (max(0, left), max(0, top)), (max(0, -left), max(0, -top)))
+        paste(canvas, image, left, top)
     return canvas
+
+
+def paste(canvas: Image.Image, image: Image.Image, left: int, top: int) -> None:
+    """Draws the part of an image that lands on the canvas. Art wholly off the canvas draws nothing."""
+    x0, y0 = max(0, -left), max(0, -top)
+    x1, y1 = min(image.width, canvas.width - left), min(image.height, canvas.height - top)
+    if x1 > x0 and y1 > y0:
+        canvas.alpha_composite(image.crop((x0, y0, x1, y1)), (left + x0, top + y0))
 
 
 class Figures:

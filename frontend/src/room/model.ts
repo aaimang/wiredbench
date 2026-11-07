@@ -622,6 +622,8 @@ export interface EffectManifest {
   drawable: boolean;
   /** Frames of an effect that changes the body, which only Wiredbench's own avatar drawing shows. */
   frame_count?: number;
+  /** How many pixels a body-changing effect lifts the avatar at most. */
+  lift?: number;
   sprites?: {
     id: string;
     member: string;
