@@ -31,8 +31,8 @@ import { state } from "../state";
 import { t } from "../strings";
 import { act, confirmDialog, errorMessage, formDialog, toast } from "../ui";
 import {
-  ACTION_MS,
   type AvatarAction,
+  actionMs,
   avatarExtras,
   canStackOn,
   DEFAULT_TIMEZONE,
@@ -389,16 +389,28 @@ class WbEditor extends HTMLElement {
       extra: look.extra,
       gesture: look.gesture,
       frame: Math.floor(this.clock * WALK_FRAMES_PER_SECOND) % 4,
+      // A kiss or a wave keeps its own pace, apart from the steps.
+      ...(this.ownPace(avatar) ? { actionFrame: look.frame } : {}),
       frontX: Math.max(fromX, front[0]),
       frontY: Math.max(fromY, front[1]),
     };
+  }
+
+  /** Whether the avatar is playing an action with frames of its own, which walking must not step. */
+  private ownPace(avatar: PlacedAvatar): boolean {
+    const playing = this.actions.get(avatar.id);
+    return (
+      playing !== undefined &&
+      playing.action !== "sixty_seven" &&
+      avatarExtras(this.heldDetails(avatar), playing.action).extra.length > 0
+    );
   }
 
   /** Redraws an action only when its frame changes, and ends it on time. */
   private tickActions(): void {
     const now = performance.now();
     for (const [id, playing] of this.actions) {
-      if (now - playing.started >= ACTION_MS) {
+      if (now - playing.started >= actionMs(playing.action)) {
         this.actions.delete(id);
         this.needsDraw = true;
       }

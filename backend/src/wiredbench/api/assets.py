@@ -117,6 +117,9 @@ async def avatar_image(
     effect: int | None = Query(None, ge=1, le=100_000),
     # An effect plays on its own clock, beside the pose's frame, and can have many more frames.
     effect_frame: int = Query(0, ge=0, le=MAX_FRAMES - 1),
+    # An action's own frame while walking, such as a kiss, so it does not step with the legs. Only drawn
+    # here: Habbo's image service has one frame for everything.
+    action_frame: int | None = Query(None, ge=0, le=3),
     services: Services = Depends(get_services),
 ) -> FileResponse:
     if not FIGURE.fullmatch(figure):
@@ -135,6 +138,7 @@ async def avatar_image(
             drawn_by,
             effect,
             effect_frame,
+            action_frame,
         )
     except UpstreamError as exc:
         raise ApiError(502, "upstream_unavailable", "Could not download this avatar.") from exc

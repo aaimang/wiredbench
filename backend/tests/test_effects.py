@@ -138,3 +138,11 @@ def test_a_body_effect_says_how_high_it_lifts_the_avatar() -> None:
     </animation>"""
     manifest, _ = effects.build(effect_swf("Broom", lifting), "Broom")
     assert manifest["lift"] == 25, "the highest the avatar goes, so labels stay clear of the head"
+
+
+def test_skates_count_their_raise_in_every_direction() -> None:
+    skates = """<animation name="fx.55"><sprite id="avatar"><direction id="2" dy="-8"/></sprite>
+      <remove id="sh"/><frame><fx id="avatar" frame="0" dy="-2"/></frame>
+    </animation>"""
+    manifest, _ = effects.build(effect_swf("Skates", skates), "Skates")
+    assert manifest["lift"] == 10

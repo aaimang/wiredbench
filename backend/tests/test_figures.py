@@ -281,7 +281,7 @@ def test_effects_are_only_drawn_by_wiredbench(
     calls: list[object] = []
 
     def fake(self: figures.Figures, *args: object) -> bytes:
-        calls.append(args[-1])  # The effect's own frame.
+        calls.append(args[8])  # The effect's own frame.
         return out.getvalue()
 
     monkeypatch.setattr(figures.Figures, "draw", fake)
@@ -315,7 +315,7 @@ def test_walking_with_an_effect_keeps_the_steps_apart_from_the_effects_frame(
     # Gesture, the walk's step, the effect, and the effect's own frame.
     assert [call[5:9] for call in calls] == [("std", step, 27, 0) for step in range(4)]
     api.get("/api/avatars/com/image", params={**base, "frame": 1, "direction": 6, "effect_frame": 5})
-    assert calls[-1][2:4] == (6, 6) and calls[-1][6:] == (1, 27, 5), "a turn and a later effect frame"
+    assert calls[-1][2:4] == (6, 6) and calls[-1][6:9] == (1, 27, 5), "a turn and a later effect frame"
 
 
 OVERRIDDEN = """<animation name="fx.38">
@@ -445,3 +445,92 @@ def test_art_off_the_canvas_draws_nothing_and_never_fails() -> None:
     assert canvas.getbbox() is None
     figures.paste(canvas, Image.new("RGBA", (4, 4), (255, 0, 0, 255)), -2, 8)
     assert canvas.getbbox() == (0, 8, 2, 10), "only the part on the canvas"
+
+
+WALK_PARTS = b"""<partSets><partSet/>
+  <activePartSet id="walk"><activePart set-type="bd"/><activePart set-type="rh"/></activePartSet>
+  <activePartSet id="handRightAndHead"><activePart set-type="rh"/></activePartSet>
+  <activePartSet id="figure"><activePart set-type="bd"/><activePart set-type="rh"/></activePartSet>
+</partSets>"""
+WALK_ACTIONS = b"""<actions>
+  <action id="Blow" state="blow" precedence="211" geometrytype="vertical" activepartset="handRightAndHead"
+    assetpartdefinition="blw"/>
+  <action id="Move" state="mv" precedence="600" geometrytype="vertical" activepartset="walk"
+    assetpartdefinition="wlk"/>
+  <action id="Default" precedence="1000" state="std" main="1" isdefault="1" geometrytype="vertical"
+    activepartset="figure" assetpartdefinition="std"/>
+</actions>"""
+WALK_ANIMATION = b"""<animationSet>
+  <action id="Move">
+    <part set-type="bd"><frame number="0"/><frame number="1"/><frame number="2"/><frame number="3"/></part>
+    <part set-type="rh"><frame number="0"/><frame number="1"/><frame number="2"/><frame number="3"/></part>
+  </action>
+  <action id="Blow">
+    <part set-type="rh"><frame number="0" repeats="10"/><frame number="1" repeats="10"/></part>
+  </action>
+</animationSet>"""
+
+
+def test_a_kiss_while_walking_keeps_its_own_frame() -> None:
+    rules = figures.parse_rules(GEOMETRY, WALK_PARTS, WALK_ANIMATION, WALK_ACTIONS)
+    stepping = figures.pose(rules, "wlk,blw", "std", 3)
+    assert stepping is not None
+    assert stepping.shows(rules, "rh") == ("blw", 1), "without its own frame, the kiss follows the step"
+    kissing = figures.pose(rules, "wlk,blw", "std", 3, action_frame=0)
+    assert kissing is not None
+    assert kissing.shows(rules, "rh") == ("blw", 0), "the kiss keeps its own frame"
+    assert kissing.shows(rules, "bd") == ("wlk", 3), "and the legs keep stepping"
+
+
+def test_an_effect_raises_the_avatar_in_each_direction(parts: tuple) -> None:
+    from swf_builder import effect_swf
+
+    rules, data, mapping = parts
+    skates = """<animation name="fx.55">
+      <sprite id="avatar"><direction id="2" dy="-8"/><direction id="4" dy="-8"/></sprite>
+      <frame><fx id="avatar" frame="0"/></frame>
+    </animation>"""
+    parsed = figures.parse_effect(effect_swf("Skates", skates), "Skates")
+    assert parsed is not None
+    art, animation = parsed
+    assert animation.avatar_shift[2] == (0, -8)
+    looks = figures.resolve("hd-180-7", data, mapping)
+    assert looks is not None
+    image = figures.compose_effect(
+        rules,
+        looks,
+        {"lib_a": library(), "Skates": art},
+        2,
+        2,
+        figures.Pose("vertical", [], [], 0),
+        animation,
+        0,
+    )
+    margin_x, margin_top, _ = figures.EFFECT_MARGIN
+    assert image.getpixel((margin_x + 10, margin_top + 10 - 8)) == (255, 0, 0, 255), "the body is 8 higher"
+
+
+def test_an_actions_own_frame_reaches_the_drawing(
+    api: Api, habbo: FakeHabbo, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import io
+
+    out = io.BytesIO()
+    Image.new("RGBA", (64, 110), (1, 2, 3, 255)).save(out, "PNG")
+    calls: list[tuple[object, ...]] = []
+
+    def fake(self: figures.Figures, *args: object) -> bytes:
+        calls.append(args)
+        return out.getvalue()
+
+    monkeypatch.setattr(figures.Figures, "draw", fake)
+    params = {
+        "figure": "hd-180-1",
+        "action": "wlk,blw",
+        "frame": 2,
+        "action_frame": 1,
+        "drawn_by": "wiredbench",
+    }
+    assert api.get("/api/avatars/com/image", params=params).status_code == 200
+    assert calls[-1][6] == 2 and calls[-1][-1] == 1, "the step and the kiss's own frame"
+    assert api.get("/api/avatars/com/image", params={**params, "action_frame": 4}).status_code == 422

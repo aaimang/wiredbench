@@ -53,11 +53,13 @@ MAX_LIBRARIES = 200
 # Directions 4 to 6 are drawn as mirrored copies of 2 to 0.
 MIRRORED = {4: 2, 5: 1, 6: 0}
 UNTINTED = {"ey"}
+# The walk's state. Its steps keep the pose's frame when another action has a frame of its own.
+WALK_STATE = "mv"
 # Measured against Habbo's images: its server draws the body art's 254 as 255.
 BODY_LIBRARY = "hh_human_body"
 MAX_ALIAS_HOPS = 6
 # Raised when drawing changes, so avatars drawn before are drawn again.
-FIGURE_RULES_VERSION = 5
+FIGURE_RULES_VERSION = 6
 
 
 @dataclass
@@ -383,6 +385,8 @@ class EffectAnimation:
     overrides: dict[str, list[FrameData]] = field(default_factory=dict)
     # The effect's own art for the avatar's shadow, named without its direction and frame.
     shadow: str = ""
+    # Direction to how far the effect moves the avatar in it, as (dx, dy), on top of each frame.
+    avatar_shift: dict[int, tuple[int, int]] = field(default_factory=dict)
 
     def playing(self, shown: Pose | None = None) -> list[FrameData]:
         """The frames for what the avatar is doing: those of the first of its actions an override names."""
@@ -431,9 +435,15 @@ def parse_effect(data: bytes, name: str) -> tuple[Library, EffectAnimation] | No
 
     sprites = {}
     lifts = False
+    shifts: dict[int, tuple[int, int]] = {}
     for sprite in animation.findall("sprite"):
         if sprite.get("id") == "avatar":
             lifts = True
+            # Skates and boards raise the avatar in every direction, beside what each frame does.
+            shifts = {
+                number(direction, "id"): (number(direction, "dx"), number(direction, "dy"))
+                for direction in sprite.findall("direction")
+            }
             continue
         sprites[sprite.get("id", "")] = EffectSprite(
             sprite.get("member", ""),
@@ -502,6 +512,7 @@ def parse_effect(data: bytes, name: str) -> tuple[Library, EffectAnimation] | No
             if override.get("override")
         },
         shadow.get("id", "") if shadow is not None else "",
+        shifts,
     )
 
 
@@ -513,6 +524,8 @@ class Pose:
     actions: list[Action]
     items: list[tuple[str, str]]
     frame: int
+    # An action's own frame, such as a blown kiss while walking, when it is not the walk's step.
+    action_frame: int | None = None
 
     def shows(self, rules: Rules, kind: str) -> tuple[str, int] | None:
         """The art name part and frame number for a part type, or None when it is not drawn."""
@@ -525,14 +538,19 @@ class Pose:
             if animated and not frames and not action.main and action.asset != "std":
                 continue
             if frames:
-                number, asset = frames[self.frame % len(frames)]
+                own = (
+                    self.frame
+                    if self.action_frame is None or action.state == WALK_STATE
+                    else self.action_frame
+                )
+                number, asset = frames[own % len(frames)]
                 asset = action.asset if asset is None else asset
                 return (asset, number) if asset else None  # An empty name hides the part for that frame.
             return action.asset, 0
         return None
 
 
-def pose(rules: Rules, action: str, gesture: str, frame: int) -> Pose | None:
+def pose(rules: Rules, action: str, gesture: str, frame: int, action_frame: int | None = None) -> Pose | None:
     """None for an action or gesture this does not know, so the image service draws it instead."""
     chosen, items = [], []
     for token in action.split(","):
@@ -552,7 +570,7 @@ def pose(rules: Rules, action: str, gesture: str, frame: int) -> Pose | None:
         chosen.append(rules.actions["std"])
     chosen.sort(key=lambda found: found.precedence)
     main = next((found for found in chosen if found.main), None)
-    return Pose(main.geometry if main else "vertical", chosen, items, frame)
+    return Pose(main.geometry if main else "vertical", chosen, items, frame, action_frame)
 
 
 def compose(
@@ -771,7 +789,8 @@ def compose_effect(
             image = image.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
             left = width - left - image.width
         layers.append((dz, image, margin_x + left, margin_top + origin[1] - offset_y + sy + dy, sprite.add))
-    layers.append((0, avatar, margin_x + lift[1], margin_top + lift[2], False))
+    shift_x, shift_y = animation.avatar_shift.get(turned, (0, 0))
+    layers.append((0, avatar, margin_x + lift[1] + shift_x, margin_top + lift[2] + shift_y, False))
     # Sprites with a negative depth are behind the avatar. The avatar comes before sprites at depth 0, so
     # a staff held in the hand is in front. An effect that removes the body draws a body of its own at
     # depth 0, such as a broom rider's cloak, and what is left of the avatar, the head, goes on top.
@@ -895,6 +914,7 @@ class Figures:
         frame: int = 0,
         effect: int | None = None,
         effect_frame: int = 0,
+        action_frame: int | None = None,
     ) -> bytes | None:
         """A PNG of the avatar, or None when it cannot be drawn here.
 
@@ -938,7 +958,7 @@ class Figures:
                     )
                 data, mapping = self._data[build]
                 looks = resolve(figure, data, mapping)
-                shown = pose(rules, action, gesture, frame)
+                shown = pose(rules, action, gesture, frame, action_frame)
                 if looks is None or shown is None:
                     return None
                 needed = {library for look in looks for *_, library in look.parts if library}

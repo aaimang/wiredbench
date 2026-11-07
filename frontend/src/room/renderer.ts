@@ -69,6 +69,8 @@ export interface AvatarPose {
   extra?: string[];
   gesture?: string;
   frame: number;
+  /** An action's own frame while walking, such as a kiss, so it does not step with the legs. */
+  actionFrame?: number;
   /** Tile used for draw order, because a walking avatar is between tiles. */
   frontX: number;
   frontY: number;
@@ -151,17 +153,20 @@ export function avatarUrl(
   gesture = "std",
   effect?: number,
   effectFrame = 0,
+  actionFrame?: number,
 ): string {
   // The choice is part of the address, so switching it never shows an image cached the other way.
-  const drawnBy = state.settings?.avatar_drawing === "wiredbench" ? { drawn_by: "wiredbench" } : {};
+  const ours = state.settings?.avatar_drawing === "wiredbench";
   return withQuery(`/api/avatars/${avatar.hotel}/image`, {
     figure: avatar.figure,
     action,
     gesture,
     direction: dir,
     frame,
-    ...drawnBy,
+    ...(ours ? { drawn_by: "wiredbench" } : {}),
     ...(effect ? { effect, effect_frame: effectFrame } : {}),
+    // Only drawn here: Habbo's image service has one frame for the walk and the action together.
+    ...(ours && actionFrame !== undefined ? { action_frame: actionFrame } : {}),
   });
 }
 
@@ -188,6 +193,11 @@ export function bodyEffectUrl(
   );
 }
 
+/** The frames an action plays on its own clock while walking. Sixty-seven swaps signs instead. */
+function walkActionFrames(action?: AvatarAction): (number | undefined)[] {
+  return action && action !== "sixty_seven" ? [0, 1] : [undefined];
+}
+
 /** Draws the room. It holds no room state of its own: each draw takes a complete Scene. */
 export class RoomRenderer {
   readonly app = new Application();
@@ -201,7 +211,13 @@ export class RoomRenderer {
   private avatarLoading = new Map<string, Promise<void>>();
   private avatarShown = new Map<
     number,
-    { texture: Texture; dir: number; extra: string[]; gesture: string | undefined }
+    {
+      texture: Texture;
+      dir: number;
+      extra: string[];
+      gesture: string | undefined;
+      actionFrame?: number;
+    }
   >();
   private warmQueue: string[] = [];
   private warmLoading = 0;
@@ -376,10 +392,11 @@ export class RoomRenderer {
     // Sixty-seven swaps between two signs, so both sets are needed.
     for (const elapsed of action === "sixty_seven" ? [0, SIXTY_SEVEN_MS] : [0]) {
       const { extra, gesture } = avatarExtras(details, action, elapsed);
-      const shown = figureAction("wlk", extra);
       const gestures = faceGestures(avatar.face);
       for (const look of gestures.length ? gestures : [gesture]) {
-        for (let frame = 0; frame < 4; frame++) this.avatarTexture(avatar, shown, dir, frame, look);
+        for (const actionFrame of walkActionFrames(action)) {
+          this.loadWalkLook(avatar, extra, look, dir, actionFrame);
+        }
       }
     }
   }
@@ -409,8 +426,14 @@ export class RoomRenderer {
     const faces = faceGestures(avatar.face);
     const gestures = faces.length ? faces : [gesture];
     const frames = pose === "wlk" ? [0, 1, 2, 3] : [0, 1];
+    // Walking, each step comes with each of the action's own frames.
+    const own = pose === "wlk" ? walkActionFrames(action) : [undefined];
     return gestures.flatMap((look) => [
-      ...frames.map((frame) => avatarUrl(avatar, shown, dir, frame, look)),
+      ...frames.flatMap((frame) =>
+        own.map((actionFrame) =>
+          avatarUrl(avatar, shown, dir, frame, look, undefined, 0, actionFrame),
+        ),
+      ),
       ...(action === "sixty_seven"
         ? frames.map((frame) =>
             avatarUrl(avatar, figureAction(pose, ["sig=7", ...extra.slice(1)]), dir, frame, look),
@@ -947,22 +970,30 @@ export class RoomRenderer {
   private walkingTexture(avatar: PlacedAvatar, pose: AvatarPose): Texture | null {
     const extra = pose.extra ?? [];
     const last = this.avatarShown.get(avatar.id);
-    this.loadWalkLook(avatar, extra, pose.gesture, pose.dir);
-    const look = pickWalkLook(
+    this.loadWalkLook(avatar, extra, pose.gesture, pose.dir, pose.actionFrame);
+    const look = pickWalkLook<{
+      extra: string[];
+      gesture: string | undefined;
+      actionFrame?: number;
+    }>(
       [
-        { extra, gesture: pose.gesture },
-        ...(last ? [{ extra: last.extra, gesture: last.gesture }] : []),
+        { extra, gesture: pose.gesture, actionFrame: pose.actionFrame },
+        ...(last
+          ? [{ extra: last.extra, gesture: last.gesture, actionFrame: last.actionFrame }]
+          : []),
         { extra: [], gesture: pose.gesture },
         { extra: [], gesture: "std" },
       ],
       (option) =>
         WALK_FRAMES.every((frame) =>
-          this.avatars.get(this.walkUrl(avatar, option.extra, option.gesture, pose.dir, frame)),
+          this.avatars.get(
+            this.walkUrl(avatar, option.extra, option.gesture, pose.dir, frame, option.actionFrame),
+          ),
         ),
     );
     if (!look) return last?.texture ?? null;
     const texture = this.avatars.get(
-      this.walkUrl(avatar, look.extra, look.gesture, pose.dir, pose.frame),
+      this.walkUrl(avatar, look.extra, look.gesture, pose.dir, pose.frame, look.actionFrame),
     );
     if (!texture) return last?.texture ?? null;
     this.avatarShown.set(avatar.id, { texture, dir: pose.dir, ...look });
@@ -975,8 +1006,18 @@ export class RoomRenderer {
     gesture: string | undefined,
     dir: number,
     frame: number,
+    actionFrame?: number,
   ): string {
-    return avatarUrl(avatar, figureAction("wlk", extra), dir, frame, gesture);
+    return avatarUrl(
+      avatar,
+      figureAction("wlk", extra),
+      dir,
+      frame,
+      gesture,
+      undefined,
+      0,
+      actionFrame,
+    );
   }
 
   private loadWalkLook(
@@ -984,9 +1025,10 @@ export class RoomRenderer {
     extra: string[],
     gesture: string | undefined,
     dir: number,
+    actionFrame?: number,
   ): void {
     for (const frame of WALK_FRAMES)
-      void this.loadAvatar(this.walkUrl(avatar, extra, gesture, dir, frame));
+      void this.loadAvatar(this.walkUrl(avatar, extra, gesture, dir, frame, actionFrame));
   }
 
   /**

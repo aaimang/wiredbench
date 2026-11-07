@@ -533,12 +533,23 @@ export type AvatarAction = "wave" | "blow" | "respect" | "sixty_seven";
 
 export const ACTION_MS = 2500;
 const ACTION_FRAME_MS = 250;
+/** Habbo's avatar animation ticks, at the walk's 8 a second. Its file lists how many ticks each frame holds. */
+const TICK_MS = 125;
 /**
- * Habbo's animation file holds each blow kiss frame for 10 ticks: the hand at the mouth, then the
- * hand out with the eyes shut and the lips pursed. At the walk's 8 ticks a second that is 1.25 seconds
- * each, one kiss over the whole action, not a hand flapping between the two.
+ * Actions Habbo plays once, frame by frame, rather than in a loop. Blow kiss holds each frame for 10
+ * ticks: the hand at the mouth, then out with the eyes shut and the lips pursed. Respect holds each
+ * thumbs-up frame for 15 ticks, so it lasts longer than the other actions.
  */
-const BLOW_FRAME_MS = ACTION_MS / 2;
+const PLAYED_ONCE: Partial<Record<AvatarAction, number>> = {
+  blow: 10 * TICK_MS,
+  respect: 15 * TICK_MS,
+};
+
+/** How long an action lasts before the avatar goes back to what it was doing. */
+export function actionMs(action: AvatarAction): number {
+  const frameMs = PLAYED_ONCE[action];
+  return frameMs ? Math.max(ACTION_MS, 2 * frameMs) : ACTION_MS;
+}
 export const SIXTY_SEVEN_MS = 400;
 export const SIGN_MAX = 17;
 /** A real room holds a sign for a few seconds. The exact length is assumed, and matches the engine. */
@@ -555,11 +566,14 @@ export function avatarExtras(
   const extra: string[] = [];
   let frame = 0;
   const sign = details["@sign"];
+  // Habbo's avatar effect action prevents blowing a kiss, so an avatar with an effect does not.
+  const blocked = action === "blow" && (details["@effect"] ?? 0) > 0;
   if (action === "sixty_seven") {
     extra.push(`sig=${Math.floor(elapsedMs / SIXTY_SEVEN_MS) % 2 ? 7 : 6}`);
-  } else if (action) {
+  } else if (action && !blocked) {
     extra.push({ wave: "wav", blow: "blw", respect: "respect" }[action]);
-    frame = action === "blow" ? Math.min(1, Math.floor(elapsedMs / BLOW_FRAME_MS)) : step % 2;
+    const frameMs = PLAYED_ONCE[action];
+    frame = frameMs ? Math.min(1, Math.floor(elapsedMs / frameMs)) : step % 2;
   } else if (sign !== undefined && sign >= 0 && sign <= SIGN_MAX) {
     extra.push(`sig=${sign}`);
   }
