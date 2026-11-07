@@ -208,6 +208,7 @@ running server.
 | GET | `/api/effects/{hotel}/{effect}/manifest` | Admin |
 | GET | `/api/engine/boxes` | Admin |
 | GET | `/api/engine/built-in-variables` | Admin |
+| GET | `/api/engine/effects` | Admin |
 | POST | `/api/folders` | Admin |
 | DELETE | `/api/folders/{folder_id}` | Admin |
 | PATCH | `/api/folders/{folder_id}` | Admin |

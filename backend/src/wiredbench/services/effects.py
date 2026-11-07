@@ -14,6 +14,7 @@ import re
 import threading
 import time
 import xml.etree.ElementTree as ET  # noqa: S405 - Only for the error type. defusedxml does the parsing.
+from importlib import resources
 from pathlib import Path
 from typing import Any
 
@@ -34,6 +35,12 @@ INK_ADD = "33"
 MAX_FRAMES = 2000
 # Raised when the manifest's shape changes, so effects built before are built again.
 EFFECT_VERSION = 1
+
+
+def facts() -> dict[str, Any]:
+    """Which effects were found drawable when the list was last made with scripts/effect_facts.py."""
+    text = resources.files("wiredbench.services").joinpath("effect_facts.json").read_text(encoding="utf-8")
+    return dict(json.loads(text))
 
 
 def parse_map(body: bytes) -> dict[int, str]:
