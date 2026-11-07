@@ -111,13 +111,14 @@ async def avatar_image(
     gesture: Gesture = "std",
     direction: int = Query(2, ge=0, le=7),
     frame: int = Query(0, ge=0, le=3),
+    drawn_by: Literal["habbo", "wiredbench"] = "habbo",
     services: Services = Depends(get_services),
 ) -> FileResponse:
     if not FIGURE.fullmatch(figure):
         raise ApiError(422, "invalid_request", "That is not a valid avatar look.")
     try:
         path = await run_in_threadpool(
-            services.assets.avatar, hotel, figure, action, gesture, direction, frame
+            services.assets.avatar, hotel, figure, action, gesture, direction, frame, drawn_by
         )
     except UpstreamError as exc:
         raise ApiError(502, "upstream_unavailable", "Could not download this avatar.") from exc

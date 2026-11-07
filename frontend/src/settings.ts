@@ -81,6 +81,12 @@ class WbSettings extends HTMLElement {
         ),
         T.defaultTimezoneHelp,
       ),
+      field(
+        "avatar_drawing",
+        T.avatarDrawing,
+        select("avatar_drawing", settings.avatar_drawing, Object.entries(T.avatarDrawings)),
+        T.avatarDrawingHelp,
+      ),
       field("theme", T.theme, select("theme", settings.theme, Object.entries(T.themes))),
       field(
         "session_hours",
