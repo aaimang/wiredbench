@@ -176,6 +176,38 @@ export function standAt(room: RoomDocument, lookup: InfoLookup, x: number, y: nu
 }
 
 /** Where an avatar at rest faces: the way its seat or bed is turned, or its own direction. */
+/** Which way each seated or lying avatar faces now, so standing them up later keeps it. */
+export function seatedFacing(room: RoomDocument, lookup: InfoLookup): Map<number, number> {
+  return new Map(
+    room.avatars
+      .filter((avatar) => avatar.pose === "sit" || avatar.pose === "lay")
+      .map((avatar) => [avatar.id, restingDir(room, lookup, avatar)]),
+  );
+}
+
+/**
+ * Stands up anyone left sitting or lying where their seat or bed is no longer, such as after the chair is
+ * moved or picked up in Build mode. A real room stands them up too. They keep facing the way they faced
+ * on the seat, from `facing` taken before the change. Says whether anyone moved.
+ */
+export function standUpOffSeats(
+  room: RoomDocument,
+  lookup: InfoLookup,
+  facing: Map<number, number> = new Map(),
+): boolean {
+  let moved = false;
+  for (const avatar of room.avatars) {
+    if (avatar.pose !== "sit" && avatar.pose !== "lay") continue;
+    const stand = standAt(room, lookup, avatar.x, avatar.y);
+    if (stand.pose === avatar.pose) continue;
+    avatar.pose = "std";
+    avatar.z = stand.pose === "std" ? stand.z : 0;
+    avatar.dir = facing.get(avatar.id) ?? avatar.dir;
+    moved = true;
+  }
+  return moved;
+}
+
 export function restingDir(
   room: RoomDocument,
   lookup: InfoLookup,

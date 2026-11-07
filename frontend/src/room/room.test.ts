@@ -36,9 +36,11 @@ import {
   pickWalkLook,
   type RoomDocument,
   restingDir,
+  seatedFacing,
   showsTime,
   stackHeight,
   standAt,
+  standUpOffSeats,
   timeDigits,
   withFace,
 } from "./model";
@@ -206,6 +208,26 @@ describe("placement", () => {
 });
 
 describe("standing", () => {
+  it("stands someone up when their chair or bed is moved away", () => {
+    const r = room(["chair", 2, 0, 0, 4], ["bed", 0, 3]);
+    const seated = { id: 1, name: "A", hotel: "com", figure: "hd-180-1", dir: 4 };
+    r.avatars = [
+      { ...seated, x: 2, y: 0, z: 1, pose: "sit" },
+      { ...seated, id: 2, x: 1, y: 4, z: 0.9, pose: "lay" },
+    ];
+    expect(standUpOffSeats(r, lookup)).toBe(false);
+    // Saved facing 4 from an earlier walk, but the chair turns them to face 2.
+    r.furni = r.furni.map((item) => (item.classname === "chair" ? { ...item, rot: 2 } : item));
+    const facing = seatedFacing(r, lookup);
+    r.furni = r.furni.map((item) => (item.classname === "chair" ? { ...item, x: 4 } : item));
+    expect(standUpOffSeats(r, lookup, facing)).toBe(true);
+    expect(r.avatars[0]).toMatchObject({ pose: "std", z: 0, dir: 2 });
+    expect(r.avatars[1]).toMatchObject({ pose: "lay" });
+    r.furni = [];
+    standUpOffSeats(r, lookup);
+    expect(r.avatars[1]).toMatchObject({ pose: "std", z: 0 });
+  });
+
   it("keeps people on the mattress of a bed taller than it looks", () => {
     const tall: InfoLookup = (name) => ({ ...lookup(name), height: 1.73 });
     expect(standAt(room(["bed", 0, 0]), tall, 0, 0).z).toBe(0.9);
