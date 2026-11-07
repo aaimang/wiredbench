@@ -90,6 +90,8 @@ const WALK_FRAMES_PER_SECOND = 8;
 const AUTOSAVE_MS = 1500;
 /** Marks a palette choice as a furni category rather than a WIRED type. */
 const FURNI_PREFIX = "furni:";
+/** How long a detail changed during a run is shown as made before the server must have it. */
+const PENDING_DETAIL_MS = 3000;
 const PALETTE_SIZE = 60;
 const MAX_PICKS = 20;
 const ARROW_STEPS: Record<string, [number, number]> = {
@@ -170,6 +172,11 @@ class WbEditor extends HTMLElement {
     return name === "@effect" && this.effectsNotDrawn.has(Number(value));
   }
   private runEdits = new Map<number, string>();
+  /**
+   * Details changed in the panel during a run that the server has not reported back yet, by
+   * "avatar:detail". A room update sent before the change arrived must not undo it on screen.
+   */
+  private pendingDetails = new Map<string, { amount: number | null; until: number }>();
   /** Where the run last put each furni, so only a move by hand is sent to it. */
   private runMoves = new Map<number, string>();
   /** The avatar last chosen during a run, who acts when a furni is selected instead. */
@@ -1291,6 +1298,7 @@ class WbEditor extends HTMLElement {
     const edits = [...this.runEdits];
     this.runEdits.clear();
     this.runMoves.clear();
+    this.pendingDetails.clear();
     this.actingAvatar = null;
     for (const [id, wired] of edits) {
       const box = this.room.furni.find((f) => f.id === id);
@@ -1324,7 +1332,7 @@ class WbEditor extends HTMLElement {
         }
         avatar.dir = user.dir;
       }
-      if (avatar && user.details) avatar.details = user.details;
+      if (avatar && user.details) avatar.details = this.withPending(user.id, user.details);
     }
     this.needsDraw = true;
     this.syncAvatarPanel();
@@ -2211,6 +2219,10 @@ class WbEditor extends HTMLElement {
     if (amount === null) delete next[name];
     else next[name] = amount;
     if (this.run) {
+      this.pendingDetails.set(`${avatar.id}:${name}`, {
+        amount,
+        until: performance.now() + PENDING_DETAIL_MS,
+      });
       void this.run.input({
         type: "user_detail",
         user: avatar.id,
@@ -2224,6 +2236,26 @@ class WbEditor extends HTMLElement {
     avatar.details = next;
     this.needsDraw = true;
     this.syncAvatarPanel();
+  }
+
+  /** The server's details for a user, with changes still on their way to it shown as made. */
+  private withPending(user: number, details: Record<string, unknown>): Record<string, unknown> {
+    const shown = { ...details };
+    const now = performance.now();
+    for (const [key, pending] of this.pendingDetails) {
+      const [id, name] = [Number(key.split(":")[0]), key.slice(key.indexOf(":") + 1)];
+      if (id !== user) continue;
+      const reported = details[name] ?? null;
+      // Done once the server reports it, or after a while, when WIRED may have changed it since.
+      if (reported === pending.amount || now > pending.until) {
+        this.pendingDetails.delete(key);
+      } else if (pending.amount === null) {
+        delete shown[name];
+      } else {
+        shown[name] = pending.amount;
+      }
+    }
+    return shown;
   }
 
   /** A face stays until changed. Unlike other changes in a run, it is kept after Stop too. */

@@ -45,7 +45,7 @@ import {
   timeDigits,
   withFace,
 } from "./model";
-import { avatarUrl, bodyEffectUrl, shadowUrl } from "./renderer";
+import { avatarImageAt, avatarUrl, bodyEffectUrl, shadowUrl } from "./renderer";
 import { isDebugCommand, runClock } from "./run-panel";
 
 const INFO: Record<string, FurniInfo> = {
@@ -704,5 +704,27 @@ describe("matching a real room", () => {
     expect(query("sit").get("pose")).toBe("sit");
     expect(query("lay").get("pose")).toBe("lay");
     expect(query("std").get("direction")).toBe("4");
+  });
+});
+
+describe("avatar placement matches Habbo's client", () => {
+  const centre = { x: 100, y: 200 };
+
+  it("draws a sitting avatar 32 pixels lower than a standing one, in the same column", () => {
+    const standing = avatarImageAt({ action: "std", dir: 2 }, centre);
+    const sitting = avatarImageAt({ action: "sit", dir: 2 }, centre);
+    expect(sitting.top - standing.top).toBe(32);
+    expect(sitting.left).toBe(standing.left);
+    expect(sitting.head - standing.head).toBe(32);
+  });
+
+  it("places the wide lying image on the bed, mirrored between its two directions", () => {
+    const two = avatarImageAt({ action: "lay", dir: 2 }, centre);
+    const four = avatarImageAt({ action: "lay", dir: 4 }, centre);
+    expect([two.w, two.h]).toEqual([110, 64]);
+    expect(two.top).toBe(four.top);
+    // The image's centre sits as far right of the tile facing 2 as left of it facing 4.
+    expect(two.left + two.w / 2 - centre.x).toBe(centre.x - (four.left + four.w / 2));
+    expect(two.top).toBeGreaterThan(avatarImageAt({ action: "std", dir: 2 }, centre).top);
   });
 });
