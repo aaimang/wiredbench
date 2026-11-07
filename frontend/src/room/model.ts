@@ -610,3 +610,49 @@ export function pickWalkLook<T>(looks: T[], complete: (look: T) => boolean): T |
 export function figureAction(pose: string, extra: string[]): string {
   return [...(pose === "std" && extra.length ? [] : [pose]), ...extra].join(",");
 }
+
+/** An effect's layers, from Habbo's own effect file. Effects that change the body are not drawn. */
+export interface EffectManifest {
+  drawable: boolean;
+  sprites?: {
+    id: string;
+    member: string;
+    add: boolean;
+    turns: boolean;
+    dirs: Record<string, { dx: number; dy: number; dz: number }>;
+  }[];
+  frames?: { s: string; f: number; dx?: number; dy?: number; dd?: number }[][];
+  images?: Record<string, { x: number; y: number; w: number; h: number; ox: number; oy: number }>;
+}
+
+/** Habbo plays effects at about 12 frames a second. */
+export const EFFECT_FRAME_MS = 83;
+/** Where an avatar image puts Habbo's offset origin, measured from its top. */
+const EFFECT_ORIGIN_Y = 100;
+
+/** Each layer of an effect at a moment, placed from the top left of the avatar's image. */
+export function effectLayers(manifest: EffectManifest, dir: number, nowMs: number) {
+  const sprites = manifest.sprites ?? [];
+  const frames = manifest.frames ?? [];
+  const shown: { s: string; f: number; dx?: number; dy?: number; dd?: number }[] = frames.length
+    ? (frames[Math.floor(nowMs / EFFECT_FRAME_MS) % frames.length] ?? [])
+    : sprites.map((sprite) => ({ s: sprite.id, f: 0 }));
+  const layers = [];
+  for (const part of shown) {
+    const sprite = sprites.find((candidate) => candidate.id === part.s);
+    if (!sprite) continue;
+    const facing = sprite.turns ? (((dir + (part.dd ?? 0)) % 8) + 8) % 8 : 0;
+    const image = manifest.images?.[`${sprite.member}_${facing}_${part.f}`];
+    if (!image) continue;
+    const shift = sprite.dirs[String(facing)] ?? { dx: 0, dy: 0, dz: 0 };
+    layers.push({
+      image,
+      x: -image.ox + shift.dx + (part.dx ?? 0),
+      y: EFFECT_ORIGIN_Y - image.oy + shift.dy + (part.dy ?? 0),
+      front: shift.dz >= 0,
+      dz: shift.dz,
+      add: sprite.add,
+    });
+  }
+  return layers;
+}

@@ -25,6 +25,8 @@ ALLOWED = {
     ("GET", "/api/furni/{revision}/{classname}/atlas"),
     ("GET", "/api/avatars/{hotel}/lookup"),
     ("GET", "/api/avatars/{hotel}/image"),
+    ("GET", "/api/effects/{hotel}/{effect}/manifest"),
+    ("GET", "/api/effects/{hotel}/{effect}/atlas"),
 }
 SECRET = "secret-variable-name"
 
@@ -112,14 +114,14 @@ def test_view_shows_what_an_avatar_holds_and_no_other_details(api: Api) -> None:
             "figure": "hd-180-1",
             "x": 1,
             "y": 1,
-            "details": {"@handitem": 1000, "@sign": 6, "@achievement_score": 77},
+            "details": {"@handitem": 1000, "@sign": 6, "@effect": 4, "@achievement_score": 77},
         }
     ]
     revision = api.get(f"/api/sandboxes/{room}").json()["revision"]
     saved = api.put(f"/api/sandboxes/{room}/document", json={"document": document, "base_revision": revision})
     assert saved.status_code == 200, saved.text
     api.post("/api/auth/view-as")
-    shown = {"@handitem": 1000, "@sign": 6}
+    shown = {"@handitem": 1000, "@sign": 6, "@effect": 4}
     assert api.get(f"/api/view/sandboxes/{room}").json()["document"]["avatars"][0]["details"] == shown
     assert api.post(f"/api/view/sandboxes/{room}/run").json()["users"][0]["details"] == shown
 

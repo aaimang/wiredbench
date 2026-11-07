@@ -85,6 +85,22 @@ def _parse_art(body: bytes) -> tuple[dict[str, Image.Image], dict[str, tuple[int
     return images, offsets
 
 
+def client_folder(upstream: Upstream, hotel: str) -> tuple[str, str]:
+    """Where Habbo's client files are for a hotel, and the build folder's name."""
+    fetched = upstream.get(f"https://{HOTELS[hotel]}/gamedata/external_variables/1", MAX_VARIABLES_BYTES)
+    base = next(
+        line[len(CLIENT_URL) :].strip()
+        for line in fetched.body.decode("utf-8", "replace").splitlines()
+        if line.startswith(CLIENT_URL)
+    )
+    base = f"https:{base}" if base.startswith("//") else base
+    base = base if base.endswith("/") else f"{base}/"
+    name = base.rstrip("/").rsplit("/", 1)[1]
+    if not name.replace("-", "").replace("_", "").isalnum():
+        raise ValueError("Unexpected client folder.")
+    return base, name
+
+
 class HandItems:
     def __init__(self, root: Path, upstream: Upstream) -> None:
         self.root = root
@@ -114,19 +130,7 @@ class HandItems:
                 return self._builds.get(name) if name else None
             self._hotels[hotel] = (time.monotonic(), None)
             try:
-                fetched = self.upstream.get(
-                    f"https://{HOTELS[hotel]}/gamedata/external_variables/1", MAX_VARIABLES_BYTES
-                )
-                base = next(
-                    line[len(CLIENT_URL) :].strip()
-                    for line in fetched.body.decode("utf-8", "replace").splitlines()
-                    if line.startswith(CLIENT_URL)
-                )
-                base = f"https:{base}" if base.startswith("//") else base
-                base = base if base.endswith("/") else f"{base}/"
-                name = base.rstrip("/").rsplit("/", 1)[1]
-                if not name.replace("-", "").replace("_", "").isalnum():
-                    raise ValueError("Unexpected client folder.")
+                base, name = client_folder(self.upstream, hotel)
                 if name not in self._builds:
                     default, arts = _parse_actions(self._file(base, name, "HabboAvatarActions.xml"))
                     images, offsets = _parse_art(self._file(base, name, "hh_human_item.swf"))

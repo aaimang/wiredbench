@@ -20,6 +20,7 @@ from PIL import Image
 
 from wiredbench.config import HOTELS
 from wiredbench.services import swf
+from wiredbench.services.effects import Effects
 from wiredbench.services.handitems import HandItems
 from wiredbench.services.upstream import IMAGE_HOST, Upstream, UpstreamError, icon_url
 
@@ -55,6 +56,7 @@ class AssetCache:
         self.upstream = upstream
         self._downloads = threading.Semaphore(4)  # A page of icons must not flood Habbo.
         self.hand_items = HandItems(root.parent / "handitems", upstream)
+        self.effects = Effects(root.parent / "effects", upstream)
         self._service_has_art: dict[int, bool] = {}
 
     def _folder(self, revision: int, classname: str) -> Path:

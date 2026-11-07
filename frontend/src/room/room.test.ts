@@ -5,6 +5,9 @@ import {
   canStackOn,
   directionBetween,
   drawTile,
+  EFFECT_FRAME_MS,
+  type EffectManifest,
+  effectLayers,
   emptyRoom,
   type FurniArtData,
   type FurniInfo,
@@ -557,5 +560,44 @@ describe("glideSteps", () => {
     expect(glideSteps([1, 1], [2, 2])).toBe(1);
     expect(glideSteps([1, 1], [3, 1])).toBe(2);
     expect(glideSteps([1, 1], [4, 1])).toBeNull();
+  });
+});
+
+describe("avatar effects", () => {
+  const manifest: EffectManifest = {
+    drawable: true,
+    sprites: [
+      {
+        id: "a",
+        member: "std_fx_a",
+        add: true,
+        turns: true,
+        dirs: { "2": { dx: 3, dy: 0, dz: -1 } },
+      },
+      { id: "b", member: "std_fx_b", add: false, turns: false, dirs: {} },
+    ],
+    frames: [
+      [
+        { s: "a", f: 0 },
+        { s: "b", f: 0 },
+      ],
+      [{ s: "a", f: 1, dy: -4 }],
+    ],
+    images: {
+      std_fx_a_2_0: { x: 0, y: 0, w: 4, h: 4, ox: -10, oy: 80 },
+      std_fx_a_2_1: { x: 5, y: 0, w: 4, h: 4, ox: -10, oy: 80 },
+      std_fx_b_0_0: { x: 0, y: 5, w: 4, h: 4, ox: 2, oy: 50 },
+    },
+  };
+
+  it("places layers from Habbo's offsets and steps through frames", () => {
+    const [glow, plain] = effectLayers(manifest, 2, 0);
+    expect(glow).toMatchObject({ x: 13, y: 20, front: false, add: true });
+    expect(plain).toMatchObject({ x: -2, y: 50, front: true, add: false });
+    expect(effectLayers(manifest, 2, EFFECT_FRAME_MS)).toMatchObject([{ y: 16 }]);
+  });
+
+  it("skips a direction the effect has no art for", () => {
+    expect(effectLayers(manifest, 4, 0)).toHaveLength(1);
   });
 });
