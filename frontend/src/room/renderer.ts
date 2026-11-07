@@ -111,20 +111,26 @@ const OUTLINE_OFFSETS = [
 ];
 const GLOW_OFFSETS = [...OUTLINE_OFFSETS, [-2, 0], [2, 0], [0, -2], [0, 2]];
 const GLOW_OPACITY = 0.8;
-/** The top of an avatar's head, above its tile, measured on Habbo's standing images: 96 - 23. */
-const HEAD_TOP = 73;
 /** Space between the head and the first variable shown over it. */
 const FX_GAP_USER = 8;
 const FX_RISE_FURNI = 40;
 const ART_VERSION = 3;
 const AVATAR_ANCHOR = { x: 32, y: 96 };
-const AVATAR_SIZE = { w: 64, h: 110 };
 /** Room the server leaves around an avatar drawn with an effect, matching EFFECT_MARGIN there. */
 const EFFECT_MARGIN = { x: 52, top: 90 };
 const SELECTED_TINT = 0xfff0a0;
 const PICKED_TINT = 0xb28ad8;
 /** How far a pose sits below the top of its furni, in height units. Matched by eye to real furni. */
-const POSE_DROP: Record<string, number> = { sit: 0.5, lay: 0.5 };
+/** Habbo's client draws a sitting or lying avatar half its 64 pixel scale lower than a standing one. */
+const POSTURE_DROP = 32;
+/**
+ * The lying image is 110 by 64. Habbo's client puts its art origin 30 pixels along from the standing
+ * one (the horizontal canvas's own offset), so facing 2 its top left is 47 left of the tile centre, and
+ * facing 4, which is mirrored, 63.
+ */
+const LAY_IMAGE = { w: 110, h: 64, left2: 47, left4: 63, top: 16 };
+/** How far below the image's top the head starts, measured on Habbo's images: standing and sitting, lying. */
+const HEAD_IN_IMAGE = { upright: 23, lay: 13 };
 /** Habbo gets four downloads at a time, and this leaves two for images already on screen. */
 const WARM_DOWNLOADS = 2;
 const MAX_WARM_QUEUE = 512;
@@ -168,6 +174,29 @@ export function avatarUrl(
     // Only drawn here: Habbo's image service has one frame for the walk and the action together.
     ...(ours && actionFrame !== undefined ? { action_frame: actionFrame } : {}),
   });
+}
+
+/**
+ * Where an avatar's image goes for its pose, from the tile point at its height: the top left, size and
+ * where the head starts. Matches Habbo's client: sitting and lying drop 32 pixels, lying is wider.
+ */
+export function avatarImageAt(
+  pose: Pick<AvatarPose, "action" | "dir">,
+  centre: { x: number; y: number },
+): { left: number; top: number; w: number; h: number; head: number } {
+  if (pose.action === "lay") {
+    const left = centre.x - (pose.dir === 2 ? LAY_IMAGE.left2 : LAY_IMAGE.left4);
+    const top = centre.y - LAY_IMAGE.top;
+    return { left, top, w: LAY_IMAGE.w, h: LAY_IMAGE.h, head: top + HEAD_IN_IMAGE.lay };
+  }
+  const top = centre.y - AVATAR_ANCHOR.y + (pose.action === "sit" ? POSTURE_DROP : 0);
+  return {
+    left: centre.x - AVATAR_ANCHOR.x,
+    top,
+    w: 64,
+    h: 110,
+    head: top + HEAD_IN_IMAGE.upright,
+  };
 }
 
 /** Habbo's floor shadow for an avatar's pose: standing (and walking) or sitting. Lying has none. */
@@ -637,13 +666,14 @@ export class RoomRenderer {
     avatar: PlacedAvatar,
   ): { centre: { x: number; y: number }; rise: number } {
     const pose = scene.avatarPose(avatar);
-    const centre = tileCentre(pose.x, pose.y, pose.z - (POSE_DROP[pose.action] ?? 0));
+    const centre = tileCentre(pose.x, pose.y, pose.z);
+    const { head } = avatarImageAt(pose, centre);
     const effect = (avatar.details as Record<string, number> | undefined)?.["@effect"] ?? 0;
     const art = effect > 0 ? this.effects.get(`${avatar.hotel}/${effect}`) : undefined;
     const drawsBody =
       state.settings?.avatar_drawing === "wiredbench" && art?.manifest.drawable === false;
     const lift = drawsBody ? (art?.manifest.lift ?? 0) : 0;
-    return { centre, rise: HEAD_TOP + FX_GAP_USER + lift };
+    return { centre, rise: centre.y - head + FX_GAP_USER + lift };
   }
 
   private drawFloor(scene: Scene): void {
@@ -1110,9 +1140,8 @@ export class RoomRenderer {
 
   private drawAvatar(scene: Scene, avatar: PlacedAvatar): void {
     const pose = scene.avatarPose(avatar);
-    const centre = tileCentre(pose.x, pose.y, pose.z - (POSE_DROP[pose.action] ?? 0));
-    const left = centre.x - AVATAR_ANCHOR.x;
-    const top = centre.y - AVATAR_ANCHOR.y;
+    const centre = tileCentre(pose.x, pose.y, pose.z);
+    const { left, top, w, h } = avatarImageAt(pose, centre);
     const selected = scene.selected?.kind === "avatar" && scene.selected.id === avatar.id;
     const order = depth(pose.frontX, pose.frontY, pose.z, 900);
     const changed = this.bodyEffectTexture(avatar, pose);
@@ -1158,7 +1187,7 @@ export class RoomRenderer {
     if (scene.looks?.users[avatar.id]?.click_through) return;
     this.hits.push({
       hit: { kind: "avatar", id: avatar.id },
-      bounds: new Rectangle(left + 12, top + 10, AVATAR_SIZE.w - 24, AVATAR_SIZE.h - 14),
+      bounds: new Rectangle(left + 12, top + 10, w - 24, h - 14),
       order: order,
     });
   }
