@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { state } from "../state";
 import { depth, screenToTile, tileCentre } from "./iso";
 import {
+  actionMs,
   avatarExtras,
   canStackOn,
   directionBetween,
@@ -40,7 +42,7 @@ import {
   timeDigits,
   withFace,
 } from "./model";
-import { bodyEffectUrl } from "./renderer";
+import { avatarUrl, bodyEffectUrl } from "./renderer";
 import { isDebugCommand, runClock } from "./run-panel";
 
 const INFO: Record<string, FurniInfo> = {
@@ -630,5 +632,37 @@ describe("body-changing effects", () => {
     expect(later.get("effect")).toBe("27");
     expect(later.get("effect_frame")).toBe("3");
     expect(later.get("frame")).toBe("0");
+  });
+});
+
+describe("avatar actions follow Habbo's frame lengths", () => {
+  it("plays respect once, each thumbs-up frame for 15 ticks", () => {
+    expect(actionMs("respect")).toBe(3750);
+    expect(actionMs("blow")).toBe(2500);
+    expect(actionMs("wave")).toBe(2500);
+    expect(avatarExtras({}, "respect", 1874).frame).toBe(0);
+    expect(avatarExtras({}, "respect", 1875).frame).toBe(1);
+    expect(avatarExtras({}, "respect", 3749).frame).toBe(1);
+  });
+
+  it("does not blow a kiss with an effect on, as Habbo's effect action prevents it", () => {
+    expect(avatarExtras({ "@effect": 247 }, "blow", 0).extra).toEqual([]);
+    expect(avatarExtras({ "@effect": 247 }, "wave", 0).extra).toEqual(["wav"]);
+  });
+
+  it("asks for an action's own frame only when Wiredbench draws the avatar", () => {
+    const avatar = { hotel: "com", figure: "hd-180-1" };
+    const asked = () =>
+      new URL(avatarUrl(avatar, "wlk,blw", 2, 3, "std", undefined, 0, 1), "http://x");
+    const saved = state.settings;
+    try {
+      state.settings = { avatar_drawing: "habbo" } as typeof state.settings;
+      expect(asked().searchParams.has("action_frame")).toBe(false);
+      state.settings = { avatar_drawing: "wiredbench" } as typeof state.settings;
+      expect(asked().searchParams.get("action_frame")).toBe("1");
+      expect(asked().searchParams.get("frame")).toBe("3");
+    } finally {
+      state.settings = saved;
+    }
   });
 });

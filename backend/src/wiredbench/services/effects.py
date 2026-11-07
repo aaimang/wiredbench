@@ -34,7 +34,7 @@ BODY_CHANGES = {"add", "remove", "override", "avatar", "direction"}
 INK_ADD = "33"
 MAX_FRAMES = 2000
 # Raised when the manifest's shape changes, so effects built before are built again.
-EFFECT_VERSION = 4
+EFFECT_VERSION = 5
 
 
 def facts() -> dict[str, Any]:
@@ -107,6 +107,15 @@ def build(data: bytes, lib: str) -> tuple[dict[str, Any], bytes | None]:
             for part in frame.findall("fx")
             if part.get("id") == "avatar"
         ]
+        # Skates and boards also raise the avatar in each direction.
+        raised = [
+            -_int(direction, "dy")
+            for sprite in sprites
+            if sprite.get("id") == "avatar"
+            for direction in sprite.findall("direction")
+        ]
+        if raised:
+            lifts = [lift + max(0, *raised) for lift in lifts] or [max(0, *raised)]
         return {
             "drawable": False,
             "why": sorted(why),

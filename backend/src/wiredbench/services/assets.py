@@ -139,6 +139,7 @@ class AssetCache:
         drawn_by: str = "habbo",
         effect: int | None = None,
         effect_frame: int = 0,
+        action_frame: int | None = None,
     ) -> Path | None:
         """One cached avatar frame. All values must already be validated by the route.
 
@@ -150,9 +151,13 @@ class AssetCache:
             # Only drawn here, because Habbo's image service draws no effects.
             if drawn_by != "wiredbench":
                 return None
-            return self._drawn_avatar(hotel, figure, action, gesture, direction, frame, effect, effect_frame)
+            return self._drawn_avatar(
+                hotel, figure, action, gesture, direction, frame, effect, effect_frame, action_frame
+            )
         if drawn_by == "wiredbench":
-            drawn = self._drawn_avatar(hotel, figure, action, gesture, direction, frame)
+            drawn = self._drawn_avatar(
+                hotel, figure, action, gesture, direction, frame, action_frame=action_frame
+            )
             if drawn is not None:
                 return drawn
         query = {
@@ -199,6 +204,7 @@ class AssetCache:
         frame: int,
         effect: int | None = None,
         effect_frame: int = 0,
+        action_frame: int | None = None,
     ) -> Path | None:
         query: dict[str, str | int] = {
             "figure": figure,
@@ -210,13 +216,15 @@ class AssetCache:
         if effect is not None:
             query["effect"] = effect
             query["effect_frame"] = effect_frame
+        if action_frame is not None:
+            query["action_frame"] = action_frame
         text = urlencode({**query, "drawn_by": "wiredbench", "rules": FIGURE_RULES_VERSION})
         path = self.avatar_root / hotel / f"{hashlib.sha256(text.encode()).hexdigest()}.png"
         if path.exists():
             os.utime(path)
             return path
         body = self.figures.draw(
-            hotel, figure, direction, direction, action, gesture, frame, effect, effect_frame
+            hotel, figure, direction, direction, action, gesture, frame, effect, effect_frame, action_frame
         )
         if body is None:
             return None
