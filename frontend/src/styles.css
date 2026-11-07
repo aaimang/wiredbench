@@ -252,7 +252,8 @@ select {
 
 .shell {
   display: grid;
-  grid-template-columns: 172px minmax(0, 1fr);
+  /* Wide enough for the brand and its two header buttons without squeezing them. */
+  grid-template-columns: 208px minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr) auto;
   height: 100%;
 }
@@ -293,12 +294,41 @@ select {
   background: var(--selected);
 }
 
-.rail-hide {
+.rail-brand {
+  gap: 6px;
+}
+
+.rail-buttons {
+  display: flex;
+  flex: none;
+  gap: 2px;
+  margin-left: auto;
+}
+
+.rail-theme {
   display: grid;
+  flex: none;
   place-items: center;
   width: 24px;
   height: 24px;
-  margin-left: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.rail-theme:hover {
+  background: var(--selected);
+}
+
+.rail-hide {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 24px;
+  height: 24px;
   padding: 0;
   border: 0;
   border-radius: 3px;
@@ -1346,6 +1376,22 @@ wb-room-view {
 
 .view-banner span {
   flex: 1 1 24ch;
+}
+
+/* The banner is the same amber in both themes, so its button keeps fixed colours that read on it. */
+.view-banner .btn {
+  border-color: #1a1a14;
+  background: #1a1a14;
+  color: #f4f2e6;
+}
+
+.view-banner .btn:hover:not(:disabled) {
+  border-color: #33362e;
+  background: #33362e;
+}
+
+.view-banner .btn:focus-visible {
+  outline-color: #1a1a14;
 }
 
 .view-list {
@@ -2425,4 +2471,13 @@ wb-editor {
   * {
     transition: none !important;
   }
+}
+
+/* Groups controls so they can be locked together, without looking like a box. */
+.plain-fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  display: contents;
 }

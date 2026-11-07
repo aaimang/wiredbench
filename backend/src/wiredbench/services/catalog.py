@@ -294,6 +294,9 @@ class CatalogService:
         stage: str | None = None,
         offset: int = 0,
         limit: int = 100,
+        category: str | None = None,
+        kind: str | None = None,
+        wired: bool | None = None,
     ) -> dict[str, Any]:
         with self.sessions() as db:
             current = self._current(db, hotel)
@@ -302,6 +305,12 @@ class CatalogService:
             base = [CatalogItem.version_id == current.id]
             if scope == "wired":
                 base.append(CatalogItem.is_wired.is_(True))
+            if wired is not None:
+                base.append(CatalogItem.is_wired.is_(wired))
+            if category:
+                base.append(CatalogItem.category == category)
+            if kind:
+                base.append(CatalogItem.kind == kind)
             for word in q.split()[:8]:
                 pattern = "%" + word.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
                 base.append(

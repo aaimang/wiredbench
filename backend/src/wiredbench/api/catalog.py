@@ -118,6 +118,10 @@ def items(
     wired_type: Literal["trigger", "effect", "condition", "selector", "addon", "variable", "utility"]
     | None = None,
     stage: Literal["live", "not_in_catalogue", "new"] | None = None,
+    # Furnidata's own grouping, such as chair or lighting, for furni that are not WIRED.
+    category: str | None = Query(None, pattern=r"^[a-z_]{1,40}$"),
+    kind: Literal["floor", "wall"] | None = None,
+    wired: bool | None = None,
     offset: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     services: Services = Depends(get_services),
@@ -132,7 +136,9 @@ def items(
     if request.headers.get("if-none-match") == etag:
         return Response(status_code=304, headers=headers)
     response.headers.update(headers)
-    return services.catalog.search(chosen, q, scope, wired_type, stage, offset, limit)
+    return services.catalog.search(
+        chosen, q, scope, wired_type, stage, offset, limit, category=category, kind=kind, wired=wired
+    )
 
 
 @router.get("/items/{classname}")
