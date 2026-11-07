@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.1](https://github.com/aaimang/wiredbench/compare/v0.9.0...v0.9.1) (2026-11-07)
+
+
+### Bug Fixes
+
+* floor shadow under avatars, grey out a kiss with an effect, projectile checked ([#90](https://github.com/aaimang/wiredbench/issues/90)) ([ffac719](https://github.com/aaimang/wiredbench/commit/ffac719e73253ec3f8ef762e27f5f619cb93d975))
+
 ## [0.9.0](https://github.com/aaimang/wiredbench/compare/v0.8.0...v0.9.0) (2026-11-08)
 
 Wiredbench can now draw avatars itself, from Habbo's own client files, including avatar effects. View as user works much more like a real client, and rooms get time zones, avatar details, faces and actions.
