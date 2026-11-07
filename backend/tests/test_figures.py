@@ -534,3 +534,46 @@ def test_an_actions_own_frame_reaches_the_drawing(
     assert api.get("/api/avatars/com/image", params=params).status_code == 200
     assert calls[-1][6] == 2 and calls[-1][-1] == 1, "the step and the kiss's own frame"
     assert api.get("/api/avatars/com/image", params={**params, "action_frame": 4}).status_code == 422
+
+
+def shadow_library() -> figures.Library:
+    from swf_builder import figure_library
+
+    black = b"\xff\x00\x00\x00"
+    blocks = {
+        "h_std_sd_1_0_0": (6, 3, black, (-15, 8)),
+        "h_sit_sd_1_2_0": (5, 3, black, (-10, 20)),
+    }
+    return figures.parse_library(figure_library(figures.BODY_LIBRARY, blocks), figures.BODY_LIBRARY)
+
+
+def test_the_floor_shadow_is_habbos_art_and_see_through() -> None:
+    body = shadow_library()
+    standing = figures.compose_shadow(body, "std", 2)
+    assert standing is not None and standing.size == (64, 110)
+    assert standing.getbbox() == (15, 92, 21, 95), "the round art for direction 0 serves every direction"
+    assert standing.getpixel((15, 92)) == (0, 0, 0, figures.SHADOW_ALPHA)
+    sitting = figures.compose_shadow(body, "sit", 4)
+    assert sitting is not None
+    assert sitting.getbbox() == (64 - 10 - 5, 80, 64 - 10, 83), "facing 4 mirrors the art for 2"
+    assert figures.compose_shadow(body, "sit", 3) == sitting, "a diagonal seat is drawn facing 4"
+    assert figures.compose_shadow(body, "lay", 2) is None, "Habbo draws no shadow for lying"
+
+
+def test_the_shadow_route(api: Api, habbo: FakeHabbo, monkeypatch: pytest.MonkeyPatch) -> None:
+    import io
+
+    out = io.BytesIO()
+    Image.new("RGBA", (64, 110)).save(out, "PNG")
+    asked: list[tuple[object, ...]] = []
+
+    def fake(self: figures.Figures, *args: object) -> bytes | None:
+        asked.append(args)
+        return None if args[1] == "lay" else out.getvalue()
+
+    monkeypatch.setattr(figures.Figures, "shadow", fake)
+    assert api.get("/api/avatars/com/shadow", params={"pose": "sit", "direction": 6}).status_code == 200
+    assert asked[-1] == ("com", "sit", 6)
+    assert api.get("/api/avatars/com/shadow", params={"pose": "lay"}).status_code == 404
+    assert api.get("/api/avatars/com/shadow", params={"pose": "wav"}).status_code == 422
+    assert api.get("/api/avatars/com/shadow", params={"direction": 8}).status_code == 422

@@ -34,7 +34,7 @@ BODY_CHANGES = {"add", "remove", "override", "avatar", "direction"}
 INK_ADD = "33"
 MAX_FRAMES = 2000
 # Raised when the manifest's shape changes, so effects built before are built again.
-EFFECT_VERSION = 5
+EFFECT_VERSION = 6
 
 
 def facts() -> dict[str, Any]:
@@ -116,11 +116,17 @@ def build(data: bytes, lib: str) -> tuple[dict[str, Any], bytes | None]:
         ]
         if raised:
             lifts = [lift + max(0, *raised) for lift in lifts] or [max(0, *raised)]
+        # Whether the room's own floor shadow stays: the effect may remove it or draw its own instead.
+        removed = {child.get("id") for child in animation if child.tag == "remove"}
+        own = animation.find("shadow")
+        own_art = own is not None and f"{lib}_h_{own.get('id', '')}_0" in parsed.named_images()
+        shadow = "none" if "sd" in removed else "own" if own_art else "plain"
         return {
             "drawable": False,
             "why": sorted(why),
             "frame_count": max(1, *played),
             "lift": max(0, *lifts) if lifts else 0,
+            "shadow": shadow,
         }, None
     if len(frames) > MAX_FRAMES:
         return {"drawable": False, "why": ["too many frames"]}, None

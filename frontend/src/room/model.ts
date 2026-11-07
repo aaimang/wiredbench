@@ -587,6 +587,11 @@ export const SIGN_MAX = 17;
 /** A real room holds a sign for a few seconds. The exact length is assumed, and matches the engine. */
 export const SIGN_MS = 5000;
 
+/** Habbo's avatar effect action prevents blowing a kiss, so the client greys the option out. */
+export function actionBlocked(saved: unknown, action: AvatarAction): boolean {
+  return action === "blow" && (((saved ?? {}) as Record<string, number>)["@effect"] ?? 0) > 0;
+}
+
 /** What Habbo's avatar image is asked to add to a pose. Effect and dance have no art there. */
 export function avatarExtras(
   saved: unknown,
@@ -598,8 +603,7 @@ export function avatarExtras(
   const extra: string[] = [];
   let frame = 0;
   const sign = details["@sign"];
-  // Habbo's avatar effect action prevents blowing a kiss, so an avatar with an effect does not.
-  const blocked = action === "blow" && (details["@effect"] ?? 0) > 0;
+  const blocked = action !== undefined && actionBlocked(details, action);
   if (action === "sixty_seven") {
     extra.push(`sig=${Math.floor(elapsedMs / SIXTY_SEVEN_MS) % 2 ? 7 : 6}`);
   } else if (action && !blocked) {
@@ -668,6 +672,8 @@ export interface EffectManifest {
   drawable: boolean;
   /** Frames of an effect that changes the body, which only Wiredbench's own avatar drawing shows. */
   frame_count?: number;
+  /** A body-changing effect's floor shadow: Habbo's plain one, its own drawn in its image, or none. */
+  shadow?: "plain" | "own" | "none";
   /** How many pixels a body-changing effect lifts the avatar at most. */
   lift?: number;
   sprites?: {

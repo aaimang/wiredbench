@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { state } from "../state";
 import { depth, screenToTile, tileCentre } from "./iso";
 import {
+  actionBlocked,
   actionMs,
   avatarExtras,
   canStackOn,
@@ -44,7 +45,7 @@ import {
   timeDigits,
   withFace,
 } from "./model";
-import { avatarUrl, bodyEffectUrl } from "./renderer";
+import { avatarUrl, bodyEffectUrl, shadowUrl } from "./renderer";
 import { isDebugCommand, runClock } from "./run-panel";
 
 const INFO: Record<string, FurniInfo> = {
@@ -686,5 +687,22 @@ describe("avatar actions follow Habbo's frame lengths", () => {
     } finally {
       state.settings = saved;
     }
+  });
+});
+
+describe("matching a real room", () => {
+  it("greys out blow kiss while an effect is on, as Habbo does", () => {
+    expect(actionBlocked({ "@effect": 38 }, "blow")).toBe(true);
+    expect(actionBlocked({}, "blow")).toBe(false);
+    expect(actionBlocked({ "@effect": 38 }, "wave")).toBe(false);
+  });
+
+  it("asks for the floor shadow of the pose, with walking using the standing one", () => {
+    const query = (action: string) =>
+      new URL(shadowUrl({ hotel: "com" }, { action, dir: 4 }), "http://x").searchParams;
+    expect(query("wlk").get("pose")).toBe("std");
+    expect(query("sit").get("pose")).toBe("sit");
+    expect(query("lay").get("pose")).toBe("lay");
+    expect(query("std").get("direction")).toBe("4");
   });
 });

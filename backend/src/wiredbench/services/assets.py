@@ -232,6 +232,19 @@ class AssetCache:
         _write_atomic(path, body)
         return path
 
+    def avatar_shadow(self, hotel: str, pose_name: str, direction: int) -> Path | None:
+        """The cached floor shadow for a pose, or None when Habbo draws none. Values validated by the route."""
+        text = urlencode({"pose": pose_name, "direction": direction, "rules": FIGURE_RULES_VERSION})
+        path = self.avatar_root / hotel / f"shadow-{hashlib.sha256(text.encode()).hexdigest()}.png"
+        if path.exists():
+            return path
+        body = self.figures.shadow(hotel, pose_name, direction)
+        if body is None:
+            return None
+        path.parent.mkdir(parents=True, exist_ok=True)
+        _write_atomic(path, body)
+        return path
+
     def _translate_hand_item(self, hotel: str, action: str) -> tuple[str, int | None]:
         """Swaps a @handitem value for its art number, or drops it if it draws nothing."""
         parts = action.split(",")

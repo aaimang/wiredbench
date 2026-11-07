@@ -32,6 +32,7 @@ import { t } from "../strings";
 import { act, confirmDialog, errorMessage, formDialog, toast } from "../ui";
 import {
   type AvatarAction,
+  actionBlocked,
   actionMs,
   avatarExtras,
   canStackOn,
@@ -2078,6 +2079,14 @@ class WbEditor extends HTMLElement {
         show(input, held[name] ?? 0);
       }
     }
+    // As in Habbo, an action the avatar cannot do now is greyed out, such as a kiss with an effect on.
+    for (const button of this.querySelectorAll<HTMLButtonElement>(
+      "[data-testid=avatar-actions] [data-action]",
+    )) {
+      const blocked = actionBlocked(held, button.dataset.action as AvatarAction);
+      button.disabled = blocked;
+      button.title = blocked ? T.actionBlockedByEffect : "";
+    }
     height.textContent = T.debugHeight(avatar.z);
     position.textContent = T.avatarAt(avatar.x, avatar.y, T.poses[avatar.pose] ?? avatar.pose);
     if (!this.walkers.has(avatar.id)) {
@@ -2182,6 +2191,7 @@ class WbEditor extends HTMLElement {
             {
               class: "btn btn-small",
               type: "button",
+              "data-action": action,
               onclick: () => this.playAction(avatar, action as AvatarAction),
             },
             name,
