@@ -108,6 +108,64 @@ def test_hidden_layers_and_removed_parts(parts: tuple) -> None:
     assert hatted.getpixel((20, 18)) == (0, 255, 0, 255), "a hat hides the back hair, so the hair stays"
 
 
+ACTIONS = b"""<actions>
+  <action id="Sit" state="sit" precedence="103" main="1" geometrytype="vertical" activepartset="sit"
+    assetpartdefinition="sit"/>
+  <action id="Wave" state="wave" precedence="205" geometrytype="vertical" activepartset="handRight"
+    assetpartdefinition="wav"/>
+  <action id="Talk" state="talk" precedence="500" geometrytype="vertical" activepartset="head"
+    assetpartdefinition="spk"/>
+  <action id="Default" precedence="1000" state="std" main="1" isdefault="1" geometrytype="vertical"
+    activepartset="figure" assetpartdefinition="std"/>
+</actions>"""
+ANIMATION = b"""<animationSet>
+  <action id="Wave"><part set-type="rh"><frame number="0"/><frame number="1" repeats="4"/></part></action>
+  <action id="Talk"><part set-type="hd"><frame number="0"/></part></action>
+</animationSet>"""
+ACTIVE = b"""<partSets><partSet><part set-type="rh" flipped-set-type="lh"/></partSet>
+  <activePartSet id="figure"><activePart set-type="bd"/><activePart set-type="hd"/><activePart set-type="ey"/>
+    <activePart set-type="rh"/><activePart set-type="hr"/></activePartSet>
+  <activePartSet id="sit"><activePart set-type="bd"/></activePartSet>
+  <activePartSet id="handRight"><activePart set-type="rh"/></activePartSet>
+  <activePartSet id="head"><activePart set-type="hd"/><activePart set-type="hr"/></activePartSet>
+</partSets>"""
+
+
+def test_a_pose_picks_each_parts_art_by_action_priority() -> None:
+    rules = figures.parse_rules(GEOMETRY, ACTIVE, ANIMATION, ACTIONS)
+    shown = figures.pose(rules, "sit,wav", "std", 1)
+    assert shown is not None
+    assert shown.shows(rules, "bd") == ("sit", 0), "sitting owns the body"
+    assert shown.shows(rules, "rh") == ("wav", 1), "waving owns the hand, counting each frame once"
+    assert shown.shows(rules, "hd") == ("std", 0)
+    talking = figures.pose(rules, "std", "spk", 0)
+    assert talking is not None
+    assert talking.shows(rules, "hd") == ("spk", 0)
+    assert talking.shows(rules, "hr") == ("std", 0), "talking changes only the parts its animation lists"
+    assert figures.pose(rules, "dance", "std", 0) is None, "the image service draws what this does not know"
+    assert figures.pose(rules, "std", "zzz", 0) is None
+
+
+def test_a_part_without_action_art_is_drawn_standing(parts: tuple) -> None:
+    rules = figures.parse_rules(GEOMETRY, ACTIVE, ANIMATION, ACTIONS)
+    _, data, mapping = parts
+    looks = figures.resolve("hd-180-7", data, mapping)
+    assert looks is not None
+    sitting = figures.compose(rules, looks, {"lib_a": library()}, 2, 2, figures.pose(rules, "sit", "std", 0))
+    assert sitting.getpixel((10, 10)) == (255, 0, 0, 255), "no sitting art for the body, so it stands"
+
+
+def test_own_direction_art_is_used_instead_of_a_mirror(parts: tuple) -> None:
+    rules, data, mapping = parts
+    looks = figures.resolve("hd-180-7", data, mapping)
+    assert looks is not None
+    lib = library()
+    lib.images["h_std_rh_1_4_0"] = Image.new("RGBA", (1, 1), (255, 255, 255, 255))
+    lib.offsets["h_std_rh_1_4_0"] = (-50, 60)
+    image = figures.compose(rules, looks, {"lib_a": lib}, 4, 4)
+    assert image.getpixel((50, 40)) == (255, 0, 0, 255), "drawn where its own offset says, unmirrored"
+
+
 def test_unknown_sets_are_not_drawn(parts: tuple) -> None:
     rules, data, mapping = parts
     assert figures.resolve("hd-999-7", data, mapping) is None
@@ -120,7 +178,9 @@ def test_the_route_falls_back_to_habbo_when_it_cannot_draw(
     drawn = Image.new("RGBA", (64, 110), (1, 2, 3, 255))
     calls: list[str] = []
 
-    def fake(self: figures.Figures, hotel: str, figure: str, direction: int, head: int) -> bytes | None:
+    def fake(
+        self: figures.Figures, hotel: str, figure: str, direction: int, head: int, *pose: object
+    ) -> bytes | None:
         calls.append(figure)
         if figure == "hd-9-1":
             return None
@@ -138,8 +198,10 @@ def test_the_route_falls_back_to_habbo_when_it_cannot_draw(
     waving = api.get(
         "/api/avatars/com/image", params={"figure": "hd-180-1", "drawn_by": "wiredbench", "action": "wav"}
     )
-    assert waving.content == PNG, "only still standing avatars are drawn here"
-    assert calls == ["hd-180-1", "hd-9-1"]
+    assert waving.content == ours.content, "poses are drawn here too"
+    plain = api.get("/api/avatars/com/image", params={"figure": "hd-180-1"})
+    assert plain.content == PNG, "Habbo's image service stays the default"
+    assert calls == ["hd-180-1", "hd-9-1", "hd-180-1"]
     assert (
         api.get("/api/avatars/com/image", params={"figure": "hd-180-1", "drawn_by": "evil"}).status_code
         == 422

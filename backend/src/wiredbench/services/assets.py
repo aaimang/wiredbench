@@ -21,7 +21,7 @@ from PIL import Image
 from wiredbench.config import HOTELS
 from wiredbench.services import swf
 from wiredbench.services.effects import Effects
-from wiredbench.services.figures import Figures
+from wiredbench.services.figures import FIGURE_RULES_VERSION, Figures
 from wiredbench.services.handitems import HandItems
 from wiredbench.services.upstream import IMAGE_HOST, Upstream, UpstreamError, icon_url
 
@@ -140,14 +140,14 @@ class AssetCache:
     ) -> Path | None:
         """One cached avatar frame. All values must already be validated by the route.
 
-        With drawn_by "wiredbench", an avatar standing still is drawn here from its parts. Anything else,
-        or a look that cannot be drawn here, still comes from Habbo's image service.
+        With drawn_by "wiredbench", the avatar is drawn here from its parts. A look or action that cannot
+        be drawn here still comes from Habbo's image service.
         """
-        if drawn_by == "wiredbench" and action == "std" and gesture == "std":
-            drawn = self._drawn_avatar(hotel, figure, direction)
+        action, art = self._translate_hand_item(hotel, action)
+        if drawn_by == "wiredbench":
+            drawn = self._drawn_avatar(hotel, figure, action, gesture, direction, frame)
             if drawn is not None:
                 return drawn
-        action, art = self._translate_hand_item(hotel, action)
         query = {
             "figure": figure,
             "size": "m",
@@ -182,13 +182,22 @@ class AssetCache:
         _write_atomic(path, body)
         return path
 
-    def _drawn_avatar(self, hotel: str, figure: str, direction: int) -> Path | None:
-        text = urlencode({"figure": figure, "direction": direction, "drawn_by": "wiredbench"})
+    def _drawn_avatar(
+        self, hotel: str, figure: str, action: str, gesture: str, direction: int, frame: int
+    ) -> Path | None:
+        query = {
+            "figure": figure,
+            "action": action,
+            "gesture": gesture,
+            "direction": direction,
+            "frame": frame,
+        }
+        text = urlencode({**query, "drawn_by": "wiredbench", "rules": FIGURE_RULES_VERSION})
         path = self.avatar_root / hotel / f"{hashlib.sha256(text.encode()).hexdigest()}.png"
         if path.exists():
             os.utime(path)
             return path
-        body = self.figures.draw(hotel, figure, direction, direction)
+        body = self.figures.draw(hotel, figure, direction, direction, action, gesture, frame)
         if body is None:
             return None
         path.parent.mkdir(parents=True, exist_ok=True)

@@ -5,8 +5,8 @@ HabboAvatarPartSets.xml. Looks come from figuredata, parts are found through fig
 art comes from the hh_human_* libraries. Nothing is stored in the repo: every file is fetched on first
 use and kept in the cache folder.
 
-Only still, standing avatars are drawn for now. Anything else returns None, and the caller asks
-Habbo's image service instead.
+Poses, actions, gestures, signs and hand items are drawn from HabboAvatarActions.xml and the client's
+animation file. Anything else returns None, and the caller asks Habbo's image service instead.
 """
 
 from __future__ import annotations
@@ -39,40 +39,73 @@ MAX_DATA_BYTES = 16 * 2**20
 MAX_LIBRARY_BYTES = 16 * 2**20
 CLIENT_KEY = "flash-windows"
 CLIENT_FILE = "HabboAir.swf"
-RULES = ("HabboAvatarGeometry", "HabboAvatarPartSets")
+RULES = ("HabboAvatarGeometry", "HabboAvatarPartSets", "HabboAvatarAnimation")
+ACTIONS_FILE = "HabboAvatarActions.xml"
+ITEM_LIBRARY = "hh_human_item"
+# Each geometry's canvas and where Habbo's offsets start on it, matching the image service.
+CANVASES = {
+    "vertical": ((64, 110), (0, 100)),
+    "sitting": ((64, 110), (0, 100)),
+    "horizontal": ((110, 64), (45, 52)),
+}
 MAX_LIBRARIES = 200
-CANVAS = (64, 110)
-ORIGIN = (0, 100)
 # Directions 4 to 6 are drawn as mirrored copies of 2 to 0.
 MIRRORED = {4: 2, 5: 1, 6: 0}
 UNTINTED = {"ey"}
 # Measured against Habbo's images: its server draws the body art's 254 as 255.
 BODY_LIBRARY = "hh_human_body"
 MAX_ALIAS_HOPS = 6
+# Raised when drawing changes, so avatars drawn before are drawn again.
+FIGURE_RULES_VERSION = 2
+
+
+@dataclass
+class Action:
+    """One avatar action from HabboAvatarActions.xml, such as sitting or waving."""
+
+    id: str
+    asset: str
+    precedence: int
+    geometry: str
+    parts: str
+    main: bool
+
+
+# Body part ID to (x, z, radius, item types with their radius).
+BodyParts = dict[str, tuple[float, float, float, list[tuple[str, float]]]]
 
 
 @dataclass
 class Rules:
-    """How the parts of an avatar stack, from the client's geometry and part set files."""
+    """How an avatar is put together, from the client's geometry, part set, animation and action files."""
 
     camera_z: float
-    # Body part ID to (x, z, radius, item types with their radius), for the standing pose.
-    parts: dict[str, tuple[float, float, float, list[tuple[str, float]]]]
+    types: dict[str, BodyParts]
     head_parts: set[str]
     flipped: dict[str, str]
     removes: dict[str, str]
+    active: dict[str, set[str]] = field(default_factory=dict)
+    # Keyed by the name the image service uses, such as "wav" or "sit".
+    actions: dict[str, Action] = field(default_factory=dict)
+    # Action ID to part type to its frames, as (frame number, asset name part).
+    frames: dict[str, dict[str, list[tuple[int, str | None]]]] = field(default_factory=dict)
 
-    def order(self, direction: int, head_direction: int) -> list[str]:
+    @property
+    def parts(self) -> BodyParts:
+        return self.types["vertical"]
+
+    def order(self, direction: int, head_direction: int, geometry: str = "vertical") -> list[str]:
         """Body parts from back to front."""
+        parts = self.types.get(geometry, self.parts)
 
         def distance(part: str) -> float:
-            x, z, radius, _ = self.parts[part]
+            x, z, radius, _ = parts[part]
             facing = head_direction if part in self.head_parts else direction
             angle = math.radians((45 * (facing + 1)) % 360)
             turned = x * math.sin(angle) + z * math.cos(angle)
             return min(abs(self.camera_z - turned - radius), abs(self.camera_z - turned + radius))
 
-        return sorted(self.parts, key=distance, reverse=True)
+        return sorted(parts, key=distance, reverse=True)
 
 
 @dataclass
@@ -91,7 +124,7 @@ class FigureData:
     palettes: dict[str, dict[str, str]]
 
 
-def parse_rules(geometry: bytes, part_sets: bytes) -> Rules:
+def parse_rules(geometry: bytes, part_sets: bytes, animation: bytes = b"", actions: bytes = b"") -> Rules:
     root = safe_fromstring(geometry)
     camera = root.find("camera")
     camera_z = float(camera.findtext("z", "10")) if camera is not None else 10.0
@@ -101,26 +134,66 @@ def parse_rules(geometry: bytes, part_sets: bytes) -> Rules:
         if avatar_set.get("id") == "head"
         for part in avatar_set.iter("bodypart")
     }
-    vertical = next(kind for kind in root.iter("type") if kind.get("id") == "vertical")
-    parts = {}
-    for part in vertical.findall("bodypart"):
-        items = [(item.get("id", ""), float(item.get("radius", "0"))) for item in part.findall("item")]
-        if items:
-            parts[part.get("id", "")] = (
-                float(part.get("x", "0")),
-                float(part.get("z", "0")),
-                float(part.get("radius", "0")),
-                items,
-            )
+    types: dict[str, BodyParts] = {}
+    for geometry_type in root.iter("type"):
+        parts: BodyParts = {}
+        for part in geometry_type.findall("bodypart"):
+            items = [(item.get("id", ""), float(item.get("radius", "0"))) for item in part.findall("item")]
+            if items:
+                parts[part.get("id", "")] = (
+                    float(part.get("x", "0")),
+                    float(part.get("z", "0")),
+                    float(part.get("radius", "0")),
+                    items,
+                )
+        types[geometry_type.get("id", "")] = parts
     sets = safe_fromstring(part_sets)
-    flipped, removes = {}, {}
+    flipped: dict[str, str] = {}
+    removes: dict[str, str] = {}
     for part in sets.iter("part"):
-        kind = part.get("set-type", "")
+        set_type = part.get("set-type", "")
         if part.get("flipped-set-type"):
-            flipped[kind] = part.get("flipped-set-type", "")
+            flipped[set_type] = part.get("flipped-set-type", "")
         if part.get("remove-set-type"):
-            removes[kind] = part.get("remove-set-type", "")
-    return Rules(camera_z, parts, head_parts, flipped, removes)
+            removes[set_type] = part.get("remove-set-type", "")
+    active = {
+        group.get("id", ""): {part.get("set-type", "") for part in group.iter("activePart")}
+        for group in sets.iter("activePartSet")
+    }
+    rules = Rules(camera_z, types, head_parts, flipped, removes, active)
+    if actions:
+        add_actions(rules, actions)
+    if animation:
+        for action in safe_fromstring(animation).iter("action"):
+            animated: dict[str, list[tuple[int, str | None]]] = {}
+            for part in action.findall("part"):
+                frames: list[tuple[int, str | None]] = []
+                # The image service counts each listed frame once, whatever its repeats say.
+                for frame in part.findall("frame"):
+                    frames.append((int(frame.get("number", "0")), frame.get("assetpartdefinition")))
+                animated[part.get("set-type", "")] = frames
+            rules.frames[action.get("id", "")] = animated
+    return rules
+
+
+def add_actions(rules: Rules, body: bytes) -> None:
+    """Adds the actions from HabboAvatarActions.xml, which sits in the client folder rather than the client."""
+    for action in safe_fromstring(body).iter("action"):
+        asset = action.get("assetpartdefinition", "")
+        found = Action(
+            action.get("id", ""),
+            asset,
+            int(action.get("precedence", "1000")),
+            action.get("geometrytype", "vertical"),
+            action.get("activepartset", ""),
+            action.get("main") == "1",
+        )
+        # The image service names an action by its art. Several actions reuse "std" art, so the
+        # default action alone answers to "std".
+        if action.get("isdefault") == "1":
+            rules.actions["std"] = found
+        elif asset not in ("std", "USE_PARAMETER"):
+            rules.actions.setdefault(asset, found)
 
 
 def parse_figuredata(body: bytes) -> FigureData:
@@ -199,6 +272,10 @@ class Library:
     offsets: dict[str, tuple[int, int]]
     aliases: dict[str, str]
 
+    def find(self, stem: str, frame: int) -> tuple[Image.Image, tuple[int, int]] | None:
+        """A frame of an asset, or its first frame when the asset has only one."""
+        return self.asset(f"{stem}_{frame}") or self.asset(f"{stem}_0")
+
     def asset(self, name: str) -> tuple[Image.Image, tuple[int, int]] | None:
         for _ in range(MAX_ALIAS_HOPS):
             if name in self.images and name in self.offsets:
@@ -235,43 +312,122 @@ def parse_library(data: bytes, name: str) -> Library:
     return Library(images, offsets, aliases)
 
 
+@dataclass
+class Pose:
+    """Which art each part shows for an action string such as "sit,wav,crr=12"."""
+
+    geometry: str
+    actions: list[Action]
+    items: list[tuple[str, str]]
+    frame: int
+
+    def shows(self, rules: Rules, kind: str) -> tuple[str, int] | None:
+        """The art name part and frame number for a part type, or None when it is not drawn."""
+        for action in self.actions:
+            if kind not in rules.active.get(action.parts, set()):
+                continue
+            animated = rules.frames.get(action.id, {})
+            frames = animated.get(kind)
+            # An action on top of the pose, such as talking, changes only the parts its animation lists.
+            if animated and not frames and not action.main and action.asset != "std":
+                continue
+            if frames:
+                number, asset = frames[self.frame % len(frames)]
+                asset = action.asset if asset is None else asset
+                return (asset, number) if asset else None  # An empty name hides the part for that frame.
+            return action.asset, 0
+        return None
+
+
+def pose(rules: Rules, action: str, gesture: str, frame: int) -> Pose | None:
+    """None for an action or gesture this does not know, so the image service draws it instead."""
+    chosen, items = [], []
+    for token in action.split(","):
+        name, _, value = token.partition("=")
+        found = rules.actions.get(name)
+        if found is None or (value and not value.isdigit()):
+            return None
+        chosen.append(found)
+        if value:
+            items.append(("li" if name == "sig" else "ri", value))
+    if gesture != "std":
+        found = rules.actions.get(gesture)
+        if found is None:
+            return None
+        chosen.append(found)
+    if "std" in rules.actions:
+        chosen.append(rules.actions["std"])
+    chosen.sort(key=lambda found: found.precedence)
+    main = next((found for found in chosen if found.main), None)
+    return Pose(main.geometry if main else "vertical", chosen, items, frame)
+
+
 def compose(
     rules: Rules,
     looks: list[Look],
     library: dict[str, Library],
     direction: int,
     head_direction: int,
+    shown: Pose | None = None,
 ) -> Image.Image:
-    """The avatar standing still, on the same 64x110 canvas as Habbo's image service."""
+    """The avatar in a pose, on the same canvas as Habbo's image service. Standing still by default."""
+    shown = shown or pose(rules, "std", "std", 0) or Pose("vertical", [], [], 0)
+    # Measured against Habbo's images: lying only faces 2 or 4, and sitting only straight. The image
+    # service draws a lying avatar facing any other way as facing 4, and sits a diagonal one facing 4.
+    if shown.geometry == "horizontal" and direction not in (2, 4):
+        direction = head_direction = 4
+    elif shown.geometry == "sitting" and direction % 2:
+        direction, head_direction = 4, 5 if head_direction in (1, 5) else head_direction
+    size, origin = CANVASES.get(shown.geometry, CANVASES["vertical"])
     hidden = {kind for look in looks for kind in look.hidden}
     worn: dict[str, list[tuple[str, str, str | None]]] = {}
     for look in looks:
         for kind, part_id, color, library_name in look.parts:
             if kind not in hidden and library_name:
                 worn.setdefault(kind, []).append((library_name, part_id, color))
+    for kind, item_id in shown.items:
+        worn.setdefault(kind, []).append((ITEM_LIBRARY, item_id, None))
     for kind, removed in rules.removes.items():
         if kind in worn:
             worn.pop(removed, None)
-    canvas = Image.new("RGBA", CANVAS, (0, 0, 0, 0))
-    for body_part in rules.order(direction, head_direction):
+    parts = rules.types.get(shown.geometry, rules.parts)
+    canvas = Image.new("RGBA", size, (0, 0, 0, 0))
+    for body_part in rules.order(direction, head_direction, shown.geometry):
         facing = head_direction if body_part in rules.head_parts else direction
         mirrored = facing in MIRRORED
         art_direction = MIRRORED.get(facing, facing)
         # Parts drawn later are nearer: a larger radius is nearer the camera.
-        for kind, _ in sorted(rules.parts[body_part][3], key=lambda item: item[1]):
+        for kind, _ in sorted(parts[body_part][3], key=lambda item: item[1]):
+            art = shown.shows(rules, kind) if rules.actions else ("std", 0)
+            if art is None:
+                continue
+            asset, number = art
             for library_name, part_id, color in worn.get(kind, []):
-                shown = rules.flipped.get(kind, kind) if mirrored else kind
-                found = library[library_name].asset(f"h_std_{shown}_{part_id}_{art_direction}_0")
-                if found is None:
+                lib = library.get(library_name)
+                if lib is None:
+                    continue
+                flip = mirrored
+                # Art made for this very direction is used as it is. Actions and items have some.
+                found = mirrored and lib.find(f"h_{asset}_{kind}_{part_id}_{facing}", number)
+                if found:
+                    flip = False
+                else:
+                    named = rules.flipped.get(kind, kind) if mirrored else kind
+                    found = lib.find(f"h_{asset}_{named}_{part_id}_{art_direction}", number)
+                    # An action without art for a part, such as the head while blowing a kiss, shows it
+                    # standing.
+                    if not found and asset != "std":
+                        found = lib.find(f"h_std_{named}_{part_id}_{art_direction}", 0)
+                if not found:
                     continue
                 image, (offset_x, offset_y) = found
                 if color and kind not in UNTINTED and color.upper() != "FFFFFF":
                     image = tint(image, color)
-                left, top = ORIGIN[0] - offset_x, ORIGIN[1] - offset_y
-                if mirrored:
+                left, top = origin[0] - offset_x, origin[1] - offset_y
+                if flip:
                     image = image.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
-                    left = CANVAS[0] - left - image.width
-                layer = Image.new("RGBA", CANVAS, (0, 0, 0, 0))
+                    left = size[0] - left - image.width
+                layer = Image.new("RGBA", size, (0, 0, 0, 0))
                 layer.paste(image, (left, top))
                 canvas = Image.alpha_composite(canvas, layer)
     return canvas
@@ -326,7 +482,7 @@ class Figures:
             for name, path in zip(RULES, paths, strict=True):
                 path.write_bytes(found[name])
             log.info("Read avatar rules from Habbo client %s.", version or key)
-        rules = parse_rules(paths[0].read_bytes(), paths[1].read_bytes())
+        rules = parse_rules(paths[0].read_bytes(), paths[1].read_bytes(), paths[2].read_bytes())
         self._rules = (key, rules)
         return rules
 
@@ -352,8 +508,17 @@ class Figures:
         temp.replace(path)
         return body
 
-    def draw(self, hotel: str, figure: str, direction: int, head_direction: int) -> bytes | None:
-        """A PNG of the avatar standing still, or None when it cannot be drawn here."""
+    def draw(
+        self,
+        hotel: str,
+        figure: str,
+        direction: int,
+        head_direction: int,
+        action: str = "std",
+        gesture: str = "std",
+        frame: int = 0,
+    ) -> bytes | None:
+        """A PNG of the avatar, or None when it cannot be drawn here."""
         with self._lock:
             try:
                 client = self._client(hotel)
@@ -375,11 +540,22 @@ class Figures:
                     )
                     self._data = {build: (data, mapping)}
                     self._libraries = {}
+                    rules.actions = {}
+                if not rules.actions:
+                    add_actions(
+                        rules,
+                        self._cached(
+                            self.root / build / ACTIONS_FILE, f"{base}{ACTIONS_FILE}", MAX_DATA_BYTES
+                        ),
+                    )
                 data, mapping = self._data[build]
                 looks = resolve(figure, data, mapping)
-                if looks is None:
+                shown = pose(rules, action, gesture, frame)
+                if looks is None or shown is None:
                     return None
                 needed = {library for look in looks for *_, library in look.parts if library}
+                if shown.items:
+                    needed.add(ITEM_LIBRARY)
                 for name in needed - set(self._libraries):
                     if not name.replace("_", "").isalnum() or len(self._libraries) > MAX_LIBRARIES:
                         return None
@@ -387,7 +563,7 @@ class Figures:
                         self.root / build / f"{name}.swf", f"{base}{name}.swf", MAX_LIBRARY_BYTES
                     )
                     self._libraries[name] = parse_library(swf_data, name)
-                image = compose(rules, looks, self._libraries, direction, head_direction)
+                image = compose(rules, looks, self._libraries, direction, head_direction, shown)
             except (
                 UpstreamError,
                 ValueError,
