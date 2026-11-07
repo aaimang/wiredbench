@@ -580,7 +580,9 @@ test("a game can be started and ended from the run panel", async ({ page }) => {
   await expect(scores).toContainText("No game running");
 });
 
-test("a box saved during a run reaches the running room", async ({ page }) => {
+test("a box saved during a run reaches the running room, for a user with rights", async ({
+  page,
+}) => {
   await login(page);
   await page.getByRole("link", { name: "Guide" }).click();
   await page
@@ -599,7 +601,13 @@ test("a box saved during a run reaches the running room", async ({ page }) => {
   );
   await page.mouse.click(point.x, point.y);
   const save = page.getByRole("button", { name: "Save settings" });
-  await expect(save).toBeVisible();
+  // As in a real room, the box cannot be changed until the acting user has rights.
+  await expect(save).toBeDisabled();
+  await page.locator(".avatar-row-pick").first().click();
+  await page.getByTestId("avatar-details").locator("summary").click();
+  await page.getByTestId("avatar-details").getByLabel("Room owner").check();
+  await page.mouse.click(point.x, point.y);
+  await expect(save).toBeEnabled();
   await save.click();
   await expect(page.getByTestId("run-panel")).toContainText("was changed");
 });

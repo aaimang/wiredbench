@@ -1920,3 +1920,52 @@ def test_visitor_view_example_shows_each_effect() -> None:
     engine.apply_input({"type": "use", "user": AVATAR, "furni": 4})
     engine.advance(100)
     assert engine.furni[3]["state"] == 1
+
+
+def rights_room(**details: int) -> Engine:
+    owner = user()
+    owner["details"] = dict(details)
+    return room(
+        box(50, "wf_colortile", 5, 5),
+        box(1, "wf_trg_says_something", 1, 1, text="go"),
+        box(2, "wf_act_rel_mov", 1, 1, 1, furni=[50], move_x=1),
+        users=[owner],
+    )
+
+
+def move_by_hand(engine: Engine) -> None:
+    engine.apply_input({"type": "move_furni", "user": 100, "furni": 50, "x": 8, "y": 3, "z": 0.5, "rot": 2})
+
+
+@pytest.mark.parametrize("details", [{"@has_rights": 1}, {"@is_owner": 1}])
+def test_a_user_with_rights_moves_furni_and_changes_boxes_during_a_run(details: dict[str, int]) -> None:
+    engine = rights_room(**details)
+    move_by_hand(engine)
+    item = engine.furni[50]
+    assert (item["x"], item["y"], item["z"], item["rot"]) == (8, 3, 0.5, 2)
+    engine.apply_input(
+        {"type": "box_settings", "user": 100, "furni": 2, "settings": {"furni": [50], "move_y": 1}}
+    )
+    say(engine, "go")
+    engine.advance(1000)
+    assert (engine.furni[50]["x"], engine.furni[50]["y"]) == (8, 4), "the new box settings are used"
+
+
+def test_without_rights_a_user_cannot_move_furni_or_change_boxes() -> None:
+    engine = rights_room()
+    move_by_hand(engine)
+    assert (engine.furni[50]["x"], engine.furni[50]["y"]) == (5, 5)
+    engine.apply_input(
+        {"type": "box_settings", "user": 100, "furni": 2, "settings": {"furni": [50], "move_y": 1}}
+    )
+    say(engine, "go")
+    engine.advance(1000)
+    assert (engine.furni[50]["x"], engine.furni[50]["y"]) == (6, 5), "the old settings still apply"
+    assert any("rights" in entry["message"] for entry in engine.trace if entry["kind"] == "info")
+
+
+def test_a_move_by_hand_stays_in_the_room() -> None:
+    engine = rights_room(**{"@is_owner": 1})
+    engine.apply_input({"type": "move_furni", "user": 100, "furni": 50, "x": 25, "y": 3})
+    engine.apply_input({"type": "move_furni", "user": 100, "furni": 999, "x": 1, "y": 1})
+    assert (engine.furni[50]["x"], engine.furni[50]["y"]) == (5, 5)

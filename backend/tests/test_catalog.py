@@ -391,3 +391,20 @@ def test_status_uses_default_hotel(client: TestClient, api: Api) -> None:
 def test_no_raw_data_outside_data_dir(api: Api, settings: Settings, tmp_path: Path) -> None:
     apply_update(api)
     assert (settings.data_dir / "cache" / "gamedata").is_dir()
+
+
+def test_search_by_furnidata_category_and_kind(api: Api, habbo: FakeHabbo) -> None:
+    habbo.set(
+        furnidata(
+            furni("chair_plasto", category="chair"),
+            furni("table_plasto", category="table"),
+            furni("wf_trg_click", category="wired"),
+            wall=(furni("poster", category="chair"),),
+        ),
+        'W/"v1"',
+    )
+    apply_update(api)
+    assert classnames(api, wired="false", kind="floor") == ["chair_plasto", "table_plasto"]
+    assert classnames(api, wired="false", kind="floor", category="chair") == ["chair_plasto"]
+    assert classnames(api, category="chair") == ["chair_plasto", "poster"]
+    assert api.get("/api/catalog/items", params={"category": "Bad;"}).status_code == 422

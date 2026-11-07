@@ -399,7 +399,13 @@ class Engine:
         elif kind == "game_end":
             self._game_end()
         elif kind == "box_settings":
-            self._edit_box(_int(entry.get("furni")), entry.get("settings"))
+            # A real room saves a box's settings only for its owner or a user with rights.
+            if user is None or self._has_rights(_int(user)):
+                self._edit_box(_int(entry.get("furni")), entry.get("settings"))
+            else:
+                self._log("info", "Only the owner or a user with rights can change a box")
+        elif kind == "move_furni":
+            self._move_by_hand(_int(user), entry)
         elif kind == "user_detail":
             who = self.users.get(_int(user))
             if who is not None and entry.get("detail") in USER_DETAILS:
@@ -544,6 +550,31 @@ class Engine:
             self._set_state(furni_id, self._next_state(furni_id))
         if furni_id in self.furni:
             self._fire("wf_trg_state_changed", user=user_id, furni=furni_id)
+
+    def _has_rights(self, user_id: int) -> bool:
+        """Whether a user may move furni and change boxes, as the room's owner or with rights."""
+        who = self.users.get(user_id)
+        details = who["details"] if who else {}
+        return bool(_int(details.get("@has_rights")) or _int(details.get("@is_owner")))
+
+    def _move_by_hand(self, user_id: int, entry: dict[str, Any]) -> None:
+        """A user with rights moves or turns a furni, as from the furni menu in a real room."""
+        item = self.furni.get(_int(entry.get("furni")))
+        if item is None:
+            return
+        if not self._has_rights(user_id):
+            self._log("info", "Only the owner or a user with rights can move furni")
+            return
+        x, y = _int(entry.get("x", item["x"])), _int(entry.get("y", item["y"]))
+        if self.room_size and not (0 <= x < self.room_size[0] and 0 <= y < self.room_size[1]):
+            return
+        item["x"], item["y"] = x, y
+        if entry.get("rot") is not None:
+            item["rot"] = _int(entry["rot"]) % 8
+        if entry.get("z") is not None:
+            item["z"] = max(0.0, min(float(entry["z"]), MAX_ALTITUDE / 100))
+        name = self.users[user_id]["name"]
+        self._log("info", f"{name} moved {self._name(item['classname'])}")
 
     def _edit_box(self, box_id: int, settings: Any) -> None:
         """A real room uses a box's new settings as soon as it is saved, so a run does too."""

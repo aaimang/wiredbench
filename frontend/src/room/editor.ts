@@ -88,6 +88,8 @@ function lookReady(loading: Promise<void> | undefined): Promise<void> {
 }
 const WALK_FRAMES_PER_SECOND = 8;
 const AUTOSAVE_MS = 1500;
+/** Marks a palette choice as a furni category rather than a WIRED type. */
+const FURNI_PREFIX = "furni:";
 const PALETTE_SIZE = 60;
 const MAX_PICKS = 20;
 const ARROW_STEPS: Record<string, [number, number]> = {
@@ -168,6 +170,10 @@ class WbEditor extends HTMLElement {
     return name === "@effect" && this.effectsNotDrawn.has(Number(value));
   }
   private runEdits = new Map<number, string>();
+  /** Where the run last put each furni, so only a move by hand is sent to it. */
+  private runMoves = new Map<number, string>();
+  /** The avatar last chosen during a run, who acts when a furni is selected instead. */
+  private actingAvatar: number | null = null;
   private faceEdited = false;
   private looks: RunState["looks"] | null = null;
   private fx: RunState["fx"] | null = null;
@@ -627,6 +633,8 @@ class WbEditor extends HTMLElement {
     }
     const goal: [number, number] | null = clicked ? [clicked.x, clicked.y] : inside ? tile : null;
     if (goal) this.walkTo(goal);
+    // With rights, a click also opens the furni's tools, as the furni menu does in a real room.
+    if (clicked && this.run && this.hasRights()) this.select(hit);
   }
 
   /** Shift turns, Ctrl or Cmd moves, and both together pick up. */
@@ -682,6 +690,7 @@ class WbEditor extends HTMLElement {
 
   private select(hit: Hit | null): void {
     this.selected = hit;
+    if (hit?.kind === "avatar") this.actingAvatar = hit.id;
     this.needsDraw = true;
     this.renderPanels();
   }
@@ -770,9 +779,25 @@ class WbEditor extends HTMLElement {
       // A run works on a copy, so only box settings carry on, into the run now and the room at Stop.
       this.needsDraw = true;
       const box = this.selectedFurni();
-      if (box?.wired && this.runEdits.get(box.id) !== JSON.stringify(box.wired)) {
+      if (!box || !this.hasRights()) return;
+      const user = this.runUser();
+      if (box.wired && this.runEdits.get(box.id) !== JSON.stringify(box.wired)) {
         this.runEdits.set(box.id, JSON.stringify(box.wired));
-        void this.run.input({ type: "box_settings", furni: box.id, settings: box.wired });
+        void this.run.input({ type: "box_settings", user, furni: box.id, settings: box.wired });
+      }
+      // A move or turn by hand reaches the running room, which checks the user's rights again.
+      const place = `${box.x},${box.y},${box.z},${box.rot}`;
+      if (this.runMoves.get(box.id) !== place) {
+        this.runMoves.set(box.id, place);
+        void this.run.input({
+          type: "move_furni",
+          user,
+          furni: box.id,
+          x: box.x,
+          y: box.y,
+          z: box.z,
+          rot: box.rot,
+        });
       }
       return;
     }
@@ -969,7 +994,10 @@ class WbEditor extends HTMLElement {
   }
 
   private walkTo(goal: [number, number]): void {
-    const avatar = this.selectedAvatar() ?? this.room.avatars[0];
+    const avatar =
+      this.selectedAvatar() ??
+      this.room.avatars.find((a) => a.id === this.actingAvatar) ??
+      this.room.avatars[0];
     if (!avatar) {
       toast(T.addAvatarFirst, "error");
       return;
@@ -1205,7 +1233,22 @@ class WbEditor extends HTMLElement {
   }
 
   private runUser(): number | null {
-    return this.selectedAvatar()?.id ?? this.room.avatars[0]?.id ?? null;
+    const acting = this.room.avatars.find((a) => a.id === this.actingAvatar)?.id;
+    return this.selectedAvatar()?.id ?? acting ?? this.room.avatars[0]?.id ?? null;
+  }
+
+  /** During a run, a real room lets only its owner or a user with rights move furni or change WIRED. */
+  private hasRights(): boolean {
+    if (!this.run) return true;
+    const avatar = this.room.avatars.find((a) => a.id === this.runUser());
+    if (!avatar) return false;
+    const held = this.heldDetails(avatar);
+    return Boolean(held["@has_rights"] || held["@is_owner"]);
+  }
+
+  /** Whether the selected furni's tools work: in Build, and in a run only for a user with rights. */
+  private furniTools(): boolean {
+    return this.run ? this.hasRights() : this.mode === "build";
   }
 
   private async startRun(): Promise<void> {
@@ -1247,6 +1290,8 @@ class WbEditor extends HTMLElement {
     this.savedRoom = null;
     const edits = [...this.runEdits];
     this.runEdits.clear();
+    this.runMoves.clear();
+    this.actingAvatar = null;
     for (const [id, wired] of edits) {
       const box = this.room.furni.find((f) => f.id === id);
       if (box) box.wired = JSON.parse(wired);
@@ -1267,6 +1312,7 @@ class WbEditor extends HTMLElement {
     for (const item of state.furni) {
       const placed = this.room.furni.find((f) => f.id === item.id);
       if (placed) Object.assign(placed, item);
+      this.runMoves.set(item.id, `${item.x},${item.y},${item.z},${item.rot}`);
     }
     this.room.avatars = this.room.avatars.filter((a) => state.users.some((u) => u.id === a.id));
     for (const user of state.users) {
@@ -1576,11 +1622,24 @@ class WbEditor extends HTMLElement {
         void this.loadPalette();
       }, 200),
     );
+    // WIRED by type, or any other furni by furnidata's own category, as the catalogue groups them.
     const type = h(
       "select",
       { "aria-label": T.boxType },
-      h("option", { value: "" }, T.allWired),
-      ...TYPE_ORDER.map((value) => h("option", { value }, t.types[value] ?? value)),
+      h(
+        "optgroup",
+        { label: T.wiredGroup },
+        h("option", { value: "" }, T.allWired),
+        ...TYPE_ORDER.map((value) => h("option", { value }, t.types[value] ?? value)),
+      ),
+      h(
+        "optgroup",
+        { label: T.furniGroup },
+        h("option", { value: FURNI_PREFIX }, T.allFurni),
+        ...Object.entries(T.furniCategories).map(([category, label]) =>
+          h("option", { value: FURNI_PREFIX + category }, label),
+        ),
+      ),
     );
     type.addEventListener("change", () => {
       this.paletteType = type.value;
@@ -1639,8 +1698,15 @@ class WbEditor extends HTMLElement {
       const page = await get<ItemPage>("/api/catalog/items", {
         hotel: this.sandbox?.hotel,
         q: this.query,
-        scope: searching ? "all" : "wired",
-        wired_type: this.paletteType,
+        ...(this.paletteType.startsWith(FURNI_PREFIX)
+          ? {
+              scope: "all",
+              wired: "false",
+              // Only floor furni: the room has no walls to hang wall furni on.
+              kind: "floor",
+              category: this.paletteType.slice(FURNI_PREFIX.length) || undefined,
+            }
+          : { scope: searching ? "all" : "wired", wired_type: this.paletteType }),
         limit: PALETTE_SIZE,
       });
       if (page.version === null) {
@@ -1723,8 +1789,13 @@ class WbEditor extends HTMLElement {
       this.selectionBar.hidden = false;
       return;
     }
-    if (!furni || this.mode !== "build") {
+    if (!furni || (this.mode !== "build" && !this.furniTools())) {
       this.selectionBar.hidden = true;
+      return;
+    }
+    if (!this.furniTools()) {
+      replace(this.selectionBar, h("span", { class: "selection-hint" }, T.needsRights));
+      this.selectionBar.hidden = false;
       return;
     }
     const arrow = (label: string, node: Parameters<typeof icon>[0], dx: number, dy: number) =>
@@ -1741,26 +1812,37 @@ class WbEditor extends HTMLElement {
       arrow(T.moveDownLeft, ArrowDownLeft, 0, 1),
       arrow(T.moveDownRight, ArrowDownRight, 1, 0),
       this.toolButton(T.rotate, RotateCw, () => void this.rotateFurni(furni)),
-      h(
-        "button",
-        {
-          class: "btn btn-quiet-danger btn-icon",
-          "aria-label": T.remove,
-          title: T.remove,
-          onclick: () => this.removeSelected(),
-        },
-        icon(Trash2),
-      ),
+      // Picking up is a Build change: a run keeps every furni it started with.
+      ...(this.run
+        ? []
+        : [
+            h(
+              "button",
+              {
+                class: "btn btn-quiet-danger btn-icon",
+                "aria-label": T.remove,
+                title: T.remove,
+                onclick: () => this.removeSelected(),
+              },
+              icon(Trash2),
+            ),
+          ]),
     );
     this.selectionBar.hidden = false;
   }
 
   private renderFurniCard(): void {
     const furni = this.selectedFurni();
-    if (!furni || this.mode !== "build" || this.placing || this.moving !== null) {
+    if (
+      !furni ||
+      (this.mode !== "build" && !this.furniTools()) ||
+      this.placing ||
+      this.moving !== null
+    ) {
       this.furniCard.hidden = true;
       return;
     }
+    const allowed = this.furniTools();
     const info = this.items.get(furni.classname);
     const picture = h("span", { class: "furni-icon" });
     if (info) {
@@ -1770,8 +1852,23 @@ class WbEditor extends HTMLElement {
     } else {
       picture.append(icon(Box, 16));
     }
-    const action = (label: string, node: Parameters<typeof icon>[0], run: () => void) =>
-      h("button", { class: "btn btn-small", onclick: run }, icon(node, 14), label);
+    const action = (
+      label: string,
+      node: Parameters<typeof icon>[0],
+      run: () => void,
+      locked = false,
+    ) =>
+      h(
+        "button",
+        {
+          class: "btn btn-small",
+          onclick: run,
+          disabled: locked,
+          title: locked ? T.needsRights : undefined,
+        },
+        icon(node, 14),
+        label,
+      );
     const pickUp = state.settings?.pickup_shortcut !== false;
     replace(
       this.furniCard,
@@ -1795,9 +1892,9 @@ class WbEditor extends HTMLElement {
       h(
         "div",
         { class: "furni-card-actions" },
-        action(T.move, Move, () => this.startMoving(furni)),
-        action(T.rotate, RotateCw, () => void this.rotateFurni(furni)),
-        action(T.pickUp, PackageOpen, () => this.removeSelected()),
+        action(T.move, Move, () => this.startMoving(furni), !allowed),
+        action(T.rotate, RotateCw, () => void this.rotateFurni(furni), !allowed),
+        ...(this.run ? [] : [action(T.pickUp, PackageOpen, () => this.removeSelected())]),
         action(T.use, Power, () => void this.useFurni(furni)),
         action(T.inspect, Search, () => this.inspector.querySelector("h2")?.scrollIntoView()),
       ),
@@ -1866,16 +1963,22 @@ class WbEditor extends HTMLElement {
       ...(info === null ? [h("p", { class: "note" }, T.missingFromCatalogue)] : []),
       h("code", {}, item.classname),
       h("div", { class: "chips" }, ...chips.map((chip) => h("span", { class: "badge" }, chip))),
+      // During a run, only the owner or a user with rights may change furni, as in a real room.
+      ...(this.hasRights() ? [] : [h("p", { class: "note" }, T.needsRights)]),
       h(
-        "div",
-        { class: "coordinates" },
-        position("X", "x", "1", false),
-        position("Y", "y", "1", false),
-        position("Z", "z", "0.01", false),
+        "fieldset",
+        { class: "plain-fieldset", disabled: !this.hasRights() },
+        h(
+          "div",
+          { class: "coordinates" },
+          position("X", "x", "1", false),
+          position("Y", "y", "1", false),
+          position("Z", "z", "0.01", false),
+        ),
+        this.stateButtons(item),
+        h("p", { class: "muted" }, t.run.idLabel(item.id)),
+        ...this.boxSettings(item),
       ),
-      this.stateButtons(item),
-      h("p", { class: "muted" }, t.run.idLabel(item.id)),
-      ...this.boxSettings(item),
     ];
   }
 

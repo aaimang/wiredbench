@@ -48,6 +48,7 @@ class Input(BaseModel):
         "game_start",
         "game_end",
         "box_settings",
+        "move_furni",
         "set_value",
         "user_detail",
     ]
@@ -56,6 +57,9 @@ class Input(BaseModel):
     y: int | None = Field(None, ge=0, le=64)
     dir: int | None = Field(None, ge=0, le=7)
     furni: Int | None = None
+    # A furni moved by hand: its turn and height.
+    rot: int | None = Field(None, ge=0, le=7)
+    z: float | None = Field(None, ge=0, le=80)
     text: str | None = Field(None, max_length=500)
     settings: dict[str, Any] | None = None
     detail: str | None = Field(None, max_length=32)

@@ -14,9 +14,11 @@ import {
   FolderTree,
   Gauge,
   LogOut,
+  Moon,
   PanelLeftClose,
   PanelLeftOpen,
   Settings as SettingsIcon,
+  Sun,
   Undo2,
 } from "lucide";
 import {
@@ -170,6 +172,36 @@ function railHidden(): boolean {
 }
 
 /** Hides the left menu to give the page more room. The strip left behind brings it back. */
+/** Whether the page is dark now: chosen in the app, or following the system. */
+function isDark(): boolean {
+  const chosen = document.documentElement.dataset.theme;
+  return chosen ? chosen === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+}
+
+/** Switches between light and dark from the header. An admin's choice is saved with the settings too. */
+function themeButton(): HTMLButtonElement {
+  const button = h("button", { class: "rail-theme" }) as HTMLButtonElement;
+  const show = () => {
+    const label = isDark() ? t.nav.lightMode : t.nav.darkMode;
+    button.setAttribute("aria-label", label);
+    button.title = label;
+    replace(button, icon(isDark() ? Sun : Moon, 16));
+  };
+  button.addEventListener("click", () => {
+    const next = isDark() ? "light" : "dark";
+    applyTheme(next);
+    if (state.settings) state.settings.theme = next;
+    show();
+    if (!state.viewAs) {
+      void request("PATCH", "/api/settings", { theme: next }).catch(() => {
+        // Saving is only for other devices. The theme already applies here.
+      });
+    }
+  });
+  show();
+  return button;
+}
+
 function railButtons(): { hide: HTMLElement; show: HTMLElement } {
   const button = (name: string, label: string, node: Parameters<typeof icon>[0]) =>
     h("button", { class: name, "aria-label": label, title: label }, icon(node, 16));
@@ -232,7 +264,13 @@ function showShell(path: string, tag: string): void {
       h(
         "header",
         { class: "rail" },
-        h("div", { class: "rail-brand" }, logo(), h("span", {}, t.appName), rail.hide),
+        h(
+          "div",
+          { class: "rail-brand" },
+          logo(),
+          h("span", {}, t.appName),
+          h("div", { class: "rail-buttons" }, themeButton(), rail.hide),
+        ),
         h("nav", { class: "rail-nav", "aria-label": "Main" }, ...links),
         h(
           "div",
@@ -299,7 +337,13 @@ function showViewShell(): void {
       h(
         "header",
         { class: "rail" },
-        h("div", { class: "rail-brand" }, logo(), h("span", {}, t.appName), rail.hide),
+        h(
+          "div",
+          { class: "rail-brand" },
+          logo(),
+          h("span", {}, t.appName),
+          h("div", { class: "rail-buttons" }, themeButton(), rail.hide),
+        ),
         h("nav", { class: "rail-nav", "aria-label": "Main" }, rooms),
         h("div", { class: "rail-foot" }, logoutButton()),
       ),
