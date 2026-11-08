@@ -531,3 +531,99 @@ test("a room's earlier WIRED messages are not shown again on coming back", async
   await say.press("Enter");
   await expect(bubbles.filter({ hasText: "pong" })).toHaveCount(1);
 });
+
+test("a visitor walks to a teleport, goes in and comes out of its partner", async ({ page }) => {
+  const teleport = (id: number) => ({
+    id,
+    classname: id === 21 ? "teleport_door" : "teleport_door*2",
+    revision: 100,
+    name: "Teleport",
+    description: "",
+    offerid: 5,
+    bc: true,
+    xdim: 1,
+    ydim: 1,
+    height: 0.1,
+    category: "teleport",
+  });
+  writeFileSync(
+    join(process.env.WB_E2E_DIR as string, "furnidata.json"),
+    JSON.stringify({
+      roomitemtypes: { furnitype: [teleport(21), teleport(22)] },
+      wallitemtypes: { furnitype: [] },
+    }),
+  );
+  await login(page);
+  await page.getByTestId("download-button").or(page.getByTestId("update-button")).first().click();
+  await page
+    .getByTestId("update-dialog")
+    .getByRole("button", { name: /Use this catalogue|Apply update/ })
+    .click();
+  await expect(page.getByTestId("furni-list")).toBeVisible();
+  const {
+    id: room,
+    width,
+    height,
+  } = await page.evaluate(async () => {
+    const me = await (await fetch("/api/auth/me")).json();
+    const headers = { "Content-Type": "application/json", "X-CSRF-Token": me.csrf_token };
+    const res = await fetch("/api/tutorials/time-tracking", {
+      method: "POST",
+      headers,
+      body: "{}",
+    });
+    const id = (await res.json()).id as number;
+    const saved = await (await fetch(`/api/sandboxes/${id}`)).json();
+    const { width, height } = saved.document.room;
+    const [x, y] = [Math.floor(width / 2), Math.floor(height / 2)];
+    saved.document.avatars = [
+      { id: 1, name: "Ann", hotel: "com", figure: "hd-180-1", x: x - 3, y: y + 3, z: 0, dir: 2 },
+    ];
+    // Turned 4, a teleport is entered from the tile below it on the map.
+    saved.document.furni = [
+      { id: 701, classname: "teleport_door", x, y, z: 0, rot: 4, state: 0, link: 702 },
+      {
+        id: 702,
+        classname: "teleport_door*2",
+        x: x + 3,
+        y: y - 3,
+        z: 0,
+        rot: 4,
+        state: 0,
+        link: 701,
+      },
+    ];
+    await fetch(`/api/sandboxes/${id}/document`, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify({ document: saved.document, base_revision: saved.revision }),
+    });
+    return { id, width: width as number, height: height as number };
+  });
+  await page.getByTestId("view-as").click();
+  await expect(page.getByTestId("view-banner")).toBeVisible();
+  await page.locator(`a[href="/view/${room}"]`).click();
+  await expect(page.getByTestId("view-say")).toBeVisible();
+  await page.waitForTimeout(500);
+
+  const canvas = page.getByTestId("room-canvas");
+  const box = (await canvas.boundingBox()) ?? { x: 0, y: 0, width: 800, height: 600 };
+  const tile = (dx: number, dy: number) => ({
+    x: box.width / 2 + (dx - dy) * 32 - ((width % 2) - (height % 2)) * 16,
+    y: box.height / 2 + (dx + dy) * 16 + 16 - ((width % 2) + (height % 2)) * 8,
+  });
+  const door = tile(0, 0);
+  await canvas.dblclick({ position: { x: door.x, y: door.y - 10 } });
+
+  const ann = () =>
+    page.evaluate(() => {
+      const view = document.querySelector("wb-room-view") as unknown as {
+        room: { avatars: { x: number; y: number }[] };
+      };
+      const [only] = view.room.avatars;
+      return `${only?.x},${only?.y}`;
+    });
+  const [x, y] = [Math.floor(width / 2), Math.floor(height / 2)];
+  // She walks to the front, steps in, and steps out in front of the partner.
+  await expect.poll(ann, { timeout: 15_000 }).toBe(`${x + 3},${y - 2}`);
+});
