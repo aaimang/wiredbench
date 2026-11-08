@@ -662,7 +662,16 @@ def test_placeholders_and_text_connector() -> None:
         box(2, "wf_act_give_var", 1, 1, 8, variable="item", value=3),
         box(3, "wf_act_show_message", 1, 1, 9, text="$(user) has $(thing) $(unknown)"),
         box(4, "wf_xtra_text_output_username", 1, 1, 10, placeholder="user"),
-        box(5, "wf_xtra_text_output_variable", 1, 1, 11, placeholder="thing", variable="item"),
+        box(
+            5,
+            "wf_xtra_text_output_variable",
+            1,
+            1,
+            11,
+            placeholder="thing",
+            variable="item",
+            display="textual",
+        ),
         box(6, "wf_xtra_var_text_connector", 1, 1, 12, variable="item", mapping="3=carrot\n4=pear"),
         box(7, "wf_xtra_exec_in_order", 1, 1, 13),
     )
@@ -2566,3 +2575,262 @@ def test_link_messages_carry_the_trigger_text_or_a_custom_message() -> None:
     say(custom, "go")
     custom.advance(10)
     assert logs(custom) == ["Ann rang"]
+
+
+def gated(*conditions: dict[str, Any], users: list[dict[str, Any]] | None = None, **kw: Any) -> Engine:
+    """Says "go" to run a stack that logs "ran" when its conditions hold."""
+    document = {
+        "schema": 1,
+        "room": {"width": 20, "height": 20},
+        "furni": [
+            box(1, "wf_trg_says_something", 1, 1, text="go"),
+            box(2, "wf_act_log", 1, 1, 1, text="ran"),
+            *conditions,
+            *kw.get("extra", []),
+        ],
+        "avatars": users if users is not None else [user()],
+    }
+    return Engine(document, seed=1, clock_start_ms=kw.get("clock", 0))
+
+
+def ran(engine: Engine, who: int = 100) -> bool:
+    before = logs(engine).count("ran")
+    say(engine, "go", who)
+    return logs(engine).count("ran") > before
+
+
+def test_hand_item_action_and_direction_conditions() -> None:
+    engine = gated(box(3, "wf_cnd_has_handitem", 1, 1, 2, handitem=2))
+    assert not ran(engine)
+    engine.users[100]["details"]["@handitem"] = 2
+    assert ran(engine)
+    empty = gated(box(3, "wf_cnd_has_handitem", 1, 1, 2, handitem=0))
+    assert ran(empty), "0 means an empty hand"
+    assert not ran(gated(box(3, "wf_cnd_not_has_handitem", 1, 1, 2, handitem=0)))
+    facing = gated(box(3, "wf_cnd_actor_dir", 1, 1, 2, dir_2=True))
+    assert ran(facing), "Ann faces east"
+    facing.users[100]["dir"] = 4
+    assert not ran(facing)
+    assert not ran(gated(box(3, "wf_cnd_actor_dir", 1, 1, 2))), "no direction ticked never holds"
+    waving = gated(box(3, "wf_cnd_user_performs_action", 1, 1, 2, action="wave"))
+    assert not ran(waving)
+    waving.apply_input({"type": "action", "user": 100, "text": "wave"})
+    assert ran(waving)
+    assert not ran(gated(box(3, "wf_cnd_not_user_performs_action", 1, 1, 2, action="stand")))
+
+
+def test_altitude_quantity_and_team_rank_conditions() -> None:
+    high = gated(
+        box(3, "wf_cnd_has_altitude", 1, 1, 2, furni=[50, 51], altitude=1, altitude_compare="more"),
+        extra=[plain(50, "ball", x=5, y=5), plain(51, "ball", x=6, y=5)],
+    )
+    high.furni[50]["z"] = 1.5
+    assert not ran(high), "both must be higher"
+    high.furni[51]["z"] = 2.0
+    assert ran(high)
+    anyone = gated(
+        box(3, "wf_cnd_has_altitude", 1, 1, 2, furni=[], quantifier="any"),
+    )
+    assert not ran(anyone), "with nothing picked, any fails"
+    counted = gated(
+        box(3, "wf_slc_users_area", 1, 1, 1.5, area_x=0, area_y=0, area_width=20, area_height=20),
+        box(4, "wf_cnd_slc_quantity", 1, 1, 2, count="users", amount=2, quantity_compare="equal"),
+        users=[user(100, "Ann"), user(101, "Bo", x=1)],
+    )
+    assert ran(counted)
+    ranked = gated(
+        box(3, "wf_cnd_team_has_rank", 1, 1, 2, placement="1"),
+        extra=[
+            box(5, "wf_trg_says_something", 2, 1, text="join"),
+            box(6, "wf_act_join_team", 2, 1, 1, team="red"),
+        ],
+    )
+    say(ranked, "join")
+    ranked.team_scores["blue"] = 5
+    assert not ran(ranked), "red is behind blue"
+    ranked.team_scores["red"] = 5
+    assert ran(ranked), "teams on the same score share 1st"
+
+
+def test_date_time_and_range_conditions() -> None:
+    # Friday 13 November 2026, 23:30:00 in London.
+    clock = 1_794_612_600_000
+    friday = gated(
+        box(3, "wf_cnd_match_date", 1, 1, 2, **{f"weekday_{n}": n == 4 for n in range(7)}), clock=clock
+    )
+    assert ran(friday)
+    month = gated(box(3, "wf_cnd_match_date", 1, 1, 2, month_9=False), clock=clock)
+    assert ran(month)
+    no_november = gated(box(3, "wf_cnd_match_date", 1, 1, 2, month_10=False), clock=clock)
+    assert not ran(no_november)
+    wrapped = gated(box(3, "wf_cnd_match_date", 1, 1, 2, use_days=True, day_min=30, day_max=14), clock=clock)
+    assert ran(wrapped), "a day range past the month end wraps round"
+    late = gated(box(3, "wf_cnd_match_time", 1, 1, 2, use_hours=True, hours_min=22, hours_max=2), clock=clock)
+    assert ran(late)
+    early = gated(
+        box(3, "wf_cnd_match_time", 1, 1, 2, use_hours=True, hours_min=8, hours_max=20), clock=clock
+    )
+    assert not ran(early)
+    now = clock // 1000
+    assert ran(gated(box(3, "wf_cnd_date_rng_active", 1, 1, 2, start=now - 5, end=now + 5), clock=clock))
+    assert not ran(gated(box(3, "wf_cnd_date_rng_active", 1, 1, 2, start=now - 5), clock=clock))
+
+
+def test_valid_moves_checks_the_stacks_moves_before_running() -> None:
+    engine = gated(
+        box(3, "wf_cnd_valid_moves", 1, 1, 2),
+        box(4, "wf_act_rel_mov", 1, 1, 3, furni=[50], move_x=1, move_y=0),
+        extra=[plain(50, "ball", x=5, y=5)],
+        users=[user(100, "Ann", x=0, y=0)],
+    )
+    assert ran(engine)
+    assert engine.furni[50]["x"] == 6
+    engine.users[100]["x"], engine.users[100]["y"] = 7, 5
+    assert not ran(engine), "Ann stands where the ball would go"
+    assert engine.furni[50]["x"] == 6
+
+
+def test_move_furni_as_group_keeps_the_layout() -> None:
+    engine = room(
+        plain(50, "ball", x=2, y=2),
+        plain(51, "ball", x=3, y=4),
+        box(1, "wf_trg_says_something", 1, 1, text="go"),
+        box(2, "wf_act_move_furni_as_group", 1, 1, 1, furni=[50, 51], offset_x=1),
+        users=[user(100, "Ann", x=10, y=10)],
+    )
+    say(engine, "go")
+    engine.advance(10)
+    assert [(engine.furni[i]["x"], engine.furni[i]["y"]) for i in (50, 51)] == [(11, 10), (12, 12)]
+
+
+def test_place_and_remove_temporary_furni() -> None:
+    engine = room(
+        plain(50, "coin", x=2, y=2),
+        plain(60, "table", x=8, y=8),
+        box(1, "wf_trg_says_something", 1, 1, text="go"),
+        box(
+            2,
+            "wf_act_place_furni",
+            1,
+            1,
+            1,
+            furni=[50],
+            location="custom",
+            target_furni=[60],
+            target_source="picks",
+        ),
+        box(3, "wf_trg_says_something", 2, 1, text="clear"),
+        box(4, "wf_slc_furni_area", 2, 1, 1, area_x=0, area_y=0, area_width=20, area_height=20),
+        box(5, "wf_act_remove_furni", 2, 1, 2),
+    )
+    engine.furni_facts = {"table": {"height": 1.0}}
+    say(engine, "go")
+    engine.advance(10)
+    copies = [f for f in engine.furni.values() if f.get("temporary")]
+    assert [(c["classname"], c["x"], c["y"], c["z"]) for c in copies] == [("coin", 8, 8, 1.0)]
+    shown = [f for f in engine.snapshot()["furni"] if f.get("temporary")]
+    assert shown[0]["classname"] == "coin"
+    say(engine, "clear")
+    engine.advance(10)
+    assert not any(f.get("temporary") for f in engine.furni.values())
+    assert 50 in engine.furni and 60 in engine.furni, "only Place Furni's copies go"
+
+
+def test_freeze_stops_walking_until_unfrozen_or_a_wired_teleport() -> None:
+    engine = room(
+        plain(70, "tile", x=4, y=4),
+        box(1, "wf_trg_says_something", 1, 1, text="freeze"),
+        box(2, "wf_act_freeze", 1, 1, 1, effect="12", thaw_on_teleport=True),
+        box(3, "wf_trg_says_something", 2, 1, text="release"),
+        box(4, "wf_act_unfreeze", 2, 1, 1),
+        box(5, "wf_trg_says_something", 3, 1, text="tp"),
+        box(6, "wf_act_teleport_to", 3, 1, 1, furni=[70]),
+    )
+    engine.users[100]["details"]["@effect"] = 5
+    say(engine, "freeze")
+    engine.advance(10)
+    assert engine.users[100]["details"]["@effect"] == 12
+    engine.apply_input({"type": "move", "user": 100, "x": 1, "y": 9})
+    assert engine.users[100]["x"] == 0, "frozen users cannot walk"
+    say(engine, "release")
+    engine.advance(10)
+    assert engine.users[100]["details"]["@effect"] == 5, "the effect worn before comes back"
+    engine.apply_input({"type": "move", "user": 100, "x": 1, "y": 9})
+    assert engine.users[100]["x"] == 1
+    say(engine, "freeze")
+    say(engine, "tp")
+    engine.advance(10)
+    assert "@is_frozen" not in engine.users[100]["details"]
+
+
+def test_random_picks_several_and_skips_recent_effects() -> None:
+    engine = room(
+        box(1, "wf_trg_says_something", 1, 1, text="go"),
+        box(2, "wf_xtra_random", 1, 1, 1, skip=1, pick=1),
+        box(3, "wf_act_log", 1, 1, 2, text="a"),
+        box(4, "wf_act_log", 1, 1, 3, text="b"),
+    )
+    for _ in range(6):
+        say(engine, "go")
+    seen = logs(engine)
+    assert all(x != y for x, y in zip(seen, seen[1:], strict=False)), "never the last run's effect twice"
+    both = room(
+        box(1, "wf_trg_says_something", 1, 1, text="go"),
+        box(2, "wf_xtra_random", 1, 1, 1, pick=2),
+        box(3, "wf_act_log", 1, 1, 2, text="a"),
+        box(4, "wf_act_log", 1, 1, 3, text="b"),
+    )
+    say(both, "go")
+    assert sorted(logs(both)) == ["a", "b"]
+
+
+def test_carry_toggle_previous_owner_only_and_multiple_placeholders() -> None:
+    carried = room(
+        plain(50, "rug", x=5, y=5),
+        plain(51, "plate", x=5, y=5),
+        box(1, "wf_trg_says_something", 1, 1, text="go"),
+        box(2, "wf_act_rel_mov", 1, 1, 1, furni=[50], move_x=1, move_y=0),
+        box(3, "wf_xtra_mov_carry_users", 1, 1, 2),
+        users=[user(100, "Ann", x=5, y=5)],
+    )
+    carried.furni[51]["z"] = 0.1
+    say(carried, "go")
+    assert carried.users[100]["x"] == 5, "Ann stands on the plate, not on the moving rug"
+    toggled = room(
+        plain(50, "lamp", x=5, y=5),
+        box(1, "wf_trg_says_something", 1, 1, text="go"),
+        box(2, "wf_act_toggle_state", 1, 1, 1, furni=[50], toggle_type="previous"),
+    )
+    toggled.furni_states = {"lamp": [0, 1, 2]}
+    say(toggled, "go")
+    assert toggled.furni[50]["state"] in (2, toggled._states(50)[-1])
+    owner = room(
+        box(1, "wf_trg_says_something", 1, 1, text="go", owner_only=True),
+        box(2, "wf_act_log", 1, 1, 1, text="ran"),
+    )
+    say(owner, "go")
+    assert logs(owner) == []
+    owner.users[100]["details"]["@is_owner"] = 1
+    say(owner, "go")
+    assert logs(owner) == ["ran"]
+    listed = room(
+        box(1, "wf_trg_says_something", 1, 1, text="go"),
+        box(2, "wf_slc_users_area", 1, 1, 1, area_x=0, area_y=0, area_width=20, area_height=20),
+        box(3, "wf_act_give_var", 1, 1, 2, variable="hp", value=3, user_source="selector"),
+        box(4, "wf_act_log", 1, 1, 3, text="$(v)"),
+        box(
+            5,
+            "wf_xtra_text_output_variable",
+            1,
+            1,
+            4,
+            placeholder="v",
+            variable="hp",
+            placeholder_type="multiple",
+            delimiter="/",
+        ),
+        box(6, "wf_xtra_exec_in_order", 1, 1, 5),
+        users=[user(100, "Ann"), user(101, "Bo", x=1)],
+    )
+    say(listed, "go")
+    assert logs(listed) == ["3/3"]

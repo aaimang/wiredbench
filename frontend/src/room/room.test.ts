@@ -34,6 +34,7 @@ import {
   History,
   highlightTint,
   type InfoLookup,
+  isFrozen,
   isNextTo,
   isWiredBox,
   nextDirection,
@@ -50,6 +51,7 @@ import {
   stackHeight,
   standAt,
   standUpOffSeats,
+  syncTemporary,
   timeDigits,
   UNKNOWN_FURNI,
   usedFromFront,
@@ -833,5 +835,35 @@ describe("invisible click tiles", () => {
     const r = room(["room_invisible_click_tile", 2, 3], ["chair", 4, 4]);
     expect(clickTileAt(r, 2, 3)?.classname).toBe("room_invisible_click_tile");
     expect(clickTileAt(r, 4, 4)).toBeNull();
+  });
+});
+
+describe("temporary furni and freeze", () => {
+  it("adds Place Furni's copies and drops the ones taken away", () => {
+    const base = [{ id: 1, classname: "chair", x: 0, y: 0, z: 0, rot: 0, state: 0 }];
+    const placed = syncTemporary(base, [
+      { id: 1 },
+      { id: 9, classname: "coin", temporary: true, x: 2, y: 3, z: 1, rot: 0, state: 0 } as never,
+    ]);
+    expect(placed.map((f) => [f.id, f.classname, f.x])).toEqual([
+      [1, "chair", 0],
+      [9, "coin", 2],
+    ]);
+    expect(syncTemporary(placed, [{ id: 1 }]).map((f) => f.id)).toEqual([1]);
+  });
+
+  it("knows a frozen avatar", () => {
+    const avatar = {
+      id: 1,
+      name: "A",
+      hotel: "com",
+      figure: "",
+      x: 0,
+      y: 0,
+      z: 0,
+      dir: 2,
+    } as never;
+    expect(isFrozen(avatar)).toBe(false);
+    expect(isFrozen({ ...(avatar as object), details: { "@is_frozen": 1 } } as never)).toBe(true);
   });
 });

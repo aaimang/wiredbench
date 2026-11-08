@@ -234,6 +234,80 @@ THREE_WAY = {
     "labels": {"less": "Less than", "equal": "Exactly", "more": "More than"},
     "default": "less",
 }
+QUANTIFIER = {
+    "name": "quantifier",
+    "kind": "select",
+    "label": "Must hold for",
+    "options": ["all", "any"],
+    "labels": {"all": "All of them", "any": "Any of them"},
+    "default": "all",
+}
+# Habbo's three-way comparison, as Lower than, Equals and Higher than.
+COMPARISON = {**THREE_WAY, "labels": {"less": "Lower than", "equal": "Equals", "more": "Higher than"}}
+CONDITION_USERS = {**USER_SOURCE, "options": ["trigger", "selector", "signal"], "default": "trigger"}
+DIRECTION_NAMES = ("North", "North-east", "East", "South-east", "South", "South-west", "West", "North-west")
+DIRECTIONS = tuple(
+    {"name": f"dir_{n}", "kind": "bool", "label": f"Faces {name.lower()} ({n})", "default": False}
+    for n, name in enumerate(DIRECTION_NAMES)
+)
+WEEKDAY_NAMES = ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+WEEKDAYS = tuple(
+    {"name": f"weekday_{n}", "kind": "bool", "label": name, "default": True}
+    for n, name in enumerate(WEEKDAY_NAMES)
+)
+MONTH_NAMES = (
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+)
+MONTHS = tuple(
+    {"name": f"month_{n}", "kind": "bool", "label": name, "default": True}
+    for n, name in enumerate(MONTH_NAMES)
+)
+
+
+def _range(unit: str, top: int) -> tuple[dict[str, Any], ...]:
+    return (
+        {"name": f"use_{unit}", "kind": "bool", "label": f"Check the {unit}", "default": False},
+        {
+            "name": f"{unit}_min",
+            "kind": "number",
+            "label": f"From {unit[:-1]}",
+            "default": 0,
+            "min": 0,
+            "max": top,
+        },
+        {
+            "name": f"{unit}_max",
+            "kind": "number",
+            "label": f"To {unit[:-1]}",
+            "default": 0,
+            "min": 0,
+            "max": top,
+        },
+    )
+
+
+OFFSETS = (
+    {"name": "offset_x", "kind": "number", "label": "X =", "default": 0, "min": -64, "max": 64},
+    {"name": "offset_y", "kind": "number", "label": "Y =", "default": 0, "min": -64, "max": 64},
+)
+TARGET_FURNI = {**FURNI, "name": "target_furni", "label": "Target furni"}
+TARGET_SOURCE = {
+    **FURNI_SOURCE,
+    "name": "target_source",
+    "label": "Target furni from",
+    "default": "trigger",
+}
 AUDIENCE = {
     "name": "audience",
     "kind": "select",
@@ -362,14 +436,12 @@ BOXES: dict[str, dict[str, Any]] = {
         _saved(
             {"name": "hide_message", "kind": "bool", "label": "Hide the triggerer's message", "default": True}
         ),
-        _saved(
-            {
-                "name": "owner_only",
-                "kind": "bool",
-                "label": "Only the room owner can trigger",
-                "default": False,
-            }
-        ),
+        {
+            "name": "owner_only",
+            "kind": "bool",
+            "label": "Only the room owner can trigger",
+            "default": False,
+        },
     ),
     "wf_trg_enter_room": _box("trigger", DOCUMENTED),
     "wf_trg_leave_room": _box("trigger", ASSUMED),
@@ -486,6 +558,114 @@ BOXES: dict[str, dict[str, Any]] = {
     ),
     "wf_cnd_time_less_than": _box("condition", DOCUMENTED, SECONDS),
     "wf_cnd_time_more_than": _box("condition", DOCUMENTED, SECONDS),
+    "wf_cnd_has_handitem": _box(
+        "condition",
+        DOCUMENTED,
+        {
+            "name": "handitem",
+            "kind": "number",
+            "label": "Hand Item (0: an empty hand)",
+            "default": 2,
+            "min": 0,
+        },
+        CONDITION_USERS,
+        QUANTIFIER,
+    ),
+    "wf_cnd_not_has_handitem": _box(
+        "condition",
+        DOCUMENTED,
+        {
+            "name": "handitem",
+            "kind": "number",
+            "label": "Hand Item (0: an empty hand)",
+            "default": 2,
+            "min": 0,
+        },
+        CONDITION_USERS,
+        QUANTIFIER,
+    ),
+    "wf_cnd_user_performs_action": _box(
+        "condition", DOCUMENTED, AVATAR_ACTION, ACTION_NUMBER, CONDITION_USERS, QUANTIFIER
+    ),
+    "wf_cnd_not_user_performs_action": _box(
+        "condition", DOCUMENTED, AVATAR_ACTION, ACTION_NUMBER, CONDITION_USERS, QUANTIFIER
+    ),
+    "wf_cnd_actor_dir": _box("condition", DOCUMENTED, *DIRECTIONS, CONDITION_USERS, QUANTIFIER),
+    "wf_cnd_has_altitude": _box(
+        "condition",
+        DOCUMENTED,
+        {
+            "name": "altitude",
+            "kind": "number",
+            "label": "Altitude in tiles",
+            "default": 0,
+            "min": 0,
+            "max": 80,
+            "step": 0.01,
+        },
+        {**COMPARISON, "name": "altitude_compare"},
+        FURNI,
+        FURNI_SOURCE,
+        QUANTIFIER,
+    ),
+    "wf_cnd_slc_quantity": _box(
+        "condition",
+        DOCUMENTED,
+        {
+            "name": "count",
+            "kind": "select",
+            "label": "Count",
+            "options": ["furni", "users"],
+            "labels": {"furni": "Furni", "users": "Users"},
+            "default": "furni",
+        },
+        {"name": "amount", "kind": "number", "label": "Amount", "default": 5, "min": 0, "max": 100},
+        {**COMPARISON, "name": "quantity_compare"},
+        {**FURNI_SOURCE, "options": ["selector", "signal", "trigger"], "default": "selector"},
+        {**USER_SOURCE, "options": ["selector", "signal", "trigger"], "default": "selector"},
+    ),
+    "wf_cnd_team_has_rank": _box(
+        "condition",
+        DOCUMENTED,
+        {
+            **TEAM,
+            "options": ["own", *TEAMS],
+            "labels": {"own": "Triggerer's team", **{team: team.capitalize() for team in TEAMS}},
+            "default": "own",
+        },
+        {
+            "name": "placement",
+            "kind": "select",
+            "label": "Placement",
+            "options": ["1", "2", "3", "4"],
+            "labels": {"1": "1st", "2": "2nd", "3": "3rd", "4": "4th"},
+            "default": "1",
+        },
+        CONDITION_USERS,
+        QUANTIFIER,
+    ),
+    "wf_cnd_match_date": _box(
+        "condition",
+        DOCUMENTED,
+        *WEEKDAYS,
+        {"name": "use_days", "kind": "bool", "label": "Check the day of the month", "default": False},
+        {"name": "day_min", "kind": "number", "label": "From day", "default": 1, "min": 1, "max": 31},
+        {"name": "day_max", "kind": "number", "label": "To day", "default": 1, "min": 1, "max": 31},
+        *MONTHS,
+        {"name": "use_years", "kind": "bool", "label": "Check the year", "default": False},
+        {"name": "year_min", "kind": "number", "label": "From year", "default": 0, "min": 0, "max": 9999},
+        {"name": "year_max", "kind": "number", "label": "To year", "default": 0, "min": 0, "max": 9999},
+    ),
+    "wf_cnd_match_time": _box(
+        "condition", DOCUMENTED, *_range("seconds", 59), *_range("minutes", 59), *_range("hours", 23)
+    ),
+    "wf_cnd_date_rng_active": _box(
+        "condition",
+        DOCUMENTED,
+        {"name": "start", "kind": "number", "label": "From (Unix seconds)", "default": 0},
+        {"name": "end", "kind": "number", "label": "To (Unix seconds, 0 never holds)", "default": 0},
+    ),
+    "wf_cnd_valid_moves": _box("condition", DOCUMENTED),
     # Selectors
     "wf_slc_users_team": _selector(ASSUMED, ANY_TEAM),
     "wf_slc_furni_area": _selector(ASSUMED, *AREA),
@@ -569,12 +749,15 @@ BOXES: dict[str, dict[str, Any]] = {
     "wf_xtra_random": _box(
         "addon",
         DOCUMENTED,
-        _saved(
-            {"name": "skip", "kind": "number", "label": "Effects to skip", "default": 0, "min": 0, "max": 100}
-        ),
-        _saved(
-            {"name": "pick", "kind": "number", "label": "Effects to pick", "default": 1, "min": 1, "max": 100}
-        ),
+        {
+            "name": "skip",
+            "kind": "number",
+            "label": "Skip the effects of the last runs",
+            "default": 0,
+            "min": 0,
+            "max": 100,
+        },
+        {"name": "pick", "kind": "number", "label": "Effects to pick", "default": 1, "min": 1, "max": 100},
     ),
     "wf_xtra_unseen": _box("addon", DOCUMENTED),
     "wf_xtra_or_eval": _box("addon", DOCUMENTED),
@@ -638,25 +821,21 @@ BOXES: dict[str, dict[str, Any]] = {
             "max": 64,
         },
         _saved({"name": "proj_bunny", "kind": "bool", "label": "Bunny hop", "default": True}),
-        _saved(
-            {"name": "proj_variables", "kind": "number", "label": "Internal variables mask", "default": 0}
-        ),
+        {"name": "proj_variables", "kind": "number", "label": "Internal variables mask", "default": 0},
         FURNI_SOURCE,
         USER_SOURCE,
     ),
     "wf_xtra_mov_carry_users": _box(
         "addon",
         ASSUMED,
-        _saved(
-            {
-                "name": "carry",
-                "kind": "select",
-                "label": "Carry",
-                "options": ["furni", "tile"],
-                "labels": {"furni": "Users on the furni", "tile": "Users on its tiles"},
-                "default": "furni",
-            }
-        ),
+        {
+            "name": "carry",
+            "kind": "select",
+            "label": "Carry",
+            "options": ["furni", "tile"],
+            "labels": {"furni": "Users on the furni", "tile": "Users on its tiles"},
+            "default": "furni",
+        },
         USER_SOURCE,
     ),
     # The movement add-ons change how this stack's moves look and what stops them. Habbo's labels.
@@ -764,27 +943,23 @@ BOXES: dict[str, dict[str, Any]] = {
         {"name": "placeholder", "kind": "text", "label": "Placeholder name", "default": ""},
         VARIABLE,
         VARIABLE_ON,
-        _saved(
-            {
-                "name": "display",
-                "kind": "select",
-                "label": "Variable display type",
-                "options": ["numeric", "textual"],
-                "labels": {"numeric": "Numeric", "textual": "Textual, with a Text Connector"},
-                "default": "numeric",
-            }
-        ),
-        _saved(
-            {
-                "name": "placeholder_type",
-                "kind": "select",
-                "label": "Placeholder type",
-                "options": ["single", "multiple"],
-                "labels": {"single": "Single", "multiple": "Multiple"},
-                "default": "single",
-            }
-        ),
-        _saved({"name": "delimiter", "kind": "text", "label": "Delimiter, for Multiple", "default": ""}),
+        {
+            "name": "display",
+            "kind": "select",
+            "label": "Variable display type",
+            "options": ["numeric", "textual"],
+            "labels": {"numeric": "Numeric", "textual": "Textual, with a Text Connector"},
+            "default": "numeric",
+        },
+        {
+            "name": "placeholder_type",
+            "kind": "select",
+            "label": "Placeholder type",
+            "options": ["single", "multiple"],
+            "labels": {"single": "Single", "multiple": "Multiple"},
+            "default": "single",
+        },
+        {"name": "delimiter", "kind": "text", "label": "Delimiter, for Multiple", "default": ""},
     ),
     "wf_xtra_var_text_connector": _box(
         "addon",
@@ -850,15 +1025,13 @@ BOXES: dict[str, dict[str, Any]] = {
         DOCUMENTED,
         FURNI,
         FURNI_SOURCE,
-        _saved(
-            {
-                "name": "toggle_type",
-                "kind": "select",
-                "label": "Toggle to the",
-                "options": ["next", "previous"],
-                "default": "next",
-            }
-        ),
+        {
+            "name": "toggle_type",
+            "kind": "select",
+            "label": "Toggle to the",
+            "options": ["next", "previous"],
+            "default": "next",
+        },
     ),
     "wf_act_toggle_to_rnd": _effect(DOCUMENTED, FURNI, FURNI_SOURCE),
     "wf_act_send_message": _effect(
@@ -990,16 +1163,14 @@ BOXES: dict[str, dict[str, Any]] = {
     "wf_act_join_team": _effect(
         ASSUMED,
         TEAM,
-        _saved(
-            {
-                "name": "team_type",
-                "kind": "select",
-                "label": "Kind of team",
-                "options": ["wired", "banzai", "freeze"],
-                "labels": {"wired": "Wired", "banzai": "Battle Banzai", "freeze": "Freeze"},
-                "default": "wired",
-            }
-        ),
+        {
+            "name": "team_type",
+            "kind": "select",
+            "label": "Kind of team",
+            "options": ["wired", "banzai", "freeze"],
+            "labels": {"wired": "Wired", "banzai": "Battle Banzai", "freeze": "Freeze"},
+            "default": "wired",
+        },
         USER_SOURCE,
     ),
     "wf_act_leave_team": _effect(ASSUMED, USER_SOURCE),
@@ -1035,6 +1206,90 @@ BOXES: dict[str, dict[str, Any]] = {
         },
     ),
     "wf_act_furni_to_user": _effect(ASSUMED, FURNI, FURNI_SOURCE, USER_SOURCE),
+    "wf_act_move_furni_as_group": _effect(
+        DOCUMENTED,
+        FURNI,
+        {**FURNI_SOURCE, "label": "Furni to move"},
+        {
+            "name": "target_user",
+            "kind": "bool",
+            "label": "Move to a user (otherwise to a furni)",
+            "default": True,
+        },
+        TARGET_FURNI,
+        TARGET_SOURCE,
+        USER_SOURCE,
+        *OFFSETS,
+    ),
+    "wf_act_place_furni": _effect(
+        DOCUMENTED,
+        {**FURNI, "label": "Furni to copy"},
+        {
+            "name": "location",
+            "kind": "select",
+            "label": "Target location",
+            "options": ["source", "custom"],
+            "labels": {"source": "Source location", "custom": "Custom location"},
+            "default": "source",
+        },
+        {
+            "name": "target_user",
+            "kind": "bool",
+            "label": "Custom location is a user (otherwise a furni)",
+            "default": False,
+        },
+        TARGET_FURNI,
+        {**TARGET_SOURCE, "default": "selector"},
+        USER_SOURCE,
+        {
+            "name": "altitude",
+            "kind": "select",
+            "label": "Target altitude",
+            "options": ["top", "source", "custom"],
+            "labels": {
+                "top": "On top of the target location",
+                "source": "Source altitude",
+                "custom": "Custom altitude",
+            },
+            "default": "top",
+        },
+        *OFFSETS,
+        {
+            "name": "offset_altitude",
+            "kind": "number",
+            "label": "Altitude =",
+            "default": 0,
+            "min": -80,
+            "max": 80,
+            "step": 0.01,
+        },
+        _saved(
+            {"name": "spawn_with_variable", "kind": "bool", "label": "Spawn with variable", "default": False}
+        ),
+    ),
+    "wf_act_remove_furni": _effect(
+        DOCUMENTED, {**FURNI_SOURCE, "options": ["selector", "trigger", "signal"], "default": "selector"}
+    ),
+    "wf_act_freeze": _effect(
+        DOCUMENTED,
+        {
+            "name": "effect",
+            "kind": "select",
+            "label": "Pick an effect",
+            "options": ["218", "12", "11", "53", "163"],
+            "labels": {
+                "218": "Effect 218",
+                "12": "Effect 12",
+                "11": "Effect 11",
+                "53": "Effect 53",
+                "163": "Effect 163",
+            },
+            "default": "218",
+        },
+        {"name": "thaw_on_teleport", "kind": "bool", "label": "Unfreeze when teleporting", "default": False},
+        USER_SOURCE,
+    ),
+    "wf_act_unfreeze": _effect(DOCUMENTED, USER_SOURCE),
     "wf_act_furni_to_furni": _effect(ASSUMED, {**FURNI, "label": "Move onto"}, MOVERS),
     "wf_act_move_rotate_user": _effect(
         ASSUMED,

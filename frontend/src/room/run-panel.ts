@@ -10,11 +10,23 @@ const TICK_MS = 250;
 const INT64_TEXT = /^-?\d{1,19}$/;
 const TRACE_SHOWN = 300;
 
+export interface RunFurni {
+  id: number;
+  x: number;
+  y: number;
+  z: number;
+  rot: number;
+  state: number;
+  classname?: string;
+  temporary?: boolean;
+}
+
 export interface RunState {
   now_ms: number;
   paused: boolean;
   seed: number;
-  furni: { id: number; x: number; y: number; z: number; rot: number; state: number }[];
+  /** A copy Place Furni put there carries its kind, as it is not in the room's file. */
+  furni: RunFurni[];
   users: {
     id: number;
     name: string;

@@ -276,6 +276,68 @@ GUIDE: dict[str, tuple[str, str]] = {
         "Runs when a user clicks a picked invisible click tile.",
         "Make a button out of a bare floor tile.",
     ),
+    "wf_cnd_has_handitem": (
+        "Checks that users hold a hand item. 0 means an empty hand.",
+        "Only let players with a drink in.",
+    ),
+    "wf_cnd_not_has_handitem": (
+        "Checks that users do not hold a hand item.",
+        "Turn away players carrying something.",
+    ),
+    "wf_cnd_user_performs_action": (
+        "Checks that users are doing an action, such as sitting or waving.",
+        "Open a door only for someone sitting.",
+    ),
+    "wf_cnd_not_user_performs_action": (
+        "Checks that users are not doing an action.",
+        "Skip players who are asleep.",
+    ),
+    "wf_cnd_actor_dir": (
+        "Checks which way users face. Tick the directions that count.",
+        "Fire only when a player faces the target.",
+    ),
+    "wf_cnd_has_altitude": (
+        "Compares the altitude of furni with a number.",
+        "Check that a lift has reached the top.",
+    ),
+    "wf_cnd_slc_quantity": (
+        "Compares how many furni or users the stack has selected.",
+        "Start only when 4 players are on the pads.",
+    ),
+    "wf_cnd_team_has_rank": (
+        "Checks a team's place by score, from 1st to 4th.",
+        "Reward the team in the lead.",
+    ),
+    "wf_cnd_match_date": (
+        "Checks the weekday, the day of the month, the month and the year.",
+        "Open a stand on Fridays.",
+    ),
+    "wf_cnd_match_time": (
+        "Checks the seconds, minutes and hours of the room's clock.",
+        "Light the lamps between 22 and 2.",
+    ),
+    "wf_cnd_date_rng_active": ("Checks that now is between two Unix times.", "Run an event for one weekend."),
+    "wf_cnd_valid_moves": (
+        "Checks that every furni move the stack's effects would make can be made.",
+        "Move a block only when nothing is in its way.",
+    ),
+    "wf_act_move_furni_as_group": (
+        "Moves furni together to a user or a furni, keeping their layout.",
+        "Bring a whole stand to a player.",
+    ),
+    "wf_act_place_furni": (
+        "Puts temporary copies of picked furni in the room.",
+        "Drop a coin where a player stands.",
+    ),
+    "wf_act_remove_furni": (
+        "Removes furni that Place Furni put there, and nothing else.",
+        "Clear the coins at the end of a round.",
+    ),
+    "wf_act_freeze": (
+        "Stops users walking and gives them an effect until they are unfrozen.",
+        "Hold players still at the start line.",
+    ),
+    "wf_act_unfreeze": ("Lets frozen users walk again.", "Let the race begin."),
     "wf_xtra_mov_no_animation": (
         "Makes the stack's moves happen at once, with no sliding.",
         "Snap a block back to its start.",

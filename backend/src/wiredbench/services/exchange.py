@@ -193,6 +193,51 @@ OPTION_FIELDS: dict[str, list[tuple[str, int, Any]]] = {
     ],
     "wf_xtra_text_output_furni_name": [("type", 0, ("single", "multiple"))],
     "wf_xtra_anim_time": [("anim_ms", 0, int)],
+    "wf_cnd_has_handitem": [("handitem", 0, int)],
+    "wf_cnd_not_has_handitem": [("handitem", 0, int)],
+    "wf_cnd_user_performs_action": [("action", 0, ACTION_NUMBERS)],
+    "wf_cnd_not_user_performs_action": [("action", 0, ACTION_NUMBERS)],
+    "wf_cnd_has_altitude": [("altitude", 0, 0.01), ("altitude_compare", 1, ("less", "equal", "more"))],
+    "wf_cnd_slc_quantity": [
+        ("count", 0, {1: "users", 0: "furni"}),
+        ("amount", 1, int),
+        ("quantity_compare", 2, ("less", "equal", "more")),
+    ],
+    "wf_cnd_team_has_rank": [
+        ("team", 0, {0: "own", 1: "red", 2: "green", 3: "blue", 4: "yellow"}),
+        ("placement", 1, {0: "1", 1: "2", 2: "3", 3: "4"}),
+    ],
+    "wf_cnd_match_date": [
+        ("use_days", 0, bool),
+        ("use_years", 1, bool),
+        ("day_min", 3, int),
+        ("day_max", 4, int),
+        ("year_min", 6, int),
+        ("year_max", 7, int),
+    ],
+    "wf_cnd_match_time": [
+        ("use_seconds", 0, bool),
+        ("use_minutes", 1, bool),
+        ("use_hours", 2, bool),
+        ("seconds_min", 3, int),
+        ("seconds_max", 4, int),
+        ("minutes_min", 5, int),
+        ("minutes_max", 6, int),
+        ("hours_min", 7, int),
+        ("hours_max", 8, int),
+    ],
+    "wf_cnd_date_rng_active": [("start", 0, int), ("end", 1, int)],
+    "wf_act_move_furni_as_group": [("target_user", 0, bool), ("offset_x", 1, int), ("offset_y", 2, int)],
+    "wf_act_place_furni": [
+        ("target_user", 0, bool),
+        ("location", 1, ("source", "custom")),
+        ("altitude", 2, ("top", "source", "custom")),
+        ("offset_x", 3, int),
+        ("offset_y", 4, int),
+        ("offset_altitude", 5, 0.01),
+        ("spawn_with_variable", 6, bool),
+    ],
+    "wf_act_freeze": [("effect", 0, ("218", "12", "11", "53", "163")), ("thaw_on_teleport", 1, bool)],
     "wf_xtra_mov_curve": [
         ("curve_from_var", 0, bool),
         ("curve", 1, int),
@@ -349,6 +394,12 @@ def _setting_to_option(value: Any, reader: Any) -> int | None:
     return round(value / reader) if isinstance(value, int | float) else None
 
 
+# Options a real box saves as one bit mask: the position, then the setting for each bit from the lowest.
+MASK_FIELDS = {
+    "wf_cnd_actor_dir": [(0, [f"dir_{n}" for n in range(8)])],
+    "wf_cnd_match_date": [(2, [f"weekday_{n}" for n in range(7)]), (5, [f"month_{n}" for n in range(12)])],
+}
+MASKED = {name for masks in MASK_FIELDS.values() for _, names in masks for name in names}
 NEIGHBOURHOOD_BOXES = {"wf_slc_users_neighborhood", "wf_slc_furni_neighborhood"}
 DRAWING_AT = 3  # The tile drawing's ints follow the first three options.
 
@@ -452,6 +503,12 @@ def friendly_settings(classname: str, box: dict[str, Any], names: dict[str, str]
                 settings[name] = value
         if classname in NEIGHBOURHOOD_BOXES:
             _read_drawing(options, settings)
+        for position, bits in MASK_FIELDS.get(classname, []):
+            if position < len(options) and isinstance(options[position], int):
+                mask = options[position]
+                if classname == "wf_cnd_match_date" and mask == 0:
+                    mask = (1 << len(bits)) - 1  # No weekday or month ticked counts as all of them.
+                settings.update({name: bool(mask & (1 << bit)) for bit, name in enumerate(bits)})
     for name, (key, defaults, numbers) in SOURCE_FIELDS.items():
         slots = box.get(key)
         fresh = (box_facts.of(classname) or {}).get(defaults) or [None]
@@ -700,6 +757,16 @@ def _apply_settings(
                 continue
         if name in ("radius", "mask") and classname in NEIGHBOURHOOD_BOXES:
             _write_drawing(box, settings)
+            continue
+        if name in MASKED and classname in MASK_FIELDS:
+            for position, names in MASK_FIELDS[classname]:
+                if name in names:
+                    bits = (
+                        1 << bit
+                        for bit, field in enumerate(names)
+                        if settings.get(field, _default(classname, field))
+                    )
+                    _write_option(box, position, sum(bits))
             continue
         if name == "variable_on":
             continue  # It only says which built-in variable "variable" means.
