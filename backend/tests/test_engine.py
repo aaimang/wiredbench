@@ -2035,3 +2035,70 @@ def test_furni_kinds() -> None:
     assert interactions.kind_of("bar_polyfon", "vending_machine") == "vending"
     assert interactions.kind_of("lamp_basic", "lighting") == "default"
     assert not interactions.anyone_may_use("gate")
+
+
+def teleports(link: bool = True) -> Engine:
+    first = box(1, "teleport_door", 2, 2)
+    first["rot"] = 4
+    second = box(2, "teleport_door", 7, 7)
+    second["rot"] = 2
+    if link:
+        first["link"], second["link"] = 2, 1
+    engine = use_room(first, second, x=2, y=3)
+    engine.furni_facts = {"teleport_door": {"category": "teleport"}}
+    return engine
+
+
+def test_a_teleport_takes_the_user_to_its_partner_and_out_of_its_front() -> None:
+    engine = teleports()
+    use(engine, 1)
+    assert (engine.users[100]["x"], engine.users[100]["y"]) == (2, 2), "the user steps in"
+    assert engine.furni[1]["state"] == 1, "the door opens"
+    engine.advance(500)
+    assert engine.furni[1]["state"] == 2, "then flashes"
+    engine.advance(1000)
+    assert (engine.users[100]["x"], engine.users[100]["y"]) == (7, 7)
+    assert (engine.furni[1]["state"], engine.furni[2]["state"]) == (0, 2)
+    engine.advance(500)
+    assert (engine.users[100]["x"], engine.users[100]["y"]) == (8, 7), "out of the front of the partner"
+    engine.advance(500)
+    assert engine.furni[2]["state"] == 0
+
+
+def test_a_teleport_is_entered_only_from_its_front_and_only_when_linked() -> None:
+    engine = teleports()
+    engine.users[100]["x"], engine.users[100]["y"] = 3, 2
+    use(engine, 1)
+    assert engine.furni[1]["state"] == 0, "beside it is not in front of it"
+    alone = teleports(link=False)
+    use(alone, 1)
+    assert (alone.furni[1]["state"], alone.users[100]["y"]) == (0, 3)
+
+
+def test_a_one_way_gate_lets_the_user_through_from_its_front() -> None:
+    gate = box(1, "one_way_door*1", 4, 4)
+    gate["rot"] = 2
+    engine = use_room(gate, x=5, y=4)
+    use(engine, 1)
+    assert (engine.users[100]["x"], engine.furni[1]["state"]) == (4, 1)
+    engine.advance(500)
+    assert (engine.users[100]["x"], engine.users[100]["y"]) == (3, 4), "out of the back"
+    engine.advance(500)
+    assert engine.furni[1]["state"] == 0
+
+
+def test_a_gate_needs_rights_and_does_not_close_on_someone() -> None:
+    gate = box(1, "gate_wood", 4, 4)
+    engine = use_room(gate, x=4, y=4, **{"@has_rights": 1})
+    engine.furni_facts = {"gate_wood": {"category": "gate"}}
+    engine.furni_states = {"gate_wood": [0, 1]}
+    engine.furni[1]["state"] = 1
+    use(engine, 1)
+    assert engine.furni[1]["state"] == 1, "someone stands in the open gate"
+    engine.users[100]["x"] = 5
+    use(engine, 1)
+    assert engine.furni[1]["state"] == 0
+    visitor = use_room(gate, x=5, y=4)
+    visitor.furni_facts = engine.furni_facts
+    use(visitor, 1)
+    assert visitor.furni[1]["state"] == 0, "a visitor cannot open it"

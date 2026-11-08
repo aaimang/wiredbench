@@ -45,6 +45,8 @@ export interface FurniInfo {
   canSit: boolean;
   canLay: boolean;
   canStack: boolean;
+  /** How it reacts when used, such as a dice or a gate. Plain furni when left out. */
+  kind?: FurniKind;
 }
 
 export type InfoLookup = (classname: string) => FurniInfo;
@@ -159,6 +161,8 @@ export function standAt(room: RoomDocument, lookup: InfoLookup, x: number, y: nu
   const top = furniAt(room, lookup, x, y).at(-1);
   if (!top) return { walkable: true, z: 0, pose: "std" };
   const info = lookup(top.classname);
+  // A gate is walked through only while it is open, as in a real room.
+  if (info.kind === "gate") return { walkable: top.state !== 0, z: top.z, pose: "std" };
   // Sit and lay heights are the furni's own height, like a stand. A real seat's sit height may differ.
   const z = top.z + info.height;
   if (info.canSit) return { walkable: true, z, pose: "sit", dir: top.rot };
@@ -793,4 +797,17 @@ export function settleOnBeds(room: RoomDocument, lookup: InfoLookup): void {
     avatar.x = x;
     avatar.y = y;
   }
+}
+
+/** The tile in front of a furni turned this way: where a teleport or one-way gate is entered from. */
+export function frontTile(item: Pick<PlacedFurni, "x" | "y" | "rot">): [number, number] {
+  const [dx, dy] = ({ 0: [0, -1], 2: [1, 0], 4: [0, 1], 6: [-1, 0] } as Record<number, number[]>)[
+    item.rot % 8
+  ] ?? [0, 1];
+  return [item.x + (dx ?? 0), item.y + (dy ?? 1)];
+}
+
+/** Furni entered from the tile in front of them. */
+export function enteredFromFront(kind: FurniKind): boolean {
+  return kind === "teleport" || kind === "one_way_gate";
 }
