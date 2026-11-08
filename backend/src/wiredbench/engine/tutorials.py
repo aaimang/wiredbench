@@ -184,14 +184,14 @@ def _plain(furni_id: int, classname: str, x: int, y: int) -> dict[str, Any]:
     return {"id": furni_id, "classname": classname, "x": x, "y": y, "z": 0, "rot": 0, "state": 0}
 
 
-def _visitor(hotel: str) -> dict[str, Any]:
+def _visitor(hotel: str, x: int = 4, y: int = 6) -> dict[str, Any]:
     return {
         "id": AVATAR,
         "name": "Visitor",
         "hotel": hotel,
         "figure": FIGURE,
-        "x": 4,
-        "y": 6,
+        "x": x,
+        "y": y,
         "z": 0,
         "dir": 0,
         "pose": "std",
@@ -209,7 +209,8 @@ def switch_flip(hotel: str = "sandbox") -> dict[str, Any]:
             _box(3, "wf_trg_state_changed", 4, 2, 0, {"furni": [1]}),
             _box(4, "wf_act_toggle_state", 4, 2, 0.65, {"furni": [2]}),
         ],
-        "avatars": [_visitor(hotel)],
+        # A floor switch works only from a tile next to it, so the visitor starts there.
+        "avatars": [_visitor(hotel, 3, 5)],
     }
 
 
@@ -226,7 +227,7 @@ def signal_relay(hotel: str = "sandbox") -> dict[str, Any]:
             _box(6, "wf_trg_recv_signal", 6, 2, 0, {"antenna": [3]}),
             _box(7, "wf_act_toggle_state", 6, 2, 0.65, {"furni": [2]}),
         ],
-        "avatars": [_visitor(hotel)],
+        "avatars": [_visitor(hotel, 3, 5)],
     }
 
 

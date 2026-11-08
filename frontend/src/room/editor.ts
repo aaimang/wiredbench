@@ -35,6 +35,7 @@ import {
   actionBlocked,
   actionMs,
   avatarExtras,
+  besideTiles,
   canStackOn,
   DEFAULT_TIMEZONE,
   directionBetween,
@@ -46,7 +47,9 @@ import {
   findPath,
   fitsInRoom,
   footprint,
+  furniKind,
   History,
+  isNextTo,
   isWiredBox,
   MAX_ROOM_SIZE,
   nextDirection,
@@ -62,6 +65,7 @@ import {
   standAt,
   standUpOffSeats,
   UNKNOWN_FURNI,
+  usedFromNextTo,
   withFace,
 } from "./model";
 import { type AvatarPose, avatarUrl, type Hit, RoomRenderer, type Scene } from "./renderer";
@@ -126,6 +130,8 @@ interface Walker {
   path: [number, number][];
   from: [number, number, number];
   elapsed: number;
+  /** What to do on arriving, such as using the furni the walk was for. */
+  onArrive?: () => void;
 }
 
 const BUILT_IN_LIST = "built-in-variables";
@@ -177,6 +183,8 @@ class WbEditor extends HTMLElement {
    * "avatar:detail". A room update sent before the change arrived must not undo it on screen.
    */
   private pendingDetails = new Map<string, { amount: number | null; until: number }>();
+  /** Dice this user last rolled, so the next double-click closes them, as Habbo's client does. */
+  private diceRolled = new Set<number>();
   /** Where the run last put each furni, so only a move by hand is sent to it. */
   private runMoves = new Map<number, string>();
   /** The avatar last chosen during a run, who acts when a furni is selected instead. */
@@ -542,6 +550,7 @@ class WbEditor extends HTMLElement {
     this.walkStatus.textContent = T.arrived(avatar.name, stand.pose, avatar.x, avatar.y);
     this.syncAvatarPanel();
     this.markDirty();
+    walker.onArrive?.();
   }
 
   // --- Pointer ---
@@ -578,7 +587,8 @@ class WbEditor extends HTMLElement {
       const hit = this.renderer?.hitAt(at.x, at.y);
       if (hit?.kind !== "furni") return;
       if (this.run) {
-        void this.run.input({ type: "use", user: this.runUser(), furni: hit.id });
+        const item = this.room.furni.find((f) => f.id === hit.id);
+        if (item) this.useInRun(item);
         return;
       }
       const item = this.room.furni.find((f) => f.id === hit.id);
@@ -1000,7 +1010,7 @@ class WbEditor extends HTMLElement {
     return best;
   }
 
-  private walkTo(goal: [number, number]): void {
+  private walkTo(goal: [number, number], onArrive?: () => void): void {
     const avatar =
       this.selectedAvatar() ??
       this.room.avatars.find((a) => a.id === this.actingAvatar) ??
@@ -1024,10 +1034,14 @@ class WbEditor extends HTMLElement {
       this.walkStatus.textContent = T.noWay(avatar.name);
       return;
     }
-    if (path.length === 0 && !walking) return;
+    if (path.length === 0 && !walking) {
+      onArrive?.();
+      return;
+    }
     this.walkStatus.textContent = T.walking(avatar.name, goal[0], goal[1]);
     if (walking && nextStep) {
       walking.path = [nextStep, ...path];
+      walking.onArrive = onArrive;
       return;
     }
     avatar.pose = "std";
@@ -1038,8 +1052,54 @@ class WbEditor extends HTMLElement {
       path,
       from: [avatar.x, avatar.y, avatar.z],
       elapsed: 0,
+      onArrive,
     });
     this.renderInspector();
+  }
+
+  /**
+   * Uses a furni during a run, as a real client does: for furni used from a tile next to them, such as
+   * dice and floor switches, the avatar first walks to the nearest free one. A dice alternates between
+   * rolling and closing, which is Habbo's client rule when it cannot tell which part was clicked.
+   */
+  private useInRun(item: PlacedFurni): void {
+    const run = this.run;
+    if (!run) return;
+    const avatar = this.room.avatars.find((a) => a.id === this.runUser());
+    if (!avatar) {
+      // A room with no avatars still lets the builder use furni, with nobody as the user.
+      void run.input({ type: "use", user: null, furni: item.id });
+      return;
+    }
+    const kind = furniKind(item.classname, this.items.get(item.classname)?.category ?? null);
+    const send = () => {
+      if (kind === "dice" && this.diceRolled.has(item.id) && ![0, 100].includes(item.state)) {
+        this.diceRolled.delete(item.id);
+        void run.input({ type: "dice_off", user: avatar.id, furni: item.id });
+        return;
+      }
+      if (kind === "dice") this.diceRolled.add(item.id);
+      void run.input({ type: "use", user: avatar.id, furni: item.id });
+    };
+    if (!usedFromNextTo(kind) || isNextTo([avatar.x, avatar.y], [item.x, item.y])) {
+      send();
+      return;
+    }
+    const occupied = new Set(
+      this.room.avatars.filter((a) => a.id !== avatar.id).map((a) => `${a.x},${a.y}`),
+    );
+    const spots = besideTiles(item, this.room)
+      .filter(
+        ([x, y]) => standAt(this.room, this.lookup, x, y).walkable && !occupied.has(`${x},${y}`),
+      )
+      .sort(
+        (a, b) =>
+          Math.hypot(a[0] - avatar.x, a[1] - avatar.y) -
+          Math.hypot(b[0] - avatar.x, b[1] - avatar.y),
+      );
+    const spot = spots[0];
+    if (spot) this.walkTo(spot, send);
+    else this.walkStatus.textContent = T.noWay(avatar.name);
   }
 
   // --- Saving ---
@@ -1299,6 +1359,7 @@ class WbEditor extends HTMLElement {
     this.runEdits.clear();
     this.runMoves.clear();
     this.pendingDetails.clear();
+    this.diceRolled.clear();
     this.actingAvatar = null;
     for (const [id, wired] of edits) {
       const box = this.room.furni.find((f) => f.id === id);

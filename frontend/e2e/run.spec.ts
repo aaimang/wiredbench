@@ -678,3 +678,80 @@ test("avatar details reach built-in values, and a change in a run takes effect",
   await live.getByRole("spinbutton", { name: "Level" }).press("Tab");
   await expect(row).toContainText("9");
 });
+
+test("a dice is rolled from the tile next to it, and a lamp switches only with rights", async ({
+  page,
+}) => {
+  await login(page);
+  const room = await page.evaluate(async () => {
+    const me = await (await fetch("/api/auth/me")).json();
+    const headers = { "Content-Type": "application/json", "X-CSRF-Token": me.csrf_token };
+    const made = await fetch("/api/tutorials/time-tracking", {
+      method: "POST",
+      headers,
+      body: "{}",
+    });
+    const id = (await made.json()).id as number;
+    const saved = await (await fetch(`/api/sandboxes/${id}`)).json();
+    const item = (furniId: number, classname: string, x: number, y: number) => ({
+      id: furniId,
+      classname,
+      x,
+      y,
+      z: 0,
+      rot: 0,
+      state: 0,
+    });
+    saved.document.furni = [item(1, "edice", 2, 2), item(2, "lamp_basic", 6, 2)];
+    saved.document.avatars = [
+      // Behind the dice, so the avatar ends on the far side and does not cover it on screen.
+      { id: 1, name: "A", hotel: "com", figure: "hd-180-1", x: 0, y: 0, z: 0, dir: 2, pose: "std" },
+    ];
+    await fetch(`/api/sandboxes/${id}/document`, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify({ document: saved.document, base_revision: saved.revision }),
+    });
+    return id;
+  });
+  await page.goto(`/sandbox/${room}`);
+  await expect(page.getByTestId("room-canvas")).toBeVisible();
+  await page.getByRole("button", { name: "Run", exact: true }).click();
+  await expect(page.getByTestId("run-panel")).toBeVisible();
+  const state = async () =>
+    (await page.evaluate(async (id) => (await fetch(`/api/sandboxes/${id}/run`)).json(), room)) as {
+      furni: { id: number; state: number }[];
+      users: { x: number; y: number }[];
+    };
+  const tile = (x: number, y: number) =>
+    page.evaluate(
+      ({ a, b }) =>
+        (
+          document.querySelector("wb-editor") as unknown as {
+            tileOnPage(a: number, b: number): { x: number; y: number };
+          }
+        ).tileOnPage(a, b),
+      { a: x, b: y },
+    );
+
+  // A plain furni is the owner's or a user with rights to switch.
+  const lamp = await tile(6, 2);
+  await page.mouse.dblclick(lamp.x, lamp.y);
+  await expect(page.getByTestId("run-panel")).toContainText("Only the owner or a user with rights");
+  expect((await state()).furni.find((f) => f.id === 2)?.state).toBe(0);
+
+  // From across the room, the avatar walks next to the dice, then it rolls and lands on a face.
+  const dice = await tile(2, 2);
+  await page.mouse.dblclick(dice.x, dice.y);
+  await expect
+    .poll(async () => (await state()).furni.find((f) => f.id === 1)?.state, { timeout: 15000 })
+    .toBe(-1);
+  const [user] = (await state()).users;
+  expect(Math.max(Math.abs((user?.x ?? 0) - 2), Math.abs((user?.y ?? 0) - 2))).toBe(1);
+  await expect
+    .poll(async () => (await state()).furni.find((f) => f.id === 1)?.state, { timeout: 5000 })
+    .toBeGreaterThan(0);
+  // The next double-click closes it, as Habbo's client does.
+  await page.mouse.dblclick(dice.x, dice.y);
+  await expect.poll(async () => (await state()).furni.find((f) => f.id === 1)?.state).toBe(0);
+});

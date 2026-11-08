@@ -49,6 +49,7 @@ class Input(BaseModel):
         "game_end",
         "box_settings",
         "move_furni",
+        "dice_off",
         "set_value",
         "user_detail",
     ]
@@ -124,6 +125,7 @@ def furni_facts(services: Services, sandbox: Sandbox) -> dict[str, dict[str, Any
             "can_sit": bool(data.get("cansiton")),
             "can_lay": bool(data.get("canlayon")),
             "stackable": bool(data.get("canputstuffon")),
+            "category": item.get("category"),
         }
     return found
 
