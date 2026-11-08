@@ -12,8 +12,8 @@ read at commit `3fc9c06f533c`, for facts only.
 - Seen in a real preset: 0
 - Seen in a real room dump: 97
 - Checked in a real room: 87
-- Have a form: 106
-- Option numbers mapped: 54
+- Have a form: 111
+- Option numbers mapped: 59
 
 | Box | Evidence | Form | Options | Room check |
 |---|---|---|---|---|
@@ -174,11 +174,11 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_slc_furni_with_var` | Checked in a real room | Yes |  | 2026-11-01 |
 | `wf_slc_remote` | Seen in a real room dump |  |  |  |
 | `wf_slc_users_area` | Checked in a real room | Yes | Yes | 2026-11-01 |
-| `wf_slc_users_byaction` | Seen in a real room dump |  |  |  |
+| `wf_slc_users_byaction` | Seen in a real room dump | Yes | Yes |  |
 | `wf_slc_users_byname` | Seen in a real room dump | Yes |  |  |
 | `wf_slc_users_bytype` | Seen in a real room dump |  |  |  |
 | `wf_slc_users_group` | Seen in a real room dump |  |  |  |
-| `wf_slc_users_handitem` | Seen in a real room dump |  |  |  |
+| `wf_slc_users_handitem` | Seen in a real room dump | Yes | Yes |  |
 | `wf_slc_users_neighborhood` | Seen in a real room dump |  |  |  |
 | `wf_slc_users_onfurni` | Checked in a real room | Yes |  | 2026-11-01 |
 | `wf_slc_users_signal` | Seen in a real room dump | Yes |  |  |
@@ -224,7 +224,7 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_trg_bot_reached_stf` | Seen in a real room dump |  |  |  |
 | `wf_trg_click_furni` | Checked in a real room | Yes |  | 2026-11-01 |
 | `wf_trg_click_tile` | Seen in a real room dump |  |  |  |
-| `wf_trg_click_user` | Seen in a real room dump |  |  |  |
+| `wf_trg_click_user` | Seen in a real room dump | Yes | Yes |  |
 | `wf_trg_clock_counter` | Checked in a real room | Yes | Yes | 2026-11-01 |
 | `wf_trg_collision` | Seen in a real room dump |  |  |  |
 | `wf_trg_enter_room` | Checked in a real room | Yes |  | 2026-11-01 |
@@ -239,12 +239,12 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_trg_recv_signal` | Checked in a real room | Yes |  | 2026-11-01 |
 | `wf_trg_room_initializes` | Seen in a real room dump | Yes |  |  |
 | `wf_trg_says_something` | Checked in a real room | Yes | Yes | 2026-11-01 |
-| `wf_trg_score_achieved` | Seen in a real room dump |  |  |  |
+| `wf_trg_score_achieved` | Seen in a real room dump | Yes | Yes |  |
 | `wf_trg_state_changed` | Checked in a real room | Yes |  | 2026-10-31 |
 | `wf_trg_stuff_state` | Checked in a real room | Yes |  | 2026-11-01 |
 | `wf_trg_transaction_complete` | Seen in a real room dump |  |  |  |
 | `wf_trg_transaction_fail` | Seen in a real room dump |  |  |  |
-| `wf_trg_user_performs_action` | Seen in a real room dump |  |  |  |
+| `wf_trg_user_performs_action` | Seen in a real room dump | Yes | Yes |  |
 | `wf_trg_var_changed` | Checked in a real room | Yes |  | 2026-11-01 |
 | `wf_trg_walks_off_furni` | Checked in a real room | Yes |  | 2026-11-01 |
 | `wf_trg_walks_on_furni` | Checked in a real room | Yes |  | 2026-11-01 |

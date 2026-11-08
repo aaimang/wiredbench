@@ -807,3 +807,48 @@ test("a vending machine hands the avatar in front of it one of its drinks", asyn
   expect([1, 2, 5, 6]).toContain((await user())?.details["@handitem"]);
   expect((await user())?.dir).toBe(4);
 });
+
+test("waving during a run fires User Performs Action", async ({ page }) => {
+  await login(page);
+  const room = await page.evaluate(async () => {
+    const me = await (await fetch("/api/auth/me")).json();
+    const headers = { "Content-Type": "application/json", "X-CSRF-Token": me.csrf_token };
+    const made = await fetch("/api/tutorials/time-tracking", {
+      method: "POST",
+      headers,
+      body: "{}",
+    });
+    const id = (await made.json()).id as number;
+    const saved = await (await fetch(`/api/sandboxes/${id}`)).json();
+    const wired = (furniId: number, classname: string, z: number, settings: object) => ({
+      id: furniId,
+      classname,
+      x: 0,
+      y: 0,
+      z,
+      rot: 0,
+      state: 0,
+      wired: settings,
+    });
+    saved.document.furni = [
+      wired(1, "wf_trg_user_performs_action", 0, { action: "wave", text: "" }),
+      wired(2, "wf_act_log", 1, { text: "someone waved", level: "0" }),
+    ];
+    saved.document.avatars = [
+      { id: 1, name: "A", hotel: "com", figure: "hd-180-1", x: 3, y: 3, z: 0, dir: 2, pose: "std" },
+    ];
+    await fetch(`/api/sandboxes/${id}/document`, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify({ document: saved.document, base_revision: saved.revision }),
+    });
+    return id;
+  });
+  await page.goto(`/sandbox/${room}`);
+  await expect(page.getByTestId("room-canvas")).toBeVisible();
+  await page.getByRole("button", { name: "Run", exact: true }).click();
+  await expect(page.getByTestId("run-panel")).toBeVisible();
+  await page.locator(".avatar-row-pick").first().click();
+  await page.locator("wb-editor").getByRole("button", { name: "Wave" }).click();
+  await expect(page.getByTestId("run-panel")).toContainText("someone waved");
+});

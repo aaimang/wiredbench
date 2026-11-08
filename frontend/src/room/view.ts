@@ -524,6 +524,8 @@ class WbRoomView extends HTMLElement {
       }
       if (hit?.kind === "avatar") {
         this.choose(hit);
+        // Clicking someone else runs Click User, as it does in a real room.
+        if (hit.id !== this.user) void this.send({ type: "click_user", target: hit.id });
         return;
       }
       this.choose(null);

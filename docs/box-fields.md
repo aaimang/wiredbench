@@ -8,7 +8,7 @@ it, and a named position is still unverified until a box is changed and read aga
 
 No reply from: `wf_contract_payment`, `wf_contract_reward`, `wf_contract_trade`. The cause is unconfirmed.
 
-Named positions: 139. Unnamed positions: 443.
+Named positions: 146. Unnamed positions: 436.
 
 | Box | Section | Default numbers | Named positions | Unnamed positions |
 |---|---|---|---|---|
@@ -116,11 +116,11 @@ Named positions: 139. Unnamed positions: 443.
 | `wf_slc_furni_with_var` | selector | `[2, 0, 0, 0, -10, 0]` |  | 0, 1, 2, 3, 4, 5 |
 | `wf_slc_remote` | selector | `[0, 0]` |  | 0, 1 |
 | `wf_slc_users_area` | selector | `[0, 0, 0, 0]` | 0: area_x, 1: area_y, 2: area_width, 3: area_height |  |
-| `wf_slc_users_byaction` | selector | `[0]` |  | 0 |
+| `wf_slc_users_byaction` | selector | `[0]` | 0: action |  |
 | `wf_slc_users_byname` | selector | `[]` |  |  |
 | `wf_slc_users_bytype` | selector | `[1]` |  | 0 |
 | `wf_slc_users_group` | selector | `[]` |  |  |
-| `wf_slc_users_handitem` | selector | `[2]` |  | 0 |
+| `wf_slc_users_handitem` | selector | `[2]` | 0: handitem |  |
 | `wf_slc_users_neighborhood` | selector | `[1, 0, 0, 33554431, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]` |  | 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17 |
 | `wf_slc_users_onfurni` | selector | `[]` |  |  |
 | `wf_slc_users_signal` | selector | `[]` |  |  |
@@ -131,7 +131,7 @@ Named positions: 139. Unnamed positions: 443.
 | `wf_trg_bot_reached_stf` | trigger | `[]` |  |  |
 | `wf_trg_click_furni` | trigger | `[]` |  |  |
 | `wf_trg_click_tile` | trigger | `[]` |  |  |
-| `wf_trg_click_user` | trigger | `[1, 0]` |  | 0, 1 |
+| `wf_trg_click_user` | trigger | `[1, 0]` | 0: block_menu, 1: keep_facing |  |
 | `wf_trg_clock_counter` | trigger | `[0, 0, 0]` | 0: clock_seconds, 1: clock_minutes, 2: clock_half |  |
 | `wf_trg_collision` | trigger | `[]` |  |  |
 | `wf_trg_enter_room` | trigger | `[]` |  |  |
@@ -146,12 +146,12 @@ Named positions: 139. Unnamed positions: 443.
 | `wf_trg_recv_signal` | trigger | `[]` |  |  |
 | `wf_trg_room_initializes` | trigger | `[]` |  |  |
 | `wf_trg_says_something` | trigger | `[0, 0, 1]` | 0: owner_only, 1: match, 2: hide_message |  |
-| `wf_trg_score_achieved` | trigger | `[100, 0]` |  | 0, 1 |
+| `wf_trg_score_achieved` | trigger | `[100, 0]` | 0: points, 1: team |  |
 | `wf_trg_state_changed` | trigger | `[]` |  |  |
 | `wf_trg_stuff_state` | trigger | `[1]` |  | 0 |
 | `wf_trg_transaction_complete` | trigger | `[]` |  |  |
 | `wf_trg_transaction_fail` | trigger | `[]` |  |  |
-| `wf_trg_user_performs_action` | trigger | `[0]` |  | 0 |
+| `wf_trg_user_performs_action` | trigger | `[0]` | 0: action |  |
 | `wf_trg_var_changed` | trigger | `[1, 1, 0, 7, -1, 0]` |  | 0, 1, 2, 3, 4, 5 |
 | `wf_trg_walks_off_furni` | trigger | `[]` |  |  |
 | `wf_trg_walks_on_furni` | trigger | `[]` |  |  |

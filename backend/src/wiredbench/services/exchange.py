@@ -11,7 +11,7 @@ from collections import Counter
 from typing import Any
 
 from wiredbench.engine import box_facts, internal
-from wiredbench.engine.boxes import BOXES
+from wiredbench.engine.boxes import AVATAR_ACTIONS, BOXES
 from wiredbench.engine.operations import OPERATION_CODES
 from wiredbench.errors import ApiError
 from wiredbench.services.room import MAX_ROOM_SIZE, MAX_Z
@@ -52,6 +52,7 @@ SOURCE_FIELDS = {
     ),
 }
 ANY_TEAM_NUMBERS = {0: "any", 1: "red", 2: "green", 3: "blue", 4: "yellow"}
+ACTION_NUMBERS = {number: action for action, number in AVATAR_ACTIONS.items()}
 CLOCK_FIELDS = [("clock_seconds", 0, int), ("clock_minutes", 1, int), ("clock_half", 2, bool)]
 HIGHLIGHT_DARKEN, HIGHLIGHT_TINT, HIGHLIGHT_BRIGHTEN = 2, 3, 4
 WHITE = 16777215
@@ -184,6 +185,11 @@ OPTION_FIELDS: dict[str, list[tuple[str, int, Any]]] = {
     "wf_cnd_actor_in_team": [("team", 0, ANY_TEAM_NUMBERS)],
     "wf_cnd_not_in_team": [("team", 0, ANY_TEAM_NUMBERS)],
     "wf_slc_users_team": [("team", 0, ANY_TEAM_NUMBERS)],
+    "wf_slc_users_handitem": [("handitem", 0, int)],
+    "wf_slc_users_byaction": [("action", 0, ACTION_NUMBERS)],
+    "wf_trg_user_performs_action": [("action", 0, ACTION_NUMBERS)],
+    "wf_trg_click_user": [("block_menu", 0, bool), ("keep_facing", 1, bool)],
+    "wf_trg_score_achieved": [("points", 0, int), ("team", 1, ANY_TEAM_NUMBERS)],
     "wf_act_rel_mov": [("move_x", 0, int), ("move_y", 1, int)],
     "wf_act_set_altitude": [("altitude", 0, 0.01), ("altitude_change", 1, ("raise", "lower", "set"))],
     "wf_act_move_rotate_user": [

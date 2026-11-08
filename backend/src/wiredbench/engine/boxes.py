@@ -126,6 +126,49 @@ ANY_TEAM = {
     "labels": {"any": "Any team", **{team: team.capitalize() for team in TEAMS}},
     "default": "any",
 }
+# What a user can be seen doing, with the number a real box saves for each.
+AVATAR_ACTIONS = {
+    "wave": 0,
+    "blow": 1,
+    "laugh": 2,
+    "respect": 3,
+    "awake": 4,
+    "sleep": 5,
+    "sit": 6,
+    "stand": 7,
+    "lay": 8,
+    "sign": 10,
+    "dance": 11,
+    "jump": 67,
+}
+AVATAR_ACTION = {
+    "name": "action",
+    "kind": "select",
+    "label": "Action",
+    "options": list(AVATAR_ACTIONS),
+    "labels": {
+        "wave": "Wave",
+        "blow": "Blow a kiss",
+        "laugh": "Laugh",
+        "respect": "Thumbs up",
+        "awake": "Awake",
+        "sleep": "Sleep (idle)",
+        "sit": "Sit",
+        "stand": "Stand",
+        "lay": "Lie down",
+        "sign": "Hold a sign",
+        "dance": "Dance",
+        "jump": "Jump (67)",
+    },
+    "default": "wave",
+}
+# For a sign or a dance, which one. Empty matches any.
+ACTION_NUMBER = {
+    "name": "text",
+    "kind": "text",
+    "label": "Sign or dance number (empty for any)",
+    "default": "",
+}
 POINTS = (
     {"name": "points", "kind": "number", "label": "Points", "default": 5, "min": -1000, "max": 1000},
     {
@@ -285,6 +328,24 @@ BOXES: dict[str, dict[str, Any]] = {
     "wf_trg_at_given_time": _box("trigger", DOCUMENTED, SECONDS),
     "wf_trg_recv_signal": _box("trigger", DOCUMENTED, ANTENNA),
     "wf_trg_var_changed": _box("trigger", ASSUMED, VARIABLE),
+    "wf_trg_user_performs_action": _box("trigger", DOCUMENTED, AVATAR_ACTION, ACTION_NUMBER),
+    "wf_trg_click_user": _box(
+        "trigger",
+        DOCUMENTED,
+        _saved({"name": "block_menu", "kind": "bool", "label": "Do not open the user menu", "default": True}),
+        {
+            "name": "keep_facing",
+            "kind": "bool",
+            "label": "The clicker does not turn to the clicked user",
+            "default": False,
+        },
+    ),
+    "wf_trg_score_achieved": _box(
+        "trigger",
+        DOCUMENTED,
+        {"name": "points", "kind": "number", "label": "Score reached", "default": 100, "min": 1, "max": 1000},
+        ANY_TEAM,
+    ),
     # Conditions
     "wf_cnd_var_age_match": _box(
         "condition",
@@ -423,6 +484,11 @@ BOXES: dict[str, dict[str, Any]] = {
     "wf_slc_users_signal": _selector(DOCUMENTED),
     "wf_slc_users_with_var": _selector(DOCUMENTED, VARIABLE),
     "wf_slc_users_onfurni": _selector(DOCUMENTED, FURNI),
+    "wf_slc_users_handitem": _selector(
+        DOCUMENTED,
+        {"name": "handitem", "kind": "number", "label": "Hand item ID", "default": 2, "min": 0},
+    ),
+    "wf_slc_users_byaction": _selector(DOCUMENTED, AVATAR_ACTION, ACTION_NUMBER),
     "wf_slc_users_byname": _selector(
         DOCUMENTED,
         {"name": "names", "kind": "text", "label": "Names, one per line", "default": ""},

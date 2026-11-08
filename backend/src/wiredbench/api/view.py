@@ -37,12 +37,13 @@ PRIVATE_BUILT_INS = "@event.variable_update."
 
 
 class ViewInput(BaseModel):
-    type: Literal["move", "say", "click", "use"]
+    type: Literal["move", "say", "click", "use", "click_user"]
     user: int = Field(ge=0, le=2**31)
     x: int | None = Field(None, ge=0, le=64)
     y: int | None = Field(None, ge=0, le=64)
     dir: int | None = Field(None, ge=0, le=7)
     furni: int | None = Field(None, ge=0, le=2**31)
+    target: int | None = Field(None, ge=0, le=2**31)  # The user clicked, for click_user.
     text: str | None = Field(None, max_length=500)
 
 

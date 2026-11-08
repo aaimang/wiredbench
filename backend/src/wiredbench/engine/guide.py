@@ -228,6 +228,26 @@ GUIDE: dict[str, tuple[str, str]] = {
     "wf_cnd_actor_in_team": ("Passes if the user is in a team.", "Only let red through a gate."),
     "wf_cnd_not_in_team": ("Passes if the user is not in a team.", "Keep players without a team out."),
     "wf_slc_users_team": ("Selects the users in a team.", "Message everyone on blue."),
+    "wf_trg_user_performs_action": (
+        "Runs when a user waves, blows a kiss, holds up a sign, dances or does another action.",
+        "Open a door for anyone who waves at it.",
+    ),
+    "wf_trg_click_user": (
+        "Runs when a user clicks another user. The clicked user is selected.",
+        "Tag a player by clicking them.",
+    ),
+    "wf_trg_score_achieved": (
+        "Runs once when a team's score goes up to the mark.",
+        "End the game when a team reaches 100 points.",
+    ),
+    "wf_slc_users_handitem": (
+        "Selects the users holding a hand item.",
+        "Let only users holding a drink through.",
+    ),
+    "wf_slc_users_byaction": (
+        "Selects the users doing an action now, such as waving or dancing.",
+        "Give a point to everyone dancing.",
+    ),
     "wf_trg_game_starts": ("Runs when a game starts.", "Open the arena doors."),
     "wf_trg_game_ends": ("Runs when a game ends.", "Send everyone back to the lobby."),
     "wf_act_rel_mov": ("Moves picked furni by a set number of tiles.", "Shift a platform three tiles along."),
