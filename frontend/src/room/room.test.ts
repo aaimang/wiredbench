@@ -5,6 +5,7 @@ import {
   actionBlocked,
   actionMs,
   avatarExtras,
+  besideTiles,
   canStackOn,
   directionBetween,
   drawTile,
@@ -23,12 +24,14 @@ import {
   flightAt,
   footprint,
   furniAt,
+  furniKind,
   furniParts,
   fxFill,
   glideSteps,
   History,
   highlightTint,
   type InfoLookup,
+  isNextTo,
   isWiredBox,
   nextDirection,
   nextId,
@@ -43,6 +46,7 @@ import {
   standAt,
   standUpOffSeats,
   timeDigits,
+  usedFromNextTo,
   withFace,
 } from "./model";
 import { avatarImageAt, avatarUrl, bodyEffectUrl, shadowUrl } from "./renderer";
@@ -726,5 +730,28 @@ describe("avatar placement matches Habbo's client", () => {
     // The image's centre sits as far right of the tile facing 2 as left of it facing 4.
     expect(two.left + two.w / 2 - centre.x).toBe(centre.x - (four.left + four.w / 2));
     expect(two.top).toBeGreaterThan(avatarImageAt({ action: "std", dir: 2 }, centre).top);
+  });
+});
+
+describe("furni kinds match the room engine", () => {
+  it("sorts furni by name and category", () => {
+    expect(furniKind("edice", "fortuna")).toBe("dice");
+    expect(furniKind("wf_floor_switch1", "wired_add_on")).toBe("switch");
+    expect(furniKind("one_way_door*1", "gate")).toBe("one_way_gate");
+    expect(furniKind("lamp_basic", "lighting")).toBe("default");
+    expect(usedFromNextTo("dice") && usedFromNextTo("switch") && !usedFromNextTo("default")).toBe(
+      true,
+    );
+  });
+
+  it("finds the tiles next to a furni, inside the room", () => {
+    expect(isNextTo([4, 4], [5, 5])).toBe(true);
+    expect(isNextTo([5, 5], [5, 5])).toBe(false);
+    expect(isNextTo([3, 5], [5, 5])).toBe(false);
+    expect(besideTiles({ x: 0, y: 0 }, { room: { width: 4, height: 4 } })).toEqual([
+      [0, 1],
+      [1, 0],
+      [1, 1],
+    ]);
   });
 });

@@ -17,7 +17,7 @@ from datetime import UTC, datetime, tzinfo
 from typing import Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from wiredbench.engine import internal, operations
+from wiredbench.engine import interactions, internal, operations
 from wiredbench.engine.boxes import BOXES, TIME_UNITS
 
 TICK_MS = 500  # Assumed from delay values in real presets, which are small whole numbers.
@@ -251,6 +251,8 @@ class Engine:
         self.random = random.Random(seed)  # noqa: S311 - Replays need a seed; this is not for security.
         self.now_ms = 0
         self.heights = heights or {}
+        # Each dice's latest roll, so an older roll that lands late is ignored.
+        self.dice_turns: dict[int, int] = {}
         self.furni: dict[int, dict[str, Any]] = {}
         self.users: dict[int, dict[str, Any]] = {}
         self.boxes_at: dict[tuple[int, int], list[Box]] = defaultdict(list)
@@ -427,6 +429,8 @@ class Engine:
             self._click(_int(user), _int(entry.get("furni")))
         elif kind == "use":
             self._use(_int(user), _int(entry.get("furni")))
+        elif kind == "dice_off":
+            self._close_dice(_int(user), _int(entry.get("furni")))
         elif kind == "enter":
             self._fire("wf_trg_enter_room", user=_int(user))
         elif kind == "leave":
@@ -538,7 +542,30 @@ class Engine:
             self._fire("wf_trg_click_furni", user=user_id, furni=furni_id)
 
     def _use(self, user_id: int, furni_id: int) -> None:
-        if furni_id in self.clocks:
+        item = self.furni.get(furni_id)
+        if item is None:
+            return
+        kind = interactions.kind_of(
+            item["classname"], self.furni_facts.get(item["classname"], {}).get("category")
+        )
+        who = self.users.get(user_id)
+        # A real room checks who may use a furni and, for some, that they stand next to it.
+        if who is not None and furni_id not in self.clocks and item["classname"] not in GAME_TIMERS:
+            if not interactions.anyone_may_use(kind) and not self._has_rights(user_id):
+                self._log(
+                    "info", f"Only the owner or a user with rights can use {self._name(item['classname'])}"
+                )
+                return
+            if interactions.needs_to_be_next_to(kind) and not interactions.next_to(
+                (who["x"], who["y"]), (item["x"], item["y"])
+            ):
+                self._log(
+                    "info", f"{who['name']} must stand next to {self._name(item['classname'])} to use it"
+                )
+                return
+        if kind == "dice":
+            self._roll_dice(furni_id)
+        elif furni_id in self.clocks:
             clock = self.clocks[furni_id]
             if clock.running:
                 clock.running = False
@@ -550,6 +577,28 @@ class Engine:
             self._set_state(furni_id, self._next_state(furni_id))
         if furni_id in self.furni:
             self._fire("wf_trg_state_changed", user=user_id, furni=furni_id)
+
+    def _roll_dice(self, furni_id: int) -> None:
+        """A dice shows its rolling animation, then lands on a random face."""
+        item = self.furni[furni_id]
+        if item["state"] == interactions.DICE_ROLLING:
+            return
+        self._set_state(furni_id, interactions.DICE_ROLLING)
+        self.dice_turns[furni_id] = self.dice_turns.get(furni_id, 0) + 1
+        face = self.random.choice(interactions.DICE_FACES)
+        payload = {"furni": furni_id, "face": face, "turn": self.dice_turns[furni_id]}
+        self._push(self.now_ms + interactions.DICE_ROLL_MS, "dice_land", payload)
+
+    def _close_dice(self, user_id: int, furni_id: int) -> None:
+        """Closing a dice puts it back to its blank face, for a user standing next to it."""
+        item, who = self.furni.get(furni_id), self.users.get(user_id)
+        if item is None or interactions.kind_of(item["classname"], None) != "dice":
+            return
+        if who is not None and not interactions.next_to((who["x"], who["y"]), (item["x"], item["y"])):
+            self._log("info", f"{who['name']} must stand next to {self._name(item['classname'])} to use it")
+            return
+        self.dice_turns[furni_id] = self.dice_turns.get(furni_id, 0) + 1  # A roll in flight no longer lands.
+        self._set_state(furni_id, interactions.DICE_CLOSED)
 
     def _has_rights(self, user_id: int) -> bool:
         """Whether a user may move furni and change boxes, as the room's owner or with rights."""
@@ -723,6 +772,12 @@ class Engine:
                 self._game_timer_tick(payload["furni"], payload["run"])
             elif action == "seat_turn_back":
                 self._seat_users()
+            elif action == "dice_land":
+                if (
+                    self.dice_turns.get(payload["furni"]) == payload["turn"]
+                    and payload["furni"] in self.furni
+                ):
+                    self._set_state(payload["furni"], payload["face"])
             elif action == "sign_end":
                 # A newer sign keeps its own time.
                 if self.sign_turns.get(payload["user"]) == payload["turn"] and payload["user"] in self.users:
