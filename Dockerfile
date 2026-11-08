@@ -7,6 +7,9 @@ RUN npm run build
 
 FROM python:3.12-slim@sha256:4840d514c583a4d3d8cad3940e68dee6f0f6f3635c12fcd0a3d74c21a5b93a54 AS app
 ENV UV_LINK_MODE=copy UV_PYTHON_DOWNLOADS=never UV_PROJECT_ENVIRONMENT=/app/.venv
+# Debian's fixes land before a new base image does (zlib CVE-2026-76844 and CVE-2026-85091).
+RUN apt-get update && apt-get upgrade -y --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/*
 RUN pip install --no-cache-dir uv==0.13.5
 WORKDIR /src
 COPY pyproject.toml uv.lock README.md LICENSE .python-version ./
