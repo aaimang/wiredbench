@@ -82,6 +82,13 @@ import {
 } from "./run-panel";
 
 const T = t.editor;
+/** The name the room engine knows each avatar action by. */
+const RUN_ACTION: Record<AvatarAction, string> = {
+  wave: "wave",
+  blow: "blow",
+  respect: "respect",
+  sixty_seven: "jump",
+};
 const NOT_HELD = -1;
 const DEMO_FIGURE = "hd-180-1.ch-210-66.lg-270-82.sh-290-91.hr-100-61";
 const SECONDS_PER_STEP = 0.5;
@@ -463,6 +470,8 @@ class WbEditor extends HTMLElement {
   }
 
   private playAction(avatar: PlacedAvatar, action: AvatarAction): void {
+    // The room sees the action too, for User Performs Action and Users by Action.
+    void this.run?.input({ type: "action", user: avatar.id, text: RUN_ACTION[action] });
     const walker = this.walkers.get(avatar.id);
     if (walker) this.preloadWalker(walker, avatar, action);
     const pose = this.avatarPose(avatar);
@@ -643,6 +652,11 @@ class WbEditor extends HTMLElement {
       return;
     }
     if (hit?.kind === "avatar") {
+      // During a run, clicking someone else is the acting avatar clicking them, for Click User.
+      const clicker = this.runUser();
+      if (this.run && clicker !== null && clicker !== hit.id) {
+        void this.run.input({ type: "click_user", user: clicker, target: hit.id });
+      }
       this.select(hit);
       return;
     }
@@ -1601,6 +1615,8 @@ class WbEditor extends HTMLElement {
       else if (field.kind === "number") next[field.name] = Number(values.get(field.name) ?? 0);
       else next[field.name] = String(values.get(field.name) ?? "");
     }
+    // A neighbourhood's new size replaces the tile drawing it was imported with.
+    if ("mask" in next && next.radius !== settings.radius) delete next.mask;
     this.change(() => {
       item.wired = next;
     });

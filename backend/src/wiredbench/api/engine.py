@@ -52,12 +52,15 @@ class Input(BaseModel):
         "dice_off",
         "set_value",
         "user_detail",
+        "click_user",
+        "action",
     ]
     user: Int | None = None
     x: int | None = Field(None, ge=0, le=64)
     y: int | None = Field(None, ge=0, le=64)
     dir: int | None = Field(None, ge=0, le=7)
     furni: Int | None = None
+    target: Int | None = None  # The user clicked, for click_user.
     # A furni moved by hand: its turn and height.
     rot: int | None = Field(None, ge=0, le=7)
     z: float | None = Field(None, ge=0, le=80)

@@ -2135,3 +2135,151 @@ def test_furni_that_give_items_are_vending_machines_whatever_their_category() ->
     assert interactions.kind_of("giftflowers", "other") == "vending"
     assert interactions.kind_of("lamp_basic", "lighting") == "default"
     assert interactions.used_from_front("vending") and not interactions.used_from_front("dice")
+
+
+def test_an_action_runs_its_trigger_and_a_sign_number_must_match() -> None:
+    engine = room(
+        box(1, "wf_trg_user_performs_action", 1, 1, action="wave"),
+        box(2, "wf_act_give_var", 1, 1, 1, variable="waved"),
+        box(3, "wf_trg_user_performs_action", 2, 1, action="sign", text="7"),
+        box(4, "wf_act_give_var", 2, 1, 1, variable="sign7"),
+    )
+    engine.apply_input({"type": "action", "user": 100, "text": "blow"})
+    assert "waved" not in engine.variables or not engine.variables["waved"]
+    engine.apply_input({"type": "action", "user": 100, "text": "wave"})
+    assert set(engine.variables["waved"]) == {"user:100"}
+    engine.apply_input({"type": "user_detail", "user": 100, "detail": "@sign", "amount": 3})
+    assert not engine.variables.get("sign7")
+    engine.apply_input({"type": "user_detail", "user": 100, "detail": "@sign", "amount": 7})
+    assert set(engine.variables["sign7"]) == {"user:100"}
+
+
+def test_users_by_action_selects_who_is_waving_for_five_seconds() -> None:
+    users = [user(100, "Ann"), user(101, "Bob", x=1)]
+    engine = room(
+        box(1, "wf_trg_says_something", 1, 1, text="go"),
+        box(2, "wf_slc_users_byaction", 1, 1, 1, action="wave"),
+        box(3, "wf_act_give_var", 1, 1, 2, variable="v", user_source="selector"),
+        users=users,
+    )
+    engine.apply_input({"type": "action", "user": 101, "text": "wave"})
+    say(engine, "go")
+    assert holders(engine) == {"user:101"}
+    engine.advance(5000)
+    engine.variables["v"].clear()
+    say(engine, "go")
+    assert holders(engine) == set(), "the wave is over"
+
+
+def test_users_with_a_hand_item_are_selected() -> None:
+    users = [user(100, "Ann"), user(101, "Bob", x=1)]
+    users[1]["details"] = {"@handitem": 19}
+    engine = room(
+        box(1, "wf_trg_says_something", 1, 1, text="go"),
+        box(2, "wf_slc_users_handitem", 1, 1, 1, handitem=19),
+        box(3, "wf_act_give_var", 1, 1, 2, variable="v", user_source="selector"),
+        users=users,
+    )
+    say(engine, "go")
+    assert holders(engine) == {"user:101"}
+
+
+def test_clicking_a_user_selects_them_and_turns_the_clicker() -> None:
+    users = [user(100, "Ann", x=2, y=2), user(101, "Bob", x=4, y=2)]
+    engine = room(
+        box(1, "wf_trg_click_user", 1, 1),
+        box(2, "wf_act_give_var", 1, 1, 1, variable="clicked", user_source="selector"),
+        box(3, "wf_act_give_var", 1, 1, 2, variable="clicker"),
+        users=users,
+    )
+    engine.apply_input({"type": "click_user", "user": 100, "target": 101})
+    assert set(engine.variables["clicked"]) == {"user:101"}
+    assert set(engine.variables["clicker"]) == {"user:100"}
+    assert engine.users[100]["dir"] == 2, "turned to face Bob"
+
+
+def test_score_achieved_runs_once_as_a_team_passes_the_mark() -> None:
+    engine = room(
+        box(1, "wf_trg_score_achieved", 1, 1, points=10, team="red"),
+        box(2, "wf_act_log", 1, 1, 1, text="red reached 10"),
+        box(3, "wf_trg_says_something", 2, 1, text="score"),
+        box(4, "wf_act_give_score_tm", 2, 1, 1, points=6, team="red"),
+        box(5, "wf_trg_score_achieved", 3, 1, points=10, team="blue"),
+        box(6, "wf_act_log", 3, 1, 1, text="blue reached 10"),
+    )
+    engine.apply_input({"type": "game_start"})
+    say(engine, "score")
+    assert not any("red reached 10" in line for line in logs(engine))
+    say(engine, "score")
+    say(engine, "score")
+    assert sum("red reached 10" in line for line in logs(engine)) == 1
+    assert not any("blue reached 10" in line for line in logs(engine)), "only the box's own team counts"
+
+
+def test_the_neighbourhood_selectors_pick_what_is_around_the_user() -> None:
+    users = [user(100, "Ann", x=5, y=5), user(101, "Bob", x=6, y=6), user(102, "Cy", x=8, y=5)]
+    engine = room(
+        plain(50, x=4, y=5),
+        plain(51, x=9, y=9),
+        box(1, "wf_trg_says_something", 1, 1, text="go"),
+        box(2, "wf_slc_users_neighborhood", 1, 1, 1, radius=1),
+        box(3, "wf_act_give_var", 1, 1, 2, variable="v", user_source="selector"),
+        box(4, "wf_trg_says_something", 2, 1, text="furni"),
+        box(5, "wf_slc_furni_neighborhood", 2, 1, 1, radius=1),
+        box(6, "wf_act_toggle_state", 2, 1, 2, furni_source="selector"),
+        users=users,
+    )
+    say(engine, "go")
+    assert holders(engine) == {"user:100", "user:101"}, "Cy is three tiles away"
+    say(engine, "furni")
+    assert (engine.furni[50]["state"], engine.furni[51]["state"]) == (1, 0)
+
+
+def test_a_neighbourhood_centre_can_be_moved() -> None:
+    users = [user(100, "Ann", x=5, y=5), user(101, "Bob", x=8, y=5)]
+    engine = room(
+        box(1, "wf_trg_says_something", 1, 1, text="go"),
+        box(2, "wf_slc_users_neighborhood", 1, 1, 1, radius=0, root_x=-3),
+        box(3, "wf_act_give_var", 1, 1, 2, variable="v", user_source="selector"),
+        users=users,
+    )
+    say(engine, "go")
+    assert holders(engine) == {"user:101"}, "the centre moves three tiles along x"
+
+
+def test_filter_furni_by_variable_keeps_the_highest_values() -> None:
+    engine = room(
+        plain(50, x=9, y=1),
+        plain(51, x=9, y=2),
+        plain(52, x=9, y=3),
+        box(1, "wf_var_furni", 5, 5, variable="pts"),
+        box(2, "wf_trg_says_something", 1, 1, text="set"),
+        box(3, "wf_act_give_var", 1, 1, 1, variable="pts", value=3, furni=[50]),
+        box(4, "wf_act_give_var", 1, 1, 2, variable="pts", value=9, furni=[51]),
+        box(5, "wf_act_give_var", 1, 1, 3, variable="pts", value=5, furni=[52]),
+        box(6, "wf_trg_says_something", 2, 1, text="go"),
+        box(7, "wf_slc_furni_picks", 2, 1, 1, furni=[50, 51, 52]),
+        box(8, "wf_xtra_filter_furni_by_var", 2, 1, 2, variable="pts", amount=1),
+        box(9, "wf_act_toggle_state", 2, 1, 3, furni_source="selector"),
+    )
+    say(engine, "set")
+    say(engine, "go")
+    assert [engine.furni[i]["state"] for i in (50, 51, 52)] == [0, 1, 0]
+
+
+def test_users_by_type_finds_only_habbos_in_a_sandbox() -> None:
+    for types, expected in (("habbo", {"user:100"}), ("pet", set()), ("all", {"user:100"})):
+        engine = room(
+            box(1, "wf_trg_says_something", 1, 1, text="go"),
+            box(2, "wf_slc_users_bytype", 1, 1, 1, types=types),
+            box(3, "wf_act_give_var", 1, 1, 2, variable="v", user_source="selector"),
+        )
+        say(engine, "go")
+        assert set(engine.variables.get("v", {})) == expected, types
+
+
+def test_a_diagonal_seat_turns_its_sitter_to_a_straight_direction() -> None:
+    seat = {"height": 1, "xdim": 1, "ydim": 1, "can_stand": False, "can_sit": True, "can_lay": False}
+    engine = room({**plain(50, x=5, y=6), "rot": 5})
+    engine.furni_facts = {"chair": seat}
+    assert engine._seat_rotation(5, 6) == 4

@@ -813,3 +813,16 @@ describe("lying on a bed", () => {
     expect([r.avatars[0]?.x, r.avatars[0]?.y]).toEqual([3, 3]);
   });
 });
+
+describe("sitting faces a straight direction", () => {
+  it("turns a sitter on a diagonal seat to the direction before, as Habbo does", () => {
+    expect(standAt(room(["chair", 1, 1, 0, 3]), lookup, 1, 1)).toMatchObject({
+      pose: "sit",
+      dir: 2,
+    });
+    expect(standAt(room(["chair", 1, 1, 0, 4]), lookup, 1, 1)).toMatchObject({
+      pose: "sit",
+      dir: 4,
+    });
+  });
+});

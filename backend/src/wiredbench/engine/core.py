@@ -17,7 +17,7 @@ from datetime import UTC, datetime, tzinfo
 from typing import Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from wiredbench.engine import interactions, internal, operations
+from wiredbench.engine import interactions, internal, neighbourhood, operations
 from wiredbench.engine.boxes import BOXES, TIME_UNITS
 
 TICK_MS = 500  # Assumed from delay values in real presets, which are small whole numbers.
@@ -65,6 +65,8 @@ USER_DETAILS = {
 }
 ADDABLE_DETAILS = {"@handitem", "@habbicon"}  # The two a real room lets Give Variable create.
 SIGN_MS = 5000  # A real room holds a sign for a few seconds. The exact length is assumed.
+# How long a user counts as doing an expression, for Users by Action. Others count until they stop.
+EXPRESSION_MS = {"wave": 5000, "blow": 1400, "jump": 700, "laugh": 2000, "respect": 2000}
 SEAT_TURN_BACK_MS = (
     500  # A real room turns a seated user back within about a second. The exact length is assumed.
 )
@@ -215,6 +217,12 @@ class Stack:
         return next((box for box in self.boxes if box.classname == classname), None)
 
 
+def _action_number_matches(box: Box | None, value: int) -> bool:
+    """A sign or dance number in the box's text must match; an empty text matches any."""
+    text = str(box.get("text", "") if box else "").strip().lower().removeprefix("dance").strip()
+    return not text.lstrip("-").isdigit() or int(text) == value
+
+
 @dataclass
 class Context:
     trigger: Box | None = None
@@ -282,6 +290,7 @@ class Engine:
         self.furni_looks: dict[int, dict[str, Any]] = {}
         self.user_looks: dict[int, dict[str, Any]] = {}
         self.sign_turns: dict[int, int] = {}
+        self.expressions: dict[int, tuple[str, int]] = {}  # A user's last expression and when.
         self.game_timer: int | None = None
         self.game_timer_run = 0
         self.score_grants: dict[tuple[int, int | None], int] = defaultdict(int)
@@ -417,6 +426,7 @@ class Engine:
                     who["details"].pop(entry["detail"], None)
                 else:
                     who["details"][entry["detail"]] = _clamp(_int(entry["amount"]))
+                    self._detail_action(who["id"], entry["detail"], who["details"][entry["detail"]])
                     if entry["detail"] == "@sign":
                         self.sign_turns[who["id"]] = self.sign_turns.get(who["id"], 0) + 1
                         turn = self.sign_turns[who["id"]]
@@ -429,6 +439,11 @@ class Engine:
             self._say(_int(user), str(entry.get("text", ""))[:500])
         elif kind == "click":
             self._click(_int(user), _int(entry.get("furni")))
+        elif kind == "click_user":
+            self._click_user(_int(user), _int(entry.get("target")))
+        elif kind == "action":
+            if _int(user) in self.users and str(entry.get("text")) in EXPRESSION_MS:
+                self._perform(_int(user), str(entry["text"]), 0)
         elif kind == "use":
             self._use(_int(user), _int(entry.get("furni")))
         elif kind == "dice_off":
@@ -493,7 +508,9 @@ class Engine:
         if top is None:
             return None
         facts = self.furni_facts.get(top["classname"], {})
-        return _int(top["rot"]) % 8 if facts.get("can_sit") or facts.get("can_lay") else None
+        rot = _int(top["rot"]) % 8
+        # Habbo never seats anyone diagonally: they face the direction before.
+        return rot - rot % 2 if facts.get("can_sit") or facts.get("can_lay") else None
 
     def _seat_users(self) -> None:
         """A user sitting or lying faces the way the furni is turned, as in a real room."""
@@ -542,6 +559,67 @@ class Engine:
     def _click(self, user_id: int, furni_id: int) -> None:
         if furni_id in self.furni:
             self._fire("wf_trg_click_furni", user=user_id, furni=furni_id)
+
+    def _click_user(self, user_id: int, target: int) -> None:
+        """One user clicks another. Effects reach the clicked user through Users from: Selector."""
+        clicker, clicked = self.users.get(user_id), self.users.get(target)
+        if clicker is None or clicked is None or user_id == target:
+            return
+        for stack, box in self._triggers("wf_trg_click_user"):
+            dx, dy = clicked["x"] - clicker["x"], clicked["y"] - clicker["y"]
+            if not box.get("keep_facing") and (dx or dy):
+                clicker["dir"] = round(math.atan2(dx, -dy) / (math.pi / 4)) % 8
+            self._start(stack, Context(trigger=box, user=user_id, users=[target]))
+
+    def _perform(self, user_id: int, action: str, value: int) -> None:
+        """A user does something others can see, such as waving or holding up a sign."""
+        if action in EXPRESSION_MS:
+            self.expressions[user_id] = (action, self.now_ms)
+        for stack, box in self._triggers("wf_trg_user_performs_action"):
+            if box.get("action", "wave") == action and _action_number_matches(box, value):
+                self._start(stack, Context(trigger=box, user=user_id))
+
+    def _detail_action(self, user_id: int, detail: str, value: int) -> None:
+        if detail == "@sign":
+            self._perform(user_id, "sign", value)
+        elif detail == "@dance" and value > 0:
+            self._perform(user_id, "dance", value)
+        elif detail == "@is_idle" and value:
+            self._perform(user_id, "sleep", value)
+
+    def _performing(self, user_id: int, action: str, box: Box) -> bool:
+        """Whether a user is doing an action now, as Users by Action checks it."""
+        user = self.users[user_id]
+        details = user["details"]
+        if action in EXPRESSION_MS:
+            last = self.expressions.get(user_id)
+            return last is not None and last[0] == action and self.now_ms - last[1] < EXPRESSION_MS[action]
+        match action:
+            case "sit" | "lay":
+                return user.get("pose") == action
+            case "stand":
+                return user.get("pose") not in ("sit", "lay")
+            case "sleep":
+                return bool(details.get("@is_idle"))
+            case "awake":
+                return not details.get("@is_idle")
+            case "sign":
+                return "@sign" in details and _action_number_matches(box, _int(details["@sign"]))
+            case "dance":
+                dance = _int(details.get("@dance"))
+                return dance > 0 and _action_number_matches(box, dance)
+        return False
+
+    def _score_changed(self, team: str, before: int, scorer: int | None) -> None:
+        """Score Achieved fires once, when a team's score goes up past the box's mark."""
+        after = self.team_scores[team]
+        for stack, box in self._triggers("wf_trg_score_achieved"):
+            mark = max(1, _int(box.get("points", 100), 100))
+            if box.get("team", "any") not in ("any", team) or not before < mark <= after:
+                continue
+            self._start(
+                stack, Context(trigger=box, user=scorer, users=[scorer] if scorer is not None else None)
+            )
 
     def _use(self, user_id: int, furni_id: int) -> None:
         item = self.furni.get(furni_id)
@@ -1012,6 +1090,14 @@ class Engine:
                     reverse=not box.get("lowest"),
                 )
                 ctx.users = ranked[:amount]
+            elif box.classname == "wf_xtra_filter_furni_by_var" and ctx.selected_furni is not None:
+                name = str(box.get("variable", ""))
+                ranked = sorted(
+                    (i for i in ctx.selected_furni if self._holding(name, i, ctx, "furni") is not None),
+                    key=lambda i: self._holding(name, i, ctx, "furni").value,  # type: ignore[union-attr]
+                    reverse=not box.get("lowest"),
+                )
+                ctx.selected_furni = ranked[:amount]
 
     def _select(self, box: Box, ctx: Context) -> None:
         if box.spec is None:
@@ -1046,6 +1132,23 @@ class Engine:
                 return height > wanted
             case _:
                 return height < wanted
+
+    def _neighbourhood(self, box: Box, ctx: Context) -> set[tuple[int, int]]:
+        """The tiles of a neighbourhood selector's drawing, around each of its users or furni."""
+        if box.get("around", "users") == "furni":
+            centres = [
+                (self.furni[i]["x"], self.furni[i]["y"]) for i in self._furni_for(box, ctx) if i in self.furni
+            ]
+        else:
+            centres = [
+                (self.users[u]["x"], self.users[u]["y"]) for u in self._users_for(box, ctx) if u in self.users
+            ]
+        mask = box.get("mask")
+        if not (isinstance(mask, list) and all(isinstance(n, int) for n in mask)):
+            mask = neighbourhood.square_mask(_int(box.get("radius", 2), 2))
+        root = (_int(box.get("root_x")), _int(box.get("root_y")))
+        shape = neighbourhood.offsets(mask)
+        return {(x + dx - root[0], y + dy - root[1]) for x, y in centres for dx, dy in shape}
 
     def _stacked(self, box: Box) -> list[int]:
         found: set[int] = set()
@@ -1106,6 +1209,25 @@ class Engine:
                     if i in self.furni
                 }
                 return [u for u, d in self.users.items() if (d["x"], d["y"]) in tiles]
+            case "wf_slc_users_bytype":
+                # A sandbox's avatars are all Habbos: it has no pets or bots.
+                return (
+                    list(self.users)
+                    if "habbo" in str(box.get("types", "habbo")) or box.get("types") == "all"
+                    else []
+                )
+            case "wf_slc_users_handitem":
+                hand = _int(box.get("handitem", 2), 2)
+                return [u for u, d in self.users.items() if _int(d["details"].get("@handitem")) == hand]
+            case "wf_slc_users_byaction":
+                action = str(box.get("action", "wave"))
+                return [u for u in self.users if self._performing(u, action, box)]
+            case "wf_slc_users_neighborhood":
+                tiles = self._neighbourhood(box, ctx)
+                return [u for u, d in self.users.items() if (d["x"], d["y"]) in tiles]
+            case "wf_slc_furni_neighborhood":
+                tiles = self._neighbourhood(box, ctx)
+                return [i for i, f in self.furni.items() if (f["x"], f["y"]) in tiles]
             case "wf_slc_users_byname":
                 wanted = {n.strip().lower() for n in str(box.get("names", "")).splitlines() if n.strip()}
                 return [u for u, d in self.users.items() if d["name"].lower() in wanted]
@@ -1424,7 +1546,9 @@ class Engine:
         """Changes a writable built-in variable. False if this one cannot be changed here."""
         if name.startswith("@teams."):
             _, team, _field = name.split(".")
+            before = self.team_scores[team]
             self.team_scores[team] = max(0, value)
+            self._score_changed(team, before, None)
             return True
         if on == "user":
             user = self.users.get(holder) if holder is not None else None
@@ -1441,7 +1565,9 @@ class Engine:
                 case "@handitem" | "@habbicon":
                     user["details"][name] = value
                 case "@team.score" if user["team"] in TEAMS:
+                    before = self.team_scores[user["team"]]
                     self.team_scores[user["team"]] = max(0, value)
+                    self._score_changed(user["team"], before, user["id"])
                 case _:
                     return False
             return True
@@ -1888,7 +2014,9 @@ class Engine:
             return
         self.score_grants[(box.id, scorer)] += 1
         points = max(-MAX_POINTS, min(_int(box.get("points", 5), 5), MAX_POINTS))
+        before = self.team_scores[team]
         self.team_scores[team] = max(0, self.team_scores[team] + points)
+        self._score_changed(team, before, scorer)
         self._log("info", f"The {team} team has {self.team_scores[team]} points")
 
     def _do_give_score(self, box: Box, ctx: Context) -> None:

@@ -807,3 +807,23 @@ def test_changing_a_built_in_keeps_its_holder_through_export_and_import() -> Non
     assert box["variableIds"][0] == "-123"
     document, _ = exchange.import_gpresets(preset)
     assert next(f for f in document["furni"] if f["id"] == 1)["wired"]["variable_on"] == "furni"
+
+
+def test_a_neighbourhood_drawing_survives_import_and_export() -> None:
+    square = [1, 0, 0, 33554431] + [0] * 14
+    file = boxed("wf_slc_users_neighborhood", "selectors", {"options": square})
+    document, _ = exchange.import_gpresets(json.loads(json.dumps(file)))
+    assert document["furni"][0]["wired"]["radius"] == 2, "the default square is read as its size"
+    assert exchange.export_gpresets(document)[0] == file
+    # A drawing that is not a square is kept as it is.
+    odd = [0, 1, -2, 5] + [0] * 14
+    file = boxed("wf_slc_furni_neighborhood", "selectors", {"options": odd})
+    document, _ = exchange.import_gpresets(json.loads(json.dumps(file)))
+    wired = document["furni"][0]["wired"]
+    assert (wired["around"], wired["root_x"], wired["root_y"], wired["mask"][0]) == ("furni", 1, -2, 5)
+    assert exchange.export_gpresets(document)[0] == file
+    # A new size draws a fresh square.
+    del wired["mask"]
+    wired["radius"] = 1
+    out = exchange.export_gpresets(document)[0]["wired"]["selectors"][0]["options"]
+    assert out[3] == 511

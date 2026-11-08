@@ -126,6 +126,91 @@ ANY_TEAM = {
     "labels": {"any": "Any team", **{team: team.capitalize() for team in TEAMS}},
     "default": "any",
 }
+# What a user can be seen doing, with the number a real box saves for each. The labels are Habbo's own.
+# Jump (67) is not in Habbo's list; it comes from a retro's notes and is unverified.
+AVATAR_ACTIONS = {
+    "wave": 0,
+    "blow": 1,
+    "laugh": 2,
+    "respect": 3,
+    "awake": 4,
+    "sleep": 5,
+    "sit": 6,
+    "stand": 7,
+    "lay": 8,
+    "swim": 9,
+    "sign": 10,
+    "dance": 11,
+    "jump": 67,
+}
+AVATAR_ACTION = {
+    "name": "action",
+    "kind": "select",
+    "label": "Action",
+    "options": list(AVATAR_ACTIONS),
+    "labels": {
+        "wave": "Wave",
+        "blow": "Blow",
+        "laugh": "Laugh",
+        "respect": "Thumbs up",
+        "awake": "Awake",
+        "sleep": "Idle",
+        "sit": "Sit",
+        "stand": "Stand",
+        "lay": "Lay",
+        "swim": "Swim",
+        "sign": "Sign",
+        "dance": "Dance",
+        "jump": "Jump (67, unverified)",
+    },
+    "default": "wave",
+}
+# For a sign or a dance, which one. Empty matches any.
+ACTION_NUMBER = {
+    "name": "text",
+    "kind": "text",
+    "label": "Which sign (0 to 17) or dance (1 to 4); empty for any",
+    "default": "",
+}
+# The neighbourhood selectors pick what stands on tiles around users or furni. A real box stores a
+# drawing of up to 21 by 21 tiles. Here a square is drawn by its size, and an imported drawing is kept.
+NEIGHBOURHOOD = (
+    {
+        "name": "around",
+        "kind": "select",
+        "label": "In neighbourhood of",
+        "options": ["users", "furni"],
+        "labels": {"users": "Users", "furni": "Furni"},
+        "default": "users",
+    },
+    USER_SOURCE,
+    FURNI,
+    FURNI_SOURCE,
+    {
+        "name": "radius",
+        "kind": "number",
+        "label": "Tiles out from the centre (a square; an imported drawing is kept until this changes)",
+        "default": 2,
+        "min": 0,
+        "max": 10,
+    },
+    {
+        "name": "root_x",
+        "kind": "number",
+        "label": "Move the centre by x",
+        "default": 0,
+        "min": -64,
+        "max": 64,
+    },
+    {
+        "name": "root_y",
+        "kind": "number",
+        "label": "Move the centre by y",
+        "default": 0,
+        "min": -64,
+        "max": 64,
+    },
+)
 POINTS = (
     {"name": "points", "kind": "number", "label": "Points", "default": 5, "min": -1000, "max": 1000},
     {
@@ -285,6 +370,19 @@ BOXES: dict[str, dict[str, Any]] = {
     "wf_trg_at_given_time": _box("trigger", DOCUMENTED, SECONDS),
     "wf_trg_recv_signal": _box("trigger", DOCUMENTED, ANTENNA),
     "wf_trg_var_changed": _box("trigger", ASSUMED, VARIABLE),
+    "wf_trg_user_performs_action": _box("trigger", DOCUMENTED, AVATAR_ACTION, ACTION_NUMBER),
+    "wf_trg_click_user": _box(
+        "trigger",
+        DOCUMENTED,
+        _saved({"name": "block_menu", "kind": "bool", "label": "Do not open avatar menu", "default": True}),
+        {"name": "keep_facing", "kind": "bool", "label": "Do not rotate", "default": False},
+    ),
+    "wf_trg_score_achieved": _box(
+        "trigger",
+        DOCUMENTED,
+        {"name": "points", "kind": "number", "label": "Score reached", "default": 100, "min": 1, "max": 1000},
+        ANY_TEAM,
+    ),
     # Conditions
     "wf_cnd_var_age_match": _box(
         "condition",
@@ -423,6 +521,32 @@ BOXES: dict[str, dict[str, Any]] = {
     "wf_slc_users_signal": _selector(DOCUMENTED),
     "wf_slc_users_with_var": _selector(DOCUMENTED, VARIABLE),
     "wf_slc_users_onfurni": _selector(DOCUMENTED, FURNI),
+    "wf_slc_users_handitem": _selector(
+        DOCUMENTED,
+        {"name": "handitem", "kind": "number", "label": "Hand Item", "default": 2, "min": 0},
+    ),
+    "wf_slc_users_bytype": _selector(
+        DOCUMENTED,
+        {
+            "name": "types",
+            "kind": "select",
+            "label": "User type",
+            "options": ["habbo", "pet", "bot", "habbo_pet", "habbo_bot", "pet_bot", "all"],
+            "labels": {
+                "habbo": "Habbo",
+                "pet": "Pet",
+                "bot": "Bot",
+                "habbo_pet": "Habbo and Pet",
+                "habbo_bot": "Habbo and Bot",
+                "pet_bot": "Pet and Bot",
+                "all": "Habbo, Pet and Bot",
+            },
+            "default": "habbo",
+        },
+    ),
+    "wf_slc_users_byaction": _selector(DOCUMENTED, AVATAR_ACTION, ACTION_NUMBER),
+    "wf_slc_users_neighborhood": _selector(DOCUMENTED, *NEIGHBOURHOOD),
+    "wf_slc_furni_neighborhood": _selector(DOCUMENTED, *NEIGHBOURHOOD),
     "wf_slc_users_byname": _selector(
         DOCUMENTED,
         {"name": "names", "kind": "text", "label": "Names, one per line", "default": ""},
@@ -525,6 +649,13 @@ BOXES: dict[str, dict[str, Any]] = {
     "wf_xtra_filter_users": _box("addon", DOCUMENTED, AMOUNT),
     "wf_xtra_filter_furni": _box("addon", DOCUMENTED, AMOUNT),
     "wf_xtra_filter_users_by_var": _box(
+        "addon",
+        DOCUMENTED,
+        VARIABLE,
+        AMOUNT,
+        {"name": "lowest", "kind": "bool", "label": "Lowest instead of highest", "default": False},
+    ),
+    "wf_xtra_filter_furni_by_var": _box(
         "addon",
         DOCUMENTED,
         VARIABLE,
