@@ -30,6 +30,7 @@ import {
   flightAt,
   footprint,
   footprintSize,
+  furniAt,
   furniParts,
   type Highlight,
   highlightTint,
@@ -1138,12 +1139,25 @@ export class RoomRenderer {
     this.layer.addChild(sprite);
   }
 
+  /**
+   * Where an avatar sorts among furni. Someone sitting or lying sorts at the seat's own level, between
+   * its layers: Habbo's furni art gives parts in front of a sitter, such as a chair back seen from
+   * behind, a positive depth and parts behind a negative one.
+   */
+  private avatarOrder(scene: Scene, pose: AvatarPose): number {
+    if (pose.action === "sit" || pose.action === "lay") {
+      const seat = furniAt(scene.room, scene.lookup, Math.round(pose.x), Math.round(pose.y)).at(-1);
+      if (seat) return depth(pose.frontX, pose.frontY, seat.z, 0);
+    }
+    return depth(pose.frontX, pose.frontY, pose.z, 900);
+  }
+
   private drawAvatar(scene: Scene, avatar: PlacedAvatar): void {
     const pose = scene.avatarPose(avatar);
     const centre = tileCentre(pose.x, pose.y, pose.z);
     const { left, top, w, h } = avatarImageAt(pose, centre);
     const selected = scene.selected?.kind === "avatar" && scene.selected.id === avatar.id;
-    const order = depth(pose.frontX, pose.frontY, pose.z, 900);
+    const order = this.avatarOrder(scene, pose);
     const changed = this.bodyEffectTexture(avatar, pose);
     const texture =
       changed?.texture ??
@@ -1188,7 +1202,8 @@ export class RoomRenderer {
     this.hits.push({
       hit: { kind: "avatar", id: avatar.id },
       bounds: new Rectangle(left + 12, top + 10, w - 24, h - 14),
-      order: order,
+      // A click on a seated avatar picks the avatar, even where the seat is drawn over it.
+      order: depth(pose.frontX, pose.frontY, pose.z, 900),
     });
   }
 }

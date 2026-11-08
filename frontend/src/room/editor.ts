@@ -56,8 +56,10 @@ import {
   type PlacedFurni,
   type RoomDocument,
   restingDir,
+  restTile,
   SIGN_MS,
   seatedFacing,
+  settleOnBeds,
   stackHeight,
   standAt,
   standUpOffSeats,
@@ -218,6 +220,7 @@ class WbEditor extends HTMLElement {
       await this.loadItems(this.room.furni.map((f) => f.classname));
       // Rooms saved before seats stood people up can hold someone sitting on nothing.
       standUpOffSeats(this.room, this.lookup);
+      settleOnBeds(this.room, this.lookup);
     } catch (error) {
       replace(
         this,
@@ -493,16 +496,12 @@ class WbEditor extends HTMLElement {
         const [after] = walker.path;
         const seated = after ? undefined : stand.dir;
         avatar.dir = seated ?? directionBetween([walker.from[0], walker.from[1]], next);
-        avatar.x = next[0];
-        avatar.y = next[1];
+        // Arriving on a bed, the avatar lies down on its head row, in the lane it walked to.
+        const [x, y] = after ? next : restTile(this.room, this.lookup, next[0], next[1]);
+        avatar.x = x;
+        avatar.y = y;
         avatar.z = stand.z;
-        void this.run?.input({
-          type: "move",
-          user: avatar.id,
-          x: next[0],
-          y: next[1],
-          dir: avatar.dir,
-        });
+        void this.run?.input({ type: "move", user: avatar.id, x, y, dir: avatar.dir });
         walker.from = [next[0], next[1], stand.z];
         this.syncAvatarPanel();
         if (after) {
@@ -2459,6 +2458,9 @@ class WbEditor extends HTMLElement {
 
   private async placeAvatar(avatar: PlacedAvatar, x: number, y: number, dir: number) {
     const { width, height } = this.room.room;
+    if (Number.isInteger(x) && Number.isInteger(y) && (x !== avatar.x || y !== avatar.y)) {
+      [x, y] = restTile(this.room, this.lookup, x, y);
+    }
     const inRoom = x >= 0 && y >= 0 && x < width && y < height;
     const whole = Number.isInteger(x) && Number.isInteger(y);
     const moved = x !== avatar.x || y !== avatar.y;
