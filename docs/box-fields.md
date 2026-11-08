@@ -8,17 +8,17 @@ it, and a named position is still unverified until a box is changed and read aga
 
 No reply from: `wf_contract_payment`, `wf_contract_reward`, `wf_contract_trade`. The cause is unconfirmed.
 
-Named positions: 209. Unnamed positions: 373.
+Named positions: 217. Unnamed positions: 365.
 
 | Box | Section | Default numbers | Named positions | Unnamed positions |
 |---|---|---|---|---|
 | `wf_act_adjust_clock` | effect | `[0, 0, 0, 0]` | 0: clock_seconds, 1: clock_minutes, 2: clock_half, 3: clock_change |  |
 | `wf_act_bot_clothes` | effect | `[]` |  |  |
-| `wf_act_bot_follow_avatar` | effect | `[1]` |  | 0 |
-| `wf_act_bot_give_handitem` | effect | `[2]` |  | 0 |
+| `wf_act_bot_follow_avatar` | effect | `[1]` | 0: follow |  |
+| `wf_act_bot_give_handitem` | effect | `[2]` | 0: handitem |  |
 | `wf_act_bot_move` | effect | `[]` |  |  |
-| `wf_act_bot_talk` | effect | `[0, -1, 0]` |  | 0, 1, 2 |
-| `wf_act_bot_talk_to_avatar` | effect | `[0, -1, 0]` |  | 0, 1, 2 |
+| `wf_act_bot_talk` | effect | `[0, -1, 0]` | 0: shout, 1: bubble_width, 2: hide_name |  |
+| `wf_act_bot_talk_to_avatar` | effect | `[0, -1, 0]` | 0: whisper, 1: bubble_width, 2: hide_name |  |
 | `wf_act_bot_teleport` | effect | `[]` |  |  |
 | `wf_act_call_stacks` | effect | `[]` |  |  |
 | `wf_act_cancel_transaction` | effect | `[0]` |  | 0 |

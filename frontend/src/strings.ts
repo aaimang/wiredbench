@@ -379,6 +379,7 @@ export const t = {
       "@achievement_score": "Achievement score",
       "@favourite_group_id": "Favourite group ID",
     } as Record<string, string>,
+    avatarBot: "This avatar is a bot. WIRED bot boxes find it by name.",
     avatarFlags: {
       "@is_owner": "Room owner",
       "@has_rights": "Has rights",

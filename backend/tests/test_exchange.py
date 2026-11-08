@@ -682,14 +682,14 @@ def test_highlight_visibility_and_carry_options_read_their_positions() -> None:
         "strength": 25,
         "color": 255,
         "pulse": True,
-        "easing": 2,
+        "easing": "2",
         "target": "users",
     }
     assert read("wf_act_set_visibility", {"options": [0, 100, 1, 4, 0]}, {}) == {
         "audience": "selected",
         "visibility": "invisible",
         "click_through": True,
-        "easing": 4,
+        "easing": "4",
         "target": "furni",
     }
     assert read("wf_xtra_mov_carry_users", {"options": [1]}, {}) == {"carry": "tile"}
@@ -869,3 +869,19 @@ def test_direction_weekday_and_month_masks_are_read() -> None:
     assert (date["use_days"], date["day_min"], date["day_max"]) == (True, 3, 9)
     group = exchange.friendly_settings("wf_act_move_furni_as_group", {"options": [0, -2, 3]}, {})
     assert (group["target_user"], group["offset_x"], group["offset_y"]) == (False, -2, 3)
+
+
+def test_bot_boxes_split_the_bot_name_from_their_text() -> None:
+    talk = exchange.friendly_settings(
+        "wf_act_bot_talk_to_avatar", {"config": "Frank\thi $(user)", "options": [1, -1, 1]}, {}
+    )
+    assert (talk["bot_name"], talk["text"], talk["whisper"], talk["hide_name"]) == (
+        "Frank",
+        "hi $(user)",
+        True,
+        True,
+    )
+    move = exchange.friendly_settings("wf_act_bot_move", {"config": "Frank", "items": [5]}, {})
+    assert (move["bot_name"], move["furni"]) == ("Frank", [5])
+    clothes = exchange.friendly_settings("wf_act_bot_clothes", {"config": "Frank\thd-180-1"}, {})
+    assert clothes["figure"] == "hd-180-1"

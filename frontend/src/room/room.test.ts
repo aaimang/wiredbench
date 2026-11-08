@@ -12,6 +12,7 @@ import {
   drawTile,
   EFFECT_FRAME_MS,
   type EffectManifest,
+  eased,
   effectLayers,
   emptyRoom,
   enteredFromFront,
@@ -865,5 +866,16 @@ describe("temporary furni and freeze", () => {
     } as never;
     expect(isFrozen(avatar)).toBe(false);
     expect(isFrozen({ ...(avatar as object), details: { "@is_frozen": 1 } } as never)).toBe(true);
+  });
+});
+
+describe("easing", () => {
+  it("follows Habbo's five easing choices", () => {
+    expect(eased(0, 0)).toBe(1);
+    expect(eased(1, 0.5)).toBe(0.5);
+    expect(eased(2, 0.5)).toBe(0.25);
+    expect(eased(3, 0.5)).toBe(0.75);
+    expect(eased(4, 0.25)).toBe(0.125);
+    expect(eased(4, 1)).toBe(1);
   });
 });

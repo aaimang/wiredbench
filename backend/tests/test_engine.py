@@ -2834,3 +2834,116 @@ def test_carry_toggle_previous_owner_only_and_multiple_placeholders() -> None:
     )
     say(listed, "go")
     assert logs(listed) == ["3/3"]
+
+
+def bot(id_: int = 200, name: str = "Frank", x: int = 0, y: int = 0) -> dict[str, Any]:
+    return {**user(id_, name, x, y), "bot": True, "figure": "hd-180-1"}
+
+
+def test_a_named_bot_walks_to_furni_and_fires_bot_reached_furni() -> None:
+    engine = room(
+        plain(50, "rug", x=3, y=0),
+        box(1, "wf_trg_says_something", 1, 5, text="go"),
+        box(2, "wf_act_bot_move", 1, 5, 1, bot_name="frank", furni=[50]),
+        box(3, "wf_trg_bot_reached_stf", 2, 5, bot_name="Frank"),
+        box(4, "wf_act_log", 2, 5, 1, text="arrived"),
+        users=[user(100, "Ann", x=9, y=9), bot(200, "Frank", x=0, y=0)],
+    )
+    say(engine, "go")
+    engine.advance(600)
+    assert engine.users[200]["x"] == 1, "a tile every half second"
+    engine.advance(1000)
+    assert (engine.users[200]["x"], engine.users[200]["y"]) == (3, 0)
+    assert logs(engine) == ["arrived"]
+    assert engine._built_in_value("@type", "user", 200, None) == 4
+
+
+def test_bot_follows_a_user_and_fires_reached_user_once_it_catches_up() -> None:
+    engine = room(
+        box(1, "wf_trg_says_something", 1, 5, text="follow"),
+        box(2, "wf_act_bot_follow_avatar", 1, 5, 1, bot_name="Frank"),
+        box(3, "wf_trg_bot_reached_avtr", 2, 5, bot_name="Frank"),
+        box(4, "wf_act_log", 2, 5, 1, text="caught"),
+        box(5, "wf_trg_says_something", 3, 5, text="halt"),
+        box(6, "wf_act_bot_follow_avatar", 3, 5, 1, bot_name="Frank", follow=False),
+        users=[user(100, "Ann", x=4, y=0), bot(200, "Frank", x=0, y=0)],
+    )
+    say(engine, "follow")
+    engine.advance(3000)
+    assert (engine.users[200]["x"], engine.users[200]["y"]) == (3, 0)
+    assert logs(engine) == ["caught"]
+    say(engine, "halt")
+    engine.users[100]["x"] = 10
+    engine.advance(3000)
+    assert engine.users[200]["x"] == 3, "it stopped following"
+
+
+def test_bot_gives_a_hand_item_and_talks() -> None:
+    engine = room(
+        box(1, "wf_trg_says_something", 1, 5, text="drink"),
+        box(2, "wf_act_bot_give_handitem", 1, 5, 1, bot_name="Frank", handitem=7),
+        box(3, "wf_trg_says_something", 2, 5, text="hello"),
+        box(4, "wf_act_bot_talk", 2, 5, 1, bot_name="Frank", text="Welcome!"),
+        box(5, "wf_act_bot_talk_to_avatar", 2, 5, 2, bot_name="Frank", text="psst", whisper=True),
+        users=[user(100, "Ann", x=4, y=0), bot(200, "Frank", x=0, y=0)],
+    )
+    say(engine, "drink")
+    assert engine.users[200]["details"]["@handitem"] == 7, "the bot carries it"
+    engine.advance(3000)
+    assert engine.users[100]["details"]["@handitem"] == 7
+    assert "@handitem" not in engine.users[200]["details"]
+    say(engine, "hello")
+    said = [(m["user"], m.get("speaker"), m["text"]) for m in engine.messages if m.get("speaker") == 200]
+    assert (None, 200, "Frank: Welcome!") in said
+    assert (100, 200, "Frank: psst") in said
+
+
+def test_bot_teleport_effect_timing_and_clothes() -> None:
+    engine = room(
+        plain(50, "tile", x=6, y=6),
+        box(1, "wf_trg_says_something", 1, 5, text="go"),
+        box(2, "wf_act_bot_teleport", 1, 5, 1, bot_name="Frank", furni=[50]),
+        box(3, "wf_act_bot_clothes", 1, 5, 2, bot_name="Frank", figure="hr-100-40.hd-180-1"),
+        users=[user(100, "Ann", x=9, y=9), bot(200, "Frank", x=0, y=0)],
+    )
+    say(engine, "go")
+    engine.advance(100)
+    assert engine.users[200]["details"]["@effect"] == 4
+    assert engine.users[200]["figure"] == "hr-100-40.hd-180-1"
+    engine.advance(1500)
+    assert (engine.users[200]["x"], engine.users[200]["y"]) == (6, 6)
+    engine.advance(1600)
+    assert "@effect" not in engine.users[200]["details"]
+
+
+def test_hidden_messages_stay_out_of_the_room_chat_and_bots_count_as_bots() -> None:
+    engine = room(
+        box(1, "wf_trg_says_something", 1, 5, text="secret"),
+        box(2, "wf_act_log", 1, 5, 1, text="ran"),
+        box(3, "wf_trg_says_something", 2, 5, text="open", hide_message=False),
+        box(4, "wf_trg_click_user", 3, 5),
+        box(5, "wf_slc_users_bytype", 4, 5, types="bot"),
+        users=[user(100, "Ann"), bot(200, "Frank")],
+    )
+    say(engine, "the secret word")
+    say(engine, "open sesame")
+    say(engine, "hi")
+    chat = [m["text"] for m in engine.messages if m["user"] is None]
+    assert chat == ["Ann: open sesame", "Ann: hi"]
+    assert engine.blocks_user_menu()
+    selector = next(b for s in engine.stacks for b in s.boxes if b.id == 5)
+    assert engine._matches(selector, Context()) == [200]
+
+
+def test_highlight_and_visibility_record_their_easing() -> None:
+    engine = room(
+        plain(50, "lamp", x=5, y=5),
+        box(1, "wf_trg_says_something", 1, 5, text="go"),
+        box(2, "wf_act_set_highlight", 1, 5, 1, furni=[50], furni_source="picks", easing="1"),
+        box(3, "wf_act_set_visibility", 1, 5, 2, furni=[50], furni_source="picks", easing="3"),
+    )
+    engine.advance(250)
+    say(engine, "go")
+    look = engine.furni_looks[50]
+    assert (look["highlight"]["easing"], look["highlight"]["since_ms"]) == (1, 250)
+    assert look["fade"] == {"easing": 3, "since_ms": 250}

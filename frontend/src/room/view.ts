@@ -75,8 +75,13 @@ interface ViewState {
     y: number;
     dir: number;
     details?: Record<string, number>;
+    bot?: boolean;
+    figure?: string;
   }[];
-  messages: { at_ms: number; user: number; text: string }[];
+  /** Chat the room hears has no user. A bot's or a user's line says who spoke. */
+  messages: { at_ms: number; user: number | null; speaker?: number; text: string }[];
+  /** False while a Click User box keeps the avatar menu shut. */
+  user_menu?: boolean;
   flights: Flight[];
   fx: FxShown[];
   looks: { furni: Record<number, Look>; users: Record<number, Look> };
@@ -120,7 +125,7 @@ class WbRoomView extends HTMLElement {
     onArrive?: () => void;
   } | null = null;
   private walkClock = 0;
-  private effects: Pick<ViewState, "flights" | "fx" | "looks"> | null = null;
+  private effects: Pick<ViewState, "flights" | "fx" | "looks" | "user_menu"> | null = null;
   private queue: Promise<unknown> = Promise.resolve();
   private waiting = 0;
   private lastTick = 0;
@@ -186,7 +191,7 @@ class WbRoomView extends HTMLElement {
       this.url = `/api/view/sandboxes/${id}/run`;
       this.room = normaliseRoom(data.document);
       this.items = data.items;
-      this.user = this.room.avatars[0]?.id ?? null;
+      this.user = this.room.avatars.find((a) => !a.bot)?.id ?? null;
       const canvas = h("div", { class: "view-canvas", "data-testid": "view-canvas" });
       replace(
         this.stage,
@@ -237,7 +242,8 @@ class WbRoomView extends HTMLElement {
   }
 
   private avatarPicker(): HTMLElement {
-    const avatars = this.room?.avatars ?? [];
+    // Nobody plays as a bot: WIRED moves it.
+    const avatars = (this.room?.avatars ?? []).filter((a) => !a.bot);
     if (!avatars.length) return h("p", { class: "muted" }, T.noAvatars);
     const select = h(
       "select",
@@ -278,8 +284,7 @@ class WbRoomView extends HTMLElement {
         this.toggleInspect();
         return;
       }
-      const speaker = this.room?.avatars.find((a) => a.id === this.user);
-      this.addChat(speaker ? `${speaker.name}: ${text}` : text, this.user);
+      // The room sends the line back, unless a WIRED box hides it.
       void this.send({ type: "say", text });
     });
     return form;
@@ -526,7 +531,8 @@ class WbRoomView extends HTMLElement {
         return;
       }
       if (hit?.kind === "avatar") {
-        this.choose(hit);
+        // A Click User box can keep the menu shut, as in a real room. Your own still opens.
+        this.choose(hit.id === this.user || this.effects?.user_menu !== false ? hit : null);
         // Clicking someone else runs Click User, as it does in a real room.
         if (hit.id !== this.user) void this.send({ type: "click_user", target: hit.id });
         return;
@@ -605,13 +611,17 @@ class WbRoomView extends HTMLElement {
           z: stand.z,
           pose: stand.pose,
           details: user.details,
+          // Bot Clothes changes what a bot wears.
+          ...(user.bot && user.figure ? { figure: user.figure } : {}),
         });
       }
     }
     // Only the latest messages are sent, so a count would stop finding new ones.
     for (const message of state.messages) {
       const key = `${message.at_ms}:${message.text}`;
-      if (!this.seen.has(key) && !this.entering) this.addChat(message.text, message.user);
+      if (!this.seen.has(key) && !this.entering) {
+        this.addChat(message.text, message.speaker ?? message.user);
+      }
       this.seen.add(key);
     }
     this.entering = false;

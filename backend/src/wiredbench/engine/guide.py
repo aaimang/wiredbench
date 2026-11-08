@@ -338,6 +338,33 @@ GUIDE: dict[str, tuple[str, str]] = {
         "Hold players still at the start line.",
     ),
     "wf_act_unfreeze": ("Lets frozen users walk again.", "Let the race begin."),
+    "wf_act_bot_move": ("Makes a bot walk to one of the picked furni.", "Send a guide to the start."),
+    "wf_act_bot_teleport": (
+        "Makes a bot appear on one of the picked furni.",
+        "Bring a bot back to its post.",
+    ),
+    "wf_act_bot_follow_avatar": (
+        "Makes a bot start or stop following a user.",
+        "Let a pet-like bot walk behind a player.",
+    ),
+    "wf_act_bot_give_handitem": (
+        "Makes a bot walk to a user and hand them a hand item.",
+        "Serve a drink to a player.",
+    ),
+    "wf_act_bot_talk": ("Makes a bot say something to the room.", "Announce the next round."),
+    "wf_act_bot_talk_to_avatar": ("Makes a bot talk or whisper to a user.", "Tell one player their score."),
+    "wf_act_bot_clothes": (
+        "Changes a bot's clothes to a figure.",
+        "Dress the referee in the winning team's colour.",
+    ),
+    "wf_trg_bot_reached_stf": (
+        "Runs when the named bot steps onto a furni.",
+        "Open a door when the guide arrives.",
+    ),
+    "wf_trg_bot_reached_avtr": (
+        "Runs when the named bot catches up with the user it follows.",
+        "Catch a player in a game of tag.",
+    ),
     "wf_xtra_mov_no_animation": (
         "Makes the stack's moves happen at once, with no sliding.",
         "Snap a block back to its start.",

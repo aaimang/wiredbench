@@ -499,12 +499,37 @@ export interface Highlight {
   strength: number;
   color: number;
   pulse: boolean;
+  /** How it fades in: 0 at once, then linear, ease in, ease out, ease in-out. When it was set. */
+  easing?: number;
+  since_ms?: number;
 }
 
 export interface Look {
   highlight?: Highlight;
   invisible?: boolean;
   click_through?: boolean;
+  /** How a change of visibility fades, and when it was made. */
+  fade?: { easing: number; since_ms: number };
+}
+
+/** A fade's length. Habbo's boxes do not say it, so half a second is assumed. */
+export const FADE_MS = 500;
+
+/** How far along a fade is, from 0 to 1, for Habbo's easing choices. */
+export function eased(easing: number, progress: number): number {
+  const t = Math.max(0, Math.min(progress, 1));
+  switch (easing) {
+    case 0:
+      return 1;
+    case 2:
+      return t * t;
+    case 3:
+      return 1 - (1 - t) * (1 - t);
+    case 4:
+      return t < 0.5 ? 2 * t * t : 1 - 2 * (1 - t) * (1 - t);
+    default:
+      return t;
+  }
 }
 
 function mixWithWhite(color: number, amount: number): number {

@@ -12,19 +12,19 @@ read at commit `3fc9c06f533c`, for facts only.
 - Seen in a real preset: 0
 - Seen in a real room dump: 97
 - Checked in a real room: 87
-- Have a form: 146
-- Option numbers mapped: 83
+- Have a form: 155
+- Option numbers mapped: 87
 
 | Box | Evidence | Form | Options | Room check |
 |---|---|---|---|---|
 | `wf_act_adjust_clock` | Checked in a real room | Yes | Yes | 2026-11-01 |
-| `wf_act_bot_clothes` | Seen in a real room dump |  |  |  |
-| `wf_act_bot_follow_avatar` | Seen in a real room dump |  |  |  |
-| `wf_act_bot_give_handitem` | Seen in a real room dump |  |  |  |
-| `wf_act_bot_move` | Seen in a real room dump |  |  |  |
-| `wf_act_bot_talk` | Seen in a real room dump |  |  |  |
-| `wf_act_bot_talk_to_avatar` | Seen in a real room dump |  |  |  |
-| `wf_act_bot_teleport` | Seen in a real room dump |  |  |  |
+| `wf_act_bot_clothes` | Seen in a real room dump | Yes |  |  |
+| `wf_act_bot_follow_avatar` | Seen in a real room dump | Yes | Yes |  |
+| `wf_act_bot_give_handitem` | Seen in a real room dump | Yes | Yes |  |
+| `wf_act_bot_move` | Seen in a real room dump | Yes |  |  |
+| `wf_act_bot_talk` | Seen in a real room dump | Yes | Yes |  |
+| `wf_act_bot_talk_to_avatar` | Seen in a real room dump | Yes | Yes |  |
+| `wf_act_bot_teleport` | Seen in a real room dump | Yes |  |  |
 | `wf_act_call_stacks` | Checked in a real room | Yes |  | 2026-11-01 |
 | `wf_act_cancel_transaction` | Seen in a real room dump |  |  |  |
 | `wf_act_change_var_val` | Checked in a real room | Yes | Yes | 2026-11-01 |
@@ -220,8 +220,8 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_token9` | No evidence yet |  |  |  |
 | `wf_trg_at_given_time` | Seen in a real room dump | Yes |  |  |
 | `wf_trg_at_time_long` | No evidence yet |  |  |  |
-| `wf_trg_bot_reached_avtr` | Seen in a real room dump |  |  |  |
-| `wf_trg_bot_reached_stf` | Seen in a real room dump |  |  |  |
+| `wf_trg_bot_reached_avtr` | Seen in a real room dump | Yes |  |  |
+| `wf_trg_bot_reached_stf` | Seen in a real room dump | Yes |  |  |
 | `wf_trg_click_furni` | Checked in a real room | Yes |  | 2026-11-01 |
 | `wf_trg_click_tile` | Seen in a real room dump | Yes |  |  |
 | `wf_trg_click_user` | Seen in a real room dump | Yes | Yes |  |

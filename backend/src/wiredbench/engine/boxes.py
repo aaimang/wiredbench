@@ -324,7 +324,14 @@ TARGET_KIND = {
     "labels": {"furni": "Furni", "users": "Users"},
     "default": "furni",
 }
-EASING = {"name": "easing", "kind": "number", "label": "Easing, 0 to 4", "default": 4, "min": 0, "max": 4}
+EASING = {
+    "name": "easing",
+    "kind": "select",
+    "label": "Easing function",
+    "options": ["0", "1", "2", "3", "4"],
+    "labels": {"0": "Instant", "1": "Linear", "2": "Ease in", "3": "Ease out", "4": "Ease in-out"},
+    "default": "4",
+}
 FX_COMMON = (
     {
         "name": "fx_target",
@@ -359,6 +366,33 @@ FX_RANGE = (
 SPLIT_USERS = {"name": "split_users", "kind": "bool", "label": "One signal per user", "default": False}
 AMOUNT = {"name": "amount", "kind": "number", "label": "How many", "default": 10, "min": 0}
 ANTENNA = {"name": "antenna", "kind": "furni", "label": "Antenna", "default": []}
+BOT_NAME = {"name": "bot_name", "kind": "text", "label": "Bot Name", "default": ""}
+BOT_SOURCE = {
+    "name": "bot_source",
+    "kind": "select",
+    "label": "Select bots source",
+    "options": ["name", "trigger", "selector", "signal"],
+    "labels": {
+        "name": "The bot named above",
+        "trigger": "Triggering user",
+        "selector": "Selector",
+        "signal": "Signal",
+    },
+    "default": "name",
+}
+BOT_TALK = (
+    {"name": "text", "kind": "text", "label": "Message", "default": ""},
+    {
+        "name": "bubble_width",
+        "kind": "select",
+        "label": "Chat bubble width",
+        "options": ["-1", "0", "1", "2"],
+        "labels": {"-1": "The user's preference", "0": "Wide", "1": "Normal", "2": "Thin"},
+        "default": "-1",
+        "saved_only": True,
+    },
+    {"name": "hide_name", "kind": "bool", "label": "Hide the bot's name in chat", "default": False},
+)
 LINKS = {"name": "furni", "kind": "furni", "label": "WIRED Links", "default": []}
 PHYSICS_FURNI = {
     **FURNI_SOURCE,
@@ -433,9 +467,7 @@ BOXES: dict[str, dict[str, Any]] = {
             "labels": {"contains": "Contains keyword", "exact": "Exact match", "all": "Match all text"},
             "default": "contains",
         },
-        _saved(
-            {"name": "hide_message", "kind": "bool", "label": "Hide the triggerer's message", "default": True}
-        ),
+        {"name": "hide_message", "kind": "bool", "label": "Hide the triggerer's message", "default": True},
         {
             "name": "owner_only",
             "kind": "bool",
@@ -453,13 +485,15 @@ BOXES: dict[str, dict[str, Any]] = {
     "wf_trg_recv_signal": _box("trigger", DOCUMENTED, ANTENNA),
     "wf_trg_var_changed": _box("trigger", ASSUMED, VARIABLE),
     "wf_trg_collision": _box("trigger", DOCUMENTED),
+    "wf_trg_bot_reached_stf": _box("trigger", DOCUMENTED, BOT_NAME, FURNI),
+    "wf_trg_bot_reached_avtr": _box("trigger", DOCUMENTED, BOT_NAME),
     "wf_trg_receive_message": _box("trigger", ASSUMED, LINKS),
     "wf_trg_click_tile": _box("trigger", DOCUMENTED, {**FURNI, "label": "Invisible click tiles"}),
     "wf_trg_user_performs_action": _box("trigger", DOCUMENTED, AVATAR_ACTION, ACTION_NUMBER),
     "wf_trg_click_user": _box(
         "trigger",
         DOCUMENTED,
-        _saved({"name": "block_menu", "kind": "bool", "label": "Do not open avatar menu", "default": True}),
+        {"name": "block_menu", "kind": "bool", "label": "Do not open avatar menu", "default": True},
         {"name": "keep_facing", "kind": "bool", "label": "Do not rotate", "default": False},
     ),
     "wf_trg_score_achieved": _box(
@@ -1140,7 +1174,7 @@ BOXES: dict[str, dict[str, Any]] = {
             "max": 16771584,
         },
         {"name": "pulse", "kind": "bool", "label": "Pulse", "default": False},
-        _saved(EASING),
+        EASING,
     ),
     "wf_act_set_visibility": _effect(
         ASSUMED,
@@ -1158,7 +1192,7 @@ BOXES: dict[str, dict[str, Any]] = {
             "default": "invisible",
         },
         {"name": "click_through", "kind": "bool", "label": "Let clicks pass through", "default": False},
-        _saved(EASING),
+        EASING,
     ),
     "wf_act_join_team": _effect(
         ASSUMED,
@@ -1206,6 +1240,43 @@ BOXES: dict[str, dict[str, Any]] = {
         },
     ),
     "wf_act_furni_to_user": _effect(ASSUMED, FURNI, FURNI_SOURCE, USER_SOURCE),
+    "wf_act_bot_move": _effect(DOCUMENTED, BOT_NAME, BOT_SOURCE, FURNI, FURNI_SOURCE),
+    "wf_act_bot_teleport": _effect(DOCUMENTED, BOT_NAME, BOT_SOURCE, FURNI, FURNI_SOURCE),
+    "wf_act_bot_follow_avatar": _effect(
+        DOCUMENTED,
+        BOT_NAME,
+        BOT_SOURCE,
+        {"name": "follow", "kind": "bool", "label": "Start following (off: stop following)", "default": True},
+        USER_SOURCE,
+    ),
+    "wf_act_bot_give_handitem": _effect(
+        DOCUMENTED,
+        {**BOT_NAME, "label": "Bot Name (empty: give it without a bot)"},
+        BOT_SOURCE,
+        {"name": "handitem", "kind": "number", "label": "Hand Item", "default": 2, "min": 0},
+        USER_SOURCE,
+    ),
+    "wf_act_bot_talk": _effect(
+        DOCUMENTED,
+        BOT_NAME,
+        BOT_SOURCE,
+        {"name": "shout", "kind": "bool", "label": "Shout", "default": False, "saved_only": True},
+        *BOT_TALK,
+    ),
+    "wf_act_bot_talk_to_avatar": _effect(
+        DOCUMENTED,
+        BOT_NAME,
+        BOT_SOURCE,
+        {"name": "whisper", "kind": "bool", "label": "Whisper (off: talk to the room)", "default": False},
+        *BOT_TALK,
+        USER_SOURCE,
+    ),
+    "wf_act_bot_clothes": _effect(
+        DOCUMENTED,
+        BOT_NAME,
+        BOT_SOURCE,
+        {"name": "figure", "kind": "text", "label": "Figure, such as hr-100-40.hd-180-1", "default": ""},
+    ),
     "wf_act_move_furni_as_group": _effect(
         DOCUMENTED,
         FURNI,

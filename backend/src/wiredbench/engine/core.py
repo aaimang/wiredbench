@@ -92,6 +92,12 @@ DEFAULT_GAME_SECONDS = 30
 MAX_TIMES = 10
 # A real room leaves these as they are when Toggle Furni State points at them.
 NOT_WIRED_TOGGLED = {"wf_floor_switch1", "wf_floor_switch2"}
+# Bots walk a tile every half second, as users do. Bot Teleport's times are from a real room.
+BOT_STEP_MS = 500
+BOT_TELEPORT_EFFECT = 4
+BOT_ARRIVE_MS, BOT_EFFECT_OFF_MS = 1500, 3100
+MAX_BOT_SEARCH = 64 * 64
+FIGURE = re.compile(r"[a-z]{2}-\d{1,6}(-\d{1,6}){0,3}(\.[a-z]{2}-\d{1,6}(-\d{1,6}){0,3}){0,24}")
 FREEZE_EFFECTS = {218, 12, 11, 53, 163}  # The effects Freeze offers.
 LINK = "wf_link"
 LINK_MESSAGE_BYTES = 1000  # Habbo refuses a longer link message.
@@ -297,6 +303,11 @@ class Engine:
         self.boxes_at: dict[tuple[int, int], list[Box]] = defaultdict(list)
         self.variables: dict[str, dict[str, Holding]] = defaultdict(dict)
         self.definitions: dict[str, dict[str, Any]] = {}
+        # Bots: where each one walks, whom it follows, and whether it has caught up with them.
+        self.bot_walks: dict[int, dict[str, Any]] = {}
+        self.bot_follows: dict[int, int] = {}
+        self.bot_caught: dict[int, bool] = {}
+        self.bot_turns: dict[int, int] = {}
         # Freeze: the effect each frozen user wore before, and who a WIRED teleport thaws.
         self.before_freeze: dict[int, int | None] = {}
         self.thaw_on_teleport: set[int] = set()
@@ -403,6 +414,8 @@ class Engine:
                 "team_type": "wired",
                 "details": dict(raw["details"]) if isinstance(raw.get("details"), dict) else {},
             }
+            if raw.get("bot"):
+                self.users[raw["id"]] |= {"bot": True, "figure": str(raw.get("figure", ""))}
         self._seat_users()
         self._log("info", "Room started", seed=self.seed)
         self._fire("wf_trg_room_initializes")
@@ -654,6 +667,7 @@ class Engine:
             return
         self._log("info", f"{self.users[user_id]['name']} says: {text}")
         owner = bool(_int(self.users[user_id]["details"].get("@is_owner")))
+        fired = []
         for stack, box in self._triggers("wf_trg_says_something"):
             if box.get("owner_only") and not owner:
                 continue
@@ -667,9 +681,17 @@ class Engine:
             else:
                 found = bool(keyword) and keyword in said
             if found:
-                self._start(
-                    stack, Context(trigger=box, user=user_id, event={"@event.chat.type": 0}, text=text)
-                )
+                fired.append((stack, box))
+        # A box that hides the triggerer's message keeps it out of the room's chat.
+        if any(box.get("hide_message", True) for _, box in fired):
+            self._log("info", "The message was hidden from the room")
+        else:
+            name = self.users[user_id]["name"]
+            self.messages.append(
+                {"at_ms": self.now_ms, "user": None, "speaker": user_id, "text": f"{name}: {text}"}
+            )
+        for stack, box in fired:
+            self._start(stack, Context(trigger=box, user=user_id, event={"@event.chat.type": 0}, text=text))
 
     def _click(self, user_id: int, furni_id: int) -> None:
         if furni_id in self.furni:
@@ -1099,6 +1121,20 @@ class Engine:
                 self._deliver_signal(payload["antennas"], payload["users"], payload["furni"])
             elif action == "link_message":
                 self._deliver_message(payload["links"], payload["text"])
+            elif action == "bot_step":
+                if self.bot_turns.get(payload["bot"]) == payload["turn"]:
+                    self._bot_step(payload["bot"])
+            elif action == "bot_arrive":
+                if payload["bot"] in self.users and payload["furni"] in self.furni:
+                    target = self.furni[payload["furni"]]
+                    self._move_bot(payload["bot"], target["x"], target["y"])
+            elif action == "bot_effect_off":
+                bot = self.users.get(payload["bot"])
+                if bot is not None and bot["details"].get("@effect") == BOT_TELEPORT_EFFECT:
+                    if payload["before"] is None:
+                        bot["details"].pop("@effect", None)
+                    else:
+                        bot["details"]["@effect"] = payload["before"]
 
     # --- Triggers and stacks ---
 
@@ -1342,12 +1378,10 @@ class Engine:
                 }
                 return [u for u, d in self.users.items() if (d["x"], d["y"]) in tiles]
             case "wf_slc_users_bytype":
-                # A sandbox's avatars are all Habbos: it has no pets or bots.
-                return (
-                    list(self.users)
-                    if "habbo" in str(box.get("types", "habbo")) or box.get("types") == "all"
-                    else []
-                )
+                # A sandbox has Habbos and bots, but no pets.
+                kinds = str(box.get("types", "habbo"))
+                habbos, bots = kinds == "all" or "habbo" in kinds, kinds == "all" or "bot" in kinds
+                return [u for u, d in self.users.items() if (bots if d.get("bot") else habbos)]
             case "wf_slc_users_handitem":
                 hand = _int(box.get("handitem", 2), 2)
                 return [u for u, d in self.users.items() if _int(d["details"].get("@handitem")) == hand]
@@ -1727,7 +1761,7 @@ class Engine:
                 # A real room holds a favourite group only while there is one.
                 return None if name == "@favourite_group_id" and not value else value
             return {
-                "@type": 1,
+                "@type": 4 if user.get("bot") else 1,
                 "@user_id": user["id"],
                 "@team.type": TEAM_TYPE_NUMBERS[user["team_type"]] if team in TEAMS else None,
                 "@index": user["id"],
@@ -2262,6 +2296,8 @@ class Engine:
                     "strength": max(0, min(_int(box.get("strength", 100), 100), 100)),
                     "color": max(0, min(_int(box.get("color", 16771584), 16771584), 0xFFFFFF)),
                     "pulse": bool(box.get("pulse")),
+                    "easing": max(0, min(_int(box.get("easing", 4), 4), 4)),
+                    "since_ms": self.now_ms,
                 }
 
     def _do_set_visibility(self, box: Box, ctx: Context) -> None:
@@ -2272,6 +2308,10 @@ class Engine:
                 look = looks.setdefault(target, {})
                 look["invisible"] = box.get("visibility", "invisible") != "visible"
                 look["click_through"] = bool(box.get("click_through"))
+                look["fade"] = {
+                    "easing": max(0, min(_int(box.get("easing", 4), 4), 4)),
+                    "since_ms": self.now_ms,
+                }
 
     def _do_control_clock(self, box: Box, ctx: Context) -> None:
         command = box.get("clock_control", "start")
@@ -2930,6 +2970,226 @@ class Engine:
                 return [(i, at[i][0] + dx, at[i][1] + dy) for i in group if i in at and (dx or dy)]
         return []
 
+    # --- Bots ---
+
+    def _named_bots(self, name: str) -> list[int]:
+        """Bots go by name, in any case. A space before or after a name is part of it."""
+        if not name:
+            return []
+        return [u for u, d in self.users.items() if d.get("bot") and d["name"].lower() == name.lower()]
+
+    def _bots_for(self, box: Box, ctx: Context, one: bool = False) -> list[int]:
+        """The bot named in the box, or the bots among the triggering, selected or signal users.
+
+        Follow, Give Hand Item and Talk to User act on one bot of the name; the others on all of them.
+        """
+        source = box.get("bot_source", "name")
+        if source == "name":
+            found = self._named_bots(str(box.get("bot_name", "")))
+            return [self.random.choice(found)] if one and found else found
+        if source == "trigger":
+            users = [ctx.user] if ctx.user is not None else []
+        elif source == "signal":
+            users = list(ctx.signal_users)
+        else:
+            users = list(ctx.users or [])
+        return [u for u in users if self.users.get(u, {}).get("bot")]
+
+    def _walkable(self, x: int, y: int, goals: set[tuple[int, int]]) -> bool:
+        if self._off_map(x, y) or self._someone_on(x, y):
+            return False
+        # A bot may end its walk on the furni it was sent to.
+        return (x, y) in goals or all(
+            self.furni[i]["classname"] not in self.not_standable for i in self._furni_on_tile(x, y)
+        )
+
+    def _path_step(self, bot: int, goals: set[tuple[int, int]]) -> tuple[int, int] | None:
+        """The first step of a shortest walk to any goal tile, or None when none can be reached."""
+        user = self.users[bot]
+        start = (user["x"], user["y"])
+        if start in goals:
+            return None
+        came: dict[tuple[int, int], tuple[int, int]] = {}
+        queue = deque([start])
+        seen = {start}
+        while queue:
+            here = queue.popleft()
+            if here in goals:
+                while came.get(here) != start:
+                    here = came[here]
+                return here
+            if len(seen) > MAX_BOT_SEARCH:
+                return None
+            for dx, dy in DIRECTION_STEPS.values():
+                step = (here[0] + dx, here[1] + dy)
+                if step not in seen and self._walkable(*step, goals):
+                    seen.add(step)
+                    came[step] = here
+                    queue.append(step)
+        return None
+
+    def _around(self, x: int, y: int) -> set[tuple[int, int]]:
+        return {(x + dx, y + dy) for dx, dy in DIRECTION_STEPS.values()}
+
+    def _schedule_bot(self, bot: int) -> None:
+        self.bot_turns[bot] = self.bot_turns.get(bot, 0) + 1
+        self._push(self.now_ms + BOT_STEP_MS, "bot_step", {"bot": bot, "turn": self.bot_turns[bot]})
+
+    def _move_bot(self, bot: int, x: int, y: int) -> None:
+        """A bot steps onto a tile. It fires Bot Reached Furni, not the user walk triggers."""
+        user = self.users[bot]
+        user["dir"] = STEP_DIRECTIONS.get((_sign(x - user["x"]), _sign(y - user["y"])), user["dir"])
+        user["x"], user["y"] = x, y
+        self._seat_users()
+        for furni_id in self._furni_on_tile(x, y):
+            for stack, box in self._triggers("wf_trg_bot_reached_stf"):
+                picks = _ids(box.get("furni", []))
+                if bot in self._named_bots(str(box.get("bot_name", ""))) and (not picks or furni_id in picks):
+                    self._start(stack, Context(trigger=box, user=bot, furni=furni_id))
+
+    def _bot_step(self, bot: int) -> None:
+        if bot not in self.users:
+            return
+        follow = self.bot_follows.get(bot)
+        if follow is not None:
+            target = self.users.get(follow)
+            if target is None:
+                self.bot_follows.pop(bot, None)
+                return
+            me = self.users[bot]
+            if interactions.next_to((me["x"], me["y"]), (target["x"], target["y"])):
+                if not self.bot_caught.get(bot):
+                    self.bot_caught[bot] = True
+                    self._bot_reached_user(bot, follow)
+            else:
+                self.bot_caught[bot] = False
+                step = self._path_step(bot, self._around(target["x"], target["y"]))
+                if step is not None:
+                    self._move_bot(bot, *step)
+            self._schedule_bot(bot)
+            return
+        walk = self.bot_walks.get(bot)
+        if walk is None:
+            return
+        step = self._path_step(bot, walk["goals"])
+        me = self.users[bot]
+        if step is not None:
+            self._move_bot(bot, *step)
+            if (me["x"], me["y"]) not in walk["goals"]:
+                self._schedule_bot(bot)
+                return
+        self.bot_walks.pop(bot, None)
+        if (me["x"], me["y"]) not in walk["goals"]:
+            self._log("info", f"{me['name']} cannot get there")
+            if walk.get("hand") is not None:
+                me["details"].pop("@handitem", None)
+            return
+        if walk.get("hand") is not None:
+            self._hand_over(bot, walk["user"], walk["hand"])
+
+    def _bot_reached_user(self, bot: int, user: int) -> None:
+        for stack, box in self._triggers("wf_trg_bot_reached_avtr"):
+            if bot in self._named_bots(str(box.get("bot_name", ""))):
+                self._start(stack, Context(trigger=box, user=user, users=[bot]))
+
+    def _hand_over(self, bot: int, user: int, hand: int) -> None:
+        self.users[bot]["details"].pop("@handitem", None)
+        if user in self.users:
+            self.users[user]["details"]["@handitem"] = hand
+            self._log("info", f"{self.users[bot]['name']} gave {self.users[user]['name']} hand item {hand}")
+
+    def _do_bot_move(self, box: Box, ctx: Context) -> None:
+        """Each bot walks to one of the picked furni."""
+        targets = [i for i in self._furni_for(box, ctx) if i in self.furni]
+        if not targets:
+            return
+        for bot in self._bots_for(box, ctx):
+            target = self.furni[self.random.choice(targets)]
+            self.bot_follows.pop(bot, None)
+            self.bot_walks[bot] = {"goals": {(target["x"], target["y"])}}
+            self._schedule_bot(bot)
+
+    def _do_bot_teleport(self, box: Box, ctx: Context) -> None:
+        """A bot gets the teleport effect, appears on a picked furni 1.5 s later, and loses it at 3.1 s."""
+        targets = [i for i in self._furni_for(box, ctx) if i in self.furni]
+        if not targets:
+            return
+        for bot in self._bots_for(box, ctx):
+            details = self.users[bot]["details"]
+            before = details.get("@effect")
+            details["@effect"] = BOT_TELEPORT_EFFECT
+            self.bot_walks.pop(bot, None)
+            self.bot_follows.pop(bot, None)
+            self.bot_turns[bot] = self.bot_turns.get(bot, 0) + 1
+            target = self.random.choice(targets)
+            self._push(self.now_ms + BOT_ARRIVE_MS, "bot_arrive", {"bot": bot, "furni": target})
+            self._push(self.now_ms + BOT_EFFECT_OFF_MS, "bot_effect_off", {"bot": bot, "before": before})
+
+    def _do_bot_follow_avatar(self, box: Box, ctx: Context) -> None:
+        users = [u for u in self._users_for(box, ctx) if u in self.users]
+        for bot in self._bots_for(box, ctx, one=True):
+            if box.get("follow", True) and users:
+                self.bot_walks.pop(bot, None)
+                self.bot_follows[bot] = users[0]
+                self.bot_caught[bot] = False
+                self._schedule_bot(bot)
+            elif not box.get("follow", True):
+                self.bot_follows.pop(bot, None)
+
+    def _do_bot_give_handitem(self, box: Box, ctx: Context) -> None:
+        """A bot carries the item to the first user and hands it over. With no bot, the users get it at once."""
+        hand = _int(box.get("handitem", 2), 2)
+        users = [u for u in self._users_for(box, ctx) if u in self.users]
+        if not str(box.get("bot_name", "")) and box.get("bot_source", "name") == "name":
+            for user in users:
+                self.users[user]["details"]["@handitem"] = hand
+            return
+        bots = self._bots_for(box, ctx, one=True)
+        if not bots or not users:
+            return
+        bot, user = bots[0], users[0]
+        me, them = self.users[bot], self.users[user]
+        if interactions.next_to((me["x"], me["y"]), (them["x"], them["y"])):
+            self._hand_over(bot, user, hand)
+            return
+        me["details"]["@handitem"] = hand
+        self.bot_follows.pop(bot, None)
+        self.bot_walks[bot] = {"goals": self._around(them["x"], them["y"]), "user": user, "hand": hand}
+        self._schedule_bot(bot)
+
+    def _bot_says(self, bot: int, box: Box, text: str, to: int | None) -> None:
+        name = self.users[bot]["name"]
+        shown = text if box.get("hide_name") else f"{name}: {text}"
+        self.messages.append({"at_ms": self.now_ms, "user": to, "speaker": bot, "text": shown})
+        self._log("message", f"{name} {'whispers' if to is not None else 'says'}: {text}")
+
+    def _do_bot_talk(self, box: Box, ctx: Context) -> None:
+        text = self._text(box, ctx, ctx.user)
+        for bot in self._bots_for(box, ctx):
+            self._bot_says(bot, box, text, None)
+
+    def _do_bot_talk_to_avatar(self, box: Box, ctx: Context) -> None:
+        """Whispering, only the user hears it. Talking, the room hears it with the user's name first."""
+        bots = self._bots_for(box, ctx, one=True)
+        if not bots:
+            return
+        for user in self._users_for(box, ctx):
+            if user not in self.users:
+                continue
+            text = self._text(box, ctx, user)
+            if box.get("whisper"):
+                self._bot_says(bots[0], box, text, user)
+            else:
+                self._bot_says(bots[0], box, f"{self.users[user]['name']}: {text}", None)
+
+    def _do_bot_clothes(self, box: Box, ctx: Context) -> None:
+        figure = str(box.get("figure", "")).strip()
+        if not FIGURE.fullmatch(figure):
+            self._log("error", "Bot Clothes has no valid figure", box=box.id)
+            return
+        for bot in self._bots_for(box, ctx):
+            self.users[bot]["figure"] = figure
+
     def _do_furni_to_furni(self, box: Box, ctx: Context) -> None:
         targets = [i for i in _ids(box.get("furni")) if i in self.furni]
         if not targets:
@@ -3052,6 +3312,10 @@ class Engine:
             "limit_hits": self.limit_hits,
             "problems": list(reversed(self.problems)),
         }
+
+    def blocks_user_menu(self) -> bool:
+        """A Click User box that says so keeps the avatar menu shut when someone is clicked."""
+        return any(box.get("block_menu", True) for _, box in self._triggers("wf_trg_click_user"))
 
     def snapshot(self) -> dict[str, Any]:
         return {
