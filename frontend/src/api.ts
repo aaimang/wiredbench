@@ -117,6 +117,8 @@ export interface CatalogItem {
   wired_type: string | null;
   release_stage: string;
   is_new: boolean;
+  /** The hand items a vending furni gives, when Wiredbench knows them. */
+  hand_items?: number[];
   data?: Record<string, unknown>;
 }
 

@@ -4,6 +4,7 @@ from typing import Any
 
 import pytest
 
+from wiredbench.engine import interactions
 from wiredbench.engine.core import INT64_MAX, SEAT_TURN_BACK_MS, Context, Engine, replay
 from wiredbench.engine.tutorials import (
     ANTENNA_CALC,
@@ -2025,7 +2026,6 @@ def test_a_closed_dice_ignores_a_roll_that_lands_after_it() -> None:
 
 
 def test_furni_kinds() -> None:
-    from wiredbench.engine import interactions
 
     assert interactions.kind_of("edicehc", "fortuna") == "dice"
     assert interactions.kind_of("wf_floor_switch2", "wired_add_on") == "switch"
@@ -2102,3 +2102,36 @@ def test_a_gate_needs_rights_and_does_not_close_on_someone() -> None:
     visitor.furni_facts = engine.furni_facts
     use(visitor, 1)
     assert visitor.furni[1]["state"] == 0, "a visitor cannot open it"
+
+
+def test_a_vending_machine_turns_the_user_and_hands_over_one_of_its_items() -> None:
+    machine = box(1, "bar_basic", 2, 2)
+    machine["rot"] = 4
+    engine = use_room(machine, x=2, y=3)
+    engine.users[100]["dir"] = 2
+    use(engine, 1)
+    assert engine.furni[1]["state"] == 1, "the machine shows it is giving"
+    assert engine.users[100]["dir"] == 0, "turned to face the machine"
+    engine.advance(500)
+    assert engine.furni[1]["state"] == 0
+    assert engine.users[100]["details"]["@handitem"] in interactions.hand_items("bar_basic")
+
+
+def test_a_vending_machine_is_used_from_its_front_by_anyone() -> None:
+    machine = box(1, "md_limukaappi", 2, 2)
+    machine["rot"] = 2
+    engine = use_room(machine, x=2, y=3)
+    use(engine, 1)
+    assert engine.furni[1]["state"] == 0, "not in front, so nothing happens"
+    assert engine.users[100]["details"].get("@handitem", 0) == 0
+    engine.users[100]["x"], engine.users[100]["y"] = 3, 2
+    use(engine, 1)
+    assert engine.users[100]["dir"] == 6, "turned to face the machine"
+    engine.advance(500)
+    assert engine.users[100]["details"]["@handitem"] == 19
+
+
+def test_furni_that_give_items_are_vending_machines_whatever_their_category() -> None:
+    assert interactions.kind_of("giftflowers", "other") == "vending"
+    assert interactions.kind_of("lamp_basic", "lighting") == "default"
+    assert interactions.used_from_front("vending") and not interactions.used_from_front("dice")

@@ -18,6 +18,7 @@ from sqlalchemy import case, func, insert, select, update
 from sqlalchemy.orm import Session, sessionmaker
 
 from wiredbench.config import Settings
+from wiredbench.engine.interactions import hand_items
 from wiredbench.errors import ApiError, not_found
 from wiredbench.models import CatalogItem, CatalogVersion, GamedataState, utcnow
 from wiredbench.services import furnidata
@@ -412,4 +413,6 @@ def item_dict(item: CatalogItem) -> dict[str, Any]:
         "wired_type": item.wired_type,
         "release_stage": item.release_stage,
         "is_new": item.is_new,
+        # What a vending furni hands out. Habbo's furnidata does not carry it.
+        "hand_items": hand_items(item.classname),
     }

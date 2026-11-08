@@ -7,6 +7,9 @@ any public file, so furni are sorted into kinds by their name and catalogue cate
 
 from __future__ import annotations
 
+import json
+from functools import cache
+from importlib import resources
 from typing import Literal
 
 Kind = Literal["dice", "switch", "teleport", "gate", "one_way_gate", "vending", "default"]
@@ -31,7 +34,7 @@ def kind_of(classname: str, category: str | None) -> Kind:
         return "teleport"
     if category == "gate":
         return "gate"
-    if category == "vending_machine":
+    if category == "vending_machine" or classname in vending_facts():
         return "vending"
     return "default"
 
@@ -44,6 +47,30 @@ def anyone_may_use(kind: Kind) -> bool:
 def entered_from_front(kind: Kind) -> bool:
     """Teleports and one-way gates are used from the tile in front of them."""
     return kind in ("teleport", "one_way_gate")
+
+
+def used_from_front(kind: Kind) -> bool:
+    """Furni the user must stand in front of: teleports, one-way gates and vending machines."""
+    return entered_from_front(kind) or kind == "vending"
+
+
+@cache
+def vending_facts() -> dict[str, list[int]]:
+    """The hand items each vending furni gives, made by scripts/vending_facts.py."""
+    text = resources.files("wiredbench.engine").joinpath("vending_facts.json").read_text(encoding="utf-8")
+    furni: dict[str, list[int]] = json.loads(text)["furni"]
+    return furni
+
+
+def hand_items(classname: str) -> list[int]:
+    """The hand items a vending furni may give. Empty when Wiredbench does not know them."""
+    return vending_facts().get(classname, [])
+
+
+# A vending machine shows its "giving" state, then hands over one of its items at random and goes back
+# to rest. Assumed timings, not measured in a real room yet.
+VENDING_GIVING = 1
+VENDING_GIVE_MS = 500
 
 
 def needs_to_be_next_to(kind: Kind) -> bool:
