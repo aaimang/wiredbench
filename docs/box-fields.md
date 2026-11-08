@@ -8,7 +8,7 @@ it, and a named position is still unverified until a box is changed and read aga
 
 No reply from: `wf_contract_payment`, `wf_contract_reward`, `wf_contract_trade`. The cause is unconfirmed.
 
-Named positions: 159. Unnamed positions: 423.
+Named positions: 169. Unnamed positions: 413.
 
 | Box | Section | Default numbers | Named positions | Unnamed positions |
 |---|---|---|---|---|
@@ -54,7 +54,7 @@ Named positions: 159. Unnamed positions: 423.
 | `wf_act_remove_var` | effect | `[1]` |  | 0 |
 | `wf_act_reset_timers` | effect | `[]` |  |  |
 | `wf_act_send_dataframe` | effect | `[0, 0, 0, -20, 0, 0, -20, 0, 0, -20, 0, 0, -20, 0, 0, -20, 0, 0, -20, 0, 0, -20, 0, 0, -20, 0, 0, -20, 0, 0, -20, 0, 0, -20, 0, 0, -20]` |  | 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36 |
-| `wf_act_send_message` | effect | `[0]` |  | 0 |
+| `wf_act_send_message` | effect | `[0]` | 0: message_source |  |
 | `wf_act_send_signal` | effect | `[0, 0]` | 1: split_users | 0 |
 | `wf_act_set_altitude` | effect | `[0, 0]` | 0: altitude, 1: altitude_change |  |
 | `wf_act_set_highlight` | effect | `[0, 0, 100, 16771584, 0, 4, 0]` | 0: audience, 1: highlight_type, 2: strength, 3: color, 4: pulse, 5: easing, 6: target |  |
@@ -158,11 +158,11 @@ Named positions: 159. Unnamed positions: 423.
 | `wf_var_context` | variable | `[0]` | 0: has_value |  |
 | `wf_var_echo` | variable | `[]` |  |  |
 | `wf_var_furni` | variable | `[0, 1]` | 0: has_value, 1: availability |  |
-| `wf_var_pointer` | variable | `[1]` |  | 0 |
+| `wf_var_pointer` | variable | `[1]` | 0: target |  |
 | `wf_var_reference` | variable | `[1]` |  | 0 |
 | `wf_var_room` | variable | `[1]` | 0: availability |  |
 | `wf_var_user` | variable | `[0, 0]` | 0: availability, 1: has_value |  |
-| `wf_xtra_anim_time` | addon | `[500]` |  | 0 |
+| `wf_xtra_anim_time` | addon | `[500]` | 0: anim_ms |  |
 | `wf_xtra_custom_contract` | addon | `[0, 0, 0, 1, -20, 0, 0, 0, 1, -20]` |  | 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 |
 | `wf_xtra_exec_in_order` | addon | `[]` |  |  |
 | `wf_xtra_execution_limit` | addon | `[100, 1]` | 0: count, 1: window_seconds |  |
@@ -172,9 +172,9 @@ Named positions: 159. Unnamed positions: 423.
 | `wf_xtra_filter_users_by_var` | addon | `[10, 0, 0, 1]` | 0: amount, 1: lowest | 2, 3 |
 | `wf_xtra_link_speaker` | addon | `[1, 1]` |  | 0, 1 |
 | `wf_xtra_mov_carry_users` | addon | `[0]` | 0: carry |  |
-| `wf_xtra_mov_curve` | addon | `[0, 160, -20]` |  | 0, 1, 2 |
+| `wf_xtra_mov_curve` | addon | `[0, 160, -20]` | 0: curve_from_var, 1: curve, 2: curve_on |  |
 | `wf_xtra_mov_no_animation` | addon | `[]` |  |  |
-| `wf_xtra_mov_physics` | addon | `[1, 0, 0, 0]` |  | 0, 1, 2, 3 |
+| `wf_xtra_mov_physics` | addon | `[1, 0, 0, 0]` | 0: keep_altitude, 1: through_furni, 2: through_users, 3: blocked_by_furni |  |
 | `wf_xtra_or_eval` | addon | `[1, 0, 0]` |  | 0, 1, 2 |
 | `wf_xtra_random` | addon | `[0, 1]` | 0: skip, 1: pick |  |
 | `wf_xtra_rotate_to_dir` | addon | `[1, 1, 0, 0, 100, -20, 1, 1, 0, 4, 0, 0, 1, 1, 0, 0, 1, -20, 50]` | 0: proj_rotate, 2: proj_custom_time, 4: proj_tile_ms, 10: proj_offset, 11: proj_variables, 12: proj_shooter, 13: proj_bunny, 14: proj_past_on, 16: proj_past, 18: proj_height | 1, 3, 5, 6, 7, 8, 9, 15, 17 |

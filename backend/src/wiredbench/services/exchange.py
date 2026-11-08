@@ -192,6 +192,20 @@ OPTION_FIELDS: dict[str, list[tuple[str, int, Any]]] = {
         ("block_users", 2, bool),
     ],
     "wf_xtra_text_output_furni_name": [("type", 0, ("single", "multiple"))],
+    "wf_xtra_anim_time": [("anim_ms", 0, int)],
+    "wf_xtra_mov_curve": [
+        ("curve_from_var", 0, bool),
+        ("curve", 1, int),
+        ("curve_on", 2, {1: "user", 0: "furni", -10: "global", -20: "context"}),
+    ],
+    "wf_xtra_mov_physics": [
+        ("keep_altitude", 0, bool),
+        ("through_furni", 1, bool),
+        ("through_users", 2, bool),
+        ("blocked_by_furni", 3, bool),
+    ],
+    "wf_var_pointer": [("target", 0, {1: "user", 0: "furni", -10: "global", -20: "context"})],
+    "wf_act_send_message": [("message_source", 0, ("trigger", "custom"))],
     "wf_slc_users_neighborhood": [
         ("around", 0, {1: "users", 0: "furni"}),
         ("root_x", 1, int),
@@ -276,6 +290,7 @@ OPTION_FIELDS: dict[str, list[tuple[str, int, Any]]] = {
 # position 5 is that variable's target and position 6 says it is read on the same holder.
 REFERENCE_FLAG = {"wf_act_give_var": 4, "wf_act_change_var_val": 2, "wf_cnd_var_val_match": 2}
 REFERENCE_TARGET, REFERENCE_SAME_HOLDER = 5, 6
+STAND_IN_FIELDS = {"wf_var_echo": "source", "wf_var_pointer": "accessor"}
 TARGET_NUMBERS = {"user": 1, "furni": 0, "global": -10, "context": -20}
 # Boxes whose first option says what kind of holder their variable has.
 TARGET_FIRST = {
@@ -411,6 +426,11 @@ def friendly_settings(classname: str, box: dict[str, Any], names: dict[str, str]
                 settings[name] = config
     if classname.startswith("wf_var_") and isinstance(config, str):
         settings["variable"] = config
+    # Echo and Pointer pick one variable: the one echoed, or the pointer's context accessor.
+    stand_in = STAND_IN_FIELDS.get(classname)
+    ids = box.get("variableIds")
+    if stand_in in fields and isinstance(ids, list) and ids and (picked := names.get(str(ids[0]))):
+        settings[stand_in] = picked
     elif "variable" in fields and isinstance(box.get("variableIds"), list) and box["variableIds"]:
         variable = names.get(str(box["variableIds"][0]))
         if variable:
@@ -701,6 +721,10 @@ def _apply_settings(
             _use_picks(box, classname, settings, value)
         elif name in ("text", "placeholder"):
             box["config"] = value
+        elif name == STAND_IN_FIELDS.get(classname):
+            if value:
+                kept = box["variableIds"] if isinstance(box.get("variableIds"), list) else []
+                box["variableIds"] = [_variable_id(str(value), variables, used), *kept[1:]]
         elif name == "variable" and classname.startswith("wf_var_"):
             box["config"] = value
             box["variableId"] = _variable_id(str(value), variables, used)

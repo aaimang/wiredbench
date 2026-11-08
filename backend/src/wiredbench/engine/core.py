@@ -18,7 +18,7 @@ from typing import Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from wiredbench.engine import interactions, internal, neighbourhood, operations
-from wiredbench.engine.boxes import BOXES, TIME_UNITS
+from wiredbench.engine.boxes import ANIM_MAX_MS, ANIM_MIN_MS, BOXES, CURVE_LIMIT, TIME_UNITS
 
 TICK_MS = 500  # Assumed from delay values in real presets, which are small whole numbers.
 MAX_DELAY_MS = 60_000  # The largest millisecond delay seen in a real room.
@@ -92,6 +92,8 @@ DEFAULT_GAME_SECONDS = 30
 MAX_TIMES = 10
 # A real room leaves these as they are when Toggle Furni State points at them.
 NOT_WIRED_TOGGLED = {"wf_floor_switch1", "wf_floor_switch2"}
+LINK = "wf_link"
+LINK_MESSAGE_BYTES = 1000  # Habbo refuses a longer link message.
 PLACEHOLDER = re.compile(r"\$\(([\w.-]{1,40})\)")
 
 
@@ -256,6 +258,8 @@ class Context:
     selected_furni: list[int] | None = None
     context_vars: dict[str, Holding] = field(default_factory=dict)
     event: dict[str, int] = field(default_factory=dict)
+    # What the trigger said or received, for $(trigger_text). None when it carried no text.
+    text: str | None = None
 
 
 class Engine:
@@ -288,6 +292,9 @@ class Engine:
         self.boxes_at: dict[tuple[int, int], list[Box]] = defaultdict(list)
         self.variables: dict[str, dict[str, Holding]] = defaultdict(dict)
         self.definitions: dict[str, dict[str, Any]] = {}
+        # Echo variables, by name, and the variable each one mirrors. Pointer variables, by name.
+        self.echoes: dict[str, str] = {}
+        self.pointers: dict[str, Box] = {}
         self.queue: list[tuple[int, int, str, dict[str, Any]]] = []
         self.sequence = 0
         self.trace: list[dict[str, Any]] = []
@@ -366,6 +373,9 @@ class Engine:
             for box in stack.boxes:
                 self._define_variable(box)
         for stack in self.stacks:
+            for box in stack.boxes:
+                self._define_stand_in(box)
+        for stack in self.stacks:
             for box in stack.of("trigger"):
                 if box.classname in ("wf_trg_periodically", "wf_trg_period_short", "wf_trg_period_long"):
                     self._schedule_period(stack, box)
@@ -398,6 +408,38 @@ class Engine:
                 self.variables[name]["global"] = Holding(0, self.now_ms, self.now_ms)
         elif box.classname == "wf_xtra_var_time_util" and (name := str(box.get("variable", "")).strip()):
             self.definitions.setdefault(name, {"scope": "user", "time": True})["time"] = True
+
+    def _define_stand_in(self, box: Box) -> None:
+        """Echo and Pointer variables stand in for other variables, so they are set up after those."""
+        name = str(box.get("variable", "")).strip()
+        if not name or name in self.definitions:
+            return
+        if box.classname == "wf_var_echo":
+            source = self.echoes.get(str(box.get("source", "")).strip(), str(box.get("source", "")).strip())
+            if source in self.definitions and source != name:
+                # Reads and writes go to the source, so both names share its scope and its values.
+                self.echoes[name] = source
+                self.definitions[name] = self.definitions[source]
+                self.variables[name] = self.variables[source]
+        elif box.classname == "wf_var_pointer":
+            self.pointers[name] = box
+            self.definitions[name] = {"scope": str(box.get("target", "user")), "time": False}
+
+    def _pointed(self, name: str, ctx: Context | None) -> str | None:
+        """The variable a pointer stands for: the variable box whose furni id its context accessor holds."""
+        box = self.pointers[name]
+        accessor = str(box.get("accessor", "")).strip()
+        if self.definitions.get(accessor, {}).get("scope") != "context" or ctx is None:
+            return None
+        held = ctx.context_vars.get(accessor)
+        target = self.stack_of.get(held.value) if held is not None else None
+        found = next((b for b in target.boxes if b.id == held.value), None) if target and held else None
+        if found is None or found.classname == "wf_var_pointer" or not found.classname.startswith("wf_var_"):
+            return None
+        pointed = str(found.get("variable", "")).strip()
+        if self.definitions.get(pointed, {}).get("scope") != self.definitions[name]["scope"]:
+            return None
+        return pointed
 
     def _schedule_period(self, stack: Stack, box: Box) -> None:
         shortest = 0.05 if box.classname == "wf_trg_period_short" else 0.5
@@ -523,15 +565,23 @@ class Engine:
         facts = self.furni_facts.get(top["classname"], {}) if top else {}
         return "sit" if facts.get("can_sit") else "lay" if facts.get("can_lay") else "std"
 
-    def _top_furni(self, x: int, y: int) -> dict[str, Any] | None:
-        top: dict[str, Any] | None = None
-        for item in self.furni.values():
+    def _covering(self, x: int, y: int) -> list[int]:
+        """Every furni whose footprint covers a tile."""
+        found = []
+        for furni_id, item in self.furni.items():
             facts = self.furni_facts.get(item["classname"], {})
             width, depth = facts.get("xdim", 1), facts.get("ydim", 1)
             if item["rot"] in (2, 6):
                 width, depth = depth, width
-            covers = item["x"] <= x < item["x"] + width and item["y"] <= y < item["y"] + depth
-            if covers and (top is None or item["z"] >= top["z"]):
+            if item["x"] <= x < item["x"] + width and item["y"] <= y < item["y"] + depth:
+                found.append(furni_id)
+        return found
+
+    def _top_furni(self, x: int, y: int) -> dict[str, Any] | None:
+        top: dict[str, Any] | None = None
+        for furni_id in self._covering(x, y):
+            item = self.furni[furni_id]
+            if top is None or item["z"] >= top["z"]:
                 top = item
         return top
 
@@ -598,7 +648,9 @@ class Engine:
             else:
                 found = bool(keyword) and keyword in said
             if found:
-                self._start(stack, Context(trigger=box, user=user_id, event={"@event.chat.type": 0}))
+                self._start(
+                    stack, Context(trigger=box, user=user_id, event={"@event.chat.type": 0}, text=text)
+                )
 
     def _click(self, user_id: int, furni_id: int) -> None:
         if furni_id in self.furni:
@@ -1026,6 +1078,8 @@ class Engine:
                     self.users[payload["user"]]["details"].pop("@sign", None)
             elif action == "signal":
                 self._deliver_signal(payload["antennas"], payload["users"], payload["furni"])
+            elif action == "link_message":
+                self._deliver_message(payload["links"], payload["text"])
 
     # --- Triggers and stacks ---
 
@@ -1659,11 +1713,18 @@ class Engine:
         if found:
             chosen = on if on in found else "user" if "user" in found else found[0]
             return self._built_in(name, chosen, user, ctx)
+        if name in self.pointers:
+            pointed = self._pointed(name, ctx)
+            return self._holding(pointed, user, ctx, on) if pointed else None
+        name = self.echoes.get(name, name)
         if self.definitions.get(name, {}).get("scope") == "context":
             return ctx.context_vars.get(name) if ctx else None
         return self.variables[name].get(self._key(name, user))
 
     def _write(self, name: str, user: int | None, holding: Holding, ctx: Context | None) -> None:
+        if name in self.pointers:
+            return  # A real room changed nothing when a box wrote through a pointer.
+        name = self.echoes.get(name, name)
         if self.definitions.get(name, {}).get("scope") == "context" and ctx is not None:
             ctx.context_vars[name] = holding
             return
@@ -1678,6 +1739,7 @@ class Engine:
         change: int = 1,
         origin: int = 0,
     ) -> None:
+        name = self.echoes.get(name, name)
         source = next(
             (
                 b.id
@@ -1730,8 +1792,17 @@ class Engine:
         self._log("effect", self._name(box.classname), box=box.id)
         handler(box, ctx)
 
+    def _through_pointer(self, box: Box, name: str) -> bool:
+        """A real room changed nothing when a box gave, changed or took a variable through a pointer."""
+        if name in self.pointers:
+            self._log("info", f"{name} is a pointer, so nothing changed", box=box.id)
+            return True
+        return False
+
     def _do_give_var(self, box: Box, ctx: Context) -> None:
         name = str(box.get("variable", "")).strip()
+        if self._through_pointer(box, name):
+            return
         if not name:
             self._log("error", "Give Variable has no variable chosen", box=box.id)
             return
@@ -1758,6 +1829,8 @@ class Engine:
 
     def _do_remove_var(self, box: Box, ctx: Context) -> None:
         name = str(box.get("variable", "")).strip()
+        if self._through_pointer(box, name):
+            return
         if name in ADDABLE_DETAILS:
             for target in self._users_for(box, ctx):
                 if (who := self.users.get(target)) is not None:
@@ -1805,6 +1878,8 @@ class Engine:
 
     def _do_change_var_val(self, box: Box, ctx: Context) -> None:
         name = str(box.get("variable", "")).strip()
+        if self._through_pointer(box, name):
+            return
         if internal.targets(name):
             self._change_built_in(box, name, ctx)
             return
@@ -1838,6 +1913,27 @@ class Engine:
 
     _do_send_signal = _send
     _do_neg_send_signal = _send
+
+    def _do_send_message(self, box: Box, ctx: Context) -> None:
+        """Sends the trigger's text, or the box's own message, through the chosen WIRED Links."""
+        links = [i for i in self._furni_for(box, ctx) if self.furni[i]["classname"] == LINK]
+        if not links:
+            self._log("error", "Send Link Message has no WIRED Link chosen", box=box.id)
+            return
+        if box.get("message_source", "trigger") == "custom":
+            message = self._text(box, ctx, ctx.user)
+        else:
+            message = ctx.text if ctx.text is not None else "null"  # What a real room sent without one.
+        message = message.encode()[:LINK_MESSAGE_BYTES].decode(errors="ignore")
+        if message:
+            self._push(self.now_ms, "link_message", {"links": links, "text": message})
+
+    def _deliver_message(self, links: list[int], text: str) -> None:
+        """One room only: a Receive Link Message hears a message sent through a link it also chose."""
+        self._log("signal", f"Link message through {links}: {text}")
+        for stack, box in self._triggers("wf_trg_receive_message"):
+            if set(_ids(box.get("furni", []))) & set(links):
+                self._start(stack, Context(trigger=box, text=text))
 
     def _deliver_signal(self, antennas: list[int], users: list[int], furni: list[int]) -> None:
         self.metrics["signals"] += 1
@@ -1893,6 +1989,8 @@ class Engine:
 
     def _text(self, box: Box, ctx: Context, user: int | None) -> str:
         values: dict[str, str] = {}
+        if ctx.text is not None:
+            values["trigger_text"] = ctx.text
         stack = self.stack_of.get(box.id)
         for addon in stack.of("addon") if stack else []:
             if addon.classname == "wf_xtra_text_output_username":
@@ -2107,23 +2205,153 @@ class Engine:
     def _shift_furni(
         self, furni_id: int, dx: int, dy: int, box: Box | None = None, ctx: Context | None = None
     ) -> bool:
-        """A move off the room or onto a user cannot be made, and the furni stays put."""
+        """A move off the room or onto a user cannot be made, and the furni stays put.
+
+        Movement Physics changes that: the move may go through users, and furni on the tile decide too.
+        """
         item = self.furni[furni_id]
         x, y = item["x"] + dx, item["y"] + dy
-        if self._off_map(x, y) or any((u["x"], u["y"]) == (x, y) for u in self.users.values()):
+        if self._off_map(x, y):
+            return False
+        physics = self._movement(box, ctx)["physics"]
+        here = {u for u, d in self.users.items() if (d["x"], d["y"]) == (x, y)}
+        if here and not self._through_users(physics, here):
+            return False
+        if physics is not None and self._furni_block(furni_id, x, y, physics):
             return False
         carried = self._carried(box, ctx, item["x"], item["y"])
-        self._launch(box, ctx, furni_id, x, y)
-        item["x"], item["y"] = x, y
+        self._place(box, ctx, furni_id, x, y)
         for user in carried:
             self._move_user(user, x, y)
         return True
 
+    def _place(self, box: Box | None, ctx: Context | None, furni_id: int, x: int, y: int) -> None:
+        """Moves a furni to a tile, as the stack's movement add-ons say it looks and lands."""
+        physics = self._movement(box, ctx)["physics"]
+        self._launch(box, ctx, furni_id, x, y)
+        item = self.furni[furni_id]
+        item["x"], item["y"] = x, y
+        if physics is not None and not physics.get("keep"):
+            item["z"] = self._landing(furni_id, x, y)
+
+    @staticmethod
+    def _through_users(physics: dict[str, Any] | None, here: set[int]) -> bool:
+        if physics is None or "through_users" not in physics:
+            return False
+        allowed = physics["through_users"]
+        return allowed is None or here <= allowed
+
+    def _furni_block(self, furni_id: int, x: int, y: int, physics: dict[str, Any]) -> bool:
+        """With Movement Physics, a furni that cannot hold others refuses the move, as in a real room.
+
+        Furni it may move through never refuse it. Furni it is blocked by always do, even stackable ones.
+        """
+        for other in self._covering(x, y):
+            if other == furni_id:
+                continue
+            blocking = physics.get("blocked", False)
+            if blocking is None or (blocking and other in blocking):
+                return True
+            through = physics.get("through_furni", False)
+            if through is None or (through and other in through):
+                continue
+            classname = self.furni[other]["classname"]
+            if not self.furni_facts.get(classname, {}).get("stackable", classname not in self.furni_facts):
+                return True
+        return False
+
+    def _landing(self, furni_id: int, x: int, y: int) -> float:
+        """Without Keep Altitude a moved furni lands on top of whatever is on its new tile."""
+        tops = [
+            self.furni[i]["z"] + self._height(self.furni[i]["classname"])
+            for i in self._covering(x, y)
+            if i != furni_id
+        ]
+        return max(tops, default=0.0)
+
+    def _height(self, classname: str) -> float:
+        known = self.heights.get(classname)
+        if known is not None:
+            return float(known)
+        return _float(self.furni_facts.get(classname, {}).get("height"), 0.0)
+
+    def _movement(self, box: Box | None, ctx: Context | None) -> dict[str, Any]:
+        """What the stack's movement add-ons say: the move's time, whether it is instant, its curve and physics."""
+        found: dict[str, Any] = {"ms": None, "instant": False, "curve": None, "physics": None}
+        stack = self.stack_of.get(box.id) if box else None
+        if stack is None or ctx is None:
+            return found
+        for addon in stack.of("addon"):
+            match addon.classname:
+                case "wf_xtra_mov_no_animation":
+                    found["instant"] = True
+                case "wf_xtra_anim_time":
+                    ms = max(ANIM_MIN_MS, min(_int(addon.get("anim_ms", 500), 500), ANIM_MAX_MS))
+                    # A second Animation Time adds to the first.
+                    found["ms"] = (found["ms"] or 0) + ms
+                case "wf_xtra_mov_curve":
+                    strength = self._curve_strength(addon, ctx)
+                    if strength is not None:
+                        found["curve"] = strength
+                case "wf_xtra_mov_physics":
+                    found["physics"] = self._physics(addon, ctx, found["physics"])
+        return found
+
+    def _curve_strength(self, addon: Box, ctx: Context) -> int | None:
+        """The curve's strength, or None when its variable is held by none of the chosen holders."""
+        value = _int(addon.get("curve", 160), 160)
+        if addon.get("curve_from_var"):
+            name = str(addon.get("variable", "")).strip()
+            on = str(addon.get("curve_on", "context"))
+            holders: list[int | None]
+            if on == "user":
+                holders = list(self._users_for(addon, ctx))
+            elif on == "furni":
+                holders = list(self._furni_for(addon, ctx))
+            else:
+                holders = [None]
+            held = next(
+                (h for h in (self._holding(name, holder, ctx, on) for holder in holders) if h is not None),
+                None,
+            )
+            if held is None:
+                return None
+            value = held.value
+        return max(-CURVE_LIMIT, min(value, CURVE_LIMIT))
+
+    def _physics(self, addon: Box, ctx: Context, had: dict[str, Any] | None) -> dict[str, Any]:
+        """Two Movement Physics add up. A box that already set an option keeps its own furni or users."""
+        physics = dict(had or {})
+        if addon.get("keep_altitude", True):
+            physics["keep"] = True
+        if addon.get("through_furni") and "through_furni" not in physics:
+            physics["through_furni"] = self._physics_furni(addon, ctx, "through")
+        if addon.get("blocked_by_furni") and "blocked" not in physics:
+            physics["blocked"] = self._physics_furni(addon, ctx, "blocking")
+        if addon.get("through_users") and "through_users" not in physics:
+            source = addon.get("user_source", "room")
+            physics["through_users"] = None if source == "room" else set(self._users_for(addon, ctx))
+        return physics
+
+    def _physics_furni(self, addon: Box, ctx: Context, which: str) -> set[int] | None:
+        """The furni one of Movement Physics' lists names. None means every furni in the room."""
+        match addon.get(f"{which}_source", "room"):
+            case "picks":
+                return {i for i in _ids(addon.get(f"{which}_picks")) if i in self.furni}
+            case "trigger":
+                return {ctx.furni} if ctx.furni is not None else set()
+            case "signal":
+                return set(ctx.signal_furni)
+            case "selector":
+                return set(ctx.selected_furni or [])
+        return None
+
     def _launch(self, box: Box | None, ctx: Context | None, furni_id: int, x: int, y: int) -> None:
-        """What a stack's Projectile add-on does to a furni the stack is about to move."""
+        """What a stack's Projectile and animation add-ons do to a furni the stack is about to move."""
         stack = self.stack_of.get(box.id) if box else None
         addon = stack.find("wf_xtra_rotate_to_dir") if stack else None
         if addon is None or ctx is None:
+            self._animate(box, ctx, furni_id, x, y)
             return
         if addon.get("furni_source", "default") != "default" and furni_id not in self._furni_for(addon, ctx):
             return
@@ -2151,21 +2379,44 @@ class Engine:
                 "position.altitude": _hundredths(item["z"]),
                 "is_travelling": 0,
             }
+        moves = self._movement(box, ctx)
         custom = addon.get("proj_custom_time", False)
         ms = (
             min(tiles * _int(addon.get("proj_tile_ms", 100), 100), MAX_FLIGHT_MS)
             if custom
-            else DEFAULT_FLIGHT_MS
+            else moves["ms"] or DEFAULT_FLIGHT_MS
         )
+        # Animation Curve overrides a projectile's own height; No Animation makes it land at once.
+        height = moves["curve"] if moves["curve"] is not None else _int(addon.get("proj_height", 50), 50)
         self.flights.append(
             {
                 "id": furni_id,
                 "start_ms": self.now_ms,
-                "ms": max(1, ms),
+                "ms": 1 if moves["instant"] else max(1, ms),
                 "from": [item["x"], item["y"]],
                 "to": [x, y],
-                "height": _int(addon.get("proj_height", 50), 50),
+                "height": height,
                 "past": _int(addon.get("proj_past", 1), 1) if addon.get("proj_past_on") else 0,
+            }
+        )
+
+    def _animate(self, box: Box | None, ctx: Context | None, furni_id: int, x: int, y: int) -> None:
+        """No Animation, Animation Time and Animation Curve change how a plain move looks."""
+        moves = self._movement(box, ctx)
+        if not moves["instant"] and moves["ms"] is None and not moves["curve"]:
+            return  # The browser slides it in the usual half second.
+        item = self.furni[furni_id]
+        if (item["x"], item["y"]) == (x, y):
+            return
+        self.flights.append(
+            {
+                "id": furni_id,
+                "start_ms": self.now_ms,
+                "ms": 1 if moves["instant"] else min(moves["ms"] or DEFAULT_FLIGHT_MS, MAX_FLIGHT_MS),
+                "from": [item["x"], item["y"]],
+                "to": [x, y],
+                "height": moves["curve"] or 0,
+                "past": 0,
             }
         )
 
@@ -2315,8 +2566,7 @@ class Engine:
         if users:
             target = self.users[users[0]]
             for furni_id in self._furni_for(box, ctx):
-                self._launch(box, ctx, furni_id, target["x"], target["y"])
-                self.furni[furni_id]["x"], self.furni[furni_id]["y"] = target["x"], target["y"]
+                self._place(box, ctx, furni_id, target["x"], target["y"])
 
     def _do_furni_to_furni(self, box: Box, ctx: Context) -> None:
         targets = [i for i in _ids(box.get("furni")) if i in self.furni]

@@ -285,6 +285,16 @@ FX_RANGE = (
 SPLIT_USERS = {"name": "split_users", "kind": "bool", "label": "One signal per user", "default": False}
 AMOUNT = {"name": "amount", "kind": "number", "label": "How many", "default": 10, "min": 0}
 ANTENNA = {"name": "antenna", "kind": "furni", "label": "Antenna", "default": []}
+LINKS = {"name": "furni", "kind": "furni", "label": "WIRED Links", "default": []}
+PHYSICS_FURNI = {
+    **FURNI_SOURCE,
+    "options": ["room", "picks", "trigger", "signal", "selector"],
+    "labels": {"room": "All furni in the room"},
+    "default": "room",
+}
+# Animation Time keeps a value outside these at the nearest end; Curve's strength the same.
+ANIM_MIN_MS, ANIM_MAX_MS = 50, 2000
+CURVE_LIMIT = 1000
 SECONDS = {"name": "seconds", "kind": "number", "label": "Seconds", "default": 10, "min": 0, "step": 0.5}
 
 
@@ -371,6 +381,7 @@ BOXES: dict[str, dict[str, Any]] = {
     "wf_trg_recv_signal": _box("trigger", DOCUMENTED, ANTENNA),
     "wf_trg_var_changed": _box("trigger", ASSUMED, VARIABLE),
     "wf_trg_collision": _box("trigger", DOCUMENTED),
+    "wf_trg_receive_message": _box("trigger", ASSUMED, LINKS),
     "wf_trg_click_tile": _box("trigger", DOCUMENTED, {**FURNI, "label": "Invisible click tiles"}),
     "wf_trg_user_performs_action": _box("trigger", DOCUMENTED, AVATAR_ACTION, ACTION_NUMBER),
     "wf_trg_click_user": _box(
@@ -648,6 +659,69 @@ BOXES: dict[str, dict[str, Any]] = {
         ),
         USER_SOURCE,
     ),
+    # The movement add-ons change how this stack's moves look and what stops them. Habbo's labels.
+    "wf_xtra_mov_no_animation": _box("addon", DOCUMENTED),
+    "wf_xtra_anim_time": _box(
+        "addon",
+        DOCUMENTED,
+        {
+            "name": "anim_ms",
+            "kind": "number",
+            "label": "Animation time (ms)",
+            "default": 500,
+            "min": ANIM_MIN_MS,
+            "max": ANIM_MAX_MS,
+        },
+    ),
+    "wf_xtra_mov_curve": _box(
+        "addon",
+        DOCUMENTED,
+        {
+            "name": "curve_from_var",
+            "kind": "bool",
+            "label": "Take the strength from a variable",
+            "default": False,
+        },
+        {
+            "name": "curve",
+            "kind": "number",
+            "label": "Strength",
+            "default": 160,
+            "min": -CURVE_LIMIT,
+            "max": CURVE_LIMIT,
+        },
+        VARIABLE,
+        {
+            "name": "curve_on",
+            "kind": "select",
+            "label": "Variable on",
+            "options": ["context", "user", "furni", "global"],
+            "labels": {"context": "Context", "user": "Users", "furni": "Furni", "global": "Room"},
+            "default": "context",
+        },
+        FURNI,
+        {**FURNI_SOURCE, "default": "picks"},
+        {**USER_SOURCE, "options": ["trigger", "signal", "selector"], "default": "trigger"},
+    ),
+    "wf_xtra_mov_physics": _box(
+        "addon",
+        DOCUMENTED,
+        {"name": "keep_altitude", "kind": "bool", "label": "Keep furni altitude", "default": True},
+        {"name": "through_furni", "kind": "bool", "label": "Move through furniture", "default": False},
+        {"name": "through_users", "kind": "bool", "label": "Move through users", "default": False},
+        {"name": "blocked_by_furni", "kind": "bool", "label": "Is blocked by furniture", "default": False},
+        {**FURNI, "name": "through_picks", "label": "Move through furni"},
+        {**PHYSICS_FURNI, "name": "through_source", "label": "Move through furni from"},
+        {**FURNI, "name": "blocking_picks", "label": "Blocked by furni"},
+        {**PHYSICS_FURNI, "name": "blocking_source", "label": "Blocked by furni from"},
+        {
+            **USER_SOURCE,
+            "label": "Move through users from",
+            "options": ["room", "trigger", "signal", "selector"],
+            "labels": {"room": "All users in the room"},
+            "default": "room",
+        },
+    ),
     "wf_xtra_filter_users": _box("addon", DOCUMENTED, AMOUNT),
     "wf_xtra_filter_furni": _box("addon", DOCUMENTED, AMOUNT),
     "wf_xtra_filter_users_by_var": _box(
@@ -726,6 +800,26 @@ BOXES: dict[str, dict[str, Any]] = {
     "wf_var_furni": _box("variable", DOCUMENTED, VARIABLE, HAS_VALUE, _availability("active", "persistent")),
     "wf_var_room": _box("variable", DOCUMENTED, VARIABLE, _availability("active", "persistent", "shared")),
     "wf_var_context": _box("variable", ASSUMED, VARIABLE, HAS_VALUE),
+    "wf_var_echo": _box(
+        "variable",
+        DOCUMENTED,
+        VARIABLE,
+        {"name": "source", "kind": "text", "label": "Variable it echoes", "default": ""},
+    ),
+    "wf_var_pointer": _box(
+        "variable",
+        DOCUMENTED,
+        VARIABLE,
+        {
+            "name": "target",
+            "kind": "select",
+            "label": "Points to a variable on",
+            "options": ["user", "furni", "global", "context"],
+            "labels": {"user": "Users", "furni": "Furni", "global": "Room", "context": "Context"},
+            "default": "user",
+        },
+        {"name": "accessor", "kind": "text", "label": "Context accessor variable", "default": ""},
+    ),
     "wf_trg_clock_counter": _box("trigger", ASSUMED, FURNI, *CLOCK_TIME),
     "wf_trg_game_starts": _box("trigger", ASSUMED),
     "wf_trg_game_ends": _box("trigger", ASSUMED),
@@ -767,6 +861,20 @@ BOXES: dict[str, dict[str, Any]] = {
         ),
     ),
     "wf_act_toggle_to_rnd": _effect(DOCUMENTED, FURNI, FURNI_SOURCE),
+    "wf_act_send_message": _effect(
+        ASSUMED,
+        {
+            "name": "message_source",
+            "kind": "select",
+            "label": "Message source",
+            "options": ["trigger", "custom"],
+            "labels": {"trigger": "From WIRED trigger", "custom": "Custom message"},
+            "default": "trigger",
+        },
+        {"name": "text", "kind": "text", "label": "Custom message", "default": ""},
+        LINKS,
+        {**FURNI_SOURCE, "label": "WIRED Links from"},
+    ),
     "wf_act_show_message": _effect(
         DOCUMENTED, {"name": "text", "kind": "text", "label": "Message", "default": ""}, USER_SOURCE
     ),

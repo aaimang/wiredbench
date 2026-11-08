@@ -827,3 +827,34 @@ def test_a_neighbourhood_drawing_survives_import_and_export() -> None:
     wired["radius"] = 1
     out = exchange.export_gpresets(document)[0]["wired"]["selectors"][0]["options"]
     assert out[3] == 511
+
+
+def test_movement_add_ons_echo_pointer_and_link_options_are_read() -> None:
+    names = {"7": "score", "8": "which"}
+    curve = exchange.friendly_settings(
+        "wf_xtra_mov_curve", {"options": [1, -40, 1], "variableIds": ["7"]}, names
+    )
+    assert (curve["curve_from_var"], curve["curve"], curve["curve_on"], curve["variable"]) == (
+        True,
+        -40,
+        "user",
+        "score",
+    )
+    physics = exchange.friendly_settings("wf_xtra_mov_physics", {"options": [0, 1, 0, 1]}, {})
+    assert physics == {
+        "keep_altitude": False,
+        "through_furni": True,
+        "through_users": False,
+        "blocked_by_furni": True,
+    }
+    assert exchange.friendly_settings("wf_xtra_anim_time", {"options": [175]}, {})["anim_ms"] == 175
+    echo = exchange.friendly_settings("wf_var_echo", {"config": "points", "variableIds": ["7"]}, names)
+    assert (echo["variable"], echo["source"]) == ("points", "score")
+    pointer = exchange.friendly_settings(
+        "wf_var_pointer", {"config": "ptr", "options": [-10], "variableIds": ["8"]}, names
+    )
+    assert (pointer["target"], pointer["accessor"]) == ("global", "which")
+    send = exchange.friendly_settings(
+        "wf_act_send_message", {"options": [1], "config": "hi", "items": [5]}, {}
+    )
+    assert (send["message_source"], send["text"], send["furni"]) == ("custom", "hi", [5])

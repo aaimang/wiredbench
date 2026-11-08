@@ -276,6 +276,38 @@ GUIDE: dict[str, tuple[str, str]] = {
         "Runs when a user clicks a picked invisible click tile.",
         "Make a button out of a bare floor tile.",
     ),
+    "wf_xtra_mov_no_animation": (
+        "Makes the stack's moves happen at once, with no sliding.",
+        "Snap a block back to its start.",
+    ),
+    "wf_xtra_anim_time": (
+        "Sets how long the stack's moves take to slide, from 50 to 2000 ms.",
+        "Make a slow lift.",
+    ),
+    "wf_xtra_mov_curve": (
+        "Bends the stack's moves into an arc, by a strength or a variable.",
+        "Make a ball jump to the next tile.",
+    ),
+    "wf_xtra_mov_physics": (
+        "Decides what the stack's moves keep, go through or are stopped by.",
+        "Let a pushed box stop at walls but pass through users.",
+    ),
+    "wf_var_echo": (
+        "Gives another variable a second name. Reads and changes go to that variable.",
+        "Show the same score under a friendlier name.",
+    ),
+    "wf_var_pointer": (
+        "Reads the variable whose box id a context variable holds. Changes through it do nothing.",
+        "Let one stack read whichever score a player picked.",
+    ),
+    "wf_act_send_message": (
+        "Sends the trigger's text, or a message of your own, through WIRED Links.",
+        "Pass on what a player said.",
+    ),
+    "wf_trg_receive_message": (
+        "Runs when a message arrives through one of its WIRED Links. The text is in $(trigger_text).",
+        "Show a message sent from another stack.",
+    ),
     "wf_xtra_text_output_furni_name": (
         "Puts a furni's name into the stack's texts.",
         "Say which prize a player stepped on.",
