@@ -494,8 +494,13 @@ class Engine:
     def _furni_on_tile(self, x: int, y: int) -> list[int]:
         return [i for i, f in self.furni.items() if f["x"] == x and f["y"] == y]
 
-    def _seat_rotation(self, x: int, y: int) -> int | None:
-        """The rotation of the seat or bed on top of a tile, which a user on it faces."""
+    def _posture(self, x: int, y: int) -> str:
+        """What a user on a tile does: sit on a seat, lay on a bed, or stand."""
+        top = self._top_furni(x, y)
+        facts = self.furni_facts.get(top["classname"], {}) if top else {}
+        return "sit" if facts.get("can_sit") else "lay" if facts.get("can_lay") else "std"
+
+    def _top_furni(self, x: int, y: int) -> dict[str, Any] | None:
         top: dict[str, Any] | None = None
         for item in self.furni.values():
             facts = self.furni_facts.get(item["classname"], {})
@@ -505,6 +510,11 @@ class Engine:
             covers = item["x"] <= x < item["x"] + width and item["y"] <= y < item["y"] + depth
             if covers and (top is None or item["z"] >= top["z"]):
                 top = item
+        return top
+
+    def _seat_rotation(self, x: int, y: int) -> int | None:
+        """The rotation of the seat or bed on top of a tile, which a user on it faces."""
+        top = self._top_furni(x, y)
         if top is None:
             return None
         facts = self.furni_facts.get(top["classname"], {})
@@ -513,11 +523,22 @@ class Engine:
         return rot - rot % 2 if facts.get("can_sit") or facts.get("can_lay") else None
 
     def _seat_users(self) -> None:
-        """A user sitting or lying faces the way the furni is turned, as in a real room."""
+        """A user sitting or lying faces the way the furni is turned, as in a real room.
+
+        A change of posture is an action others see, for User Performs Action. The first look at a
+        user, as the room starts, is not a change.
+        """
+        changed: list[tuple[int, str]] = []
         for user in self.users.values():
             seat = self._seat_rotation(user["x"], user["y"])
             if seat is not None:
                 user["dir"] = seat
+            pose = self._posture(user["x"], user["y"])
+            if user.get("pose") not in (None, pose):
+                changed.append((user["id"], {"std": "stand"}.get(pose, pose)))
+            user["pose"] = pose
+        for user_id, action in changed:
+            self._perform(user_id, action, 0)
 
     def _turn_back_later(self) -> None:
         """A real room lets a seated user turn for a moment, then turns them back to the seat."""

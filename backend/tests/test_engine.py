@@ -2283,3 +2283,48 @@ def test_a_diagonal_seat_turns_its_sitter_to_a_straight_direction() -> None:
     engine = room({**plain(50, x=5, y=6), "rot": 5})
     engine.furni_facts = {"chair": seat}
     assert engine._seat_rotation(5, 6) == 4
+
+
+def test_sitting_lying_and_standing_up_are_actions() -> None:
+    seat = {"height": 1, "xdim": 1, "ydim": 1, "can_stand": False, "can_sit": True, "can_lay": False}
+    bed = {**seat, "can_sit": False, "can_lay": True}
+    engine = room(
+        plain(50, "chair", x=5, y=5),
+        plain(51, "bed", x=7, y=5),
+        box(1, "wf_trg_user_performs_action", 1, 1, action="sit"),
+        box(2, "wf_act_log", 1, 1, 1, text="sat"),
+        box(3, "wf_trg_user_performs_action", 2, 1, action="stand"),
+        box(4, "wf_act_log", 2, 1, 1, text="stood"),
+        box(5, "wf_trg_user_performs_action", 3, 1, action="lay"),
+        box(6, "wf_act_log", 3, 1, 1, text="lay down"),
+        box(7, "wf_trg_says_something", 4, 1, text="who sits"),
+        box(8, "wf_slc_users_byaction", 4, 1, 1, action="sit"),
+        box(9, "wf_act_give_var", 4, 1, 2, variable="v", user_source="selector"),
+    )
+    engine.furni_facts = {"chair": seat, "bed": bed}
+    engine.apply_input({"type": "move", "user": 100, "x": 5, "y": 5})
+    say(engine, "who sits")
+    engine.apply_input({"type": "move", "user": 100, "x": 7, "y": 5})
+    engine.apply_input({"type": "move", "user": 100, "x": 9, "y": 5})
+    engine.advance(10)
+    said = [line for line in logs(engine) if line in ("sat", "stood", "lay down")]
+    assert said == ["sat", "lay down", "stood"]
+    assert set(engine.variables["v"]) == {"user:100"}, "Users by Action sees the sitter"
+
+
+def test_a_user_already_seated_when_the_room_starts_is_not_an_action() -> None:
+    seat = {"height": 1, "xdim": 1, "ydim": 1, "can_stand": False, "can_sit": True, "can_lay": False}
+    document = {
+        "schema": 1,
+        "room": {"width": 20, "height": 20},
+        "furni": [
+            plain(50, "chair", x=0, y=9),
+            box(1, "wf_trg_user_performs_action", 1, 1, action="sit"),
+            box(2, "wf_act_log", 1, 1, 1, text="sat"),
+        ],
+        "avatars": [user()],
+    }
+    engine = Engine(document, seed=1, furni_facts={"chair": seat})
+    engine.advance(10)
+    assert engine.users[100]["pose"] == "sit"
+    assert "sat" not in logs(engine)
