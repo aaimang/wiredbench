@@ -2437,8 +2437,9 @@ class WbEditor extends HTMLElement {
     const avatar = this.selectedAvatar();
     if (!panel || avatar?.id !== panel.avatarId) return;
     const { x, y, dir, height, preview, position, editing } = panel;
+    // A field being typed in keeps what is typed: a run's update a moment later would undo it.
     const show = (input: HTMLInputElement | HTMLSelectElement, value: number) => {
-      if (!editing.has(input)) input.value = String(value);
+      if (!editing.has(input) && input !== document.activeElement) input.value = String(value);
     };
     show(x, avatar.x);
     show(y, avatar.y);
