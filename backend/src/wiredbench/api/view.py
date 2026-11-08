@@ -30,7 +30,7 @@ FURNI_FIELDS = ("id", "classname", "x", "y", "z", "rot", "state")
 AVATAR_FIELDS = ("id", "name", "hotel", "figure", "x", "y", "z", "dir", "pose", "face")
 VISIBLE_DETAILS = ("@handitem", "@sign", "@is_idle", "@effect", "@is_frozen")
 ITEM_FIELDS = ("classname", "revision", "category", "hand_items", "xdim", "ydim", "height", "data")
-LOOK_FIELDS = ("highlight", "invisible", "click_through")
+LOOK_FIELDS = ("highlight", "invisible", "click_through", "fade")
 MESSAGES_SHOWN = 20
 # These carry the value of a room's own variable, which a visitor must not read.
 PRIVATE_BUILT_INS = "@event.variable_update."
@@ -118,10 +118,16 @@ def _public_state(run: Run, hidden: set[int], user: int | None) -> dict[str, Any
         "now_ms": engine.now_ms,
         "furni": [item for item in snapshot["furni"] if item["id"] not in hidden],
         "users": [
-            {**{key: u[key] for key in ("id", "name", "x", "y", "dir")}, "details": _visible_details(u)}
+            {
+                **{key: u[key] for key in ("id", "name", "x", "y", "dir")},
+                "details": _visible_details(u),
+                **({"bot": True, "figure": u["figure"]} if u.get("bot") else {}),
+            }
             for u in snapshot["users"]
         ],
-        "messages": [m for m in engine.messages if m.get("user") == user][-MESSAGES_SHOWN:],
+        # Chat the room hears, and messages and whispers meant for this user.
+        "messages": [m for m in engine.messages if m.get("user") in (None, user)][-MESSAGES_SHOWN:],
+        "user_menu": not engine.blocks_user_menu(),
         "flights": [f for f in snapshot["flights"] if f["id"] not in hidden],
         "fx": [f for f in snapshot["fx"] if not (f["target"] == "furni" and f["id"] in hidden)],
         "looks": {

@@ -19,8 +19,10 @@ import {
   avatarExtras,
   EFFECT_FRAME_MS,
   type EffectManifest,
+  eased,
   effectLayers,
   FACE_NAMES,
+  FADE_MS,
   type Flight,
   type FurniArtData,
   type FxShown,
@@ -596,6 +598,11 @@ export class RoomRenderer {
   }
 
   private flightStarts = new Map<string, number>();
+  /** Fades in progress, by holder: from what amount to what, since when, and for which change. */
+  private fades = new Map<
+    string,
+    { stamp: string; from: number; to: number; began: number; easing: number }
+  >();
   private slides = new Map<
     number,
     { from: [number, number]; to: [number, number]; began: number }
@@ -793,17 +800,52 @@ export class RoomRenderer {
     };
   }
 
+  /** Where a fade has got to. A new change starts from wherever the last one had reached. */
+  private fadeTo(key: string, to: number, stamp: string, easing: number, start: number): number {
+    const now = performance.now();
+    const at = (fade: { from: number; to: number; began: number; easing: number }) =>
+      fade.from + (fade.to - fade.from) * eased(fade.easing, (now - fade.began) / FADE_MS);
+    let fade = this.fades.get(key);
+    if (!fade || fade.stamp !== stamp || fade.to !== to) {
+      fade = { stamp, from: fade ? at(fade) : start, to, began: now, easing };
+      this.fades.set(key, fade);
+    }
+    const value = at(fade);
+    if (value !== fade.to) this.animating = true;
+    return value;
+  }
+
+  /** The look as it shows now: a new highlight fades in, and a change of visibility fades. */
+  private easedLook(
+    key: string,
+    look: Look | undefined,
+  ): { look: Look | undefined; shown: number } {
+    const fade = look?.fade;
+    const shown = this.fadeTo(
+      `${key}:visible`,
+      look?.invisible ? 0 : 1,
+      fade ? String(fade.since_ms) : "",
+      fade?.easing ?? 0,
+      1,
+    );
+    const light = look?.highlight;
+    if (!light?.easing) return { look, shown };
+    const amount = this.fadeTo(`${key}:light`, 1, String(light.since_ms), light.easing, 0);
+    return { look: { ...look, highlight: { ...light, strength: light.strength * amount } }, shown };
+  }
+
   private drawFurni(scene: Scene, placed: PlacedFurni): void {
     const item = this.flown(scene, placed);
     const selected = scene.selected?.kind === "furni" && scene.selected.id === item.id;
-    const look = scene.looks?.furni[item.id];
+    const { look, shown } = this.easedLook(`furni:${item.id}`, scene.looks?.furni[item.id]);
     if (look?.highlight?.pulse) this.animating = true;
     const tint = selected
       ? SELECTED_TINT
       : scene.picked.has(item.id)
         ? PICKED_TINT
         : highlightTint(look?.highlight, performance.now());
-    const opacity = look?.invisible ? (selected ? SELECTED_INVISIBLE_OPACITY : 0) : 1;
+    const opacity =
+      selected && look?.invisible ? Math.max(shown, SELECTED_INVISIBLE_OPACITY) : shown;
     const bounds = this.addFurniSprites(scene, item, tint, opacity, depth, look?.highlight);
     if (bounds && !look?.click_through) {
       const [fx, fy] = this.front(scene, item);
@@ -1175,7 +1217,7 @@ export class RoomRenderer {
       ring.zIndex = order - 1;
       this.layer.addChild(ring);
     }
-    const look = scene.looks?.users[avatar.id];
+    const { look, shown } = this.easedLook(`user:${avatar.id}`, scene.looks?.users[avatar.id]);
     if (texture && !look?.invisible) this.drawShadow(avatar, pose, left, top, order);
     if (texture) {
       const sprite = new Sprite(texture);
@@ -1187,7 +1229,10 @@ export class RoomRenderer {
       if (look?.highlight?.pulse) this.animating = true;
       const tinted = highlightTint(look?.highlight, performance.now());
       if (tinted !== null) sprite.tint = tinted;
-      if (look?.invisible) sprite.alpha = selected ? SELECTED_INVISIBLE_OPACITY : 0;
+      if (shown < 1 || look?.invisible) {
+        sprite.alpha =
+          selected && look?.invisible ? Math.max(shown, SELECTED_INVISIBLE_OPACITY) : shown;
+      }
       this.layer.addChild(sprite);
       if (look?.highlight && !look.invisible) this.addLook([sprite], look.highlight);
       if (!look?.invisible && !changed) this.drawEffect(avatar, pose.dir, left, top, order);

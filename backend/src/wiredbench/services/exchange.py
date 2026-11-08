@@ -95,6 +95,7 @@ PLACEHOLDER_BOX, PLACEHOLDER_TARGET = "wf_xtra_text_output_variable", 1
 AREA_FIELDS = [("area_x", 0, int), ("area_y", 1, int), ("area_width", 2, int), ("area_height", 3, int)]
 # A selector's two switches sit on the box itself. The file calls invert "inverse".
 SELECTOR_SWITCHES = {"filter": "filter", "invert": "inverse"}
+EASINGS = ("0", "1", "2", "3", "4")
 OPTION_FIELDS: dict[str, list[tuple[str, int, Any]]] = {
     "wf_trg_says_something": [
         ("owner_only", 0, bool),
@@ -141,14 +142,14 @@ OPTION_FIELDS: dict[str, list[tuple[str, int, Any]]] = {
         ("strength", 2, int),
         ("color", 3, int),
         ("pulse", 4, bool),
-        ("easing", 5, int),
+        ("easing", 5, EASINGS),
         ("target", 6, ("furni", "users")),
     ],
     "wf_act_set_visibility": [
         ("audience", 0, ("selected", "everyone")),
         ("visibility", 1, {0: "visible", 100: "invisible"}),
         ("click_through", 2, bool),
-        ("easing", 3, int),
+        ("easing", 3, EASINGS),
         ("target", 4, ("furni", "users")),
     ],
     "wf_xtra_varfx_number": FX_FIELDS,
@@ -193,6 +194,18 @@ OPTION_FIELDS: dict[str, list[tuple[str, int, Any]]] = {
     ],
     "wf_xtra_text_output_furni_name": [("type", 0, ("single", "multiple"))],
     "wf_xtra_anim_time": [("anim_ms", 0, int)],
+    "wf_act_bot_follow_avatar": [("follow", 0, bool)],
+    "wf_act_bot_give_handitem": [("handitem", 0, int)],
+    "wf_act_bot_talk": [
+        ("shout", 0, bool),
+        ("bubble_width", 1, {-1: "-1", 0: "0", 1: "1", 2: "2"}),
+        ("hide_name", 2, bool),
+    ],
+    "wf_act_bot_talk_to_avatar": [
+        ("whisper", 0, bool),
+        ("bubble_width", 1, {-1: "-1", 0: "0", 1: "1", 2: "2"}),
+        ("hide_name", 2, bool),
+    ],
     "wf_cnd_has_handitem": [("handitem", 0, int)],
     "wf_cnd_not_has_handitem": [("handitem", 0, int)],
     "wf_cnd_user_performs_action": [("action", 0, ACTION_NUMBERS)],
@@ -335,6 +348,11 @@ OPTION_FIELDS: dict[str, list[tuple[str, int, Any]]] = {
 # position 5 is that variable's target and position 6 says it is read on the same holder.
 REFERENCE_FLAG = {"wf_act_give_var": 4, "wf_act_change_var_val": 2, "wf_cnd_var_val_match": 2}
 REFERENCE_TARGET, REFERENCE_SAME_HOLDER = 5, 6
+BOT_SECOND_FIELD = {
+    "wf_act_bot_talk": "text",
+    "wf_act_bot_talk_to_avatar": "text",
+    "wf_act_bot_clothes": "figure",
+}
 STAND_IN_FIELDS = {"wf_var_echo": "source", "wf_var_pointer": "accessor"}
 TARGET_NUMBERS = {"user": 1, "furni": 0, "global": -10, "context": -20}
 # Boxes whose first option says what kind of holder their variable has.
@@ -477,6 +495,14 @@ def friendly_settings(classname: str, box: dict[str, Any], names: dict[str, str]
                 settings[name] = config
     if classname.startswith("wf_var_") and isinstance(config, str):
         settings["variable"] = config
+    if "bot_name" in fields and isinstance(config, str):
+        # A bot box saves the bot's name, then a tab and its message or figure for those that have one.
+        name, _, rest = config.partition("\t")
+        settings["bot_name"] = name
+        if classname in BOT_SECOND_FIELD:
+            settings[BOT_SECOND_FIELD[classname]] = rest
+        else:
+            settings.pop("text", None)
     # Echo and Pointer pick one variable: the one echoed, or the pointer's context accessor.
     stand_in = STAND_IN_FIELDS.get(classname)
     ids = box.get("variableIds")
@@ -786,6 +812,10 @@ def _apply_settings(
         elif name in ("furni", "antenna"):
             box["items"] = value
             _use_picks(box, classname, settings, value)
+        elif name in ("bot_name", "figure") or (name == "text" and classname in BOT_SECOND_FIELD):
+            second = BOT_SECOND_FIELD.get(classname)
+            bot = str(settings.get("bot_name", ""))
+            box["config"] = f"{bot}\t{settings.get(second, '')}" if second else bot
         elif name in ("text", "placeholder"):
             box["config"] = value
         elif name == STAND_IN_FIELDS.get(classname):

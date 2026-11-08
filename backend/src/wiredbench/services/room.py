@@ -57,6 +57,8 @@ class PlacedAvatar(_Open):
     pose: Literal["std", "sit", "lay"] = "std"
     details: dict[str, int] | None = None
     face: Annotated[str, StringConstraints(pattern=r"^[a-z_]{1,20}$")] | None = None
+    # A bot is placed like an avatar, but WIRED moves it and nobody plays as it.
+    bot: bool = False
 
 
 class RoomDocument(_Open):

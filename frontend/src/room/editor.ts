@@ -1429,6 +1429,8 @@ class WbEditor extends HTMLElement {
         avatar.dir = user.dir;
       }
       if (avatar && user.details) avatar.details = this.withPending(user.id, user.details);
+      if (avatar && user.bot && user.figure && avatar.figure !== user.figure)
+        avatar.figure = user.figure;
     }
     this.needsDraw = true;
     this.syncAvatarPanel();
@@ -2544,7 +2546,26 @@ class WbEditor extends HTMLElement {
       ),
       h("p", { class: "muted" }, T.avatarNotDrawn),
       h("div", { class: "avatar-flags" }, ...Object.entries(T.avatarFlags).map(flag)),
+      this.botFlag(avatar),
     );
+  }
+
+  /** A bot is placed like an avatar, but WIRED moves it and nobody plays as it in View as user. */
+  private botFlag(avatar: PlacedAvatar): HTMLElement {
+    const input = h("input", {
+      type: "checkbox",
+      checked: Boolean(avatar.bot),
+      disabled: Boolean(this.run),
+      "data-testid": "avatar-bot",
+    }) as HTMLInputElement;
+    input.addEventListener("change", () => {
+      this.history.record(this.room);
+      if (input.checked) avatar.bot = true;
+      else delete avatar.bot;
+      this.markDirty();
+      this.renderPanels();
+    });
+    return h("label", { class: "avatar-flag avatar-bot" }, input, h("span", {}, T.avatarBot));
   }
 
   /** Where the avatar stands now. A change moves it at once. In a run it may stand on any tile, as a test needs. */

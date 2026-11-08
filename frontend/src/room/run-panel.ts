@@ -34,6 +34,8 @@ export interface RunState {
     y: number;
     dir: number;
     details?: Record<string, number>;
+    bot?: boolean;
+    figure?: string;
   }[];
   variables: { variable: string; holder: string; value: string }[];
   defined_variables: { variable: string; scope: string }[];
