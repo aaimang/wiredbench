@@ -169,6 +169,45 @@ ACTION_NUMBER = {
     "label": "Sign or dance number (empty for any)",
     "default": "",
 }
+# The neighbourhood selectors pick what stands on tiles around users or furni. A real box stores a
+# drawing of up to 21 by 21 tiles. Here a square is drawn by its size, and an imported drawing is kept.
+NEIGHBOURHOOD = (
+    {
+        "name": "around",
+        "kind": "select",
+        "label": "In the neighbourhood of",
+        "options": ["users", "furni"],
+        "labels": {"users": "Users", "furni": "Furni"},
+        "default": "users",
+    },
+    USER_SOURCE,
+    FURNI,
+    FURNI_SOURCE,
+    {
+        "name": "radius",
+        "kind": "number",
+        "label": "Tiles out from the centre (a square; an imported drawing is kept until this changes)",
+        "default": 2,
+        "min": 0,
+        "max": 10,
+    },
+    {
+        "name": "root_x",
+        "kind": "number",
+        "label": "Move the centre by x",
+        "default": 0,
+        "min": -64,
+        "max": 64,
+    },
+    {
+        "name": "root_y",
+        "kind": "number",
+        "label": "Move the centre by y",
+        "default": 0,
+        "min": -64,
+        "max": 64,
+    },
+)
 POINTS = (
     {"name": "points", "kind": "number", "label": "Points", "default": 5, "min": -1000, "max": 1000},
     {
@@ -489,6 +528,8 @@ BOXES: dict[str, dict[str, Any]] = {
         {"name": "handitem", "kind": "number", "label": "Hand item ID", "default": 2, "min": 0},
     ),
     "wf_slc_users_byaction": _selector(DOCUMENTED, AVATAR_ACTION, ACTION_NUMBER),
+    "wf_slc_users_neighborhood": _selector(DOCUMENTED, *NEIGHBOURHOOD),
+    "wf_slc_furni_neighborhood": _selector(DOCUMENTED, *NEIGHBOURHOOD),
     "wf_slc_users_byname": _selector(
         DOCUMENTED,
         {"name": "names", "kind": "text", "label": "Names, one per line", "default": ""},

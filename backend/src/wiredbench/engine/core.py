@@ -17,7 +17,7 @@ from datetime import UTC, datetime, tzinfo
 from typing import Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from wiredbench.engine import interactions, internal, operations
+from wiredbench.engine import interactions, internal, neighbourhood, operations
 from wiredbench.engine.boxes import BOXES, TIME_UNITS
 
 TICK_MS = 500  # Assumed from delay values in real presets, which are small whole numbers.
@@ -1123,6 +1123,23 @@ class Engine:
             case _:
                 return height < wanted
 
+    def _neighbourhood(self, box: Box, ctx: Context) -> set[tuple[int, int]]:
+        """The tiles of a neighbourhood selector's drawing, around each of its users or furni."""
+        if box.get("around", "users") == "furni":
+            centres = [
+                (self.furni[i]["x"], self.furni[i]["y"]) for i in self._furni_for(box, ctx) if i in self.furni
+            ]
+        else:
+            centres = [
+                (self.users[u]["x"], self.users[u]["y"]) for u in self._users_for(box, ctx) if u in self.users
+            ]
+        mask = box.get("mask")
+        if not (isinstance(mask, list) and all(isinstance(n, int) for n in mask)):
+            mask = neighbourhood.square_mask(_int(box.get("radius", 2), 2))
+        root = (_int(box.get("root_x")), _int(box.get("root_y")))
+        shape = neighbourhood.offsets(mask)
+        return {(x + dx - root[0], y + dy - root[1]) for x, y in centres for dx, dy in shape}
+
     def _stacked(self, box: Box) -> list[int]:
         found: set[int] = set()
         for pick in _ids(box.get("furni")):
@@ -1188,6 +1205,12 @@ class Engine:
             case "wf_slc_users_byaction":
                 action = str(box.get("action", "wave"))
                 return [u for u in self.users if self._performing(u, action, box)]
+            case "wf_slc_users_neighborhood":
+                tiles = self._neighbourhood(box, ctx)
+                return [u for u, d in self.users.items() if (d["x"], d["y"]) in tiles]
+            case "wf_slc_furni_neighborhood":
+                tiles = self._neighbourhood(box, ctx)
+                return [i for i, f in self.furni.items() if (f["x"], f["y"]) in tiles]
             case "wf_slc_users_byname":
                 wanted = {n.strip().lower() for n in str(box.get("names", "")).splitlines() if n.strip()}
                 return [u for u, d in self.users.items() if d["name"].lower() in wanted]

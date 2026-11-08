@@ -2214,3 +2214,34 @@ def test_score_achieved_runs_once_as_a_team_passes_the_mark() -> None:
     say(engine, "score")
     assert sum("red reached 10" in line for line in logs(engine)) == 1
     assert not any("blue reached 10" in line for line in logs(engine)), "only the box's own team counts"
+
+
+def test_the_neighbourhood_selectors_pick_what_is_around_the_user() -> None:
+    users = [user(100, "Ann", x=5, y=5), user(101, "Bob", x=6, y=6), user(102, "Cy", x=8, y=5)]
+    engine = room(
+        plain(50, x=4, y=5),
+        plain(51, x=9, y=9),
+        box(1, "wf_trg_says_something", 1, 1, text="go"),
+        box(2, "wf_slc_users_neighborhood", 1, 1, 1, radius=1),
+        box(3, "wf_act_give_var", 1, 1, 2, variable="v", user_source="selector"),
+        box(4, "wf_trg_says_something", 2, 1, text="furni"),
+        box(5, "wf_slc_furni_neighborhood", 2, 1, 1, radius=1),
+        box(6, "wf_act_toggle_state", 2, 1, 2, furni_source="selector"),
+        users=users,
+    )
+    say(engine, "go")
+    assert holders(engine) == {"user:100", "user:101"}, "Cy is three tiles away"
+    say(engine, "furni")
+    assert (engine.furni[50]["state"], engine.furni[51]["state"]) == (1, 0)
+
+
+def test_a_neighbourhood_centre_can_be_moved() -> None:
+    users = [user(100, "Ann", x=5, y=5), user(101, "Bob", x=8, y=5)]
+    engine = room(
+        box(1, "wf_trg_says_something", 1, 1, text="go"),
+        box(2, "wf_slc_users_neighborhood", 1, 1, 1, radius=0, root_x=-3),
+        box(3, "wf_act_give_var", 1, 1, 2, variable="v", user_source="selector"),
+        users=users,
+    )
+    say(engine, "go")
+    assert holders(engine) == {"user:101"}, "the centre moves three tiles along x"

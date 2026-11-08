@@ -8,7 +8,7 @@ it, and a named position is still unverified until a box is changed and read aga
 
 No reply from: `wf_contract_payment`, `wf_contract_reward`, `wf_contract_trade`. The cause is unconfirmed.
 
-Named positions: 146. Unnamed positions: 436.
+Named positions: 152. Unnamed positions: 430.
 
 | Box | Section | Default numbers | Named positions | Unnamed positions |
 |---|---|---|---|---|
@@ -109,7 +109,7 @@ Named positions: 146. Unnamed positions: 436.
 | `wf_slc_furni_altitude` | selector | `[0, 0]` | 0: altitude, 1: altitude_compare |  |
 | `wf_slc_furni_area` | selector | `[0, 0, 0, 0]` | 0: area_x, 1: area_y, 2: area_width, 3: area_height |  |
 | `wf_slc_furni_bytype` | selector | `[0]` |  | 0 |
-| `wf_slc_furni_neighborhood` | selector | `[1, 0, 0, 33554431, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]` |  | 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17 |
+| `wf_slc_furni_neighborhood` | selector | `[1, 0, 0, 33554431, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]` | 0: around, 1: root_x, 2: root_y | 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17 |
 | `wf_slc_furni_onfurni` | selector | `[0]` | 0: stacking |  |
 | `wf_slc_furni_picks` | selector | `[]` |  |  |
 | `wf_slc_furni_signal` | selector | `[]` |  |  |
@@ -121,7 +121,7 @@ Named positions: 146. Unnamed positions: 436.
 | `wf_slc_users_bytype` | selector | `[1]` |  | 0 |
 | `wf_slc_users_group` | selector | `[]` |  |  |
 | `wf_slc_users_handitem` | selector | `[2]` | 0: handitem |  |
-| `wf_slc_users_neighborhood` | selector | `[1, 0, 0, 33554431, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]` |  | 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17 |
+| `wf_slc_users_neighborhood` | selector | `[1, 0, 0, 33554431, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]` | 0: around, 1: root_x, 2: root_y | 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17 |
 | `wf_slc_users_onfurni` | selector | `[]` |  |  |
 | `wf_slc_users_signal` | selector | `[]` |  |  |
 | `wf_slc_users_team` | selector | `[0]` | 0: team |  |

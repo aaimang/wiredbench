@@ -1615,6 +1615,8 @@ class WbEditor extends HTMLElement {
       else if (field.kind === "number") next[field.name] = Number(values.get(field.name) ?? 0);
       else next[field.name] = String(values.get(field.name) ?? "");
     }
+    // A neighbourhood's new size replaces the tile drawing it was imported with.
+    if ("mask" in next && next.radius !== settings.radius) delete next.mask;
     this.change(() => {
       item.wired = next;
     });

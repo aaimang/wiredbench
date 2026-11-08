@@ -12,8 +12,8 @@ read at commit `3fc9c06f533c`, for facts only.
 - Seen in a real preset: 0
 - Seen in a real room dump: 97
 - Checked in a real room: 87
-- Have a form: 111
-- Option numbers mapped: 59
+- Have a form: 113
+- Option numbers mapped: 61
 
 | Box | Evidence | Form | Options | Room check |
 |---|---|---|---|---|
@@ -167,7 +167,7 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_slc_furni_altitude` | Checked in a real room | Yes | Yes | 2026-11-01 |
 | `wf_slc_furni_area` | Checked in a real room | Yes | Yes | 2026-11-01 |
 | `wf_slc_furni_bytype` | Checked in a real room | Yes |  | 2026-11-01 |
-| `wf_slc_furni_neighborhood` | Seen in a real room dump |  |  |  |
+| `wf_slc_furni_neighborhood` | Seen in a real room dump | Yes | Yes |  |
 | `wf_slc_furni_onfurni` | Checked in a real room | Yes | Yes | 2026-11-01 |
 | `wf_slc_furni_picks` | Checked in a real room | Yes |  | 2026-11-01 |
 | `wf_slc_furni_signal` | Seen in a real room dump | Yes |  |  |
@@ -179,7 +179,7 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_slc_users_bytype` | Seen in a real room dump |  |  |  |
 | `wf_slc_users_group` | Seen in a real room dump |  |  |  |
 | `wf_slc_users_handitem` | Seen in a real room dump | Yes | Yes |  |
-| `wf_slc_users_neighborhood` | Seen in a real room dump |  |  |  |
+| `wf_slc_users_neighborhood` | Seen in a real room dump | Yes | Yes |  |
 | `wf_slc_users_onfurni` | Checked in a real room | Yes |  | 2026-11-01 |
 | `wf_slc_users_signal` | Seen in a real room dump | Yes |  |  |
 | `wf_slc_users_team` | Checked in a real room | Yes | Yes | 2026-11-01 |

@@ -240,6 +240,14 @@ GUIDE: dict[str, tuple[str, str]] = {
         "Runs once when a team's score goes up to the mark.",
         "End the game when a team reaches 100 points.",
     ),
+    "wf_slc_users_neighborhood": (
+        "Selects the users on the tiles around users or furni.",
+        "Hit everyone standing next to the bomb.",
+    ),
+    "wf_slc_furni_neighborhood": (
+        "Selects the furni on the tiles around users or furni.",
+        "Light up the tiles around the player.",
+    ),
     "wf_slc_users_handitem": (
         "Selects the users holding a hand item.",
         "Let only users holding a drink through.",

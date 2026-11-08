@@ -10,7 +10,7 @@ import copy
 from collections import Counter
 from typing import Any
 
-from wiredbench.engine import box_facts, internal
+from wiredbench.engine import box_facts, internal, neighbourhood
 from wiredbench.engine.boxes import AVATAR_ACTIONS, BOXES
 from wiredbench.engine.operations import OPERATION_CODES
 from wiredbench.errors import ApiError
@@ -186,6 +186,16 @@ OPTION_FIELDS: dict[str, list[tuple[str, int, Any]]] = {
     "wf_cnd_not_in_team": [("team", 0, ANY_TEAM_NUMBERS)],
     "wf_slc_users_team": [("team", 0, ANY_TEAM_NUMBERS)],
     "wf_slc_users_handitem": [("handitem", 0, int)],
+    "wf_slc_users_neighborhood": [
+        ("around", 0, {1: "users", 0: "furni"}),
+        ("root_x", 1, int),
+        ("root_y", 2, int),
+    ],
+    "wf_slc_furni_neighborhood": [
+        ("around", 0, {1: "users", 0: "furni"}),
+        ("root_x", 1, int),
+        ("root_y", 2, int),
+    ],
     "wf_slc_users_byaction": [("action", 0, ACTION_NUMBERS)],
     "wf_trg_user_performs_action": [("action", 0, ACTION_NUMBERS)],
     "wf_trg_click_user": [("block_menu", 0, bool), ("keep_facing", 1, bool)],
@@ -313,6 +323,35 @@ def _setting_to_option(value: Any, reader: Any) -> int | None:
     return round(value / reader) if isinstance(value, int | float) else None
 
 
+NEIGHBOURHOOD_BOXES = {"wf_slc_users_neighborhood", "wf_slc_furni_neighborhood"}
+DRAWING_AT = 3  # The tile drawing's ints follow the first three options.
+
+
+def _read_drawing(options: list[Any], settings: dict[str, Any]) -> None:
+    """A square drawing becomes its size. Any other drawing is kept as it is."""
+    mask = [
+        int(n) for n in options[DRAWING_AT : DRAWING_AT + neighbourhood.MASK_INTS + 1] if isinstance(n, int)
+    ]
+    mask = mask[: neighbourhood.MASK_INTS] + [0] * max(0, neighbourhood.MASK_INTS - len(mask))
+    for radius in range(neighbourhood.RADIUS + 1):
+        if mask == neighbourhood.square_mask(radius):
+            settings["radius"] = radius
+            return
+    settings["mask"] = mask
+
+
+def _write_drawing(box: dict[str, Any], settings: dict[str, Any]) -> None:
+    mask = settings.get("mask")
+    if not (isinstance(mask, list) and all(isinstance(n, int) for n in mask)):
+        mask = neighbourhood.square_mask(_int_or(settings.get("radius"), 2))
+    for index, number in enumerate(mask[: neighbourhood.MASK_INTS + 1]):
+        _write_option(box, DRAWING_AT + index, number)
+
+
+def _int_or(value: Any, default: int) -> int:
+    return int(value) if isinstance(value, int | float) else default
+
+
 def _write_option(box: dict[str, Any], position: int, number: int) -> None:
     options = box["options"] if isinstance(box.get("options"), list) else []
     box["options"] = options + [0] * (position + 1 - len(options)) if len(options) <= position else options
@@ -380,6 +419,8 @@ def friendly_settings(classname: str, box: dict[str, Any], names: dict[str, str]
             )
             if value is not None:
                 settings[name] = value
+        if classname in NEIGHBOURHOOD_BOXES:
+            _read_drawing(options, settings)
     for name, (key, defaults, numbers) in SOURCE_FIELDS.items():
         slots = box.get(key)
         fresh = (box_facts.of(classname) or {}).get(defaults) or [None]
@@ -626,6 +667,9 @@ def _apply_settings(
             if number is not None:
                 _write_option(box, mapped[name][0], number)
                 continue
+        if name in ("radius", "mask") and classname in NEIGHBOURHOOD_BOXES:
+            _write_drawing(box, settings)
+            continue
         if name == "variable_on":
             continue  # It only says which built-in variable "variable" means.
         if name in SOURCE_FIELDS and value != "default":
