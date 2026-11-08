@@ -256,6 +256,30 @@ GUIDE: dict[str, tuple[str, str]] = {
         "Keeps the selected furni with the highest or lowest value of a variable.",
         "Pick the tile with the most points.",
     ),
+    "wf_act_chase": (
+        "Moves furni a tile toward the nearest user on its row or column, or at random.",
+        "Make a ghost hunt players down.",
+    ),
+    "wf_act_flee": (
+        "Moves furni a tile away from the nearest user on its row or column.",
+        "Make a ball run from players.",
+    ),
+    "wf_act_move_to_dir": (
+        "Moves furni a tile in their direction, turning by the rule you pick when blocked.",
+        "Bounce a ball around a court.",
+    ),
+    "wf_trg_collision": (
+        "Runs when Chase, Flee or Move to Direction runs a furni into a user.",
+        "Send a player back to the start when a ghost catches them.",
+    ),
+    "wf_trg_click_tile": (
+        "Runs when a user clicks a picked invisible click tile.",
+        "Make a button out of a bare floor tile.",
+    ),
+    "wf_xtra_text_output_furni_name": (
+        "Puts a furni's name into the stack's texts.",
+        "Say which prize a player stepped on.",
+    ),
     "wf_slc_users_handitem": (
         "Selects the users holding a hand item.",
         "Let only users holding a drink through.",

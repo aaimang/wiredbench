@@ -2283,3 +2283,139 @@ def test_a_diagonal_seat_turns_its_sitter_to_a_straight_direction() -> None:
     engine = room({**plain(50, x=5, y=6), "rot": 5})
     engine.furni_facts = {"chair": seat}
     assert engine._seat_rotation(5, 6) == 4
+
+
+def test_sitting_lying_and_standing_up_are_actions() -> None:
+    seat = {"height": 1, "xdim": 1, "ydim": 1, "can_stand": False, "can_sit": True, "can_lay": False}
+    bed = {**seat, "can_sit": False, "can_lay": True}
+    engine = room(
+        plain(50, "chair", x=5, y=5),
+        plain(51, "bed", x=7, y=5),
+        box(1, "wf_trg_user_performs_action", 1, 1, action="sit"),
+        box(2, "wf_act_log", 1, 1, 1, text="sat"),
+        box(3, "wf_trg_user_performs_action", 2, 1, action="stand"),
+        box(4, "wf_act_log", 2, 1, 1, text="stood"),
+        box(5, "wf_trg_user_performs_action", 3, 1, action="lay"),
+        box(6, "wf_act_log", 3, 1, 1, text="lay down"),
+        box(7, "wf_trg_says_something", 4, 1, text="who sits"),
+        box(8, "wf_slc_users_byaction", 4, 1, 1, action="sit"),
+        box(9, "wf_act_give_var", 4, 1, 2, variable="v", user_source="selector"),
+    )
+    engine.furni_facts = {"chair": seat, "bed": bed}
+    engine.apply_input({"type": "move", "user": 100, "x": 5, "y": 5})
+    say(engine, "who sits")
+    engine.apply_input({"type": "move", "user": 100, "x": 7, "y": 5})
+    engine.apply_input({"type": "move", "user": 100, "x": 9, "y": 5})
+    engine.advance(10)
+    said = [line for line in logs(engine) if line in ("sat", "stood", "lay down")]
+    assert said == ["sat", "lay down", "stood"]
+    assert set(engine.variables["v"]) == {"user:100"}, "Users by Action sees the sitter"
+
+
+def test_a_user_already_seated_when_the_room_starts_is_not_an_action() -> None:
+    seat = {"height": 1, "xdim": 1, "ydim": 1, "can_stand": False, "can_sit": True, "can_lay": False}
+    document = {
+        "schema": 1,
+        "room": {"width": 20, "height": 20},
+        "furni": [
+            plain(50, "chair", x=0, y=9),
+            box(1, "wf_trg_user_performs_action", 1, 1, action="sit"),
+            box(2, "wf_act_log", 1, 1, 1, text="sat"),
+        ],
+        "avatars": [user()],
+    }
+    engine = Engine(document, seed=1, furni_facts={"chair": seat})
+    engine.advance(10)
+    assert engine.users[100]["pose"] == "sit"
+    assert "sat" not in logs(engine)
+
+
+def test_chase_steps_toward_a_user_in_line_and_collides_next_to_them() -> None:
+    engine = room(
+        plain(50, "ghost", x=2, y=9),
+        box(1, "wf_trg_says_something", 1, 1, text="go"),
+        box(2, "wf_act_chase", 1, 1, 1, furni=[50]),
+        box(3, "wf_trg_collision", 2, 1),
+        box(4, "wf_act_log", 2, 1, 1, text="caught"),
+        users=[user(100, "Ann", x=5, y=9)],
+    )
+    say(engine, "go")
+    engine.advance(10)
+    assert (engine.furni[50]["x"], engine.furni[50]["y"]) == (3, 9), "a tile toward Ann"
+    say(engine, "go")
+    engine.advance(10)
+    assert engine.furni[50]["x"] == 4
+    say(engine, "go")
+    engine.advance(10)
+    assert engine.furni[50]["x"] == 4, "next to her it waits"
+    assert logs(engine).count("caught") == 1
+
+
+def test_flee_steps_away_and_keeps_its_way_when_nobody_is_near() -> None:
+    engine = room(
+        plain(50, "ball", x=5, y=9),
+        box(1, "wf_trg_says_something", 1, 1, text="go"),
+        box(2, "wf_act_flee", 1, 1, 1, furni=[50]),
+        users=[user(100, "Ann", x=3, y=9)],
+    )
+    say(engine, "go")
+    engine.advance(10)
+    assert engine.furni[50]["x"] == 6, "away from Ann"
+    engine.users[100]["y"] = 2  # Out of line now.
+    say(engine, "go")
+    engine.advance(10)
+    assert (engine.furni[50]["x"], engine.furni[50]["y"]) == (7, 9), "it keeps going the same way"
+
+
+def test_move_to_direction_turns_when_blocked_and_a_user_in_the_way_collides() -> None:
+    engine = room(
+        plain(50, "ball", x=18, y=5),
+        box(1, "wf_trg_says_something", 1, 1, text="go"),
+        box(2, "wf_act_move_to_dir", 1, 1, 1, furni=[50], start_dir="2", turn="back"),
+        box(3, "wf_trg_collision", 2, 1),
+        box(4, "wf_act_log", 2, 1, 1, text="hit"),
+        users=[user(100, "Ann", x=17, y=9)],
+    )
+    say(engine, "go")
+    engine.advance(10)
+    assert engine.furni[50]["x"] == 19
+    say(engine, "go")
+    engine.advance(10)
+    assert engine.furni[50]["x"] == 18, "the wall turns it back"
+    engine.users[100]["y"] = 5
+    say(engine, "go")
+    engine.advance(10)
+    assert engine.furni[50]["x"] == 18, "Ann stands in the way and stops it"
+    assert "hit" in logs(engine)
+
+
+def test_clicking_an_invisible_click_tile_runs_click_tile() -> None:
+    engine = room(
+        plain(50, "room_invisible_click_tile", x=4, y=4),
+        plain(51, "room_invisible_click_tile", x=5, y=4),
+        box(1, "wf_trg_click_tile", 1, 1, furni=[50]),
+        box(2, "wf_act_log", 1, 1, 1, text="tile"),
+    )
+    engine.apply_input({"type": "click", "user": 100, "furni": 51})
+    assert "tile" not in logs(engine), "only the picked tile"
+    engine.apply_input({"type": "click", "user": 100, "furni": 50})
+    engine.advance(10)
+    assert "tile" in logs(engine)
+
+
+def test_the_furni_name_placeholder_uses_the_public_name() -> None:
+    document = {
+        "schema": 1,
+        "room": {"width": 20, "height": 20},
+        "furni": [
+            plain(50, "small_block", x=4, y=4),
+            box(1, "wf_trg_walks_on_furni", 1, 1, furni=[50]),
+            box(2, "wf_act_log", 1, 1, 1, text="on $(name)"),
+            box(3, "wf_xtra_text_output_furni_name", 1, 1, 2, placeholder="name"),
+        ],
+        "avatars": [user()],
+    }
+    engine = Engine(document, seed=1, furni_facts={"small_block": {"name": "Small Block"}})
+    engine.apply_input({"type": "move", "user": 100, "x": 4, "y": 4})
+    engine.advance(10)
+    assert "on Small Block" in logs(engine)

@@ -7,6 +7,7 @@ import {
   avatarExtras,
   besideTiles,
   canStackOn,
+  clickTileAt,
   directionBetween,
   drawTile,
   EFFECT_FRAME_MS,
@@ -824,5 +825,13 @@ describe("sitting faces a straight direction", () => {
       pose: "sit",
       dir: 4,
     });
+  });
+});
+
+describe("invisible click tiles", () => {
+  it("finds the click tile on a tile, so a click on the bare floor there clicks it", () => {
+    const r = room(["room_invisible_click_tile", 2, 3], ["chair", 4, 4]);
+    expect(clickTileAt(r, 2, 3)?.classname).toBe("room_invisible_click_tile");
+    expect(clickTileAt(r, 4, 4)).toBeNull();
   });
 });

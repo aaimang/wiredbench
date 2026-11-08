@@ -12,8 +12,8 @@ read at commit `3fc9c06f533c`, for facts only.
 - Seen in a real preset: 0
 - Seen in a real room dump: 97
 - Checked in a real room: 87
-- Have a form: 115
-- Option numbers mapped: 63
+- Have a form: 121
+- Option numbers mapped: 65
 
 | Box | Evidence | Form | Options | Room check |
 |---|---|---|---|---|
@@ -28,10 +28,10 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_act_call_stacks` | Checked in a real room | Yes |  | 2026-11-01 |
 | `wf_act_cancel_transaction` | Seen in a real room dump |  |  |  |
 | `wf_act_change_var_val` | Checked in a real room | Yes | Yes | 2026-11-01 |
-| `wf_act_chase` | Seen in a real room dump |  |  |  |
+| `wf_act_chase` | Seen in a real room dump | Yes |  |  |
 | `wf_act_click_conf` | Seen in a real room dump |  |  |  |
 | `wf_act_control_clock` | Checked in a real room | Yes | Yes | 2026-11-01 |
-| `wf_act_flee` | Seen in a real room dump |  |  |  |
+| `wf_act_flee` | Seen in a real room dump | Yes |  |  |
 | `wf_act_freeze` | Seen in a real room dump |  |  |  |
 | `wf_act_furni_to_furni` | Seen in a real room dump | Yes |  |  |
 | `wf_act_furni_to_user` | Checked in a real room | Yes |  | 2026-11-01 |
@@ -51,7 +51,7 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_act_move_furni_to` | Reference only |  |  |  |
 | `wf_act_move_rotate` | Checked in a real room | Yes | Yes | 2026-11-01 |
 | `wf_act_move_rotate_user` | Checked in a real room | Yes | Yes | 2026-11-01 |
-| `wf_act_move_to_dir` | Seen in a real room dump |  |  |  |
+| `wf_act_move_to_dir` | Seen in a real room dump | Yes | Yes |  |
 | `wf_act_mute_triggerer` | Reference only |  |  |  |
 | `wf_act_neg_call_stacks` | Checked in a real room | Yes |  | 2026-11-01 |
 | `wf_act_neg_log` | Seen in a real room dump | Yes |  |  |
@@ -223,10 +223,10 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_trg_bot_reached_avtr` | Seen in a real room dump |  |  |  |
 | `wf_trg_bot_reached_stf` | Seen in a real room dump |  |  |  |
 | `wf_trg_click_furni` | Checked in a real room | Yes |  | 2026-11-01 |
-| `wf_trg_click_tile` | Seen in a real room dump |  |  |  |
+| `wf_trg_click_tile` | Seen in a real room dump | Yes |  |  |
 | `wf_trg_click_user` | Seen in a real room dump | Yes | Yes |  |
 | `wf_trg_clock_counter` | Checked in a real room | Yes | Yes | 2026-11-01 |
-| `wf_trg_collision` | Seen in a real room dump |  |  |  |
+| `wf_trg_collision` | Seen in a real room dump | Yes |  |  |
 | `wf_trg_enter_room` | Checked in a real room | Yes |  | 2026-11-01 |
 | `wf_trg_game_ends` | Checked in a real room | Yes |  | 2026-11-01 |
 | `wf_trg_game_starts` | Checked in a real room | Yes |  | 2026-11-01 |
@@ -284,7 +284,7 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_xtra_rotate_to_dir` | Seen in a real room dump | Yes | Yes |  |
 | `wf_xtra_scan_chest_furni_by_type` | Seen in a real room dump |  |  |  |
 | `wf_xtra_text_input_variable` | Seen in a real room dump |  |  |  |
-| `wf_xtra_text_output_furni_name` | Seen in a real room dump |  |  |  |
+| `wf_xtra_text_output_furni_name` | Seen in a real room dump | Yes | Yes |  |
 | `wf_xtra_text_output_username` | Checked in a real room | Yes |  | 2026-11-01 |
 | `wf_xtra_text_output_variable` | Checked in a real room | Yes | Yes | 2026-11-01 |
 | `wf_xtra_unseen` | Checked in a real room | Yes |  | 2026-11-01 |

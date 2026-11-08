@@ -37,6 +37,7 @@ import {
   avatarExtras,
   besideTiles,
   canStackOn,
+  clickTileAt,
   DEFAULT_TIMEZONE,
   directionBetween,
   drawTile,
@@ -660,7 +661,11 @@ class WbEditor extends HTMLElement {
       this.select(hit);
       return;
     }
-    const clicked = hit ? this.room.furni.find((f) => f.id === hit.id) : null;
+    const clicked = hit
+      ? this.room.furni.find((f) => f.id === hit.id)
+      : inside
+        ? clickTileAt(this.room, tile[0], tile[1])
+        : null;
     if (clicked && this.run) {
       void this.run.input({ type: "click", user: this.runUser(), furni: clicked.id });
     }

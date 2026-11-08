@@ -7,6 +7,7 @@ import { InspectWindow } from "./inspect";
 import {
   avatarExtras,
   besideTiles,
+  clickTileAt,
   directionBetween,
   drawTile,
   type Flight,
@@ -531,6 +532,8 @@ class WbRoomView extends HTMLElement {
       this.choose(null);
       const tile = this.renderer?.tileAt(x, y);
       if (tile && this.room && fitsInRoom(this.room, [tile])) {
+        const clickTile = clickTileAt(this.room, tile[0], tile[1]);
+        if (clickTile) void this.send({ type: "click", furni: clickTile.id });
         this.walkTo([tile[0], tile[1]]);
       }
     });
