@@ -12,8 +12,8 @@ read at commit `3fc9c06f533c`, for facts only.
 - Seen in a real preset: 0
 - Seen in a real room dump: 97
 - Checked in a real room: 87
-- Have a form: 113
-- Option numbers mapped: 61
+- Have a form: 115
+- Option numbers mapped: 63
 
 | Box | Evidence | Form | Options | Room check |
 |---|---|---|---|---|
@@ -176,7 +176,7 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_slc_users_area` | Checked in a real room | Yes | Yes | 2026-11-01 |
 | `wf_slc_users_byaction` | Seen in a real room dump | Yes | Yes |  |
 | `wf_slc_users_byname` | Seen in a real room dump | Yes |  |  |
-| `wf_slc_users_bytype` | Seen in a real room dump |  |  |  |
+| `wf_slc_users_bytype` | Seen in a real room dump | Yes | Yes |  |
 | `wf_slc_users_group` | Seen in a real room dump |  |  |  |
 | `wf_slc_users_handitem` | Seen in a real room dump | Yes | Yes |  |
 | `wf_slc_users_neighborhood` | Seen in a real room dump | Yes | Yes |  |
@@ -271,7 +271,7 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_xtra_exec_in_order` | Checked in a real room | Yes |  | 2026-11-01 |
 | `wf_xtra_execution_limit` | Checked in a real room | Yes | Yes | 2026-11-01 |
 | `wf_xtra_filter_furni` | Checked in a real room | Yes | Yes | 2026-11-01 |
-| `wf_xtra_filter_furni_by_var` | Seen in a real room dump |  |  |  |
+| `wf_xtra_filter_furni_by_var` | Seen in a real room dump | Yes | Yes |  |
 | `wf_xtra_filter_users` | Checked in a real room | Yes | Yes | 2026-11-01 |
 | `wf_xtra_filter_users_by_var` | Checked in a real room | Yes | Yes | 2026-11-01 |
 | `wf_xtra_link_speaker` | Seen in a real room dump |  |  |  |

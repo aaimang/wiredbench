@@ -218,6 +218,11 @@ OPTION_FIELDS: dict[str, list[tuple[str, int, Any]]] = {
     "wf_xtra_filter_users": [("amount", 0, int)],
     "wf_xtra_filter_furni": [("amount", 0, int)],
     "wf_xtra_filter_users_by_var": [("amount", 0, int), ("lowest", 1, bool)],
+    "wf_xtra_filter_furni_by_var": [("amount", 0, int), ("lowest", 1, bool)],
+    # Habbo 1, Pet 2 and Bot 4, added up.
+    "wf_slc_users_bytype": [
+        ("types", 0, {1: "habbo", 2: "pet", 4: "bot", 3: "habbo_pet", 5: "habbo_bot", 6: "pet_bot", 7: "all"})
+    ],
     "wf_act_toggle_state": [("toggle_type", 0, ("next", "previous"))],
     "wf_act_give_var": [("value", 2, LONG)],
     "wf_act_change_var_val": [

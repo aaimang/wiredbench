@@ -2245,3 +2245,34 @@ def test_a_neighbourhood_centre_can_be_moved() -> None:
     )
     say(engine, "go")
     assert holders(engine) == {"user:101"}, "the centre moves three tiles along x"
+
+
+def test_filter_furni_by_variable_keeps_the_highest_values() -> None:
+    engine = room(
+        plain(50, x=9, y=1),
+        plain(51, x=9, y=2),
+        plain(52, x=9, y=3),
+        box(1, "wf_var_furni", 5, 5, variable="pts"),
+        box(2, "wf_trg_says_something", 1, 1, text="set"),
+        box(3, "wf_act_give_var", 1, 1, 1, variable="pts", value=3, furni=[50]),
+        box(4, "wf_act_give_var", 1, 1, 2, variable="pts", value=9, furni=[51]),
+        box(5, "wf_act_give_var", 1, 1, 3, variable="pts", value=5, furni=[52]),
+        box(6, "wf_trg_says_something", 2, 1, text="go"),
+        box(7, "wf_slc_furni_picks", 2, 1, 1, furni=[50, 51, 52]),
+        box(8, "wf_xtra_filter_furni_by_var", 2, 1, 2, variable="pts", amount=1),
+        box(9, "wf_act_toggle_state", 2, 1, 3, furni_source="selector"),
+    )
+    say(engine, "set")
+    say(engine, "go")
+    assert [engine.furni[i]["state"] for i in (50, 51, 52)] == [0, 1, 0]
+
+
+def test_users_by_type_finds_only_habbos_in_a_sandbox() -> None:
+    for types, expected in (("habbo", {"user:100"}), ("pet", set()), ("all", {"user:100"})):
+        engine = room(
+            box(1, "wf_trg_says_something", 1, 1, text="go"),
+            box(2, "wf_slc_users_bytype", 1, 1, 1, types=types),
+            box(3, "wf_act_give_var", 1, 1, 2, variable="v", user_source="selector"),
+        )
+        say(engine, "go")
+        assert set(engine.variables.get("v", {})) == expected, types

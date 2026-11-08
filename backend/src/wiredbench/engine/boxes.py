@@ -126,7 +126,8 @@ ANY_TEAM = {
     "labels": {"any": "Any team", **{team: team.capitalize() for team in TEAMS}},
     "default": "any",
 }
-# What a user can be seen doing, with the number a real box saves for each.
+# What a user can be seen doing, with the number a real box saves for each. The labels are Habbo's own.
+# Jump (67) is not in Habbo's list; it comes from a retro's notes and is unverified.
 AVATAR_ACTIONS = {
     "wave": 0,
     "blow": 1,
@@ -137,6 +138,7 @@ AVATAR_ACTIONS = {
     "sit": 6,
     "stand": 7,
     "lay": 8,
+    "swim": 9,
     "sign": 10,
     "dance": 11,
     "jump": 67,
@@ -148,17 +150,18 @@ AVATAR_ACTION = {
     "options": list(AVATAR_ACTIONS),
     "labels": {
         "wave": "Wave",
-        "blow": "Blow a kiss",
+        "blow": "Blow",
         "laugh": "Laugh",
         "respect": "Thumbs up",
         "awake": "Awake",
-        "sleep": "Sleep (idle)",
+        "sleep": "Idle",
         "sit": "Sit",
         "stand": "Stand",
-        "lay": "Lie down",
-        "sign": "Hold a sign",
+        "lay": "Lay",
+        "swim": "Swim",
+        "sign": "Sign",
         "dance": "Dance",
-        "jump": "Jump (67)",
+        "jump": "Jump (67, unverified)",
     },
     "default": "wave",
 }
@@ -166,7 +169,7 @@ AVATAR_ACTION = {
 ACTION_NUMBER = {
     "name": "text",
     "kind": "text",
-    "label": "Sign or dance number (empty for any)",
+    "label": "Which sign (0 to 17) or dance (1 to 4); empty for any",
     "default": "",
 }
 # The neighbourhood selectors pick what stands on tiles around users or furni. A real box stores a
@@ -175,7 +178,7 @@ NEIGHBOURHOOD = (
     {
         "name": "around",
         "kind": "select",
-        "label": "In the neighbourhood of",
+        "label": "In neighbourhood of",
         "options": ["users", "furni"],
         "labels": {"users": "Users", "furni": "Furni"},
         "default": "users",
@@ -371,13 +374,8 @@ BOXES: dict[str, dict[str, Any]] = {
     "wf_trg_click_user": _box(
         "trigger",
         DOCUMENTED,
-        _saved({"name": "block_menu", "kind": "bool", "label": "Do not open the user menu", "default": True}),
-        {
-            "name": "keep_facing",
-            "kind": "bool",
-            "label": "The clicker does not turn to the clicked user",
-            "default": False,
-        },
+        _saved({"name": "block_menu", "kind": "bool", "label": "Do not open avatar menu", "default": True}),
+        {"name": "keep_facing", "kind": "bool", "label": "Do not rotate", "default": False},
     ),
     "wf_trg_score_achieved": _box(
         "trigger",
@@ -525,7 +523,26 @@ BOXES: dict[str, dict[str, Any]] = {
     "wf_slc_users_onfurni": _selector(DOCUMENTED, FURNI),
     "wf_slc_users_handitem": _selector(
         DOCUMENTED,
-        {"name": "handitem", "kind": "number", "label": "Hand item ID", "default": 2, "min": 0},
+        {"name": "handitem", "kind": "number", "label": "Hand Item", "default": 2, "min": 0},
+    ),
+    "wf_slc_users_bytype": _selector(
+        DOCUMENTED,
+        {
+            "name": "types",
+            "kind": "select",
+            "label": "User type",
+            "options": ["habbo", "pet", "bot", "habbo_pet", "habbo_bot", "pet_bot", "all"],
+            "labels": {
+                "habbo": "Habbo",
+                "pet": "Pet",
+                "bot": "Bot",
+                "habbo_pet": "Habbo and Pet",
+                "habbo_bot": "Habbo and Bot",
+                "pet_bot": "Pet and Bot",
+                "all": "Habbo, Pet and Bot",
+            },
+            "default": "habbo",
+        },
     ),
     "wf_slc_users_byaction": _selector(DOCUMENTED, AVATAR_ACTION, ACTION_NUMBER),
     "wf_slc_users_neighborhood": _selector(DOCUMENTED, *NEIGHBOURHOOD),
@@ -632,6 +649,13 @@ BOXES: dict[str, dict[str, Any]] = {
     "wf_xtra_filter_users": _box("addon", DOCUMENTED, AMOUNT),
     "wf_xtra_filter_furni": _box("addon", DOCUMENTED, AMOUNT),
     "wf_xtra_filter_users_by_var": _box(
+        "addon",
+        DOCUMENTED,
+        VARIABLE,
+        AMOUNT,
+        {"name": "lowest", "kind": "bool", "label": "Lowest instead of highest", "default": False},
+    ),
+    "wf_xtra_filter_furni_by_var": _box(
         "addon",
         DOCUMENTED,
         VARIABLE,

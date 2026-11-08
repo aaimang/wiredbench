@@ -1088,6 +1088,14 @@ class Engine:
                     reverse=not box.get("lowest"),
                 )
                 ctx.users = ranked[:amount]
+            elif box.classname == "wf_xtra_filter_furni_by_var" and ctx.selected_furni is not None:
+                name = str(box.get("variable", ""))
+                ranked = sorted(
+                    (i for i in ctx.selected_furni if self._holding(name, i, ctx, "furni") is not None),
+                    key=lambda i: self._holding(name, i, ctx, "furni").value,  # type: ignore[union-attr]
+                    reverse=not box.get("lowest"),
+                )
+                ctx.selected_furni = ranked[:amount]
 
     def _select(self, box: Box, ctx: Context) -> None:
         if box.spec is None:
@@ -1199,6 +1207,13 @@ class Engine:
                     if i in self.furni
                 }
                 return [u for u, d in self.users.items() if (d["x"], d["y"]) in tiles]
+            case "wf_slc_users_bytype":
+                # A sandbox's avatars are all Habbos: it has no pets or bots.
+                return (
+                    list(self.users)
+                    if "habbo" in str(box.get("types", "habbo")) or box.get("types") == "all"
+                    else []
+                )
             case "wf_slc_users_handitem":
                 hand = _int(box.get("handitem", 2), 2)
                 return [u for u, d in self.users.items() if _int(d["details"].get("@handitem")) == hand]

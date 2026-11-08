@@ -8,7 +8,7 @@ it, and a named position is still unverified until a box is changed and read aga
 
 No reply from: `wf_contract_payment`, `wf_contract_reward`, `wf_contract_trade`. The cause is unconfirmed.
 
-Named positions: 152. Unnamed positions: 430.
+Named positions: 155. Unnamed positions: 427.
 
 | Box | Section | Default numbers | Named positions | Unnamed positions |
 |---|---|---|---|---|
@@ -118,7 +118,7 @@ Named positions: 152. Unnamed positions: 430.
 | `wf_slc_users_area` | selector | `[0, 0, 0, 0]` | 0: area_x, 1: area_y, 2: area_width, 3: area_height |  |
 | `wf_slc_users_byaction` | selector | `[0]` | 0: action |  |
 | `wf_slc_users_byname` | selector | `[]` |  |  |
-| `wf_slc_users_bytype` | selector | `[1]` |  | 0 |
+| `wf_slc_users_bytype` | selector | `[1]` | 0: types |  |
 | `wf_slc_users_group` | selector | `[]` |  |  |
 | `wf_slc_users_handitem` | selector | `[2]` | 0: handitem |  |
 | `wf_slc_users_neighborhood` | selector | `[1, 0, 0, 33554431, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]` | 0: around, 1: root_x, 2: root_y | 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17 |
@@ -167,7 +167,7 @@ Named positions: 152. Unnamed positions: 430.
 | `wf_xtra_exec_in_order` | addon | `[]` |  |  |
 | `wf_xtra_execution_limit` | addon | `[100, 1]` | 0: count, 1: window_seconds |  |
 | `wf_xtra_filter_furni` | addon | `[10, 0, 1]` | 0: amount | 1, 2 |
-| `wf_xtra_filter_furni_by_var` | addon | `[10, 0, 0, 1]` |  | 0, 1, 2, 3 |
+| `wf_xtra_filter_furni_by_var` | addon | `[10, 0, 0, 1]` | 0: amount, 1: lowest | 2, 3 |
 | `wf_xtra_filter_users` | addon | `[10, 0, 1]` | 0: amount | 1, 2 |
 | `wf_xtra_filter_users_by_var` | addon | `[10, 0, 0, 1]` | 0: amount, 1: lowest | 2, 3 |
 | `wf_xtra_link_speaker` | addon | `[1, 1]` |  | 0, 1 |

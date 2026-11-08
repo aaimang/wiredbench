@@ -248,6 +248,14 @@ GUIDE: dict[str, tuple[str, str]] = {
         "Selects the furni on the tiles around users or furni.",
         "Light up the tiles around the player.",
     ),
+    "wf_slc_users_bytype": (
+        "Selects users by type: Habbos, pets or bots. A sandbox only has Habbos.",
+        "Leave pets out of a game.",
+    ),
+    "wf_xtra_filter_furni_by_var": (
+        "Keeps the selected furni with the highest or lowest value of a variable.",
+        "Pick the tile with the most points.",
+    ),
     "wf_slc_users_handitem": (
         "Selects the users holding a hand item.",
         "Let only users holding a drink through.",
