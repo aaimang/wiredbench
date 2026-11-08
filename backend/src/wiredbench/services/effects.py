@@ -34,7 +34,7 @@ BODY_CHANGES = {"add", "remove", "override", "avatar", "direction"}
 INK_ADD = "33"
 MAX_FRAMES = 2000
 # Raised when the manifest's shape changes, so effects built before are built again.
-EFFECT_VERSION = 6
+EFFECT_VERSION = 7
 
 
 def facts() -> dict[str, Any]:
@@ -139,7 +139,11 @@ def build(data: bytes, lib: str) -> tuple[dict[str, Any], bytes | None]:
     offsets: dict[str, tuple[int, int]] = {}
     for asset in manifest.iter("asset"):
         param = asset.find("param")
-        x, _, y = (param.get("value", "") if param is not None else "").partition(",")
+        if param is None:
+            # Older effects such as Wade list their images without an offset, which is none at all.
+            offsets[asset.get("name", "")] = (0, 0)
+            continue
+        x, _, y = param.get("value", "").partition(",")
         try:
             offsets[asset.get("name", "")] = (int(x), int(y))
         except ValueError:
