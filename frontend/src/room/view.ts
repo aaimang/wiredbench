@@ -18,6 +18,7 @@ import {
   frontTile,
   furniKind,
   glideSteps,
+  isFrozen,
   isNextTo,
   type Look,
   normaliseRoom,
@@ -25,6 +26,7 @@ import {
   type RoomDocument,
   restTile,
   standAt,
+  syncTemporary,
   UNKNOWN_FURNI,
   usedFromFront,
   usedFromNextTo,
@@ -447,7 +449,7 @@ class WbRoomView extends HTMLElement {
   private walkTo(goal: [number, number], onArrive?: () => void): void {
     const room = this.room;
     const avatar = room?.avatars.find((a) => a.id === this.user);
-    if (!room || !avatar) return;
+    if (!room || !avatar || isFrozen(avatar)) return;
     const [next] = this.walker?.path ?? [];
     const start: [number, number] = next ?? [avatar.x, avatar.y];
     const occupied = new Set(
@@ -584,6 +586,7 @@ class WbRoomView extends HTMLElement {
     const room = this.room;
     if (!room) return;
     this.effects = state;
+    room.furni = syncTemporary(room.furni, state.furni);
     for (const item of state.furni) {
       const placed = room.furni.find((f) => f.id === item.id);
       if (placed) Object.assign(placed, item);

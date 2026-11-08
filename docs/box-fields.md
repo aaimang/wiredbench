@@ -8,7 +8,7 @@ it, and a named position is still unverified until a box is changed and read aga
 
 No reply from: `wf_contract_payment`, `wf_contract_reward`, `wf_contract_trade`. The cause is unconfirmed.
 
-Named positions: 169. Unnamed positions: 413.
+Named positions: 209. Unnamed positions: 373.
 
 | Box | Section | Default numbers | Named positions | Unnamed positions |
 |---|---|---|---|---|
@@ -27,7 +27,7 @@ Named positions: 169. Unnamed positions: 413.
 | `wf_act_click_conf` | effect | `[0, 0]` |  | 0, 1 |
 | `wf_act_control_clock` | effect | `[0]` | 0: clock_control |  |
 | `wf_act_flee` | effect | `[]` |  |  |
-| `wf_act_freeze` | effect | `[0, 0]` |  | 0, 1 |
+| `wf_act_freeze` | effect | `[0, 0]` | 0: effect, 1: thaw_on_teleport |  |
 | `wf_act_furni_to_furni` | effect | `[]` |  |  |
 | `wf_act_furni_to_user` | effect | `[]` |  |  |
 | `wf_act_give_currency` | effect | `[0, 1, 0, -20, 1, 11]` |  | 0, 1, 2, 3, 4, 5 |
@@ -41,14 +41,14 @@ Named positions: 169. Unnamed positions: 413.
 | `wf_act_leave_team` | effect | `[]` |  |  |
 | `wf_act_log` | effect | `[0]` | 0: level |  |
 | `wf_act_match_to_sshot` | effect | `[0, 0, 0, 0, 1]` |  | 0, 1, 2, 3, 4 |
-| `wf_act_move_furni_as_group` | effect | `[1, 0, 0]` |  | 0, 1, 2 |
+| `wf_act_move_furni_as_group` | effect | `[1, 0, 0]` | 0: target_user, 1: offset_x, 2: offset_y |  |
 | `wf_act_move_rotate` | effect | `[0, 0, 1]` | 0: direction, 1: rotation | 2 |
 | `wf_act_move_rotate_user` | effect | `[-1, -1]` | 0: user_move, 1: user_turn |  |
 | `wf_act_move_to_dir` | effect | `[0, 0, 1]` | 0: start_dir, 1: turn, 2: block_users |  |
 | `wf_act_neg_call_stacks` | effect | `[]` |  |  |
 | `wf_act_neg_log` | effect | `[0]` |  | 0 |
 | `wf_act_neg_send_signal` | effect | `[0, 0]` | 1: split_users | 0 |
-| `wf_act_place_furni` | effect | `[0, 0, 0, 0, 0, 0, 0, 0, 0, -20]` |  | 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 |
+| `wf_act_place_furni` | effect | `[0, 0, 0, 0, 0, 0, 0, 0, 0, -20]` | 0: target_user, 1: location, 2: altitude, 3: offset_x, 4: offset_y, 5: offset_altitude, 6: spawn_with_variable | 7, 8, 9 |
 | `wf_act_rel_mov` | effect | `[0, 0]` | 0: move_x, 1: move_y |  |
 | `wf_act_remove_furni` | effect | `[]` |  |  |
 | `wf_act_remove_var` | effect | `[1]` |  | 0 |
@@ -72,18 +72,18 @@ Named positions: 169. Unnamed positions: 413.
 | `wf_cnd_chest_has_item_type` | condition | `[0, 0, -20, 2]` |  | 0, 1, 2, 3 |
 | `wf_cnd_chest_has_items` | condition | `[0, 0, -20, 2]` |  | 0, 1, 2, 3 |
 | `wf_cnd_counter_time_matches` | condition | `[0, 0, 0, 0]` | 0: clock_seconds, 1: clock_minutes, 2: clock_half, 3: clock_compare |  |
-| `wf_cnd_date_rng_active` | condition | `[0, 0]` |  | 0, 1 |
+| `wf_cnd_date_rng_active` | condition | `[0, 0]` | 0: start, 1: end |  |
 | `wf_cnd_furnis_hv_avtrs` | condition | `[1]` |  | 0 |
-| `wf_cnd_has_altitude` | condition | `[0, 0]` |  | 0, 1 |
+| `wf_cnd_has_altitude` | condition | `[0, 0]` | 0: altitude, 1: altitude_compare |  |
 | `wf_cnd_has_furni_on` | condition | `[0]` |  | 0 |
-| `wf_cnd_has_handitem` | condition | `[2]` |  | 0 |
+| `wf_cnd_has_handitem` | condition | `[2]` | 0: handitem |  |
 | `wf_cnd_has_var` | condition | `[1]` |  | 0 |
-| `wf_cnd_match_date` | condition | `[0, 0, 127, 1, 1, 4095, 0, 0]` |  | 0, 1, 2, 3, 4, 5, 6, 7 |
+| `wf_cnd_match_date` | condition | `[0, 0, 127, 1, 1, 4095, 0, 0]` | 0: use_days, 1: use_years, 3: day_min, 4: day_max, 6: year_min, 7: year_max | 2, 5 |
 | `wf_cnd_match_snapshot` | condition | `[0, 0, 0, 0]` |  | 0, 1, 2, 3 |
-| `wf_cnd_match_time` | condition | `[0, 0, 0, 0, 0, 0, 0, 0, 0]` |  | 0, 1, 2, 3, 4, 5, 6, 7, 8 |
+| `wf_cnd_match_time` | condition | `[0, 0, 0, 0, 0, 0, 0, 0, 0]` | 0: use_seconds, 1: use_minutes, 2: use_hours, 3: seconds_min, 4: seconds_max, 5: minutes_min, 6: minutes_max, 7: hours_min, 8: hours_max |  |
 | `wf_cnd_neg_has_var` | condition | `[1]` |  | 0 |
 | `wf_cnd_not_furni_on` | condition | `[0]` |  | 0 |
-| `wf_cnd_not_has_handitem` | condition | `[2]` |  | 0 |
+| `wf_cnd_not_has_handitem` | condition | `[2]` | 0: handitem |  |
 | `wf_cnd_not_hv_avtrs` | condition | `[0]` |  | 0 |
 | `wf_cnd_not_in_group` | condition | `[]` |  |  |
 | `wf_cnd_not_in_team` | condition | `[0]` | 0: team |  |
@@ -92,17 +92,17 @@ Named positions: 169. Unnamed positions: 413.
 | `wf_cnd_not_trggrer_on` | condition | `[]` |  |  |
 | `wf_cnd_not_triggerer_match` | condition | `[1]` |  | 0 |
 | `wf_cnd_not_user_count` | condition | `[1, 50]` | 0: min, 1: max |  |
-| `wf_cnd_not_user_performs_action` | condition | `[0]` |  | 0 |
-| `wf_cnd_slc_quantity` | condition | `[0, 5, 0]` |  | 0, 1, 2 |
+| `wf_cnd_not_user_performs_action` | condition | `[0]` | 0: action |  |
+| `wf_cnd_slc_quantity` | condition | `[0, 5, 0]` | 0: count, 1: amount, 2: quantity_compare |  |
 | `wf_cnd_stuff_is` | condition | `[]` |  |  |
-| `wf_cnd_team_has_rank` | condition | `[0, 0]` |  | 0, 1 |
+| `wf_cnd_team_has_rank` | condition | `[0, 0]` | 0: team, 1: placement |  |
 | `wf_cnd_team_has_score` | condition | `[0, 0, 0]` | 0: team, 1: points, 2: score_compare |  |
 | `wf_cnd_time_less_than` | condition | `[20]` |  | 0 |
 | `wf_cnd_time_more_than` | condition | `[20]` |  | 0 |
 | `wf_cnd_trggrer_on_frn` | condition | `[]` |  |  |
 | `wf_cnd_triggerer_match` | condition | `[1]` |  | 0 |
 | `wf_cnd_user_count_in` | condition | `[1, 50]` | 0: min, 1: max |  |
-| `wf_cnd_user_performs_action` | condition | `[0]` |  | 0 |
+| `wf_cnd_user_performs_action` | condition | `[0]` | 0: action |  |
 | `wf_cnd_valid_moves` | condition | `[]` |  |  |
 | `wf_cnd_var_age_match` | condition | `[1, 0, 0, 0, 0, 1, 0, -10]` | 1: compare, 2: age_of, 4: duration, 5: unit | 0, 3, 6, 7 |
 | `wf_cnd_var_val_match` | condition | `[1, 2, 0, 0, 0, -10, 0]` | 1: compare, 4: value | 0, 2, 3, 5, 6 |

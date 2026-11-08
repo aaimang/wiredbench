@@ -858,3 +858,14 @@ def test_movement_add_ons_echo_pointer_and_link_options_are_read() -> None:
         "wf_act_send_message", {"options": [1], "config": "hi", "items": [5]}, {}
     )
     assert (send["message_source"], send["text"], send["furni"]) == ("custom", "hi", [5])
+
+
+def test_direction_weekday_and_month_masks_are_read() -> None:
+    facing = exchange.friendly_settings("wf_cnd_actor_dir", {"options": [0b101]}, {})
+    assert [n for n in range(8) if facing[f"dir_{n}"]] == [0, 2]
+    date = exchange.friendly_settings("wf_cnd_match_date", {"options": [1, 0, 0b10000, 3, 9, 0, 0, 0]}, {})
+    assert [n for n in range(7) if date[f"weekday_{n}"]] == [4], "Friday only"
+    assert all(date[f"month_{n}"] for n in range(12)), "no month ticked counts as every month"
+    assert (date["use_days"], date["day_min"], date["day_max"]) == (True, 3, 9)
+    group = exchange.friendly_settings("wf_act_move_furni_as_group", {"options": [0, -2, 3]}, {})
+    assert (group["target_user"], group["offset_x"], group["offset_y"]) == (False, -2, 3)

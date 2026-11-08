@@ -51,6 +51,7 @@ import {
   frontTile,
   furniKind,
   History,
+  isFrozen,
   isNextTo,
   isWiredBox,
   MAX_ROOM_SIZE,
@@ -68,6 +69,7 @@ import {
   stackHeight,
   standAt,
   standUpOffSeats,
+  syncTemporary,
   UNKNOWN_FURNI,
   usedFromFront,
   usedFromNextTo,
@@ -1040,6 +1042,10 @@ class WbEditor extends HTMLElement {
       toast(T.addAvatarFirst, "error");
       return;
     }
+    if (this.run && isFrozen(avatar)) {
+      toast(T.frozen, "error");
+      return;
+    }
     if (this.selected?.id !== avatar.id) {
       this.selected = { kind: "avatar", id: avatar.id };
       this.renderPanels();
@@ -1406,6 +1412,7 @@ class WbEditor extends HTMLElement {
     this.looks = state.looks;
     this.fx = state.fx;
     this.flights = state.flights;
+    this.room.furni = syncTemporary(this.room.furni, state.furni);
     for (const item of state.furni) {
       const placed = this.room.furni.find((f) => f.id === item.id);
       if (placed) Object.assign(placed, item);

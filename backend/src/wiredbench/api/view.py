@@ -28,7 +28,7 @@ router = APIRouter(prefix="/api/view", tags=["view"])
 HIDDEN_STAGES = {"not_in_catalogue", "staff", "in_development"}
 FURNI_FIELDS = ("id", "classname", "x", "y", "z", "rot", "state")
 AVATAR_FIELDS = ("id", "name", "hotel", "figure", "x", "y", "z", "dir", "pose", "face")
-VISIBLE_DETAILS = ("@handitem", "@sign", "@is_idle", "@effect")
+VISIBLE_DETAILS = ("@handitem", "@sign", "@is_idle", "@effect", "@is_frozen")
 ITEM_FIELDS = ("classname", "revision", "category", "hand_items", "xdim", "ydim", "height", "data")
 LOOK_FIELDS = ("highlight", "invisible", "click_through")
 MESSAGES_SHOWN = 20

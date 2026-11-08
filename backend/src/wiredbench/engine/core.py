@@ -92,6 +92,7 @@ DEFAULT_GAME_SECONDS = 30
 MAX_TIMES = 10
 # A real room leaves these as they are when Toggle Furni State points at them.
 NOT_WIRED_TOGGLED = {"wf_floor_switch1", "wf_floor_switch2"}
+FREEZE_EFFECTS = {218, 12, 11, 53, 163}  # The effects Freeze offers.
 LINK = "wf_link"
 LINK_MESSAGE_BYTES = 1000  # Habbo refuses a longer link message.
 PLACEHOLDER = re.compile(r"\$\(([\w.-]{1,40})\)")
@@ -140,6 +141,10 @@ def _three_way(compare: Any, value: int, reference: int) -> bool:
     if compare == "equal":
         return value == reference
     return value > reference if compare == "more" else value < reference
+
+
+def _in_range(value: int, low: int, high: int) -> bool:
+    return low <= value <= high if low <= high else value >= low or value <= high
 
 
 def _hundredths(value: Any) -> int:
@@ -292,6 +297,11 @@ class Engine:
         self.boxes_at: dict[tuple[int, int], list[Box]] = defaultdict(list)
         self.variables: dict[str, dict[str, Holding]] = defaultdict(dict)
         self.definitions: dict[str, dict[str, Any]] = {}
+        # Freeze: the effect each frozen user wore before, and who a WIRED teleport thaws.
+        self.before_freeze: dict[int, int | None] = {}
+        self.thaw_on_teleport: set[int] = set()
+        # Random add-on: the effects each one picked in its recent runs.
+        self.random_picks: dict[int, deque[list[int]]] = {}
         # Echo variables, by name, and the variable each one mirrors. Pointer variables, by name.
         self.echoes: dict[str, str] = {}
         self.pointers: dict[str, Box] = {}
@@ -369,6 +379,9 @@ class Engine:
             for (x, y), boxes in sorted(self.boxes_at.items())
         ]
         self.stack_of = {box.id: stack for stack in self.stacks for box in stack.boxes}
+        # Place Furni copies what its picks looked like when the room started.
+        self.templates = {i: dict(item) for i, item in self.furni.items()}
+        self.next_furni_id = max(self.furni, default=0) + 1
         for stack in self.stacks:
             for box in stack.boxes:
                 self._define_variable(box)
@@ -469,6 +482,9 @@ class Engine:
         kind = entry.get("type")
         user = entry.get("user")
         if kind == "move":
+            if self._frozen(_int(user)):
+                self._log("info", f"{self._user_name(_int(user))} is frozen and cannot walk")
+                return
             if entry.get("dir") is not None and (who := self.users.get(_int(user))) is not None:
                 who["dir"] = _int(entry["dir"]) % 8
             self._move_user(_int(user), _int(entry.get("x")), _int(entry.get("y")))
@@ -637,7 +653,10 @@ class Engine:
         if user_id not in self.users:
             return
         self._log("info", f"{self.users[user_id]['name']} says: {text}")
+        owner = bool(_int(self.users[user_id]["details"].get("@is_owner")))
         for stack, box in self._triggers("wf_trg_says_something"):
+            if box.get("owner_only") and not owner:
+                continue
             keyword = str(box.get("text", "")).strip().lower()
             said = text.strip().lower()
             match = "exact" if box.get("exact") is True else str(box.get("match", "contains"))
@@ -1148,8 +1167,8 @@ class Engine:
         known = [box for box in effects if box.spec is not None]
         if not known:
             return []
-        if stack.find("wf_xtra_random"):
-            return [self.random.choice(known)]
+        if (addon := stack.find("wf_xtra_random")) is not None:
+            return self._random_effects(addon, known)
         if stack.find("wf_xtra_unseen"):
             if not stack.unseen:
                 stack.unseen = [box.id for box in known]
@@ -1164,6 +1183,19 @@ class Engine:
         shuffled = list(known)
         self.random.shuffle(shuffled)
         return shuffled
+
+    def _random_effects(self, addon: Box, known: list[Box]) -> list[Box]:
+        """Picks some effects, avoiding those its last few runs picked while others are left."""
+        skip = max(0, min(_int(addon.get("skip", 0)), 100))
+        pick = max(1, min(_int(addon.get("pick", 1), 1), 100))
+        history = self.random_picks.setdefault(addon.id, deque())
+        recent = {i for run in history for i in run}
+        fresh = [box for box in known if box.id not in recent] or known
+        chosen = self.random.sample(fresh, min(pick, len(fresh)))
+        history.append([box.id for box in chosen])
+        while len(history) > skip:
+            history.popleft()
+        return chosen
 
     # --- Selectors ---
 
@@ -1347,8 +1379,11 @@ class Engine:
         return list(ctx.signal_users)
 
     def _furni_for(self, box: Box, ctx: Context) -> list[int]:
-        source = box.get("furni_source", "default")
-        picks = [i for i in _ids(box.get("furni")) if i in self.furni]
+        return self._furni_from(box, ctx, "furni_source", "furni")
+
+    def _furni_from(self, box: Box, ctx: Context, source_field: str, picks_field: str) -> list[int]:
+        source = box.get(source_field, "default")
+        picks = [i for i in _ids(box.get(picks_field)) if i in self.furni]
         if source == "picks":
             return picks
         if source == "trigger":
@@ -1461,10 +1496,116 @@ class Engine:
                 return self._user_name(ctx.user).lower() == str(box.get("name", "")).lower()
             case "wf_cnd_not_triggerer_match":
                 return self._user_name(ctx.user).lower() != str(box.get("name", "")).lower()
+            case "wf_cnd_has_handitem":
+                hand = _int(box.get("handitem", 2), 2)
+                return self._quantify(box, [self._hand_item(u) == hand for u in users])
+            case "wf_cnd_not_has_handitem":
+                hand = _int(box.get("handitem", 2), 2)
+                return self._quantify(box, [self._hand_item(u) != hand for u in users])
+            case "wf_cnd_user_performs_action":
+                action = str(box.get("action", "wave"))
+                return self._quantify(
+                    box, [self._performing(u, action, box) for u in users if u in self.users]
+                )
+            case "wf_cnd_not_user_performs_action":
+                action = str(box.get("action", "wave"))
+                return self._quantify(
+                    box, [not self._performing(u, action, box) for u in users if u in self.users]
+                )
+            case "wf_cnd_actor_dir":
+                faces = {n for n in range(8) if box.get(f"dir_{n}")}
+                if not faces:
+                    return False  # A box with no direction ticked never holds.
+                return self._quantify(box, [self.users[u]["dir"] in faces for u in users if u in self.users])
+            case "wf_cnd_has_altitude":
+                wanted = _hundredths(box.get("altitude", 0))
+                compare = box.get("altitude_compare", "less")
+                found = [i for i in self._furni_for(box, ctx) if i in self.furni]
+                return self._quantify(
+                    box, [_three_way(compare, _hundredths(self.furni[i]["z"]), wanted) for i in found]
+                )
+            case "wf_cnd_slc_quantity":
+                if box.get("count", "furni") == "users":
+                    count = len(self._condition_users(box, ctx))
+                else:
+                    count = len(self._condition_furni(box, ctx))
+                return _three_way(box.get("quantity_compare", "less"), count, _int(box.get("amount", 5), 5))
+            case "wf_cnd_team_has_rank":
+                placement = _int(box.get("placement", "1"), 1)
+                team = box.get("team", "own")
+                if team in TEAMS:
+                    return self._rank(team) == placement
+                teams = [self.users[u]["team"] for u in users if u in self.users]
+                return self._quantify(box, [t in TEAMS and self._rank(t) == placement for t in teams])
+            case "wf_cnd_match_date":
+                return self._date_matches(box)
+            case "wf_cnd_match_time":
+                return self._time_matches(box)
+            case "wf_cnd_date_rng_active":
+                now = (self.clock_start_ms + self.now_ms) // 1000
+                return _int(box.get("start", 0)) <= now <= _int(box.get("end", 0))
+            case "wf_cnd_valid_moves":
+                stack = self.stack_of.get(box.id)
+                return stack is None or self._moves_valid(stack, ctx)
             case "wf_cnd_time_less_than":
                 return self.now_ms - self.timer_start_ms < _int(box.get("seconds", 0)) * 1000
             case "wf_cnd_time_more_than":
                 return self.now_ms - self.timer_start_ms > _int(box.get("seconds", 0)) * 1000
+        return True
+
+    @staticmethod
+    def _quantify(box: Box, results: list[bool]) -> bool:
+        """All or any of them, as the box says. With none at all, "all" holds and "any" does not."""
+        return any(results) if box.get("quantifier", "all") == "any" else all(results)
+
+    def _hand_item(self, user_id: int) -> int:
+        user = self.users.get(user_id)
+        return _int(user["details"].get("@handitem")) if user else 0
+
+    def _condition_users(self, box: Box, ctx: Context) -> list[int]:
+        source = box.get("user_source", "selector")
+        if source == "trigger":
+            return [ctx.user] if ctx.user is not None else []
+        return list(ctx.signal_users) if source == "signal" else list(ctx.users or [])
+
+    def _condition_furni(self, box: Box, ctx: Context) -> list[int]:
+        source = box.get("furni_source", "selector")
+        if source == "trigger":
+            return [ctx.furni] if ctx.furni is not None else []
+        return list(ctx.signal_furni) if source == "signal" else list(ctx.selected_furni or [])
+
+    def _rank(self, team: str) -> int:
+        """1 for the highest score. Teams on the same score share a place."""
+        return 1 + sum(self.team_scores[other] > self.team_scores[team] for other in TEAMS)
+
+    def _local_now(self) -> datetime:
+        return datetime.fromtimestamp((self.clock_start_ms + self.now_ms) / 1000, tz=self.timezone)
+
+    def _date_matches(self, box: Box) -> bool:
+        """No weekday or month ticked counts as all of them. A day range past the month end wraps round."""
+        now = self._local_now()
+        weekdays = {n for n in range(7) if box.get(f"weekday_{n}", True)}
+        if weekdays and now.weekday() not in weekdays:
+            return False
+        months = {n for n in range(12) if box.get(f"month_{n}", True)}
+        if months and now.month - 1 not in months:
+            return False
+        if box.get("use_days") and not _in_range(
+            now.day, _int(box.get("day_min", 1), 1), _int(box.get("day_max", 1), 1)
+        ):
+            return False
+        return not (
+            box.get("use_years")
+            and not _int(box.get("year_min", 0)) <= now.year <= _int(box.get("year_max", 0))
+        )
+
+    def _time_matches(self, box: Box) -> bool:
+        """Both ends count, and a range whose start is past its end wraps round: hours 22 to 2."""
+        now = self._local_now()
+        for unit, value in (("seconds", now.second), ("minutes", now.minute), ("hours", now.hour)):
+            low, high = _int(box.get(f"{unit}_min", 0)), _int(box.get(f"{unit}_max", 0))
+            if box.get(f"use_{unit}") and not _in_range(value, low, high):
+                return False
         return True
 
     def _age_matches(self, box: Box, holding: Holding | None) -> bool:
@@ -1979,9 +2120,17 @@ class Engine:
             self._fire("wf_trg_stuff_state", furni=furni_id)
 
     def _do_toggle_state(self, box: Box, ctx: Context) -> None:
+        back = box.get("toggle_type", "next") == "previous"
         for furni_id in self._furni_for(box, ctx):
             if self.furni[furni_id]["classname"] not in NOT_WIRED_TOGGLED:
-                self._set_state(furni_id, self._next_state(furni_id))
+                self._set_state(
+                    furni_id, self._previous_state(furni_id) if back else self._next_state(furni_id)
+                )
+
+    def _previous_state(self, furni_id: int) -> int:
+        states = self._states(furni_id)
+        current = self.furni[furni_id]["state"]
+        return states[(states.index(current) - 1) % len(states)] if current in states else states[0]
 
     def _do_toggle_to_rnd(self, box: Box, ctx: Context) -> None:
         for furni_id in self._furni_for(box, ctx):
@@ -2007,16 +2156,41 @@ class Engine:
             elif addon.classname == "wf_xtra_text_output_variable":
                 name = str(addon.get("variable", ""))
                 on = self._scope(addon, name)
+                textual = addon.get("display", "numeric") == "textual"
+                key = str(addon.get("placeholder", name))
+                if addon.get("placeholder_type", "single") == "multiple":
+                    # Every selected holder, or the triggering one, joined by the delimiter.
+                    holders: list[int | None]
+                    if on == "furni":
+                        holders = list(ctx.selected_furni or []) or (
+                            [ctx.furni] if ctx.furni is not None else []
+                        )
+                    elif on == "user":
+                        holders = list(ctx.users or []) or ([user] if user is not None else [])
+                    else:
+                        holders = [None]
+                    shown_all = [
+                        self._shown(stack, name, self._holding(name, h, ctx, on), textual) or "null"
+                        for h in holders
+                    ]
+                    values[key] = str(addon.get("delimiter", "")).join(shown_all)
+                    continue
                 holding = self._holding(name, ctx.furni if on == "furni" else user, ctx, on)
-                shown = self._connected(stack, name, holding)
+                shown = self._shown(stack, name, holding, textual)
                 absent = holding is None and internal.targets(name)
-                values[str(addon.get("placeholder", name))] = "null" if absent else shown
+                values[key] = "null" if absent else shown
         return PLACEHOLDER.sub(lambda m: values.get(m.group(1), m.group(0)), str(box.get("text", "")))
 
     def _furni_name(self, furni_id: int) -> str:
         """The furni's public name, as Habbo shows it, or its class name when the catalogue has none."""
         classname = self.furni[furni_id]["classname"]
         return str(self.furni_facts.get(classname, {}).get("name") or classname)
+
+    def _shown(self, stack: Stack | None, name: str, holding: Holding | None, textual: bool) -> str:
+        """Numeric shows the number. Textual shows a Text Connector's label for it, or the number."""
+        if holding is None:
+            return ""
+        return self._connected(stack, name, holding) if textual else str(holding.value)
 
     def _connected(self, stack: Stack | None, name: str, holding: Holding | None) -> str:
         if holding is None:
@@ -2051,6 +2225,8 @@ class Engine:
             target = self.furni[self.random.choice(picks)]
             if user in self.users:
                 self._move_user(user, target["x"], target["y"])
+                if user in self.thaw_on_teleport:
+                    self._unfreeze(user)
 
     _do_teleport_to = _teleport
 
@@ -2190,13 +2366,18 @@ class Engine:
             return True
         return self.room_size is not None and (x >= self.room_size[0] or y >= self.room_size[1])
 
-    def _carried(self, box: Box | None, ctx: Context | None, x: int, y: int) -> list[int]:
+    def _carried(self, box: Box | None, ctx: Context | None, furni_id: int, x: int, y: int) -> list[int]:
         """The users a stack's Carry Users add-on takes along from a tile."""
         stack = self.stack_of.get(box.id) if box else None
         addon = stack.find("wf_xtra_mov_carry_users") if stack else None
         if addon is None or ctx is None:
             return []
         here = [u for u, d in self.users.items() if (d["x"], d["y"]) == (x, y)]
+        if addon.get("carry", "furni") == "furni":
+            # Only those standing on this furni itself, not on others on its tile.
+            top = self._top_furni(x, y)
+            if top is None or top["id"] != furni_id:
+                return []
         if addon.get("user_source", "default") == "default":
             return here
         allowed = self._users_for(addon, ctx)
@@ -2211,19 +2392,23 @@ class Engine:
         """
         item = self.furni[furni_id]
         x, y = item["x"] + dx, item["y"] + dy
-        if self._off_map(x, y):
+        if self._blocked(furni_id, x, y, box, ctx):
             return False
-        physics = self._movement(box, ctx)["physics"]
-        here = {u for u, d in self.users.items() if (d["x"], d["y"]) == (x, y)}
-        if here and not self._through_users(physics, here):
-            return False
-        if physics is not None and self._furni_block(furni_id, x, y, physics):
-            return False
-        carried = self._carried(box, ctx, item["x"], item["y"])
+        carried = self._carried(box, ctx, furni_id, item["x"], item["y"])
         self._place(box, ctx, furni_id, x, y)
         for user in carried:
             self._move_user(user, x, y)
         return True
+
+    def _blocked(self, furni_id: int, x: int, y: int, box: Box | None, ctx: Context | None) -> bool:
+        """Off the room, onto a user, or refused by furni under Movement Physics."""
+        if self._off_map(x, y):
+            return True
+        physics = self._movement(box, ctx)["physics"]
+        here = {u for u, d in self.users.items() if (d["x"], d["y"]) == (x, y)}
+        if here and not self._through_users(physics, here):
+            return True
+        return physics is not None and self._furni_block(furni_id, x, y, physics)
 
     def _place(self, box: Box | None, ctx: Context | None, furni_id: int, x: int, y: int) -> None:
         """Moves a furni to a tile, as the stack's movement add-ons say it looks and lands."""
@@ -2568,6 +2753,183 @@ class Engine:
             for furni_id in self._furni_for(box, ctx):
                 self._place(box, ctx, furni_id, target["x"], target["y"])
 
+    def _group_move(self, box: Box, ctx: Context) -> tuple[list[int], int, int] | None:
+        """Move Furni as Group: the corner of the box round the group lands on the target plus the offset."""
+        group = [i for i in self._furni_for(box, ctx) if i in self.furni]
+        target: tuple[int, int] | None = None
+        if box.get("target_user", True):
+            users = [u for u in self._users_for(box, ctx) if u in self.users]
+            if users:
+                target = (self.users[users[0]]["x"], self.users[users[0]]["y"])
+        else:
+            found = self._furni_from(box, ctx, "target_source", "target_furni")
+            if found:
+                target = (self.furni[found[0]]["x"], self.furni[found[0]]["y"])
+        if not group or target is None:
+            return None
+        dx = target[0] + _int(box.get("offset_x")) - min(self.furni[i]["x"] for i in group)
+        dy = target[1] + _int(box.get("offset_y")) - min(self.furni[i]["y"] for i in group)
+        return group, dx, dy
+
+    def _do_move_furni_as_group(self, box: Box, ctx: Context) -> None:
+        """Every furni moves by the same step. One that cannot go stays, and the rest still go."""
+        planned = self._group_move(box, ctx)
+        if planned is None or planned[1:] == (0, 0):
+            return
+        group, dx, dy = planned
+        # The one furthest along goes first, so none is blocked by its own group; on a tile, the lowest.
+        ahead = sorted(
+            group,
+            key=lambda i: (
+                -(self.furni[i]["x"] * _sign(dx) + self.furni[i]["y"] * _sign(dy)),
+                self.furni[i]["z"],
+            ),
+        )
+        for furni_id in ahead:
+            self._shift_furni(furni_id, dx, dy, box, ctx)
+        self._seat_users()
+
+    def _place_anchor(self, box: Box, ctx: Context) -> tuple[int, int, float] | None:
+        """Where a custom Place Furni puts the first copy: a user's tile, or a furni's tile and altitude."""
+        if box.get("target_user"):
+            users = [u for u in self._users_for(box, ctx) if u in self.users]
+            return (self.users[users[0]]["x"], self.users[users[0]]["y"], 0.0) if users else None
+        found = self._furni_from(box, ctx, "target_source", "target_furni")
+        if not found:
+            return None
+        target = self.furni[found[0]]
+        return target["x"], target["y"], float(target["z"])
+
+    def _do_place_furni(self, box: Box, ctx: Context) -> None:
+        """Puts temporary copies of the picked furni in the room, as they were when the room started.
+
+        A group keeps its layout: at a custom location the first copy lands on the target.
+        """
+        picks = [i for i in _ids(box.get("furni")) if i in self.templates and i in self.furni]
+        sources = [self.templates[i] for i in picks if self.templates[i]["classname"] not in BOXES]
+        if not sources:
+            return
+        anchor = None
+        if box.get("location", "source") == "custom":
+            anchor = self._place_anchor(box, ctx)
+            if anchor is None:
+                return
+        first = sources[0]
+        for template in sources:
+            x, y = template["x"], template["y"]
+            if anchor is not None:
+                x, y = anchor[0] + x - first["x"], anchor[1] + y - first["y"]
+            x, y = x + _int(box.get("offset_x")), y + _int(box.get("offset_y"))
+            if self._off_map(x, y):
+                self._log("info", "Place Furni cannot put a furni outside the room", box=box.id)
+                continue
+            match box.get("altitude", "top"):
+                case "source":
+                    z = float(template["z"])
+                case "custom":
+                    z = anchor[2] if anchor is not None else float(template["z"])
+                case _:
+                    z = self._landing(-1, x, y)
+            z += _hundredths(box.get("offset_altitude", 0)) / 100
+            copy = {**template, "id": self.next_furni_id, "x": x, "y": y, "temporary": True}
+            copy["z"] = max(0, min(_hundredths(z), MAX_ALTITUDE)) / 100
+            self.furni[self.next_furni_id] = copy
+            self.next_furni_id += 1
+        self._seat_users()
+
+    def _do_remove_furni(self, box: Box, ctx: Context) -> None:
+        """Takes out furni that Place Furni put there, and no others."""
+        for furni_id in self._condition_furni(box, ctx):
+            if self.furni.get(furni_id, {}).get("temporary"):
+                del self.furni[furni_id]
+                self.furni_looks.pop(furni_id, None)
+                self.flights = [f for f in self.flights if f["id"] != furni_id]
+        self._seat_users()
+
+    def _frozen(self, user_id: int) -> bool:
+        user = self.users.get(user_id)
+        return bool(user and user["details"].get("@is_frozen"))
+
+    def _do_freeze(self, box: Box, ctx: Context) -> None:
+        effect = _int(box.get("effect", "218"), 218)
+        for user_id in self._users_for(box, ctx):
+            user = self.users.get(user_id)
+            if user is None:
+                continue
+            if not self._frozen(user_id):
+                self.before_freeze[user_id] = user["details"].get("@effect")
+            user["details"]["@is_frozen"] = 1
+            user["details"]["@effect"] = effect
+            if box.get("thaw_on_teleport"):
+                self.thaw_on_teleport.add(user_id)
+            else:
+                self.thaw_on_teleport.discard(user_id)
+
+    def _do_unfreeze(self, box: Box, ctx: Context) -> None:
+        for user_id in self._users_for(box, ctx):
+            self._unfreeze(user_id)
+
+    def _unfreeze(self, user_id: int) -> None:
+        """The user walks again, and the effect worn before comes back unless another was put on since."""
+        user = self.users.get(user_id)
+        if user is None or not self._frozen(user_id):
+            return
+        user["details"].pop("@is_frozen", None)
+        self.thaw_on_teleport.discard(user_id)
+        before = self.before_freeze.pop(user_id, None)
+        if user["details"].get("@effect") in FREEZE_EFFECTS:
+            if before is None:
+                user["details"].pop("@effect", None)
+            else:
+                user["details"]["@effect"] = before
+
+    def _moves_valid(self, stack: Stack, ctx: Context) -> bool:
+        """Can Perform Movements: every move the stack's effects would make, in a random order, can be made."""
+        at = {i: (f["x"], f["y"]) for i, f in self.furni.items()}
+        effects = [b for b in stack.of("effect") if b.spec is not None]
+        for box in self.random.sample(effects, len(effects)):
+            for furni_id, x, y in self._planned_moves(box, ctx, at):
+                if self._blocked(furni_id, x, y, box, ctx):
+                    return False
+                at[furni_id] = (x, y)
+        return True
+
+    def _planned_moves(
+        self, box: Box, ctx: Context, at: dict[int, tuple[int, int]]
+    ) -> list[tuple[int, int, int]]:
+        """Where an effect would move its furni. Random steps cannot be known ahead and are left out."""
+        movers = [i for i in self._furni_for(box, ctx) if i in at]
+        match box.classname:
+            case "wf_act_rel_mov":
+                dx, dy = _int(box.get("move_x")), _int(box.get("move_y"))
+                return [(i, at[i][0] + dx, at[i][1] + dy) for i in movers if dx or dy]
+            case "wf_act_move_rotate":
+                direction = str(box.get("direction", "none"))
+                if direction.startswith("random"):
+                    return []
+                dx, dy = self._furni_step(direction)
+                return [(i, at[i][0] + dx, at[i][1] + dy) for i in movers if dx or dy]
+            case "wf_act_move_to_dir":
+                moves = []
+                for i in movers:
+                    heading = self.headings.get((box.id, i), _int(box.get("start_dir", "0")))
+                    dx, dy = DIRECTION_STEPS[heading]
+                    moves.append((i, at[i][0] + dx, at[i][1] + dy))
+                return moves
+            case "wf_act_furni_to_user":
+                users = [u for u in self._users_for(box, ctx) if u in self.users]
+                if not users:
+                    return []
+                target = self.users[users[0]]
+                return [(i, target["x"], target["y"]) for i in movers]
+            case "wf_act_move_furni_as_group":
+                planned = self._group_move(box, ctx)
+                if planned is None:
+                    return []
+                group, dx, dy = planned
+                return [(i, at[i][0] + dx, at[i][1] + dy) for i in group if i in at and (dx or dy)]
+        return []
+
     def _do_furni_to_furni(self, box: Box, ctx: Context) -> None:
         targets = [i for i in _ids(box.get("furni")) if i in self.furni]
         if not targets:
@@ -2695,7 +3057,12 @@ class Engine:
         return {
             "now_ms": self.now_ms,
             "furni": sorted(
-                ({k: f[k] for k in ("id", "x", "y", "z", "rot", "state")} for f in self.furni.values()),
+                (
+                    {k: f[k] for k in ("id", "x", "y", "z", "rot", "state")}
+                    # A copy Place Furni put there is not in the room's file, so the browser needs its kind.
+                    | ({"classname": f["classname"], "temporary": True} if f.get("temporary") else {})
+                    for f in self.furni.values()
+                ),
                 key=lambda f: f["id"],
             ),
             "users": sorted(self.users.values(), key=lambda u: u["id"]),

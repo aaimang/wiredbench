@@ -833,3 +833,34 @@ export function clickTileAt(
 export function enteredFromFront(kind: FurniKind): boolean {
   return kind === "teleport" || kind === "one_way_gate";
 }
+
+/** Adds the copies Place Furni put in the room and drops the ones it took away. */
+export function syncTemporary(
+  furni: PlacedFurni[],
+  shown: { id: number; classname?: string; temporary?: boolean }[],
+): PlacedFurni[] {
+  const ids = new Set(shown.map((item) => item.id));
+  const kept = furni.filter((item) => !item.temporary || ids.has(item.id));
+  const known = new Set(kept.map((item) => item.id));
+  for (const item of shown) {
+    if (item.temporary && item.classname && !known.has(item.id)) {
+      kept.push({
+        x: 0,
+        y: 0,
+        z: 0,
+        rot: 0,
+        state: 0,
+        ...item,
+        classname: item.classname,
+        temporary: true,
+      });
+    }
+  }
+  return kept;
+}
+
+/** Freeze stops a user walking until they are unfrozen. */
+export function isFrozen(avatar: PlacedAvatar): boolean {
+  const details = (avatar.details ?? {}) as Record<string, unknown>;
+  return Boolean(details["@is_frozen"]);
+}

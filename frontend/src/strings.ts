@@ -459,6 +459,7 @@ export const t = {
     wallNotYet: "Wall furni cannot be placed yet. Only floor furni can.",
     roomFull: "There is no free tile for an avatar.",
     addAvatarFirst: "Add an avatar first.",
+    frozen: "This avatar is frozen and cannot walk.",
     moveUpLeft: "Move up left",
     moveUpRight: "Move up right",
     moveDownLeft: "Move down left",
