@@ -751,14 +751,18 @@ export type FurniKind =
   | "vending"
   | "default";
 
-export function furniKind(classname: string, category: string | null): FurniKind {
+export function furniKind(
+  classname: string,
+  category: string | null,
+  handItems: readonly number[] = [],
+): FurniKind {
   const name = classname.toLowerCase();
   if (name.includes("dice")) return "dice";
   if (name.startsWith("wf_floor_switch")) return "switch";
   if (name.startsWith("one_way_door")) return "one_way_gate";
   if (category === "teleport") return "teleport";
   if (category === "gate") return "gate";
-  if (category === "vending_machine") return "vending";
+  if (category === "vending_machine" || handItems.length > 0) return "vending";
   return "default";
 }
 
@@ -808,6 +812,11 @@ export function frontTile(item: Pick<PlacedFurni, "x" | "y" | "rot">): [number, 
 }
 
 /** Furni entered from the tile in front of them. */
+/** Furni used from the tile in front of them: teleports, one-way gates and vending machines. */
+export function usedFromFront(kind: FurniKind): boolean {
+  return enteredFromFront(kind) || kind === "vending";
+}
+
 export function enteredFromFront(kind: FurniKind): boolean {
   return kind === "teleport" || kind === "one_way_gate";
 }

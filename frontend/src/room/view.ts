@@ -9,7 +9,6 @@ import {
   besideTiles,
   directionBetween,
   drawTile,
-  enteredFromFront,
   type Flight,
   type FurniInfo,
   type FxShown,
@@ -26,6 +25,7 @@ import {
   restTile,
   standAt,
   UNKNOWN_FURNI,
+  usedFromFront,
   usedFromNextTo,
   withFace,
 } from "./model";
@@ -49,6 +49,7 @@ const WIRED_COMMAND = ":wired";
 interface ViewItem {
   revision?: number;
   category?: string;
+  hand_items?: number[];
   xdim?: number;
   ydim?: number;
   height?: number;
@@ -171,7 +172,7 @@ class WbRoomView extends HTMLElement {
       canSit: item.data?.cansiton === true,
       canLay: item.data?.canlayon === true,
       canStack: item.data?.canputstuffon !== false,
-      kind: furniKind(classname, item.category ?? null),
+      kind: furniKind(classname, item.category ?? null, item.hand_items),
     };
   };
 
@@ -417,8 +418,8 @@ class WbRoomView extends HTMLElement {
       send();
       return;
     }
-    const kind = this.lookup(item.classname).kind ?? "default";
-    if (enteredFromFront(kind)) {
+    const kind = this.lookup(item.classname).kind ?? furniKind(item.classname, null);
+    if (usedFromFront(kind)) {
       const front = frontTile(item);
       if (avatar.x === front[0] && avatar.y === front[1]) send();
       else this.walkTo(front, send);

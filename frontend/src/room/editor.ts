@@ -41,7 +41,6 @@ import {
   directionBetween,
   drawTile,
   emptyRoom,
-  enteredFromFront,
   FACE_NAMES,
   type FurniInfo,
   figureAction,
@@ -69,6 +68,7 @@ import {
   standAt,
   standUpOffSeats,
   UNKNOWN_FURNI,
+  usedFromFront,
   usedFromNextTo,
   withFace,
 } from "./model";
@@ -347,7 +347,7 @@ class WbEditor extends HTMLElement {
       canSit: data.cansiton === true,
       canLay: data.canlayon === true,
       canStack: data.canputstuffon !== false,
-      kind: furniKind(classname, item.category ?? null),
+      kind: furniKind(classname, item.category ?? null, item.hand_items),
     };
   };
 
@@ -1073,7 +1073,7 @@ class WbEditor extends HTMLElement {
       void run.input({ type: "use", user: null, furni: item.id });
       return;
     }
-    const kind = furniKind(item.classname, this.items.get(item.classname)?.category ?? null);
+    const kind = this.lookup(item.classname).kind ?? furniKind(item.classname, null);
     const send = () => {
       if (kind === "dice" && this.diceRolled.has(item.id) && ![0, 100].includes(item.state)) {
         this.diceRolled.delete(item.id);
@@ -1083,8 +1083,8 @@ class WbEditor extends HTMLElement {
       if (kind === "dice") this.diceRolled.add(item.id);
       void run.input({ type: "use", user: avatar.id, furni: item.id });
     };
-    // Teleports and one-way gates are entered from the tile in front of them.
-    if (enteredFromFront(kind)) {
+    // Teleports, one-way gates and vending machines are used from the tile in front of them.
+    if (usedFromFront(kind)) {
       const front = frontTile(item);
       if (avatar.x === front[0] && avatar.y === front[1]) send();
       else this.walkTo(front, send);

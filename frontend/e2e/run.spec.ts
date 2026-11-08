@@ -755,3 +755,55 @@ test("a dice is rolled from the tile next to it, and a lamp switches only with r
   await page.mouse.dblclick(dice.x, dice.y);
   await expect.poll(async () => (await state()).furni.find((f) => f.id === 1)?.state).toBe(0);
 });
+
+test("a vending machine hands the avatar in front of it one of its drinks", async ({ page }) => {
+  await login(page);
+  const room = await page.evaluate(async () => {
+    const me = await (await fetch("/api/auth/me")).json();
+    const headers = { "Content-Type": "application/json", "X-CSRF-Token": me.csrf_token };
+    const made = await fetch("/api/tutorials/time-tracking", {
+      method: "POST",
+      headers,
+      body: "{}",
+    });
+    const id = (await made.json()).id as number;
+    const saved = await (await fetch(`/api/sandboxes/${id}`)).json();
+    // Turned 0, the minibar's front is the tile behind it, so the avatar does not cover it on screen.
+    saved.document.furni = [{ id: 1, classname: "bar_basic", x: 2, y: 2, z: 0, rot: 0, state: 0 }];
+    saved.document.avatars = [
+      { id: 1, name: "A", hotel: "com", figure: "hd-180-1", x: 2, y: 1, z: 0, dir: 2, pose: "std" },
+    ];
+    await fetch(`/api/sandboxes/${id}/document`, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify({ document: saved.document, base_revision: saved.revision }),
+    });
+    return id;
+  });
+  await page.goto(`/sandbox/${room}`);
+  await expect(page.getByTestId("room-canvas")).toBeVisible();
+  await page.getByRole("button", { name: "Run", exact: true }).click();
+  await expect(page.getByTestId("run-panel")).toBeVisible();
+  const user = async () =>
+    (
+      (await page.evaluate(
+        async (id) => (await fetch(`/api/sandboxes/${id}/run`)).json(),
+        room,
+      )) as {
+        users: { dir: number; details: Record<string, number> }[];
+      }
+    ).users[0];
+  const machine = await page.evaluate(() =>
+    (
+      document.querySelector("wb-editor") as unknown as {
+        tileOnPage(a: number, b: number): { x: number; y: number };
+      }
+    ).tileOnPage(2, 2),
+  );
+  await page.mouse.dblclick(machine.x, machine.y);
+  await expect
+    .poll(async () => (await user())?.details["@handitem"] ?? 0, { timeout: 5000 })
+    .toBeGreaterThan(0);
+  expect([1, 2, 5, 6]).toContain((await user())?.details["@handitem"]);
+  expect((await user())?.dir).toBe(4);
+});

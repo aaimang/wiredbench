@@ -51,6 +51,7 @@ import {
   standUpOffSeats,
   timeDigits,
   UNKNOWN_FURNI,
+  usedFromFront,
   usedFromNextTo,
   withFace,
 } from "./model";
@@ -744,6 +745,11 @@ describe("furni kinds match the room engine", () => {
     expect(furniKind("wf_floor_switch1", "wired_add_on")).toBe("switch");
     expect(furniKind("one_way_door*1", "gate")).toBe("one_way_gate");
     expect(furniKind("lamp_basic", "lighting")).toBe("default");
+    // A furni that hands out items is a vending machine, whatever its category.
+    expect(furniKind("giftflowers", "other", [1019])).toBe("vending");
+    expect(usedFromFront("vending") && usedFromFront("teleport") && !usedFromFront("dice")).toBe(
+      true,
+    );
     expect(usedFromNextTo("dice") && usedFromNextTo("switch") && !usedFromNextTo("default")).toBe(
       true,
     );

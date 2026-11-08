@@ -565,14 +565,18 @@ class Engine:
                     "info", f"{who['name']} must stand next to {self._name(item['classname'])} to use it"
                 )
                 return
-        if kind in ("teleport", "one_way_gate") and who is not None:
+        if interactions.used_from_front(kind) and who is not None:
             if (who["x"], who["y"]) != interactions.front_of(item["x"], item["y"], item["rot"]):
                 self._log("info", f"{who['name']} must stand in front of {self._name(item['classname'])}")
                 return
             if kind == "teleport":
                 self._enter_teleport(user_id, furni_id)
-            else:
+            elif kind == "one_way_gate":
                 self._pass_one_way(user_id, furni_id)
+            else:
+                self._vend(user_id, furni_id)
+        elif kind == "vending":
+            self._vend(None, furni_id)  # With nobody using it, it only plays its animation.
         elif kind == "gate" and item["state"] != 0 and self._someone_on(item["x"], item["y"]):
             # A real room does not close a gate on someone standing in it.
             self._log("info", f"{self._name(item['classname'])} cannot close while someone stands in it")
@@ -647,6 +651,32 @@ class Engine:
         payload = {"user": user_id, "furni": furni_id, "x": x, "y": y}
         self._push(self.now_ms + interactions.ONE_WAY_THROUGH_MS, "one_way_through", payload)
         self._push(self.now_ms + interactions.ONE_WAY_CLOSE_MS, "one_way_close", payload)
+
+    def _vend(self, user_id: int | None, furni_id: int) -> None:
+        """The user turns to the machine, it shows its giving state, and hands over a random item."""
+        item = self.furni[furni_id]
+        if item["state"] != 0:
+            return  # Busy giving to someone else.
+        if user_id is not None:
+            self.users[user_id]["dir"] = (item["rot"] + 4) % 8
+        self._set_state(furni_id, interactions.VENDING_GIVING)
+        payload = {"user": user_id, "furni": furni_id}
+        self._push(self.now_ms + interactions.VENDING_GIVE_MS, "vend", payload)
+
+    def _vend_give(self, user_id: int | None, furni_id: int) -> None:
+        if furni_id not in self.furni:
+            return
+        self._set_state(furni_id, 0)
+        user = self.users.get(user_id) if user_id is not None else None
+        if user is None:
+            return
+        choices = interactions.hand_items(self.furni[furni_id]["classname"])
+        if not choices:
+            self._log(
+                "info", f"Wiredbench does not know what {self._name(self.furni[furni_id]['classname'])} gives"
+            )
+            return
+        user["details"]["@handitem"] = self.random.choice(choices)
 
     def _free_tile(self, x: int, y: int) -> bool:
         """Inside the room, with nobody on it and nothing on it that cannot be stood on."""
@@ -855,6 +885,8 @@ class Engine:
             elif action == "one_way_through":
                 if payload["user"] in self.users:
                     self._move_user(payload["user"], payload["x"], payload["y"])
+            elif action == "vend":
+                self._vend_give(payload["user"], payload["furni"])
             elif action == "one_way_close":
                 if payload["furni"] in self.furni:
                     self._set_state(payload["furni"], 0)
