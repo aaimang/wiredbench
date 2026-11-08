@@ -737,6 +737,53 @@ export function effectLayers(manifest: EffectManifest, dir: number, nowMs: numbe
   return layers;
 }
 
+/** A furni's interaction kind, sorted as the room engine does from its name and catalogue category. */
+export type FurniKind =
+  | "dice"
+  | "switch"
+  | "teleport"
+  | "gate"
+  | "one_way_gate"
+  | "vending"
+  | "default";
+
+export function furniKind(classname: string, category: string | null): FurniKind {
+  const name = classname.toLowerCase();
+  if (name.includes("dice")) return "dice";
+  if (name.startsWith("wf_floor_switch")) return "switch";
+  if (name.startsWith("one_way_door")) return "one_way_gate";
+  if (category === "teleport") return "teleport";
+  if (category === "gate") return "gate";
+  if (category === "vending_machine") return "vending";
+  return "default";
+}
+
+/** Furni a user must stand next to to use, such as dice and floor switches. */
+export function usedFromNextTo(kind: FurniKind): boolean {
+  return kind === "dice" || kind === "switch";
+}
+
+/** On one of the eight tiles around a tile. */
+export function isNextTo(user: [number, number], item: [number, number]): boolean {
+  return Math.max(Math.abs(user[0] - item[0]), Math.abs(user[1] - item[1])) === 1;
+}
+
+/** The tiles around a 1 by 1 furni that are inside the room. */
+export function besideTiles(
+  item: Pick<PlacedFurni, "x" | "y">,
+  room: Pick<RoomDocument, "room">,
+): [number, number][] {
+  const found: [number, number][] = [];
+  for (let dx = -1; dx <= 1; dx++) {
+    for (let dy = -1; dy <= 1; dy++) {
+      const [x, y] = [item.x + dx, item.y + dy];
+      if ((dx || dy) && x >= 0 && y >= 0 && x < room.room.width && y < room.room.height)
+        found.push([x, y]);
+    }
+  }
+  return found;
+}
+
 /** Puts anyone lying on a bed onto its head row, as a room saved before this rule may hold them anywhere. */
 export function settleOnBeds(room: RoomDocument, lookup: InfoLookup): void {
   for (const avatar of room.avatars) {

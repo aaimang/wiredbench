@@ -1969,3 +1969,69 @@ def test_a_move_by_hand_stays_in_the_room() -> None:
     engine.apply_input({"type": "move_furni", "user": 100, "furni": 50, "x": 25, "y": 3})
     engine.apply_input({"type": "move_furni", "user": 100, "furni": 999, "x": 1, "y": 1})
     assert (engine.furni[50]["x"], engine.furni[50]["y"]) == (5, 5)
+
+
+def use_room(*furni: dict[str, Any], x: int = 5, y: int = 6, **details: int) -> Engine:
+    who = user(x=x, y=y)
+    who["details"] = dict(details)
+    return room(*furni, users=[who])
+
+
+def use(engine: Engine, furni: int) -> None:
+    engine.apply_input({"type": "use", "user": 100, "furni": furni})
+
+
+def test_plain_furni_switch_only_for_the_owner_or_a_user_with_rights() -> None:
+    lamp = box(1, "lamp_basic", 5, 5)
+    engine = use_room(lamp)
+    engine.furni_states = {"lamp_basic": [0, 1]}
+    use(engine, 1)
+    assert engine.furni[1]["state"] == 0, "a visitor cannot switch a lamp"
+    engine = use_room(lamp, **{"@has_rights": 1})
+    engine.furni_states = {"lamp_basic": [0, 1]}
+    use(engine, 1)
+    assert engine.furni[1]["state"] == 1
+
+
+def test_a_floor_switch_is_for_anyone_standing_next_to_it() -> None:
+    switch = box(1, "wf_floor_switch1", 5, 5)
+    far = use_room(switch, x=8, y=8)
+    use(far, 1)
+    assert far.furni[1]["state"] == 0, "too far away"
+    near = use_room(switch, x=6, y=6)
+    use(near, 1)
+    assert near.furni[1]["state"] == 1, "a diagonal tile is next to it, and no rights are needed"
+
+
+def test_a_dice_rolls_then_lands_on_a_face_and_can_be_closed() -> None:
+    engine = use_room(box(1, "edice", 5, 5))
+    use(engine, 1)
+    assert engine.furni[1]["state"] == -1, "it shows the rolling animation first"
+    use(engine, 1)
+    engine.advance(1499)
+    assert engine.furni[1]["state"] == -1, "a second click while rolling changes nothing"
+    engine.advance(1)
+    assert engine.furni[1]["state"] in range(1, 7)
+    engine.apply_input({"type": "dice_off", "user": 100, "furni": 1})
+    assert engine.furni[1]["state"] == 0
+
+
+def test_a_closed_dice_ignores_a_roll_that_lands_after_it() -> None:
+    engine = use_room(box(1, "edice", 5, 5))
+    use(engine, 1)
+    engine.apply_input({"type": "dice_off", "user": 100, "furni": 1})
+    engine.advance(2000)
+    assert engine.furni[1]["state"] == 0
+
+
+def test_furni_kinds() -> None:
+    from wiredbench.engine import interactions
+
+    assert interactions.kind_of("edicehc", "fortuna") == "dice"
+    assert interactions.kind_of("wf_floor_switch2", "wired_add_on") == "switch"
+    assert interactions.kind_of("one_way_door*1", "gate") == "one_way_gate"
+    assert interactions.kind_of("teleport_door", "teleport") == "teleport"
+    assert interactions.kind_of("hc_gate", "gate") == "gate"
+    assert interactions.kind_of("bar_polyfon", "vending_machine") == "vending"
+    assert interactions.kind_of("lamp_basic", "lighting") == "default"
+    assert not interactions.anyone_may_use("gate")
