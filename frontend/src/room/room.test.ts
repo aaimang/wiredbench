@@ -42,7 +42,9 @@ import {
   pickWalkLook,
   type RoomDocument,
   restingDir,
+  restTile,
   seatedFacing,
+  settleOnBeds,
   showsTime,
   stackHeight,
   standAt,
@@ -774,5 +776,34 @@ describe("furni kinds match the room engine", () => {
       [1, 0],
       [1, 1],
     ]);
+  });
+});
+
+describe("lying on a bed", () => {
+  const bedInfo = (name: string) =>
+    name.startsWith("bed")
+      ? { ...lookup("bed"), xdim: name === "bed2" ? 2 : 1, ydim: 3 }
+      : lookup(name);
+
+  it("rests on the head row, in the middle of a one-wide bed and on either side of a double bed", () => {
+    const r = room(["bed1", 1, 1, 0, 0], ["bed2", 4, 1, 0, 0], ["bed1", 1, 6, 0, 2]);
+    // Turned 0, a bed runs along y and its first row is the head.
+    expect(restTile(r, bedInfo, 1, 3)).toEqual([1, 1]);
+    expect(restTile(r, bedInfo, 5, 3)).toEqual([5, 1]);
+    expect(restTile(r, bedInfo, 4, 2)).toEqual([4, 1]);
+    // Turned 2, it runs along x.
+    expect(restTile(r, bedInfo, 3, 6)).toEqual([1, 6]);
+    expect(standAt(r, bedInfo, 1, 3)).toMatchObject({ pose: "lay", dir: 4 });
+    expect(standAt(r, bedInfo, 3, 6)).toMatchObject({ pose: "lay", dir: 2 });
+    expect(restTile(r, bedInfo, 8, 8)).toEqual([8, 8]);
+  });
+
+  it("moves someone saved on a bed's foot to its head when the room opens", () => {
+    const r = room(["bed1", 3, 3, 0, 0]);
+    r.avatars = [
+      { id: 1, name: "A", hotel: "com", figure: "hd-1", x: 3, y: 5, z: 0.9, dir: 4, pose: "lay" },
+    ];
+    settleOnBeds(r, bedInfo);
+    expect([r.avatars[0]?.x, r.avatars[0]?.y]).toEqual([3, 3]);
   });
 });
