@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { state } from "../state";
-import { depth, screenToTile, tileCentre } from "./iso";
+import { AVATAR_DEPTH, depth, layerDepth, screenToTile, tileCentre } from "./iso";
 import {
   actionBlocked,
   actionMs,
@@ -31,6 +31,7 @@ import {
   furniAt,
   furniKind,
   furniParts,
+  furniWalkTarget,
   fxFill,
   glideSteps,
   History,
@@ -150,11 +151,18 @@ describe("geometry", () => {
     expect(tileCentre(2, 2, 1).y).toBe(tileCentre(2, 2).y - 32);
   });
 
-  it("draws nearer tiles later, then higher, then by layer", () => {
+  it("sorts as Habbo's room camera does: by tile, height and layer", () => {
     expect(depth(1, 1, 0)).toBeLessThan(depth(2, 1, 0));
     expect(depth(1, 1, 0)).toBeLessThan(depth(1, 1, 1));
-    expect(depth(1, 1, 0, 1)).toBeLessThan(depth(1, 1, 0, 800));
-    expect(depth(1, 1, 5, 800)).toBeLessThan(depth(2, 1, 0));
+    // A layer with a higher z in its file is nearer, and so is a later layer, a little.
+    expect(depth(1, 1, 0, layerDepth(-100, 0))).toBeLessThan(depth(1, 1, 0, layerDepth(100, 0)));
+    expect(depth(1, 1, 0, layerDepth(0, 0))).toBeLessThan(depth(1, 1, 0, layerDepth(0, 1)));
+    // A shadow is behind its furni, and an avatar a hundredth in front of its tile.
+    expect(depth(1, 1, 0, layerDepth(0, -1))).toBeLessThan(depth(1, 1, 0, layerDepth(0, 0)));
+    expect(depth(1, 1, 0)).toBeLessThan(depth(1, 1, 0, AVATAR_DEPTH));
+    // A 2 by 2 rug counts from its own corner, so a thing on its far tile draws over it.
+    expect(depth(7, 8, 0, layerDepth(0, 0))).toBeLessThan(depth(8, 9, 0));
+    expect(depth(1, 1, 5)).toBeGreaterThan(depth(2, 1, 0));
   });
 });
 
@@ -912,5 +920,45 @@ describe("background toner and room background", () => {
     expect(brandingOffset(5, 100, 50)).toEqual([-100, 0]);
     expect(brandingOffset(7, 100, 50)).toEqual([-100, -50]);
     expect(brandingOffset(4, 100, 50)).toEqual([-50, -25]);
+  });
+});
+
+describe("walking by clicking a furni", () => {
+  const info =
+    (extra: Partial<FurniInfo>): InfoLookup =>
+    () => ({
+      ...UNKNOWN_FURNI,
+      xdim: 2,
+      ydim: 2,
+      height: 0,
+      canStand: true,
+      ...extra,
+    });
+  const rug = { classname: "rug", x: 4, y: 4, z: 0, rot: 0 };
+
+  it("walks to the tile clicked on a rug, not its corner", () => {
+    expect(furniWalkTarget(rug, info({}), () => [5, 5])).toEqual([5, 5]);
+    expect(furniWalkTarget(rug, info({}), () => [6, 5])).toBeNull();
+    expect(furniWalkTarget(rug, info({}), (h) => (h > 0 ? [9, 9] : [4, 5]))).toEqual([4, 5]);
+    expect(
+      furniWalkTarget({ ...rug, classname: "chair" }, info({ xdim: 1, ydim: 1 }), () => [0, 0]),
+    ).toEqual([4, 4]);
+  });
+
+  it("measures on the furni's own top, half a tile lower on a seat", () => {
+    const heights: number[] = [];
+    furniWalkTarget({ ...rug, z: 1 }, info({ height: 0.5 }), (h) => {
+      heights.push(h);
+      return [4, 4];
+    });
+    furniWalkTarget(rug, info({ height: 1, canStand: false, canSit: true }), (h) => {
+      heights.push(h);
+      return [4, 4];
+    });
+    expect(heights).toEqual([1.5, 0.5]);
+  });
+
+  it("does not walk to a furni nobody can stand, sit or lie on", () => {
+    expect(furniWalkTarget(rug, info({ canStand: false }), () => [4, 4])).toBeNull();
   });
 });

@@ -52,6 +52,7 @@ import {
   footprint,
   frontTile,
   furniKind,
+  furniWalkTarget,
   History,
   hslToRgb,
   isFrozen,
@@ -676,7 +677,15 @@ class WbEditor extends HTMLElement {
     if (clicked && this.run) {
       void this.run.input({ type: "click", user: this.runUser(), furni: clicked.id });
     }
-    const goal: [number, number] | null = clicked ? [clicked.x, clicked.y] : inside ? tile : null;
+    // As in Habbo, a click on a furni you can stand, sit or lie on walks to the tile under the cursor on it.
+    const goal: [number, number] | null =
+      hit && clicked
+        ? furniWalkTarget(clicked, this.lookup, (height) =>
+            renderer.tileAtHeight(at.x, at.y, height),
+          )
+        : inside
+          ? tile
+          : null;
     if (goal) this.walkTo(goal);
     // With rights, a click also opens the furni's tools, as the furni menu does in a real room.
     if (clicked && this.run && this.hasRights()) this.select(hit);

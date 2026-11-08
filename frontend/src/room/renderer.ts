@@ -13,7 +13,17 @@ import {
 import { get, withQuery } from "../api";
 import { state } from "../state";
 import { fxArt, fxHeight } from "./fx-art";
-import { depth, screenToTile, TILE_HEIGHT, TILE_WIDTH, tileCentre, Z_UNIT } from "./iso";
+import {
+  AVATAR_DEPTH,
+  depth,
+  LYING_DEPTH,
+  layerDepth,
+  screenToTile,
+  TILE_HEIGHT,
+  TILE_WIDTH,
+  tileCentre,
+  Z_UNIT,
+} from "./iso";
 import {
   type AvatarAction,
   avatarExtras,
@@ -34,7 +44,6 @@ import {
   figureAction,
   flightAt,
   footprint,
-  footprintSize,
   furniAt,
   furniParts,
   type Highlight,
@@ -170,13 +179,40 @@ function cssColor(name: string, fallback: number): number {
   return /^#[0-9a-f]{6}$/i.test(value) ? Number.parseInt(value.slice(1), 16) : fallback;
 }
 
+/** The image behind each texture, so a click can read the pixel it lands on. */
+const sourceImages = new WeakMap<object, HTMLImageElement>();
+
 async function loadTexture(url: string): Promise<Texture> {
   const image = new Image();
   image.src = url;
   await image.decode();
   const texture = Texture.from(image);
   texture.source.scaleMode = "nearest";
+  sourceImages.set(texture.source, image);
   return texture;
+}
+
+/** Habbo's client counts a click on a sprite only where its pixel is at least half opaque. */
+const CLICK_ALPHA = 128;
+let probe: CanvasRenderingContext2D | null = null;
+
+/** Whether the sprite's own pixel under a point, in the room's coordinates, is solid enough to click. */
+function opaqueAt(sprite: Sprite, x: number, y: number): boolean {
+  const image = sourceImages.get(sprite.texture.source);
+  if (!image) return true;
+  const frame = sprite.texture.frame;
+  const localX = Math.floor(sprite.scale.x < 0 ? sprite.x - x : x - sprite.x);
+  const localY = Math.floor(y - sprite.y);
+  if (localX < 0 || localY < 0 || localX >= frame.width || localY >= frame.height) return false;
+  if (!probe) {
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = 1;
+    probe = canvas.getContext("2d", { willReadFrequently: true });
+    if (!probe) return true;
+  }
+  probe.clearRect(0, 0, 1, 1);
+  probe.drawImage(image, frame.x + localX, frame.y + localY, 1, 1, 0, 0, 1, 1);
+  return (probe.getImageData(0, 0, 1, 1).data[3] ?? 0) >= CLICK_ALPHA;
 }
 
 export function avatarUrl(
@@ -302,7 +338,11 @@ export class RoomRenderer {
   >();
   /** Per avatar, the last effect image shown for each way of facing and step, and overall. */
   private effectShown = new Map<number, Map<string, Texture>>();
-  private hits: { hit: Hit; bounds: Rectangle; order: number }[] = [];
+  /** What a click can land on. With sprites, only on their solid pixels; without, anywhere in bounds. */
+  private hits: { hit: Hit; bounds: Rectangle; order: number; sprites?: Sprite[] }[] = [];
+  /** The sprites the last furni drawn shows, for clicking on its pixels. */
+  private lastDrawn: Sprite[] = [];
+  private destroyed = false;
   private scene: Scene | null = null;
   private drawnRoomSize = "";
   private panX = 0;
@@ -330,6 +370,7 @@ export class RoomRenderer {
   }
 
   destroy(): void {
+    this.destroyed = true;
     this.app.destroy({ removeView: true }, { children: true });
   }
 
@@ -601,13 +642,22 @@ export class RoomRenderer {
     return screenToTile(canvasX - this.world.x, canvasY - this.world.y);
   }
 
+  /** The tile under a canvas position on a surface this high, such as the top of a rug or a box. */
+  tileAtHeight(canvasX: number, canvasY: number, height: number): [number, number] {
+    return screenToTile(canvasX - this.world.x, canvasY - this.world.y + height * Z_UNIT);
+  }
+
   /** The nearest furni or avatar drawn under a canvas position. */
   hitAt(canvasX: number, canvasY: number): Hit | null {
     const x = canvasX - this.world.x;
     const y = canvasY - this.world.y;
     let best: { hit: Hit; order: number } | null = null;
     for (const entry of this.hits) {
-      if (entry.bounds.contains(x, y) && (!best || entry.order > best.order)) best = entry;
+      if (!entry.bounds.contains(x, y) || (best && entry.order <= best.order)) continue;
+      // As in Habbo, a click goes through the clear parts of a furni or avatar to what is behind.
+      if (entry.sprites?.length && !entry.sprites.some((sprite) => opaqueAt(sprite, x, y)))
+        continue;
+      best = entry;
     }
     return best?.hit ?? null;
   }
@@ -658,6 +708,8 @@ export class RoomRenderer {
   }
 
   draw(scene: Scene): void {
+    // A picture that finishes loading after the room is closed asks for a draw nothing can show.
+    if (this.destroyed) return;
     this.scene = scene;
     this.animating = false;
     this.travelling = false;
@@ -785,11 +837,6 @@ export class RoomRenderer {
     return this.furniLoaded.get(key);
   }
 
-  private front(scene: Scene, item: { x: number; y: number; rot: number; classname: string }) {
-    const [width, height] = footprintSize(scene.lookup(item.classname), item.rot);
-    return [item.x + width - 1, item.y + height - 1] as const;
-  }
-
   /** Where a furni is drawn while it flies or slides, and where it ended up once it has. */
   private flown(scene: Scene, item: PlacedFurni): PlacedFurni {
     const shown = this.travelled(scene, item);
@@ -901,13 +948,12 @@ export class RoomRenderer {
     const item = this.flown(scene, placed);
     const branding = placed.branding as BrandingSettings | undefined;
     if (BRANDED_BACKGROUNDS.has(item.classname) && branding?.imageUrl) {
-      const bounds = this.drawBranding(scene, item, branding);
-      const [fx, fy] = this.front(scene, item);
+      const bounds = this.drawBranding(item, branding);
       if (bounds)
         this.hits.push({
           hit: { kind: "furni", id: item.id },
           bounds,
-          order: depth(fx, fy, item.z),
+          order: depth(item.x, item.y, item.z),
         });
       return;
     }
@@ -923,11 +969,11 @@ export class RoomRenderer {
       selected && look?.invisible ? Math.max(shown, SELECTED_INVISIBLE_OPACITY) : shown;
     const bounds = this.addFurniSprites(scene, item, tint, opacity, depth, look?.highlight);
     if (bounds && !look?.click_through) {
-      const [fx, fy] = this.front(scene, item);
       this.hits.push({
         hit: { kind: "furni", id: item.id },
         bounds,
-        order: depth(fx, fy, item.z),
+        sprites: this.lastDrawn,
+        order: depth(item.x, item.y, item.z),
       });
     }
   }
@@ -957,9 +1003,10 @@ export class RoomRenderer {
     order: typeof depth,
     highlight?: Highlight,
   ): Rectangle | null {
+    // Each furni starts with no sprites of its own: a placeholder is picked by its whole box.
+    this.lastDrawn = [];
     const art = this.artFor(scene, item.classname);
     const centre = tileCentre(item.x, item.y, item.z);
-    const [fx, fy] = this.front(scene, item);
     if (art === undefined) return null; // Still downloading.
     if (art === null) return this.addPlaceholder(scene, item, tint, opacity);
     const { manifest, atlas } = art;
@@ -998,13 +1045,13 @@ export class RoomRenderer {
       else if (layerColor) sprite.tint = Number.parseInt(layerColor, 16);
       if (part.z <= BACKDROP_Z) {
         // Behind the whole room, deepest first, and never in the way of a click.
-        sprite.zIndex = part.z + order(fx, fy, item.z) / 1e6;
+        sprite.zIndex = part.z + order(item.x, item.y, item.z) / 1e6;
         this.backdrop.addChild(sprite);
         backdropOnly = backdropOnly ?? true;
         continue;
       }
       backdropOnly = false;
-      sprite.zIndex = order(fx, fy, item.z, part.z);
+      sprite.zIndex = order(item.x, item.y, item.z, layerDepth(part.z, part.layer));
       this.layer.addChild(sprite);
       if (part.layer >= 0) {
         drawn.push(sprite);
@@ -1015,17 +1062,14 @@ export class RoomRenderer {
       }
     }
     if (highlight && opacity > 0) this.addLook(drawn, highlight);
+    this.lastDrawn = drawn;
     // A furni drawn only behind the room is picked by its own tile, so it can still be selected.
     if (backdropOnly) return tileBounds(centre);
     return right > left ? new Rectangle(left, top, right - left, bottom - top) : null;
   }
 
   /** A Room Background with a picture: drawn behind the room, a corner or its middle on the furni. */
-  private drawBranding(
-    scene: Scene,
-    item: PlacedFurni,
-    branding: BrandingSettings,
-  ): Rectangle | null {
+  private drawBranding(item: PlacedFurni, branding: BrandingSettings): Rectangle | null {
     const url = `/api/branding/image?url=${encodeURIComponent(branding.imageUrl)}`;
     const texture = this.branding.get(url);
     const centre = tileCentre(item.x, item.y, item.z);
@@ -1040,8 +1084,7 @@ export class RoomRenderer {
       const [dx, dy] = brandingOffset(item.rot, texture.width, texture.height);
       const sprite = new Sprite(texture);
       sprite.position.set(centre.x + dx + branding.offsetX, centre.y + dy + branding.offsetY);
-      const [fx, fy] = this.front(scene, item);
-      sprite.zIndex = BRANDING_Z - branding.offsetZ + depth(fx, fy, item.z) / 1e6;
+      sprite.zIndex = BRANDING_Z - branding.offsetZ + depth(item.x, item.y, item.z) / 1e6;
       this.backdrop.addChild(sprite);
     }
     return tileBounds(centre);
@@ -1110,7 +1153,6 @@ export class RoomRenderer {
     const info = scene.lookup(item.classname);
     const lift = Math.max(info.height, 0.2) * Z_UNIT;
     const c = tileCentre(item.x, item.y, item.z);
-    const [fx, fy] = this.front(scene, item);
     const halfW = TILE_WIDTH / 2 - 8;
     const halfH = TILE_HEIGHT / 2 - 4;
     const color = tint ?? cssColor("--wire-utility", 0x6b6f66);
@@ -1131,7 +1173,7 @@ export class RoomRenderer {
       ])
       .fill({ color, alpha: 0.75 * opacity })
       .stroke({ width: 1, color: cssColor("--ink", 0x1c211c), alpha: opacity });
-    block.zIndex = depth(fx, fy, item.z);
+    block.zIndex = depth(item.x, item.y, item.z);
     this.layer.addChild(block);
     return new Rectangle(c.x - halfW, c.y - lift - halfH, halfW * 2, lift + halfH * 2);
   }
@@ -1300,11 +1342,14 @@ export class RoomRenderer {
    * behind, a positive depth and parts behind a negative one.
    */
   private avatarOrder(scene: Scene, pose: AvatarPose): number {
+    // A walking avatar sorts by the tile it is nearest, as Habbo's client rounds it.
+    const [x, y] = [Math.round(pose.x), Math.round(pose.y)];
     if (pose.action === "sit" || pose.action === "lay") {
       const seat = furniAt(scene.room, scene.lookup, Math.round(pose.x), Math.round(pose.y)).at(-1);
-      if (seat) return depth(pose.frontX, pose.frontY, seat.z, 0);
+      // A seated or lying avatar counts from the seat's own height, as Habbo places it.
+      if (seat) return depth(x, y, seat.z, pose.action === "lay" ? LYING_DEPTH : AVATAR_DEPTH);
     }
-    return depth(pose.frontX, pose.frontY, pose.z, 900);
+    return depth(x, y, pose.z, AVATAR_DEPTH);
   }
 
   private drawAvatar(scene: Scene, avatar: PlacedAvatar): void {
@@ -1332,6 +1377,7 @@ export class RoomRenderer {
     }
     const { look, shown } = this.easedLook(`user:${avatar.id}`, scene.looks?.users[avatar.id]);
     if (texture && !look?.invisible) this.drawShadow(avatar, pose, left, top, order);
+    let avatarSprite: Sprite | null = null;
     if (texture) {
       const sprite = new Sprite(texture);
       sprite.position.set(
@@ -1347,6 +1393,7 @@ export class RoomRenderer {
           selected && look?.invisible ? Math.max(shown, SELECTED_INVISIBLE_OPACITY) : shown;
       }
       this.layer.addChild(sprite);
+      avatarSprite = sprite;
       if (look?.highlight && !look.invisible) this.addLook([sprite], look.highlight);
       if (!look?.invisible && !changed) this.drawEffect(avatar, pose.dir, left, top, order);
     } else {
@@ -1360,8 +1407,9 @@ export class RoomRenderer {
     this.hits.push({
       hit: { kind: "avatar", id: avatar.id },
       bounds: new Rectangle(left + 12, top + 10, w - 24, h - 14),
+      ...(avatarSprite ? { sprites: [avatarSprite] } : {}),
       // A click on a seated avatar picks the avatar, even where the seat is drawn over it.
-      order: depth(pose.frontX, pose.frontY, pose.z, 900),
+      order: this.avatarOrder(scene, pose),
     });
   }
 }

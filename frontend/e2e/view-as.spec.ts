@@ -101,11 +101,18 @@ test(":wired opens an inspection window with live values and is never said aloud
     const id = (await res.json()).id as number;
     const saved = await (await fetch(`/api/sandboxes/${id}`)).json();
     const { width, height } = saved.document.room;
+    // An empty tile, so nothing else is drawn over the chair.
+    const taken = new Set(
+      (saved.document.furni as { x: number; y: number }[]).map((f) => `${f.x},${f.y}`),
+    );
+    const free = [...Array(width * height).keys()]
+      .map((i) => [i % width, Math.floor(i / width)] as const)
+      .find(([x, y]) => x > 1 && y > 1 && !taken.has(`${x},${y}`) && !taken.has(`${x - 1},${y}`));
     saved.document.furni.push({
       id: 700,
       classname: "plain_chair",
-      x: Math.floor(width / 2),
-      y: Math.floor(height / 2),
+      x: free?.[0] ?? Math.floor(width / 2),
+      y: free?.[1] ?? Math.floor(height / 2),
       z: 0,
       rot: 0,
       state: 0,
@@ -143,7 +150,37 @@ test(":wired opens an inspection window with live values and is never said aloud
   const canvas = page.getByTestId("room-canvas");
   const box = await canvas.boundingBox();
   const [middleX, middleY] = [(box?.width ?? 400) / 2, (box?.height ?? 300) / 2];
-  await canvas.click({ position: { x: middleX, y: middleY - 10 } });
+  // A spot on the chair's own pixels, not on whoever sits on it: a click there picks the chair.
+  const findChair = () =>
+    page.evaluate(() => {
+      const view = document.querySelector("wb-room-view") as unknown as {
+        room: { furni: { id: number; classname: string }[] };
+        renderer: {
+          world: { x: number; y: number };
+          hits: {
+            hit: { id: number };
+            bounds: { x: number; y: number; width: number; height: number };
+          }[];
+          hitAt(x: number, y: number): { kind: string; id: number } | null;
+        };
+      };
+      const { renderer } = view;
+      const chair = view.room.furni.find((f) => f.classname === "plain_chair");
+      const drawn = renderer.hits.find((entry) => entry.hit.id === chair?.id)?.bounds;
+      if (!drawn) return null;
+      // Inside the chair's own box, the first spot where a click picks the chair.
+      for (let y = drawn.y; y < drawn.y + drawn.height; y += 2) {
+        for (let x = drawn.x; x < drawn.x + drawn.width; x += 2) {
+          const [cx, cy] = [x + renderer.world.x, y + renderer.world.y];
+          const hit = renderer.hitAt(cx, cy);
+          if (hit?.kind === "furni" && hit.id === chair?.id) return { x: cx, y: cy };
+        }
+      }
+      return null;
+    });
+  await expect.poll(findChair, { message: "the chair is drawn somewhere" }).not.toBeNull();
+  const onChair = await findChair();
+  await canvas.click({ position: onChair ?? { x: middleX, y: middleY } });
   await expect(page.getByTestId("inspect")).toContainText("Values for plain_chair");
   await expect(rows).toContainText("@id");
   expect(said.join(), "picking a furni does not use it").not.toContain('"click"');

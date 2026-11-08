@@ -165,9 +165,10 @@ test("build a room, walk to a chair, sit, and find it all there after a reload",
   await expect(place.getByLabel("Direction")).toHaveValue(String(seat));
   expect((await room(page)).avatars[0]?.dir).toBe(seat);
 
-  // A blocked tile cannot be walked to.
+  // As in Habbo, clicking a furni nobody can stand on does not walk there.
   await clickTile(page, 3, 2);
-  await expect(page.getByTestId("walk-status")).toContainText("cannot get there");
+  await page.waitForTimeout(500);
+  expect((await room(page)).avatars[0]).toMatchObject({ x: 5, y: 2, pose: "sit" });
 
   // It saves by itself, and everything comes back after a reload.
   await expect(page.getByTestId("save-status")).toContainText("Saved", { timeout: 10000 });

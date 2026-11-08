@@ -966,3 +966,27 @@ export function brandingOffset(dir: number, width: number, height: number): [num
       return [-width / 2, -height / 2];
   }
 }
+
+/**
+ * Where a click on a furni walks to, as Habbo's client works it out: the tile under the cursor on the
+ * furni's own top, half a tile lower on a seat, for furni you can stand, sit or lie on. A click low on
+ * its art, below that top, counts at its foot. None when the furni is not one you can stand, sit or
+ * lie on, or the point falls outside it.
+ */
+export function furniWalkTarget(
+  item: Pick<PlacedFurni, "classname" | "x" | "y" | "z" | "rot">,
+  lookup: InfoLookup,
+  tileAtHeight: (height: number) => [number, number],
+): [number, number] | null {
+  const info = lookup(item.classname);
+  if (!info.canStand && !info.canSit && !info.canLay) return null;
+  const [width, depth] = footprintSize(info, item.rot);
+  if (width === 1 && depth === 1) return [item.x, item.y];
+  const top = item.z + Math.max(info.height, 0) - (info.canSit ? 0.5 : 0);
+  // On its top first, as Habbo measures it; then at its foot, for a click low on its art.
+  for (const height of [top, item.z]) {
+    const [x, y] = tileAtHeight(height);
+    if (x >= item.x && x < item.x + width && y >= item.y && y < item.y + depth) return [x, y];
+  }
+  return null;
+}

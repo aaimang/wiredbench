@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import hashlib
+import io
 import os
 import sys
 from pathlib import Path
 
 import httpx
 import uvicorn
+from PIL import Image
 
 from swf_builder import furni_swf
 from wiredbench.app import create_app
@@ -23,13 +25,25 @@ PNG = bytes.fromhex(
 )
 
 
+def _avatar_png() -> bytes:
+    """An image the size of Habbo's avatar images, clear but for a figure in the middle, as theirs are."""
+    image = Image.new("RGBA", (64, 110), (0, 0, 0, 0))
+    image.paste((200, 120, 60, 255), (22, 20, 42, 104))
+    out = io.BytesIO()
+    image.save(out, "PNG")
+    return out.getvalue()
+
+
+AVATAR_PNG = _avatar_png()
+
+
 def habbo(request: httpx.Request) -> httpx.Response:
     if request.url.host == "images.habbo.com":
         if request.url.path.endswith(".swf"):
             return httpx.Response(200, content=furni_swf(request.url.path.rsplit("/", 1)[1][:-4]))
         return httpx.Response(200, content=PNG)
     if request.url.path.endswith("/avatarimage"):
-        return httpx.Response(200, content=PNG)
+        return httpx.Response(200, content=AVATAR_PNG)
     if not FURNIDATA.exists():
         return httpx.Response(503)
     body = FURNIDATA.read_bytes()
