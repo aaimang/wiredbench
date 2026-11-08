@@ -2419,3 +2419,150 @@ def test_the_furni_name_placeholder_uses_the_public_name() -> None:
     engine.apply_input({"type": "move", "user": 100, "x": 4, "y": 4})
     engine.advance(10)
     assert "on Small Block" in logs(engine)
+
+
+def mover(*addons: dict[str, Any], **furni: Any) -> Engine:
+    """A ball at (5, 5) that "go" moves one tile east, with the given add-ons in its stack."""
+    return room(
+        plain(50, "ball", x=5, y=5),
+        box(1, "wf_trg_says_something", 1, 1, text="go"),
+        box(2, "wf_act_rel_mov", 1, 1, 1, furni=[50], move_x=1, move_y=0),
+        *addons,
+        *furni.get("extra", []),
+        users=furni.get("users"),
+    )
+
+
+def test_plain_moves_send_no_flight_and_the_animation_add_ons_do() -> None:
+    engine = mover()
+    say(engine, "go")
+    assert engine.flights == [], "the browser slides it in the usual half second"
+    timed = mover(box(3, "wf_xtra_anim_time", 1, 1, 2, anim_ms=5000), box(4, "wf_xtra_anim_time", 1, 1, 3))
+    say(timed, "go")
+    assert timed.flights[0]["ms"] == 2500, "kept at 2000, and a second box adds its 500"
+    assert timed.flights[0]["height"] == 0
+    instant = mover(box(3, "wf_xtra_mov_no_animation", 1, 1, 2), box(4, "wf_xtra_anim_time", 1, 1, 3))
+    say(instant, "go")
+    assert instant.flights[0]["ms"] == 1
+    curved = mover(box(3, "wf_xtra_mov_curve", 1, 1, 2, curve=-4000))
+    say(curved, "go")
+    assert curved.flights[0]["height"] == -1000
+    assert curved.flights[0]["ms"] == 500
+    assert (curved.furni[50]["x"], curved.furni[50]["y"]) == (6, 5)
+
+
+def test_curve_strength_from_a_variable_and_none_when_nobody_holds_it() -> None:
+    engine = mover(
+        box(3, "wf_xtra_mov_curve", 1, 1, 3, curve_from_var=True, variable="jump", curve_on="global"),
+        box(4, "wf_act_change_var_val", 1, 1, 2, variable="jump", operation="set", value=300),
+        extra=[box(5, "wf_var_room", 3, 3, variable="jump")],
+    )
+    say(engine, "go")
+    assert engine.flights[0]["height"] == 300
+    unset = mover(box(3, "wf_xtra_mov_curve", 1, 1, 2, curve_from_var=True, variable="jump"))
+    say(unset, "go")
+    assert unset.flights == [], "the move is left as it was"
+
+
+def test_movement_physics_blocks_moves_through_users_and_lands_on_top() -> None:
+    blocked = mover(
+        box(3, "wf_xtra_mov_physics", 1, 1, 2),
+        extra=[plain(60, "chair", x=6, y=5)],
+    )
+    blocked.furni_facts = {"chair": {"stackable": False}, "ball": {"stackable": True}}
+    say(blocked, "go")
+    assert blocked.furni[50]["x"] == 5, "a chair cannot hold the ball"
+    through = mover(
+        box(3, "wf_xtra_mov_physics", 1, 1, 2, through_furni=True, through_users=True, keep_altitude=False),
+        extra=[plain(60, "table", x=6, y=5)],
+        users=[user(100, "Ann", x=6, y=5)],
+    )
+    through.furni_facts = {"table": {"stackable": False, "height": 0.7}}
+    say(through, "go")
+    assert through.furni[50]["x"] == 6, "through the table and through Ann"
+    assert through.furni[50]["z"] == pytest.approx(0.7), "it lands on the table"
+    stopped = mover(
+        box(
+            3,
+            "wf_xtra_mov_physics",
+            1,
+            1,
+            2,
+            blocked_by_furni=True,
+            blocking_source="picks",
+            blocking_picks=[60],
+        ),
+        extra=[plain(60, "rug", x=6, y=5)],
+    )
+    stopped.furni_facts = {"rug": {"stackable": True}}
+    say(stopped, "go")
+    assert stopped.furni[50]["x"] == 5, "a picked furni blocks even when it can be stacked on"
+    plain_room = mover(users=[user(100, "Ann", x=6, y=5)])
+    say(plain_room, "go")
+    assert plain_room.furni[50]["x"] == 5, "without the add-on a user still stops it"
+
+
+def test_echo_reads_and_writes_the_variable_it_echoes() -> None:
+    engine = room(
+        box(1, "wf_var_user", 3, 3, variable="score"),
+        box(2, "wf_var_echo", 4, 4, variable="points", source="score"),
+        box(3, "wf_trg_says_something", 1, 1, text="go"),
+        box(4, "wf_act_give_var", 1, 1, 1, variable="points", value=4),
+        box(5, "wf_act_change_var_val", 1, 1, 2, variable="score", operation="add", value=1),
+        box(6, "wf_act_log", 1, 1, 3, text="$(n)"),
+        box(7, "wf_xtra_text_output_variable", 1, 1, 4, placeholder="n", variable="points"),
+        box(8, "wf_xtra_exec_in_order", 1, 1, 5),
+    )
+    say(engine, "go")
+    assert engine.variables["score"]["user:100"].value == 5
+    assert logs(engine) == ["5"]
+
+
+def test_pointer_reads_the_box_its_accessor_holds_and_writes_change_nothing() -> None:
+    engine = room(
+        box(20, "wf_var_room", 3, 3, variable="round"),
+        box(21, "wf_var_context", 4, 4, variable="which"),
+        box(22, "wf_var_pointer", 5, 5, variable="ptr", target="global", accessor="which"),
+        box(1, "wf_trg_says_something", 1, 1, text="go"),
+        box(2, "wf_act_change_var_val", 1, 1, 1, variable="round", operation="set", value=7),
+        box(3, "wf_act_give_var", 1, 1, 2, variable="which", value=20),
+        box(4, "wf_act_change_var_val", 1, 1, 3, variable="ptr", operation="set", value=9),
+        box(5, "wf_act_log", 1, 1, 4, text="$(n)"),
+        box(6, "wf_xtra_text_output_variable", 1, 1, 5, placeholder="n", variable="ptr"),
+        box(7, "wf_xtra_exec_in_order", 1, 1, 6),
+    )
+    say(engine, "go")
+    assert engine.variables["round"]["global"].value == 7
+    assert logs(engine) == ["7"]
+
+
+def test_link_messages_carry_the_trigger_text_or_a_custom_message() -> None:
+    engine = room(
+        plain(60, "wf_link", x=8, y=8),
+        plain(61, "wf_link", x=9, y=8),
+        box(1, "wf_trg_says_something", 1, 1, match="all"),
+        box(2, "wf_act_send_message", 1, 1, 1, furni=[60]),
+        box(3, "wf_trg_receive_message", 2, 1, furni=[60, 61]),
+        box(4, "wf_act_log", 2, 1, 1, text="got $(trigger_text)"),
+        box(5, "wf_trg_receive_message", 3, 1, furni=[61]),
+        box(6, "wf_act_log", 3, 1, 1, text="other"),
+        box(7, "wf_trg_room_initializes", 4, 1),
+        box(8, "wf_act_send_message", 4, 1, 1, furni=[60]),
+    )
+    engine.advance(10)
+    assert logs(engine) == ["got null"], "a trigger without text sends null"
+    say(engine, "hello there")
+    engine.advance(10)
+    assert logs(engine)[-1] == "got hello there"
+    assert "other" not in logs(engine), "only a link both boxes chose carries it"
+    custom = room(
+        plain(60, "wf_link", x=8, y=8),
+        box(1, "wf_trg_says_something", 1, 1, text="go"),
+        box(2, "wf_act_send_message", 1, 1, 1, furni=[60], message_source="custom", text="$(user) rang"),
+        box(3, "wf_xtra_text_output_username", 1, 1, 2, placeholder="user"),
+        box(4, "wf_trg_receive_message", 2, 1, furni=[60]),
+        box(5, "wf_act_log", 2, 1, 1, text="$(trigger_text)"),
+    )
+    say(custom, "go")
+    custom.advance(10)
+    assert logs(custom) == ["Ann rang"]

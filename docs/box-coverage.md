@@ -12,8 +12,8 @@ read at commit `3fc9c06f533c`, for facts only.
 - Seen in a real preset: 0
 - Seen in a real room dump: 97
 - Checked in a real room: 87
-- Have a form: 121
-- Option numbers mapped: 65
+- Have a form: 129
+- Option numbers mapped: 70
 
 | Box | Evidence | Form | Options | Room check |
 |---|---|---|---|---|
@@ -63,7 +63,7 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_act_remove_var` | Checked in a real room | Yes |  | 2026-11-01 |
 | `wf_act_reset_timers` | Seen in a real room dump | Yes |  |  |
 | `wf_act_send_dataframe` | Seen in a real room dump |  |  |  |
-| `wf_act_send_message` | Seen in a real room dump |  |  |  |
+| `wf_act_send_message` | Seen in a real room dump | Yes | Yes |  |
 | `wf_act_send_signal` | Checked in a real room | Yes | Yes | 2026-11-01 |
 | `wf_act_set_altitude` | Checked in a real room | Yes | Yes | 2026-11-01 |
 | `wf_act_set_highlight` | Checked in a real room | Yes | Yes | 2026-11-01 |
@@ -235,7 +235,7 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_trg_period_short` | Checked in a real room | Yes | Yes | 2026-11-01 |
 | `wf_trg_periodically` | Checked in a real room | Yes | Yes | 2026-11-01 |
 | `wf_trg_receive_dataframe` | Seen in a real room dump |  |  |  |
-| `wf_trg_receive_message` | Seen in a real room dump |  |  |  |
+| `wf_trg_receive_message` | Seen in a real room dump | Yes |  |  |
 | `wf_trg_recv_signal` | Checked in a real room | Yes |  | 2026-11-01 |
 | `wf_trg_room_initializes` | Seen in a real room dump | Yes |  |  |
 | `wf_trg_says_something` | Checked in a real room | Yes | Yes | 2026-11-01 |
@@ -252,9 +252,9 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_upcounter2` | No evidence yet |  |  |  |
 | `wf_var_context` | Seen in a real room dump | Yes | Yes |  |
 | `wf_var_dailytask` | No evidence yet |  |  |  |
-| `wf_var_echo` | Seen in a real room dump |  |  |  |
+| `wf_var_echo` | Seen in a real room dump | Yes |  |  |
 | `wf_var_furni` | Checked in a real room | Yes | Yes | 2026-11-01 |
-| `wf_var_pointer` | Seen in a real room dump |  |  |  |
+| `wf_var_pointer` | Seen in a real room dump | Yes | Yes |  |
 | `wf_var_quest` | No evidence yet |  |  |  |
 | `wf_var_quest_chain` | No evidence yet |  |  |  |
 | `wf_var_reference` | Seen in a real room dump |  |  |  |
@@ -266,7 +266,7 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_wire3` | No evidence yet |  |  |  |
 | `wf_wire4` | No evidence yet |  |  |  |
 | `wf_xtra_achievement_enabler` | No evidence yet |  |  |  |
-| `wf_xtra_anim_time` | Seen in a real room dump |  |  |  |
+| `wf_xtra_anim_time` | Seen in a real room dump | Yes | Yes |  |
 | `wf_xtra_custom_contract` | Seen in a real room dump |  |  |  |
 | `wf_xtra_exec_in_order` | Checked in a real room | Yes |  | 2026-11-01 |
 | `wf_xtra_execution_limit` | Checked in a real room | Yes | Yes | 2026-11-01 |
@@ -276,9 +276,9 @@ read at commit `3fc9c06f533c`, for facts only.
 | `wf_xtra_filter_users_by_var` | Checked in a real room | Yes | Yes | 2026-11-01 |
 | `wf_xtra_link_speaker` | Seen in a real room dump |  |  |  |
 | `wf_xtra_mov_carry_users` | Checked in a real room | Yes | Yes | 2026-11-01 |
-| `wf_xtra_mov_curve` | Seen in a real room dump |  |  |  |
-| `wf_xtra_mov_no_animation` | Seen in a real room dump |  |  |  |
-| `wf_xtra_mov_physics` | Seen in a real room dump |  |  |  |
+| `wf_xtra_mov_curve` | Seen in a real room dump | Yes | Yes |  |
+| `wf_xtra_mov_no_animation` | Seen in a real room dump | Yes |  |  |
+| `wf_xtra_mov_physics` | Seen in a real room dump | Yes | Yes |  |
 | `wf_xtra_or_eval` | Checked in a real room | Yes |  | 2026-11-01 |
 | `wf_xtra_random` | Checked in a real room | Yes | Yes | 2026-11-01 |
 | `wf_xtra_rotate_to_dir` | Seen in a real room dump | Yes | Yes |  |
