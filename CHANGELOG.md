@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.10.0](https://github.com/aaimang/wiredbench/compare/v0.9.1...v0.10.0) (2026-11-08)
+
+
+### Features
+
+* furni need rights to switch, and dice roll, as in a real room ([#95](https://github.com/aaimang/wiredbench/issues/95)) ([0a7e9d2](https://github.com/aaimang/wiredbench/commit/0a7e9d259195296a5ed3f800b026f4e9c00b53dc))
+* room rights during a run, a theme toggle, more furni to place ([#92](https://github.com/aaimang/wiredbench/issues/92)) ([cb728f2](https://github.com/aaimang/wiredbench/commit/cb728f266a01cc7962fd7d46d8e42a824fc5e00d))
+* teleports, one-way gates and gates work as in a room ([f2aa3cd](https://github.com/aaimang/wiredbench/commit/f2aa3cdce7ab52100c592eaf4d91c9a5891e872a))
+
+
+### Bug Fixes
+
+* lie on a bed's head row and sit between a seat's layers ([#96](https://github.com/aaimang/wiredbench/issues/96)) ([79915a6](https://github.com/aaimang/wiredbench/commit/79915a60612e5ed58e7ff91d7ad96d2831a832b8))
+* sit and lie on furni as Habbo's client draws it ([#94](https://github.com/aaimang/wiredbench/issues/94)) ([bc29a15](https://github.com/aaimang/wiredbench/commit/bc29a15fc9d6382a2c241ba22c6a58a0c1efcb34))
+* upgrade Debian packages in the image for the zlib CVEs ([5b11b82](https://github.com/aaimang/wiredbench/commit/5b11b826d62146acf8df7219e3c44a290ccfb954))
+
 ## [0.9.1](https://github.com/aaimang/wiredbench/compare/v0.9.0...v0.9.1) (2026-11-07)
 
 
