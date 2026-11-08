@@ -34,6 +34,26 @@ class RoomSize(_Open):
     timezone: str | None = Field(None, max_length=64)
 
 
+Channel = Annotated[int, Field(ge=0, le=255)]
+
+
+class Toner(_Open):
+    """A Background Toner's colour, each channel 0 to 255 as Habbo stores it."""
+
+    hue: Channel = 0
+    saturation: Channel = 0
+    lightness: Channel = 0
+
+
+class Branding(_Open):
+    """A Room Background's picture and where it sits, in pixels, as Habbo's map data names them."""
+
+    imageUrl: str = Field("", max_length=512)  # noqa: N815 - Habbo's own name for it.
+    offsetX: int = Field(0, ge=-10000, le=10000)  # noqa: N815
+    offsetY: int = Field(0, ge=-10000, le=10000)  # noqa: N815
+    offsetZ: int = Field(0, ge=-10000, le=10000)  # noqa: N815
+
+
 class PlacedFurni(_Open):
     id: int = Field(ge=1)
     classname: Annotated[str, StringConstraints(pattern=f"^{CLASSNAME.pattern}$")]
@@ -43,6 +63,8 @@ class PlacedFurni(_Open):
     rot: Direction = 0
     state: int = Field(0, ge=0, le=9999)
     wired: dict[str, Any] | None = None
+    toner: Toner | None = None
+    branding: Branding | None = None
 
 
 class PlacedAvatar(_Open):

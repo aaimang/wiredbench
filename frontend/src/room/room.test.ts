@@ -6,6 +6,7 @@ import {
   actionMs,
   avatarExtras,
   besideTiles,
+  brandingOffset,
   canStackOn,
   clickTileAt,
   directionBetween,
@@ -34,6 +35,7 @@ import {
   glideSteps,
   History,
   highlightTint,
+  hslToRgb,
   type InfoLookup,
   isFrozen,
   isNextTo,
@@ -54,6 +56,7 @@ import {
   standUpOffSeats,
   syncTemporary,
   timeDigits,
+  tonerColor,
   UNKNOWN_FURNI,
   usedFromFront,
   usedFromNextTo,
@@ -877,5 +880,37 @@ describe("easing", () => {
     expect(eased(3, 0.5)).toBe(0.75);
     expect(eased(4, 0.25)).toBe(0.125);
     expect(eased(4, 1)).toBe(1);
+  });
+});
+
+describe("background toner and room background", () => {
+  it("turns Habbo's hue, saturation and lightness into a colour", () => {
+    expect(hslToRgb(0, 0, 128)).toBe(0x808080);
+    expect(hslToRgb(0, 255, 128)).toBe(0xff0101);
+    expect(hslToRgb(85, 255, 128)).toBe(0x01ff01);
+  });
+
+  it("uses the toner switched on most recently", () => {
+    const toner = (id: number, state: number, hue: number, turn?: number) => ({
+      id,
+      classname: "roombg_color",
+      x: 0,
+      y: 0,
+      z: 0,
+      rot: 0,
+      state,
+      toner: { hue, saturation: 255, lightness: 128, ...(turn === undefined ? {} : { turn }) },
+    });
+    expect(tonerColor([toner(1, 0, 0)])).toBeNull();
+    expect(tonerColor([toner(1, 1, 0), toner(2, 1, 85)])).toBe(0x01ff01);
+    expect(tonerColor([toner(1, 1, 0, 9), toner(2, 1, 85, 3)])).toBe(0xff0101);
+  });
+
+  it("puts a corner of the picture on the furni, or its middle for direction 4", () => {
+    expect(brandingOffset(3, 100, 50)).toEqual([0, 0]);
+    expect(brandingOffset(1, 100, 50)).toEqual([0, -50]);
+    expect(brandingOffset(5, 100, 50)).toEqual([-100, 0]);
+    expect(brandingOffset(7, 100, 50)).toEqual([-100, -50]);
+    expect(brandingOffset(4, 100, 50)).toEqual([-50, -25]);
   });
 });

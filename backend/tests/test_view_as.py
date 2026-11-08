@@ -28,6 +28,7 @@ ALLOWED = {
     ("GET", "/api/avatars/{hotel}/shadow"),
     ("GET", "/api/effects/{hotel}/{effect}/manifest"),
     ("GET", "/api/effects/{hotel}/{effect}/atlas"),
+    ("GET", "/api/branding/image"),
 }
 SECRET = "secret-variable-name"
 

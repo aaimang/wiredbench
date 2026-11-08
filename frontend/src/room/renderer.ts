@@ -17,6 +17,9 @@ import { depth, screenToTile, TILE_HEIGHT, TILE_WIDTH, tileCentre, Z_UNIT } from
 import {
   type AvatarAction,
   avatarExtras,
+  BRANDED_BACKGROUNDS,
+  type BrandingSettings,
+  brandingOffset,
   EFFECT_FRAME_MS,
   type EffectManifest,
   eased,
@@ -44,6 +47,7 @@ import {
   pickWalkLook,
   type RoomDocument,
   SIXTY_SEVEN_MS,
+  tonerColor,
 } from "./model";
 
 export interface FurniManifest extends FurniArtData {
@@ -123,6 +127,20 @@ const ART_VERSION = 3;
  * (Habbo's own files); ordinary layers stay within a few hundred.
  */
 const BACKDROP_Z = -10000;
+/** A Room Background's own layer depth in Habbo's file. Its offset Z moves it nearer or further. */
+const BRANDING_Z = -10000000;
+/** How long the colour behind the room takes to change to a toner's, as Habbo's client fades it. */
+const TONER_FADE_MS = 1500;
+
+/** The floor tile's own diamond, for picking a furni drawn only behind the room. */
+function tileBounds(centre: { x: number; y: number }): Rectangle {
+  return new Rectangle(
+    centre.x - TILE_WIDTH / 2,
+    centre.y - TILE_HEIGHT / 2,
+    TILE_WIDTH,
+    TILE_HEIGHT,
+  );
+}
 /** Matches EFFECT_VERSION on the server, so a rebuilt effect is fetched again. */
 const EFFECT_VERSION = 7;
 const AVATAR_ANCHOR = { x: 32, y: 96 };
@@ -255,6 +273,10 @@ export class RoomRenderer {
   private layer = new Container({ sortableChildren: true });
   /** Layers Habbo sets far back, such as a room background's picture, which sit behind the floor. */
   private backdrop = new Container({ sortableChildren: true });
+  /** Room Background pictures by address: null while loading, false when it cannot be shown. */
+  private branding = new Map<string, Texture | null | false>();
+  /** The colour behind the room and its fade to a toner's. */
+  private tonerFade: { from: number; to: number; began: number } | null = null;
   private furni = new Map<string, Promise<FurniArt | null>>();
   private furniLoaded = new Map<string, FurniArt | null>();
   private avatars = new Map<string, Texture | null>();
@@ -639,6 +661,7 @@ export class RoomRenderer {
     this.scene = scene;
     this.animating = false;
     this.travelling = false;
+    this.applyToner(tonerColor(scene.room.furni));
     this.applyPan();
     const sizeKey = `${scene.room.room.width}x${scene.room.room.height}`;
     if (sizeKey !== this.drawnRoomSize) {
@@ -815,6 +838,31 @@ export class RoomRenderer {
     };
   }
 
+  /** A toner switched on fades what is behind the room to its colour, and back when switched off. */
+  private applyToner(target: number | null): void {
+    if (!this.app.renderer) return;
+    const to = target ?? cssColor("--bg", 0xe4e5dc);
+    const now = performance.now();
+    const fade = this.tonerFade;
+    const at = (f: { from: number; to: number; began: number }) => {
+      const t = Math.min(1, (now - f.began) / TONER_FADE_MS);
+      const mix = (shift: number) =>
+        Math.round(
+          ((f.from >> shift) & 255) + (((f.to >> shift) & 255) - ((f.from >> shift) & 255)) * t,
+        );
+      return (mix(16) << 16) | (mix(8) << 8) | mix(0);
+    };
+    if (!fade) {
+      this.tonerFade = { from: to, to, began: now };
+    } else if (fade.to !== to) {
+      this.tonerFade = { from: at(fade), to, began: now };
+    }
+    const current = this.tonerFade as { from: number; to: number; began: number };
+    const shown = at(current);
+    if (shown !== current.to) this.animating = true;
+    this.app.renderer.background.color = shown;
+  }
+
   /** Where a fade has got to. A new change starts from wherever the last one had reached. */
   private fadeTo(key: string, to: number, stamp: string, easing: number, start: number): number {
     const now = performance.now();
@@ -851,6 +899,18 @@ export class RoomRenderer {
 
   private drawFurni(scene: Scene, placed: PlacedFurni): void {
     const item = this.flown(scene, placed);
+    const branding = placed.branding as BrandingSettings | undefined;
+    if (BRANDED_BACKGROUNDS.has(item.classname) && branding?.imageUrl) {
+      const bounds = this.drawBranding(scene, item, branding);
+      const [fx, fy] = this.front(scene, item);
+      if (bounds)
+        this.hits.push({
+          hit: { kind: "furni", id: item.id },
+          bounds,
+          order: depth(fx, fy, item.z),
+        });
+      return;
+    }
     const selected = scene.selected?.kind === "furni" && scene.selected.id === item.id;
     const { look, shown } = this.easedLook(`furni:${item.id}`, scene.looks?.furni[item.id]);
     if (look?.highlight?.pulse) this.animating = true;
@@ -920,6 +980,7 @@ export class RoomRenderer {
     let right = Number.NEGATIVE_INFINITY;
     let bottom = Number.NEGATIVE_INFINITY;
     const drawn: Sprite[] = [];
+    let backdropOnly: boolean | undefined;
     for (const part of pose) {
       const sprite = new Sprite(this.partTexture(atlas, part));
       const x = centre.x + part.dx;
@@ -939,8 +1000,10 @@ export class RoomRenderer {
         // Behind the whole room, deepest first, and never in the way of a click.
         sprite.zIndex = part.z + order(fx, fy, item.z) / 1e6;
         this.backdrop.addChild(sprite);
+        backdropOnly = backdropOnly ?? true;
         continue;
       }
+      backdropOnly = false;
       sprite.zIndex = order(fx, fy, item.z, part.z);
       this.layer.addChild(sprite);
       if (part.layer >= 0) {
@@ -952,7 +1015,36 @@ export class RoomRenderer {
       }
     }
     if (highlight && opacity > 0) this.addLook(drawn, highlight);
+    // A furni drawn only behind the room is picked by its own tile, so it can still be selected.
+    if (backdropOnly) return tileBounds(centre);
     return right > left ? new Rectangle(left, top, right - left, bottom - top) : null;
+  }
+
+  /** A Room Background with a picture: drawn behind the room, a corner or its middle on the furni. */
+  private drawBranding(
+    scene: Scene,
+    item: PlacedFurni,
+    branding: BrandingSettings,
+  ): Rectangle | null {
+    const url = `/api/branding/image?url=${encodeURIComponent(branding.imageUrl)}`;
+    const texture = this.branding.get(url);
+    const centre = tileCentre(item.x, item.y, item.z);
+    if (texture === undefined) {
+      this.branding.set(url, null);
+      void loadTexture(url)
+        .then((loaded) => this.branding.set(url, loaded))
+        .catch(() => this.branding.set(url, false))
+        .finally(() => this.onChange());
+    }
+    if (texture) {
+      const [dx, dy] = brandingOffset(item.rot, texture.width, texture.height);
+      const sprite = new Sprite(texture);
+      sprite.position.set(centre.x + dx + branding.offsetX, centre.y + dy + branding.offsetY);
+      const [fx, fy] = this.front(scene, item);
+      sprite.zIndex = BRANDING_Z - branding.offsetZ + depth(fx, fy, item.z) / 1e6;
+      this.backdrop.addChild(sprite);
+    }
+    return tileBounds(centre);
   }
 
   /** Draws the looks a tint cannot: an edge around the shape, or light added on top of it. */

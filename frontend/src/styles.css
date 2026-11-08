@@ -2481,3 +2481,27 @@ wb-editor {
   min-width: 0;
   display: contents;
 }
+
+.toner-panel,
+.branding-panel {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.toner-panel input[type="range"] {
+  width: 100%;
+}
+
+.toner-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toner-swatch {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
