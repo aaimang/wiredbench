@@ -356,6 +356,10 @@ export const t = {
       respect: "Thumbs up",
       sixty_seven: "67",
     } as Record<string, string>,
+    teleportLink: "Linked teleport",
+    teleportNoLink: "Not linked",
+    teleportOption: (name: string, id: number, x: number, y: number) =>
+      `${name} #${id} at ${x}, ${y}`,
     needsRights:
       "During a run, only the room owner or a user with rights can move furni or change WIRED. Give the acting user @has_rights or @is_owner.",
     actionBlockedByEffect: "Not with an effect on, as in Habbo.",

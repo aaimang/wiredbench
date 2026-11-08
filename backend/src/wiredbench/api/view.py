@@ -29,7 +29,7 @@ HIDDEN_STAGES = {"not_in_catalogue", "staff", "in_development"}
 FURNI_FIELDS = ("id", "classname", "x", "y", "z", "rot", "state")
 AVATAR_FIELDS = ("id", "name", "hotel", "figure", "x", "y", "z", "dir", "pose", "face")
 VISIBLE_DETAILS = ("@handitem", "@sign", "@is_idle", "@effect")
-ITEM_FIELDS = ("classname", "revision", "xdim", "ydim", "height", "data")
+ITEM_FIELDS = ("classname", "revision", "category", "xdim", "ydim", "height", "data")
 LOOK_FIELDS = ("highlight", "invisible", "click_through")
 MESSAGES_SHOWN = 20
 # These carry the value of a room's own variable, which a visitor must not read.

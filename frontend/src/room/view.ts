@@ -6,20 +6,26 @@ import { errorMessage, toast } from "../ui";
 import { InspectWindow } from "./inspect";
 import {
   avatarExtras,
+  besideTiles,
   directionBetween,
   drawTile,
+  enteredFromFront,
   type Flight,
   type FurniInfo,
   type FxShown,
   findPath,
   fitsInRoom,
+  frontTile,
+  furniKind,
   glideSteps,
+  isNextTo,
   type Look,
   normaliseRoom,
   type PlacedAvatar,
   type RoomDocument,
   standAt,
   UNKNOWN_FURNI,
+  usedFromNextTo,
   withFace,
 } from "./model";
 import { type AvatarPose, type Hit, RoomRenderer } from "./renderer";
@@ -41,6 +47,7 @@ const WIRED_COMMAND = ":wired";
 
 interface ViewItem {
   revision?: number;
+  category?: string;
   xdim?: number;
   ydim?: number;
   height?: number;
@@ -105,6 +112,7 @@ class WbRoomView extends HTMLElement {
     path: [number, number][];
     from: [number, number, number];
     elapsed: number;
+    onArrive?: () => void;
   } | null = null;
   private walkClock = 0;
   private effects: Pick<ViewState, "flights" | "fx" | "looks"> | null = null;
@@ -162,6 +170,7 @@ class WbRoomView extends HTMLElement {
       canSit: item.data?.cansiton === true,
       canLay: item.data?.canlayon === true,
       canStack: item.data?.canputstuffon !== false,
+      kind: furniKind(classname, item.category ?? null),
     };
   };
 
@@ -386,7 +395,7 @@ class WbRoomView extends HTMLElement {
                 {
                   class: "btn btn-small",
                   "data-testid": "view-use",
-                  onclick: () => void this.send({ type: "use", furni: furni.id }),
+                  onclick: () => this.useFurni(furni.id),
                 },
                 T.card.use,
               ),
@@ -397,7 +406,42 @@ class WbRoomView extends HTMLElement {
     this.card.hidden = false;
   }
 
-  private walkTo(goal: [number, number]): void {
+  /** Like the client, the avatar first walks to where the furni is used from. */
+  private useFurni(id: number): void {
+    const room = this.room;
+    const item = room?.furni.find((f) => f.id === id);
+    const avatar = room?.avatars.find((a) => a.id === this.user);
+    const send = () => void this.send({ type: "use", furni: id });
+    if (!room || !item || !avatar) {
+      send();
+      return;
+    }
+    const kind = this.lookup(item.classname).kind ?? "default";
+    if (enteredFromFront(kind)) {
+      const front = frontTile(item);
+      if (avatar.x === front[0] && avatar.y === front[1]) send();
+      else this.walkTo(front, send);
+      return;
+    }
+    if (!usedFromNextTo(kind) || isNextTo([avatar.x, avatar.y], [item.x, item.y])) {
+      send();
+      return;
+    }
+    const occupied = new Set(
+      room.avatars.filter((a) => a.id !== avatar.id).map((a) => `${a.x},${a.y}`),
+    );
+    const [spot] = besideTiles(item, room)
+      .filter(([x, y]) => standAt(room, this.lookup, x, y).walkable && !occupied.has(`${x},${y}`))
+      .sort(
+        (a, b) =>
+          Math.hypot(a[0] - avatar.x, a[1] - avatar.y) -
+          Math.hypot(b[0] - avatar.x, b[1] - avatar.y),
+      );
+    if (spot) this.walkTo(spot, send);
+    else send();
+  }
+
+  private walkTo(goal: [number, number], onArrive?: () => void): void {
     const room = this.room;
     const avatar = room?.avatars.find((a) => a.id === this.user);
     if (!room || !avatar) return;
@@ -409,11 +453,12 @@ class WbRoomView extends HTMLElement {
     const path = findPath(room, this.lookup, start, goal, occupied);
     if (path === null) return;
     if (!next && path.length === 0) {
-      void this.send({ type: "move", x: goal[0], y: goal[1] });
+      if (onArrive) onArrive();
+      else void this.send({ type: "move", x: goal[0], y: goal[1] });
       return;
     }
-    if (this.walker && next) this.walker.path = [next, ...path];
-    else this.walker = { path, from: [avatar.x, avatar.y, avatar.z], elapsed: 0 };
+    if (this.walker && next) Object.assign(this.walker, { path: [next, ...path], onArrive });
+    else this.walker = { path, from: [avatar.x, avatar.y, avatar.z], elapsed: 0, onArrive };
     let from = start;
     for (const step of path) {
       this.renderer?.preloadWalk(avatar, directionBetween(from, step));
@@ -443,7 +488,10 @@ class WbRoomView extends HTMLElement {
       walker.from = [next[0], next[1], stand.z];
       if (!after) this.walker = null;
       void this.send({ type: "move", x: next[0], y: next[1], dir: avatar.dir });
-      if (!this.walker) return;
+      if (!this.walker) {
+        walker.onArrive?.();
+        return;
+      }
     }
   }
 
@@ -484,9 +532,7 @@ class WbRoomView extends HTMLElement {
     canvas.addEventListener("dblclick", (event) => {
       const rect = canvas.getBoundingClientRect();
       const hit = this.renderer?.hitAt(event.clientX - rect.left, event.clientY - rect.top);
-      if (hit?.kind === "furni" && this.inspect?.tab !== "furni") {
-        void this.send({ type: "use", furni: hit.id });
-      }
+      if (hit?.kind === "furni" && this.inspect?.tab !== "furni") this.useFurni(hit.id);
     });
   }
 

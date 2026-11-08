@@ -308,6 +308,8 @@ class Engine:
                 "rot": raw.get("rot", 0),
                 "state": raw.get("state", 0),
             }
+            if isinstance(raw.get("link"), int):
+                item["link"] = raw["link"]  # A teleport's partner.
             self.furni[item["id"]] = item
             game_counter = raw["classname"].startswith("wf_game_upcounter")
             if game_counter or raw["classname"].startswith("wf_upcounter"):
@@ -563,7 +565,19 @@ class Engine:
                     "info", f"{who['name']} must stand next to {self._name(item['classname'])} to use it"
                 )
                 return
-        if kind == "dice":
+        if kind in ("teleport", "one_way_gate") and who is not None:
+            if (who["x"], who["y"]) != interactions.front_of(item["x"], item["y"], item["rot"]):
+                self._log("info", f"{who['name']} must stand in front of {self._name(item['classname'])}")
+                return
+            if kind == "teleport":
+                self._enter_teleport(user_id, furni_id)
+            else:
+                self._pass_one_way(user_id, furni_id)
+        elif kind == "gate" and item["state"] != 0 and self._someone_on(item["x"], item["y"]):
+            # A real room does not close a gate on someone standing in it.
+            self._log("info", f"{self._name(item['classname'])} cannot close while someone stands in it")
+            return
+        elif kind == "dice":
             self._roll_dice(furni_id)
         elif furni_id in self.clocks:
             clock = self.clocks[furni_id]
@@ -577,6 +591,70 @@ class Engine:
             self._set_state(furni_id, self._next_state(furni_id))
         if furni_id in self.furni:
             self._fire("wf_trg_state_changed", user=user_id, furni=furni_id)
+
+    def _someone_on(self, x: int, y: int) -> bool:
+        return any(u["x"] == x and u["y"] == y for u in self.users.values())
+
+    def _enter_teleport(self, user_id: int, furni_id: int) -> None:
+        """The user steps in, the door flashes, and they come out of the linked teleport."""
+        item = self.furni[furni_id]
+        partner = item.get("link")
+        if partner not in self.furni or partner == furni_id:
+            self._log("info", f"{self._name(item['classname'])} is not linked to another teleport")
+            return
+        if item["state"] != 0 or self._someone_on(item["x"], item["y"]):
+            return  # Busy: someone is already going through.
+        self._set_state(furni_id, interactions.TELEPORT_OPEN)
+        self._move_user(user_id, item["x"], item["y"])
+        start = self.now_ms
+        payload = {"user": user_id, "from": furni_id, "to": partner}
+        for at, phase in (
+            (interactions.TELEPORT_FLASH_AT_MS, "flash"),
+            (interactions.TELEPORT_ARRIVE_AT_MS, "arrive"),
+            (interactions.TELEPORT_OUT_AT_MS, "out"),
+            (interactions.TELEPORT_CLOSE_AT_MS, "close"),
+        ):
+            self._push(start + at, "teleport", {**payload, "phase": phase})
+
+    def _teleport_step(self, payload: dict[str, Any]) -> None:
+        user, start, end = payload["user"], self.furni.get(payload["from"]), self.furni.get(payload["to"])
+        if start is None or end is None or user not in self.users:
+            return
+        match payload["phase"]:
+            case "flash":
+                self._set_state(payload["from"], interactions.TELEPORT_FLASH)
+            case "arrive":
+                self._set_state(payload["from"], 0)
+                self._set_state(payload["to"], interactions.TELEPORT_FLASH)
+                self._move_user(user, end["x"], end["y"])
+                self.users[user]["dir"] = end["rot"] % 8
+            case "out":
+                self._set_state(payload["to"], interactions.TELEPORT_OPEN)
+                x, y = interactions.front_of(end["x"], end["y"], end["rot"])
+                if self._free_tile(x, y):
+                    self._move_user(user, x, y)
+            case "close":
+                self._set_state(payload["to"], 0)
+
+    def _pass_one_way(self, user_id: int, furni_id: int) -> None:
+        """A one-way gate opens and lets the user through from its front to its back."""
+        item = self.furni[furni_id]
+        x, y = interactions.back_of(item["x"], item["y"], item["rot"])
+        if item["state"] != 0 or not self._free_tile(x, y):
+            return
+        self._set_state(furni_id, 1)
+        self._move_user(user_id, item["x"], item["y"])
+        payload = {"user": user_id, "furni": furni_id, "x": x, "y": y}
+        self._push(self.now_ms + interactions.ONE_WAY_THROUGH_MS, "one_way_through", payload)
+        self._push(self.now_ms + interactions.ONE_WAY_CLOSE_MS, "one_way_close", payload)
+
+    def _free_tile(self, x: int, y: int) -> bool:
+        """Inside the room, with nobody on it and nothing on it that cannot be stood on."""
+        if self.room_size and not (0 <= x < self.room_size[0] and 0 <= y < self.room_size[1]):
+            return False
+        if self._someone_on(x, y):
+            return False
+        return all(self.furni[i]["classname"] not in self.not_standable for i in self._furni_on_tile(x, y))
 
     def _roll_dice(self, furni_id: int) -> None:
         """A dice shows its rolling animation, then lands on a random face."""
@@ -772,6 +850,14 @@ class Engine:
                 self._game_timer_tick(payload["furni"], payload["run"])
             elif action == "seat_turn_back":
                 self._seat_users()
+            elif action == "teleport":
+                self._teleport_step(payload)
+            elif action == "one_way_through":
+                if payload["user"] in self.users:
+                    self._move_user(payload["user"], payload["x"], payload["y"])
+            elif action == "one_way_close":
+                if payload["furni"] in self.furni:
+                    self._set_state(payload["furni"], 0)
             elif action == "dice_land":
                 if (
                     self.dice_turns.get(payload["furni"]) == payload["turn"]

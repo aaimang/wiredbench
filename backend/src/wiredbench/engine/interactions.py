@@ -41,6 +41,11 @@ def anyone_may_use(kind: Kind) -> bool:
     return kind in ("dice", "switch", "teleport", "one_way_gate", "vending")
 
 
+def entered_from_front(kind: Kind) -> bool:
+    """Teleports and one-way gates are used from the tile in front of them."""
+    return kind in ("teleport", "one_way_gate")
+
+
 def needs_to_be_next_to(kind: Kind) -> bool:
     """Whether the user must stand on a tile next to it. The floor switch's own text says so."""
     return kind in ("dice", "switch")
@@ -49,3 +54,28 @@ def needs_to_be_next_to(kind: Kind) -> bool:
 def next_to(user: tuple[int, int], item: tuple[int, int]) -> bool:
     """On one of the eight tiles around a furni's tile."""
     return max(abs(user[0] - item[0]), abs(user[1] - item[1])) == 1
+
+
+# A teleport's sequence, from stepping in to stepping out of its partner. Assumed timings, not measured
+# in a real room yet. States from the teleport's art: 0 closed, 1 open, 2 teleporting.
+TELEPORT_OPEN, TELEPORT_FLASH = 1, 2
+TELEPORT_FLASH_AT_MS = 500
+TELEPORT_ARRIVE_AT_MS = 1500
+TELEPORT_OUT_AT_MS = 2000
+TELEPORT_CLOSE_AT_MS = 2500
+# A one-way gate opens, lets the user through and closes. Assumed timings.
+ONE_WAY_THROUGH_MS = 500
+ONE_WAY_CLOSE_MS = 1000
+
+# A furni's front, by its rotation: the tile a teleport or one-way gate is entered from.
+_FRONT = {0: (0, -1), 2: (1, 0), 4: (0, 1), 6: (-1, 0)}
+
+
+def front_of(x: int, y: int, rot: int) -> tuple[int, int]:
+    dx, dy = _FRONT.get(rot % 8, (0, 1))
+    return x + dx, y + dy
+
+
+def back_of(x: int, y: int, rot: int) -> tuple[int, int]:
+    dx, dy = _FRONT.get(rot % 8, (0, 1))
+    return x - dx, y - dy

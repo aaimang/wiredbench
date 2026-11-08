@@ -41,12 +41,14 @@ import {
   directionBetween,
   drawTile,
   emptyRoom,
+  enteredFromFront,
   FACE_NAMES,
   type FurniInfo,
   figureAction,
   findPath,
   fitsInRoom,
   footprint,
+  frontTile,
   furniKind,
   History,
   isNextTo,
@@ -342,6 +344,7 @@ class WbEditor extends HTMLElement {
       canSit: data.cansiton === true,
       canLay: data.canlayon === true,
       canStack: data.canputstuffon !== false,
+      kind: furniKind(classname, item.category ?? null),
     };
   };
 
@@ -1081,6 +1084,13 @@ class WbEditor extends HTMLElement {
       if (kind === "dice") this.diceRolled.add(item.id);
       void run.input({ type: "use", user: avatar.id, furni: item.id });
     };
+    // Teleports and one-way gates are entered from the tile in front of them.
+    if (enteredFromFront(kind)) {
+      const front = frontTile(item);
+      if (avatar.x === front[0] && avatar.y === front[1]) send();
+      else this.walkTo(front, send);
+      return;
+    }
     if (!usedFromNextTo(kind) || isNextTo([avatar.x, avatar.y], [item.x, item.y])) {
       send();
       return;
@@ -2045,6 +2055,7 @@ class WbEditor extends HTMLElement {
           position("Z", "z", "0.01", false),
         ),
         this.stateButtons(item),
+        ...(data.kind === "teleport" ? [this.teleportLink(item)] : []),
         h("p", { class: "muted" }, t.run.idLabel(item.id)),
         ...this.boxSettings(item),
       ),
@@ -2076,6 +2087,46 @@ class WbEditor extends HTMLElement {
       );
     });
     return holder;
+  }
+
+  /** A teleport takes you to the one it is linked to. Links go both ways, as two paired teleports do. */
+  private teleportLink(item: PlacedFurni): HTMLElement {
+    const others = this.room.furni.filter(
+      (other) => other.id !== item.id && this.lookup(other.classname).kind === "teleport",
+    );
+    const select = h(
+      "select",
+      { "aria-label": T.teleportLink },
+      h("option", { value: "", selected: typeof item.link !== "number" }, T.teleportNoLink),
+      ...others.map((other) =>
+        h(
+          "option",
+          { value: String(other.id), selected: item.link === other.id },
+          T.teleportOption(
+            this.items.get(other.classname)?.name || other.classname,
+            other.id,
+            other.x,
+            other.y,
+          ),
+        ),
+      ),
+    );
+    select.addEventListener("change", () => {
+      const partner = others.find((other) => String(other.id) === select.value) ?? null;
+      this.change(() => {
+        // Whatever either one was linked to before is let go.
+        for (const furni of this.room.furni) {
+          if (furni.link === item.id || (partner && furni.link === partner.id)) delete furni.link;
+        }
+        delete item.link;
+        if (partner) {
+          delete partner.link;
+          item.link = partner.id;
+          partner.link = item.id;
+        }
+      });
+    });
+    return h("label", { class: "field" }, h("span", {}, T.teleportLink), select);
   }
 
   private setPosition(item: PlacedFurni, key: "x" | "y" | "z", value: number): void {

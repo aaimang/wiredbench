@@ -13,6 +13,7 @@ import {
   type EffectManifest,
   effectLayers,
   emptyRoom,
+  enteredFromFront,
   type FurniArtData,
   type FurniInfo,
   type FurniPart,
@@ -23,6 +24,7 @@ import {
   fitsInRoom,
   flightAt,
   footprint,
+  frontTile,
   furniAt,
   furniKind,
   furniParts,
@@ -46,6 +48,7 @@ import {
   standAt,
   standUpOffSeats,
   timeDigits,
+  UNKNOWN_FURNI,
   usedFromNextTo,
   withFace,
 } from "./model";
@@ -742,6 +745,24 @@ describe("furni kinds match the room engine", () => {
     expect(usedFromNextTo("dice") && usedFromNextTo("switch") && !usedFromNextTo("default")).toBe(
       true,
     );
+  });
+
+  it("enters teleports and one-way gates from the tile in front", () => {
+    expect(enteredFromFront("teleport") && enteredFromFront("one_way_gate")).toBe(true);
+    expect(enteredFromFront("dice")).toBe(false);
+    expect(frontTile({ x: 3, y: 3, rot: 0 })).toEqual([3, 2]);
+    expect(frontTile({ x: 3, y: 3, rot: 2 })).toEqual([4, 3]);
+    expect(frontTile({ x: 3, y: 3, rot: 4 })).toEqual([3, 4]);
+    expect(frontTile({ x: 3, y: 3, rot: 6 })).toEqual([2, 3]);
+  });
+
+  it("lets people walk through a gate only while it is open", () => {
+    const gates: InfoLookup = (name) =>
+      name === "gate" ? { ...UNKNOWN_FURNI, canStand: false, kind: "gate" } : lookup(name);
+    const r = room(["gate", 2, 2]);
+    expect(standAt(r, gates, 2, 2).walkable).toBe(false);
+    r.furni = r.furni.map((item) => ({ ...item, state: 1 }));
+    expect(standAt(r, gates, 2, 2).walkable).toBe(true);
   });
 
   it("finds the tiles next to a furni, inside the room", () => {
