@@ -54,6 +54,7 @@ class Input(BaseModel):
         "user_detail",
         "click_user",
         "action",
+        "toner",
     ]
     user: Int | None = None
     x: int | None = Field(None, ge=0, le=64)
@@ -72,6 +73,10 @@ class Input(BaseModel):
     key: str | None = Field(None, max_length=64)
     # A string, because 64-bit values do not survive being a JavaScript number.
     value: str | None = Field(None, pattern=r"^-?\d{1,19}$")
+    # A Background Toner's colour, from its window.
+    hue: int | None = Field(None, ge=0, le=255)
+    saturation: int | None = Field(None, ge=0, le=255)
+    lightness: int | None = Field(None, ge=0, le=255)
 
 
 class Command(BaseModel):

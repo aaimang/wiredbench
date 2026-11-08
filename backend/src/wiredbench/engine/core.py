@@ -98,6 +98,9 @@ BOT_TELEPORT_EFFECT = 4
 BOT_ARRIVE_MS, BOT_EFFECT_OFF_MS = 1500, 3100
 MAX_BOT_SEARCH = 64 * 64
 FIGURE = re.compile(r"[a-z]{2}-\d{1,6}(-\d{1,6}){0,3}(\.[a-z]{2}-\d{1,6}(-\d{1,6}){0,3}){0,24}")
+# Background Toners colour what is behind the room. Habbo's two, with a hue, saturation and lightness each 0 to 255.
+TONERS = {"roombg_color", "room_info15_bg"}
+TONER_CHANNELS = ("hue", "saturation", "lightness")
 FREEZE_EFFECTS = {218, 12, 11, 53, 163}  # The effects Freeze offers.
 LINK = "wf_link"
 LINK_MESSAGE_BYTES = 1000  # Habbo refuses a longer link message.
@@ -147,6 +150,10 @@ def _three_way(compare: Any, value: int, reference: int) -> bool:
     if compare == "equal":
         return value == reference
     return value > reference if compare == "more" else value < reference
+
+
+def _channel(value: Any) -> int:
+    return max(0, min(_int(value), 255))
 
 
 def _in_range(value: int, low: int, high: int) -> bool:
@@ -303,6 +310,8 @@ class Engine:
         self.boxes_at: dict[tuple[int, int], list[Box]] = defaultdict(list)
         self.variables: dict[str, dict[str, Holding]] = defaultdict(dict)
         self.definitions: dict[str, dict[str, Any]] = {}
+        # Background toners, in the order they last changed. The latest one switched on colours the room.
+        self.toner_turns: dict[int, int] = {}
         # Who stands in water: the water's effect, and the effect they wore before stepping in.
         self.wet: dict[int, tuple[int, int | None]] = {}
         # Bots: where each one walks, whom it follows, and whether it has caught up with them.
@@ -372,6 +381,10 @@ class Engine:
             }
             if isinstance(raw.get("link"), int):
                 item["link"] = raw["link"]  # A teleport's partner.
+            if raw["classname"] in TONERS:
+                toner = raw.get("toner") if isinstance(raw.get("toner"), dict) else {}
+                item["toner"] = {key: _channel(toner.get(key)) for key in TONER_CHANNELS}
+                self.toner_turns[item["id"]] = len(self.toner_turns)
             self.furni[item["id"]] = item
             game_counter = raw["classname"].startswith("wf_game_upcounter")
             if game_counter or raw["classname"].startswith("wf_upcounter"):
@@ -535,6 +548,8 @@ class Engine:
             self._say(_int(user), str(entry.get("text", ""))[:500])
         elif kind == "click":
             self._click(_int(user), _int(entry.get("furni")))
+        elif kind == "toner":
+            self._set_toner(_int(user) if user is not None else None, _int(entry.get("furni")), entry)
         elif kind == "click_user":
             self._click_user(_int(user), _int(entry.get("target")))
         elif kind == "action":
@@ -1802,6 +1817,9 @@ class Engine:
         clock = self.clocks.get(holder)
         if name == "~clock.pulse_count":
             return clock.half_seconds if clock else None
+        if name.startswith("~background_color."):
+            channel = name.removeprefix("~background_color.")
+            return item["toner"].get(channel) if "toner" in item else None
         if name == "~clock.is_game_aware":
             return int(clock.game_aware) if clock else None
         if name == "~clock.state":
@@ -1884,6 +1902,11 @@ class Engine:
                 self._seat_users()
             case "@altitude":
                 item["z"] = max(0, min(value, MAX_ALTITUDE)) / 100
+            case "~background_color.hue" | "~background_color.saturation" | "~background_color.lightness" if (
+                "toner" in self.furni.get(holder or 0, {})
+            ):
+                self.furni[holder or 0]["toner"][name.removeprefix("~background_color.")] = _channel(value)
+                self._toner_changed(holder or 0)
             case "~clock.pulse_count" if holder in self.clocks:
                 self.clocks[holder].half_seconds = max(0, value)
                 self._clock_show(holder, self.clocks[holder])
@@ -2170,10 +2193,28 @@ class Engine:
         current = self.furni[furni_id]["state"]
         return states[(states.index(current) + 1) % len(states)] if current in states else states[0]
 
+    def _toner_changed(self, furni_id: int) -> None:
+        self.toner_turns[furni_id] = max(self.toner_turns.values(), default=0) + 1
+
+    def _set_toner(self, user_id: int | None, furni_id: int, entry: dict[str, Any]) -> None:
+        """The toner's window sets its colour. A real room lets only the owner or rights do it."""
+        item = self.furni.get(furni_id)
+        if item is None or "toner" not in item:
+            return
+        if user_id is not None and not self._has_rights(user_id):
+            self._log("info", "Only the owner or a user with rights can change the Background Toner")
+            return
+        for key in TONER_CHANNELS:
+            if entry.get(key) is not None:
+                item["toner"][key] = _channel(entry[key])
+        self._toner_changed(furni_id)
+
     def _set_state(self, furni_id: int, state: int) -> None:
         item = self.furni.get(furni_id)
         if item:
             item["state"] = state
+            if "toner" in item:
+                self._toner_changed(furni_id)
             self._fire("wf_trg_stuff_state", furni=furni_id)
 
     def _do_toggle_state(self, box: Box, ctx: Context) -> None:
@@ -3348,6 +3389,8 @@ class Engine:
                     {k: f[k] for k in ("id", "x", "y", "z", "rot", "state")}
                     # A copy Place Furni put there is not in the room's file, so the browser needs its kind.
                     | ({"classname": f["classname"], "temporary": True} if f.get("temporary") else {})
+                    # A toner's colour, and when it last changed: the latest one switched on wins.
+                    | ({"toner": {**f["toner"], "turn": self.toner_turns[f["id"]]}} if "toner" in f else {})
                     for f in self.furni.values()
                 ),
                 key=lambda f: f["id"],

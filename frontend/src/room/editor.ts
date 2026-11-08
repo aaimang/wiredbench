@@ -35,6 +35,8 @@ import {
   actionBlocked,
   actionMs,
   avatarExtras,
+  BRANDED_BACKGROUNDS,
+  type BrandingSettings,
   besideTiles,
   canStackOn,
   clickTileAt,
@@ -51,6 +53,7 @@ import {
   frontTile,
   furniKind,
   History,
+  hslToRgb,
   isFrozen,
   isNextTo,
   isWiredBox,
@@ -70,6 +73,8 @@ import {
   standAt,
   standUpOffSeats,
   syncTemporary,
+  TONERS,
+  type TonerSettings,
   UNKNOWN_FURNI,
   usedFromFront,
   usedFromNextTo,
@@ -2085,6 +2090,8 @@ class WbEditor extends HTMLElement {
         ),
         this.stateButtons(item),
         ...(data.kind === "teleport" ? [this.teleportLink(item)] : []),
+        ...(TONERS.has(item.classname) ? [this.tonerPanel(item)] : []),
+        ...(BRANDED_BACKGROUNDS.has(item.classname) ? [this.brandingPanel(item)] : []),
         h("p", { class: "muted" }, t.run.idLabel(item.id)),
         ...this.boxSettings(item),
       ),
@@ -2116,6 +2123,126 @@ class WbEditor extends HTMLElement {
       );
     });
     return holder;
+  }
+
+  /** The Background Toner's window: a hue, saturation and lightness, each 0 to 255, and on or off. */
+  private tonerPanel(item: PlacedFurni): HTMLElement {
+    const saved = (item.toner ?? {}) as Partial<TonerSettings>;
+    const draft = {
+      hue: saved.hue ?? 0,
+      saturation: saved.saturation ?? 0,
+      lightness: saved.lightness ?? 0,
+    };
+    const swatch = h("span", { class: "toner-swatch", "data-testid": "toner-swatch" });
+    const paint = () => {
+      const color = hslToRgb(draft.hue, draft.saturation, draft.lightness);
+      swatch.style.background = `#${color.toString(16).padStart(6, "0")}`;
+    };
+    const slider = (key: keyof typeof draft, label: string) => {
+      const input = h("input", {
+        type: "range",
+        min: 0,
+        max: 255,
+        value: draft[key],
+        "aria-label": label,
+      }) as HTMLInputElement;
+      input.addEventListener("input", () => {
+        draft[key] = Number(input.value);
+        paint();
+      });
+      return h("label", { class: "field" }, h("span", {}, label), input);
+    };
+    paint();
+    return h(
+      "div",
+      { class: "toner-panel", "data-testid": "toner-panel" },
+      h("strong", {}, T.tonerTitle),
+      slider("hue", T.tonerHue),
+      slider("saturation", T.tonerSaturation),
+      slider("lightness", T.tonerLightness),
+      h(
+        "div",
+        { class: "toner-actions" },
+        swatch,
+        h(
+          "button",
+          { class: "btn btn-small", type: "button", onclick: () => this.setToner(item, draft) },
+          T.tonerApply,
+        ),
+        h(
+          "button",
+          { class: "btn btn-small", type: "button", onclick: () => this.toggleToner(item) },
+          item.state === 1 ? T.tonerOff : T.tonerOn,
+        ),
+      ),
+    );
+  }
+
+  private setToner(
+    item: PlacedFurni,
+    colour: { hue: number; saturation: number; lightness: number },
+  ): void {
+    if (this.run) {
+      void this.run.input({ type: "toner", user: this.runUser(), furni: item.id, ...colour });
+      return;
+    }
+    this.change(() => {
+      item.toner = { ...colour };
+    });
+  }
+
+  /** Using a toner switches it on or off, as in a real room. */
+  private toggleToner(item: PlacedFurni): void {
+    if (this.run) {
+      void this.run.input({ type: "use", user: this.runUser(), furni: item.id });
+      return;
+    }
+    this.change(() => {
+      item.state = item.state === 1 ? 0 : 1;
+    });
+  }
+
+  /** A Room Background's picture and where it sits. Habbo shows pictures from its own image hosts. */
+  private brandingPanel(item: PlacedFurni): HTMLElement {
+    const saved = (item.branding ?? {}) as Partial<BrandingSettings>;
+    const field = (key: keyof BrandingSettings, label: string, kind: "text" | "number") => {
+      const input = h("input", {
+        type: kind,
+        value: String(saved[key] ?? (kind === "number" ? 0 : "")),
+        "aria-label": label,
+        disabled: Boolean(this.run),
+        ...(kind === "text" ? { placeholder: "https://images.habbo.com/..." } : {}),
+      }) as HTMLInputElement;
+      input.addEventListener("change", () =>
+        this.change(() => {
+          const next: BrandingSettings = {
+            imageUrl: "",
+            offsetX: 0,
+            offsetY: 0,
+            offsetZ: 0,
+            ...(item.branding as Partial<BrandingSettings> | undefined),
+          };
+          if (key === "imageUrl") next.imageUrl = input.value.trim();
+          else next[key] = Math.trunc(Number(input.value) || 0);
+          item.branding = next;
+        }),
+      );
+      return h("label", { class: "field" }, h("span", {}, label), input);
+    };
+    return h(
+      "div",
+      { class: "branding-panel", "data-testid": "branding-panel" },
+      h("strong", {}, T.brandingTitle),
+      field("imageUrl", T.brandingUrl, "text"),
+      h("p", { class: "muted" }, T.brandingHosts),
+      h(
+        "div",
+        { class: "coordinates" },
+        field("offsetX", "X", "number"),
+        field("offsetY", "Y", "number"),
+        field("offsetZ", "Z", "number"),
+      ),
+    );
   }
 
   /** A teleport takes you to the one it is linked to. Links go both ways, as two paired teleports do. */
@@ -2310,8 +2437,9 @@ class WbEditor extends HTMLElement {
     const avatar = this.selectedAvatar();
     if (!panel || avatar?.id !== panel.avatarId) return;
     const { x, y, dir, height, preview, position, editing } = panel;
+    // A field being typed in keeps what is typed: a run's update a moment later would undo it.
     const show = (input: HTMLInputElement | HTMLSelectElement, value: number) => {
-      if (!editing.has(input)) input.value = String(value);
+      if (!editing.has(input) && input !== document.activeElement) input.value = String(value);
     };
     show(x, avatar.x);
     show(y, avatar.y);

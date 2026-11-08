@@ -26,8 +26,8 @@ router = APIRouter(prefix="/api/view", tags=["view"])
 
 # The catalogue can only tell that a box has no offer, so retired or event boxes are hidden with staff ones.
 HIDDEN_STAGES = {"not_in_catalogue", "staff", "in_development"}
-FURNI_FIELDS = ("id", "classname", "x", "y", "z", "rot", "state")
-AVATAR_FIELDS = ("id", "name", "hotel", "figure", "x", "y", "z", "dir", "pose", "face")
+FURNI_FIELDS = ("id", "classname", "x", "y", "z", "rot", "state", "toner", "branding")
+AVATAR_FIELDS = ("id", "name", "hotel", "figure", "x", "y", "z", "dir", "pose", "face", "bot")
 VISIBLE_DETAILS = ("@handitem", "@sign", "@is_idle", "@effect", "@is_frozen")
 ITEM_FIELDS = ("classname", "revision", "category", "hand_items", "xdim", "ydim", "height", "data")
 LOOK_FIELDS = ("highlight", "invisible", "click_through", "fade")

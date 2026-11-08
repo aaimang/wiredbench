@@ -889,3 +889,80 @@ export function isFrozen(avatar: PlacedAvatar): boolean {
   const details = (avatar.details ?? {}) as Record<string, unknown>;
   return Boolean(details["@is_frozen"]);
 }
+
+/** Habbo's two Background Toners, which colour what is behind the room. */
+export const TONERS = new Set(["roombg_color", "room_info15_bg"]);
+/** The Room Background, which shows a picture from a link. Billboards are drawn as their own art. */
+export const BRANDED_BACKGROUNDS = new Set(["ads_background"]);
+
+export interface TonerSettings {
+  hue: number;
+  saturation: number;
+  lightness: number;
+  /** In a run, when it last changed: the latest one switched on wins. */
+  turn?: number;
+}
+
+export interface BrandingSettings {
+  imageUrl: string;
+  offsetX: number;
+  offsetY: number;
+  offsetZ: number;
+}
+
+/** Habbo's colour from a hue, saturation and lightness, each 0 to 255. */
+export function hslToRgb(hue: number, saturation: number, lightness: number): number {
+  const h = (hue & 255) / 255;
+  const s = (saturation & 255) / 255;
+  const l = (lightness & 255) / 255;
+  let channels = [l, l, l];
+  if (s > 0) {
+    const t2 = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const t1 = 2 * l - t2;
+    channels = [h + 1 / 3, h, h - 1 / 3].map((c) => {
+      let color = c;
+      if (color < 0) color += 1;
+      if (color > 1) color -= 1;
+      if (color * 6 < 1) return t1 + (t2 - t1) * 6 * color;
+      if (color * 2 < 1) return t2;
+      if (color * 3 < 2) return t1 + (t2 - t1) * (2 / 3 - color) * 6;
+      return t1;
+    });
+  }
+  const [r, g, b] = channels.map((c) => Math.round(c * 255));
+  return ((r as number) << 16) | ((g as number) << 8) | (b as number);
+}
+
+/** The colour behind the room: the toner switched on most recently, or none. */
+export function tonerColor(furni: readonly PlacedFurni[]): number | null {
+  let best: number | null = null;
+  let latest = Number.NEGATIVE_INFINITY;
+  furni.forEach((item, index) => {
+    if (!TONERS.has(item.classname) || item.state !== 1) return;
+    const toner = (item.toner ?? {}) as Partial<TonerSettings>;
+    const turn = typeof toner.turn === "number" ? toner.turn : index;
+    if (turn < latest) return;
+    latest = turn;
+    best = hslToRgb(toner.hue ?? 0, toner.saturation ?? 0, toner.lightness ?? 0);
+  });
+  return best;
+}
+
+/**
+ * Where a Room Background's picture sits from its furni, by the furni's direction, as Habbo's client
+ * places it: a corner on the furni for the four diagonals, or the middle for direction 4.
+ */
+export function brandingOffset(dir: number, width: number, height: number): [number, number] {
+  switch (dir) {
+    case 1:
+      return [0, -height];
+    case 3:
+      return [0, 0];
+    case 5:
+      return [-width, 0];
+    case 7:
+      return [-width, -height];
+    default:
+      return [-width / 2, -height / 2];
+  }
+}

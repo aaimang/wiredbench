@@ -193,6 +193,7 @@ running server.
 | GET | `/api/avatars/{hotel}/image` | Admin |
 | GET | `/api/avatars/{hotel}/lookup` | Admin |
 | GET | `/api/avatars/{hotel}/shadow` | Admin |
+| GET | `/api/branding/image` | Admin |
 | GET | `/api/cache` | Admin |
 | POST | `/api/cache/clear` | Admin |
 | POST | `/api/catalog/apply` | Admin |

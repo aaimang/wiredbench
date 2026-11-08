@@ -169,3 +169,10 @@ def test_a_body_effect_says_what_happens_to_the_floor_shadow() -> None:
     own = plain.replace('<sprite id="avatar"/>', '<sprite id="avatar"/><shadow id="std_fx1_sd_0"/>')
     assert shadow_of(own, shadow="std_fx1_sd_0") == "own", "a barrel draws its own"
     assert shadow_of(own) == "plain", "a shadow named without art keeps the plain one"
+
+
+def test_room_background_pictures_come_only_from_habbos_image_hosts(api: Api) -> None:
+    for url in ("http://images.habbo.com/a.png", "https://example.com/a.png", "https://127.0.0.1/a.png"):
+        answer = api.get("/api/branding/image", params={"url": url})
+        assert answer.status_code == 422
+        assert answer.json()["error"] == "not_habbo_image"

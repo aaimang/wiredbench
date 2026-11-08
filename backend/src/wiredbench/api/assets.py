@@ -163,3 +163,20 @@ async def avatar_image(
     if path is None:
         raise not_found("Avatar")
     return FileResponse(path, media_type="image/png", headers=IMMUTABLE)
+
+
+@router.get("/branding/image")
+@viewer
+async def branding_image(
+    url: str = Query(min_length=9, max_length=512), services: Services = Depends(get_services)
+) -> FileResponse:
+    """A Room Background's picture, fetched from Habbo's own image hosts only."""
+    try:
+        found = await run_in_threadpool(services.assets.branding, url)
+    except ValueError as exc:
+        raise ApiError(422, "not_habbo_image", str(exc)) from exc
+    except UpstreamError as exc:
+        raise ApiError(502, "upstream_unavailable", "Could not download this picture.") from exc
+    if found is None:
+        raise not_found("Picture")
+    return FileResponse(found, media_type="image/png", headers=DAILY)

@@ -13,7 +13,7 @@ import re
 import threading
 import time
 from pathlib import Path
-from urllib.parse import quote, urlencode
+from urllib.parse import quote, urlencode, urlsplit
 from uuid import uuid4
 
 from PIL import Image
@@ -23,7 +23,7 @@ from wiredbench.services import swf
 from wiredbench.services.effects import Effects
 from wiredbench.services.figures import FIGURE_RULES_VERSION, Figures
 from wiredbench.services.handitems import HandItems
-from wiredbench.services.upstream import IMAGE_HOST, Upstream, UpstreamError, icon_url
+from wiredbench.services.upstream import ALLOWED_HOSTS, IMAGE_HOST, Upstream, UpstreamError, icon_url
 
 MAX_ICON_BYTES = 2**20
 MAX_AVATAR_BYTES = 2 * 2**20
@@ -46,6 +46,7 @@ def _write_atomic(path: Path, data: bytes) -> None:
         temp.unlink(missing_ok=True)
 
 
+MAX_BRANDING_BYTES = 8 * 2**20  # A Room Background picture.
 MANIFEST_NAME = f"manifest.v{swf.ART_VERSION}.json"
 ATLAS_NAME = f"atlas.v{swf.ART_VERSION}.png"
 
@@ -67,6 +68,37 @@ class AssetCache:
 
     def _is_known_missing(self, marker: Path) -> bool:
         return marker.exists() and time.time() - marker.stat().st_mtime < MISSING_RETRY_SECONDS
+
+    def branding(self, url: str) -> Path | None:
+        """A Room Background's picture as a PNG, cached. None if Habbo has no such image.
+
+        Only https addresses on Habbo's own hosts are fetched, so a room cannot make the server
+        reach anywhere else. Raises ValueError for any other address.
+        """
+        if not url.startswith("https://") or urlsplit(url).hostname not in ALLOWED_HOSTS:
+            raise ValueError("Only pictures on Habbo's own image hosts can be shown.")
+        folder = self.root.parent / "branding"
+        path = folder / f"{hashlib.sha256(url.encode()).hexdigest()}.png"
+        if path.exists():
+            os.utime(path)
+            return path
+        with self._downloads:
+            fetched = self.upstream.get(url, MAX_BRANDING_BYTES)
+        if fetched.status == 404:
+            return None
+        if fetched.status != 200:
+            raise UpstreamError(f"Unexpected image response: HTTP {fetched.status}.")
+        try:
+            with Image.open(io.BytesIO(fetched.body)) as image:
+                if image.width * image.height > swf.MAX_IMAGE_PIXELS:
+                    return None
+                out = io.BytesIO()
+                image.convert("RGBA").save(out, "PNG")
+        except (OSError, ValueError, Image.DecompressionBombError):
+            return None
+        folder.mkdir(parents=True, exist_ok=True)
+        _write_atomic(path, out.getvalue())
+        return path
 
     def icon(self, revision: int, classname: str) -> Path | None:
         """The cached icon, or None if Habbo has none. Raises UpstreamError if Habbo cannot be reached."""

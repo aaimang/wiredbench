@@ -2963,3 +2963,45 @@ def test_water_puts_its_effect_on_whoever_stands_in_it() -> None:
     assert engine.users[100]["details"]["@effect"] == 28, "Splash, anywhere on the 2 by 2 patch"
     engine.apply_input({"type": "move", "user": 100, "x": 6, "y": 5})
     assert engine.users[100]["details"]["@effect"] == 4, "the effect worn before comes back"
+
+
+def test_background_toner_colour_switching_and_smart_variables() -> None:
+    document = {
+        "schema": 1,
+        "room": {"width": 20, "height": 20},
+        "furni": [
+            {**plain(50, "roombg_color", x=3, y=3), "toner": {"hue": 10, "saturation": 300, "lightness": 40}},
+            plain(51, "roombg_color", x=4, y=3),
+            box(1, "wf_trg_says_something", 1, 1, text="go"),
+            box(
+                2,
+                "wf_act_change_var_val",
+                1,
+                1,
+                1,
+                variable="~background_color.hue",
+                variable_on="furni",
+                operation="set",
+                value=999,
+                furni=[50],
+                furni_source="picks",
+            ),
+        ],
+        "avatars": [user(100, "Ann", x=0, y=0)],
+    }
+    engine = Engine(document, seed=1, furni_states={"roombg_color": [0, 1]})
+    assert engine.furni[50]["toner"] == {"hue": 10, "saturation": 255, "lightness": 40}
+    engine.apply_input({"type": "use", "user": 100, "furni": 50})
+    assert engine.furni[50]["state"] == 0, "only the owner or rights switch it"
+    engine.apply_input({"type": "toner", "user": 100, "furni": 50, "hue": 5})
+    assert engine.furni[50]["toner"]["hue"] == 10
+    engine.users[100]["details"]["@has_rights"] = 1
+    engine.apply_input({"type": "use", "user": 100, "furni": 51})
+    engine.apply_input({"type": "use", "user": 100, "furni": 50})
+    shown = {f["id"]: f["toner"] for f in engine.snapshot()["furni"] if "toner" in f}
+    assert shown[50]["turn"] > shown[51]["turn"], "the one switched on last wins"
+    engine.apply_input({"type": "toner", "user": 100, "furni": 50, "hue": 200, "saturation": 9})
+    assert engine.furni[50]["toner"] == {"hue": 200, "saturation": 9, "lightness": 40}
+    assert engine._built_in_value("~background_color.saturation", "furni", 50, None) == 9
+    say(engine, "go")
+    assert engine.furni[50]["toner"]["hue"] == 255, "a variable write is kept within 0 to 255"
