@@ -186,6 +186,12 @@ OPTION_FIELDS: dict[str, list[tuple[str, int, Any]]] = {
     "wf_cnd_not_in_team": [("team", 0, ANY_TEAM_NUMBERS)],
     "wf_slc_users_team": [("team", 0, ANY_TEAM_NUMBERS)],
     "wf_slc_users_handitem": [("handitem", 0, int)],
+    "wf_act_move_to_dir": [
+        ("start_dir", 0, ("0", "1", "2", "3", "4", "5", "6", "7")),
+        ("turn", 1, ("wait", "right_45", "right_90", "left_45", "left_90", "back", "random")),
+        ("block_users", 2, bool),
+    ],
+    "wf_xtra_text_output_furni_name": [("type", 0, ("single", "multiple"))],
     "wf_slc_users_neighborhood": [
         ("around", 0, {1: "users", 0: "furni"}),
         ("root_x", 1, int),

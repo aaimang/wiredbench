@@ -8,7 +8,7 @@ it, and a named position is still unverified until a box is changed and read aga
 
 No reply from: `wf_contract_payment`, `wf_contract_reward`, `wf_contract_trade`. The cause is unconfirmed.
 
-Named positions: 155. Unnamed positions: 427.
+Named positions: 159. Unnamed positions: 423.
 
 | Box | Section | Default numbers | Named positions | Unnamed positions |
 |---|---|---|---|---|
@@ -44,7 +44,7 @@ Named positions: 155. Unnamed positions: 427.
 | `wf_act_move_furni_as_group` | effect | `[1, 0, 0]` |  | 0, 1, 2 |
 | `wf_act_move_rotate` | effect | `[0, 0, 1]` | 0: direction, 1: rotation | 2 |
 | `wf_act_move_rotate_user` | effect | `[-1, -1]` | 0: user_move, 1: user_turn |  |
-| `wf_act_move_to_dir` | effect | `[0, 0, 1]` |  | 0, 1, 2 |
+| `wf_act_move_to_dir` | effect | `[0, 0, 1]` | 0: start_dir, 1: turn, 2: block_users |  |
 | `wf_act_neg_call_stacks` | effect | `[]` |  |  |
 | `wf_act_neg_log` | effect | `[0]` |  | 0 |
 | `wf_act_neg_send_signal` | effect | `[0, 0]` | 1: split_users | 0 |
@@ -180,7 +180,7 @@ Named positions: 155. Unnamed positions: 427.
 | `wf_xtra_rotate_to_dir` | addon | `[1, 1, 0, 0, 100, -20, 1, 1, 0, 4, 0, 0, 1, 1, 0, 0, 1, -20, 50]` | 0: proj_rotate, 2: proj_custom_time, 4: proj_tile_ms, 10: proj_offset, 11: proj_variables, 12: proj_shooter, 13: proj_bunny, 14: proj_past_on, 16: proj_past, 18: proj_height | 1, 3, 5, 6, 7, 8, 9, 15, 17 |
 | `wf_xtra_scan_chest_furni_by_type` | addon | `[0]` |  | 0 |
 | `wf_xtra_text_input_variable` | addon | `[0]` |  | 0 |
-| `wf_xtra_text_output_furni_name` | addon | `[0]` |  | 0 |
+| `wf_xtra_text_output_furni_name` | addon | `[0]` | 0: type |  |
 | `wf_xtra_text_output_username` | addon | `[0]` |  | 0 |
 | `wf_xtra_text_output_variable` | addon | `[0, 1, 0]` | 0: placeholder_type, 2: display | 1 |
 | `wf_xtra_unseen` | addon | `[]` |  |  |

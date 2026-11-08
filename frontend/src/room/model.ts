@@ -818,6 +818,18 @@ export function usedFromFront(kind: FurniKind): boolean {
   return enteredFromFront(kind) || kind === "vending";
 }
 
+/** An invisible click tile on a tile: clicking the bare floor there clicks it, for Click Tile. */
+export function clickTileAt(
+  room: Pick<RoomDocument, "furni">,
+  x: number,
+  y: number,
+): PlacedFurni | null {
+  return (
+    room.furni.find((f) => f.classname === "room_invisible_click_tile" && f.x === x && f.y === y) ??
+    null
+  );
+}
+
 export function enteredFromFront(kind: FurniKind): boolean {
   return kind === "teleport" || kind === "one_way_gate";
 }

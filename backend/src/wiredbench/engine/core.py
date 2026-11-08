@@ -217,6 +217,28 @@ class Stack:
         return next((box for box in self.boxes if box.classname == classname), None)
 
 
+CLICK_TILE = "room_invisible_click_tile"
+# Chase and Flee notice a user this many tiles away, on the furni's row or column only.
+NOTICE_RANGE = 3
+# The tile one step away in each of the eight directions, 0 being y-.
+DIRECTION_STEPS = {
+    0: (0, -1),
+    1: (1, -1),
+    2: (1, 0),
+    3: (1, 1),
+    4: (0, 1),
+    5: (-1, 1),
+    6: (-1, 0),
+    7: (-1, -1),
+}
+STEP_DIRECTIONS = {step: direction for direction, step in DIRECTION_STEPS.items()}
+CARDINAL_STEPS = [(0, -1), (1, 0), (0, 1), (-1, 0)]
+
+
+def _sign(value: int) -> int:
+    return (value > 0) - (value < 0)
+
+
 def _action_number_matches(box: Box | None, value: int) -> bool:
     """A sign or dance number in the box's text must match; an empty text matches any."""
     text = str(box.get("text", "") if box else "").strip().lower().removeprefix("dance").strip()
@@ -291,6 +313,7 @@ class Engine:
         self.user_looks: dict[int, dict[str, Any]] = {}
         self.sign_turns: dict[int, int] = {}
         self.expressions: dict[int, tuple[str, int]] = {}  # A user's last expression and when.
+        self.headings: dict[tuple[int, int], int] = {}  # Move to Direction and Flee: the way a furni goes.
         self.game_timer: int | None = None
         self.game_timer_run = 0
         self.score_grants: dict[tuple[int, int | None], int] = defaultdict(int)
@@ -580,6 +603,8 @@ class Engine:
     def _click(self, user_id: int, furni_id: int) -> None:
         if furni_id in self.furni:
             self._fire("wf_trg_click_furni", user=user_id, furni=furni_id)
+            if self.furni[furni_id]["classname"] == CLICK_TILE:
+                self._fire("wf_trg_click_tile", user=user_id, furni=furni_id)
 
     def _click_user(self, user_id: int, target: int) -> None:
         """One user clicks another. Effects reach the clicked user through Users from: Selector."""
@@ -1872,6 +1897,15 @@ class Engine:
         for addon in stack.of("addon") if stack else []:
             if addon.classname == "wf_xtra_text_output_username":
                 values[str(addon.get("placeholder", "user"))] = self._user_name(user)
+            elif addon.classname == "wf_xtra_text_output_furni_name":
+                if addon.get("furni_source", "default") == "default":
+                    named = [ctx.furni] if ctx.furni is not None else []
+                else:
+                    named = self._furni_for(addon, ctx)
+                names = [self._furni_name(i) for i in named if i in self.furni]
+                if addon.get("type", "single") == "single":
+                    names = names[:1]
+                values[str(addon.get("placeholder", "name"))] = ",".join(names)
             elif addon.classname == "wf_xtra_text_output_variable":
                 name = str(addon.get("variable", ""))
                 on = self._scope(addon, name)
@@ -1880,6 +1914,11 @@ class Engine:
                 absent = holding is None and internal.targets(name)
                 values[str(addon.get("placeholder", name))] = "null" if absent else shown
         return PLACEHOLDER.sub(lambda m: values.get(m.group(1), m.group(0)), str(box.get("text", "")))
+
+    def _furni_name(self, furni_id: int) -> str:
+        """The furni's public name, as Habbo shows it, or its class name when the catalogue has none."""
+        classname = self.furni[furni_id]["classname"]
+        return str(self.furni_facts.get(classname, {}).get("name") or classname)
 
     def _connected(self, stack: Stack | None, name: str, holding: Holding | None) -> str:
         if holding is None:
@@ -2152,6 +2191,109 @@ class Engine:
                 turn = self.random.choice((0, 2, 4, 6))
             item["rot"] = (item["rot"] + turn) % 8
         self._seat_users()
+
+    def _nearest_in_line(self, x: int, y: int) -> tuple[int, int] | None:
+        """The nearest user on a furni's row or column within reach, with the distance."""
+        found = [
+            (abs(u["x"] - x) + abs(u["y"] - y), u["id"])
+            for u in self.users.values()
+            if (u["x"] == x or u["y"] == y) and abs(u["x"] - x) + abs(u["y"] - y) <= NOTICE_RANGE
+        ]
+        if not found:
+            return None
+        closest = min(d for d, _ in found)
+        user = self.random.choice(sorted(u for d, u in found if d == closest))
+        return user, closest
+
+    def _collide(self, furni_id: int, user_id: int) -> None:
+        self._fire("wf_trg_collision", user=user_id, furni=furni_id)
+
+    def _try_steps(self, furni_id: int, steps: list[tuple[int, int]], box: Box, ctx: Context) -> bool:
+        return any(self._shift_furni(furni_id, dx, dy, box, ctx) for dx, dy in steps)
+
+    def _do_chase(self, box: Box, ctx: Context) -> None:
+        """Steps toward the nearest user in line, or at random. Next to them it waits and collides."""
+        hits: list[tuple[int, int]] = []
+        for furni_id in self._furni_for(box, ctx):
+            item = self.furni[furni_id]
+            nearest = self._nearest_in_line(item["x"], item["y"])
+            steps: list[tuple[int, int]] = []
+            if nearest is not None:
+                user, distance = nearest
+                if distance <= 1:
+                    hits.append((furni_id, user))
+                    continue
+                target = self.users[user]
+                steps.append((_sign(target["x"] - item["x"]), _sign(target["y"] - item["y"])))
+            steps += self.random.sample(CARDINAL_STEPS, len(CARDINAL_STEPS))
+            self._try_steps(furni_id, steps, box, ctx)
+        for furni_id, user in hits:
+            self._collide(furni_id, user)
+        self._seat_users()
+
+    def _do_flee(self, box: Box, ctx: Context) -> None:
+        """Steps away from the nearest user in line, else keeps its way. Next to a user it collides."""
+        hits: list[tuple[int, int]] = []
+        for furni_id in self._furni_for(box, ctx):
+            item = self.furni[furni_id]
+            nearest = self._nearest_in_line(item["x"], item["y"])
+            key = (box.id, furni_id)
+            if nearest is not None:
+                user, distance = nearest
+                if distance <= 1:
+                    hits.append((furni_id, user))
+                    continue
+                target = self.users[user]
+                away = (_sign(item["x"] - target["x"]), _sign(item["y"] - target["y"]))
+                # Refused, it sidesteps a quarter clockwise, then the other way; never back.
+                steps = [away, (-away[1], away[0]), (away[1], -away[0])]
+            else:
+                way = DIRECTION_STEPS[self.headings.get(key, 2)]
+                sides = [(-way[1], way[0]), (way[1], -way[0])]
+                steps = [way, *self.random.sample(sides, 2), (-way[0], -way[1])]
+            for dx, dy in steps:
+                if self._shift_furni(furni_id, dx, dy, box, ctx):
+                    self.headings[key] = STEP_DIRECTIONS[(dx, dy)]
+                    break
+        for furni_id, user in hits:
+            self._collide(furni_id, user)
+        self._seat_users()
+
+    def _do_move_to_dir(self, box: Box, ctx: Context) -> None:
+        """Moves one tile the way the furni is heading, turning by the box's rule when blocked."""
+        turn = str(box.get("turn", "wait"))
+        block_users = box.get("block_users", True) is not False
+        hits: list[tuple[int, int]] = []
+        movers = self._furni_for(box, ctx)
+        for furni_id in self.random.sample(movers, len(movers)):
+            key = (box.id, furni_id)
+            heading = self.headings.get(key, _int(box.get("start_dir", 0)) % 8)
+            tried = 0
+            for _ in range(8):
+                item = self.furni[furni_id]
+                tried |= 1 << heading
+                dx, dy = DIRECTION_STEPS[heading]
+                x, y = item["x"] + dx, item["y"] + dy
+                users = [u["id"] for u in self.users.values() if (u["x"], u["y"]) == (x, y)]
+                hits += [(furni_id, u) for u in users]
+                if users and block_users:
+                    break
+                if not users and self._shift_furni(furni_id, dx, dy, box, ctx):
+                    break
+                if turn == "wait":
+                    break
+                heading = self._turned(heading, turn, tried)
+            self.headings[key] = heading
+        for furni_id, user in hits:
+            self._collide(furni_id, user)
+        self._seat_users()
+
+    def _turned(self, heading: int, turn: str, tried: int) -> int:
+        if turn == "random":
+            untried = [d for d in range(8) if not tried & (1 << d)]
+            return self.random.choice(untried) if untried else heading
+        change = {"right_45": 1, "right_90": 2, "left_45": -1, "left_90": -2, "back": 4}.get(turn, 0)
+        return (heading + change) % 8
 
     def _do_rel_mov(self, box: Box, ctx: Context) -> None:
         dx, dy = _int(box.get("move_x")), _int(box.get("move_y"))

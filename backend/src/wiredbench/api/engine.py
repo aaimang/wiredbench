@@ -129,6 +129,7 @@ def furni_facts(services: Services, sandbox: Sandbox) -> dict[str, dict[str, Any
             "can_lay": bool(data.get("canlayon")),
             "stackable": bool(data.get("canputstuffon")),
             "category": item.get("category"),
+            "name": item.get("name") or classname,
         }
     return found
 
