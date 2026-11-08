@@ -170,3 +170,13 @@ def test_vars_global_shows_zero_before_a_global_is_set(api: Api) -> None:
     assert "round = 0" in send(":vars global")
     assert send(":set global x round 3") == "round = 3"
     assert "round = 3" in send(":vars global")
+
+
+def test_water_effect_comes_from_habbos_customparams() -> None:
+    from wiredbench.api.engine import water_effect
+
+    assert water_effect({"customparams": "30,0.5", "canstandon": True}) == 30
+    assert water_effect({"customparams": "28,1.5", "canstandon": True}) == 28
+    assert water_effect({"customparams": "163", "canstandon": True}) == 0, "not a water effect"
+    assert water_effect({"customparams": "30,0.5", "canstandon": False}) == 0
+    assert water_effect({}) == 0

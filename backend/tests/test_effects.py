@@ -49,6 +49,12 @@ def test_an_overlay_effect_is_built_into_a_sprite_sheet() -> None:
     assert "std_fx1_1_1_4_0" not in images, "a mirrored alias is skipped"
 
 
+def test_an_effect_without_image_offsets_is_still_drawn() -> None:
+    manifest, sheet = effects.build(effect_swf("Wade", OVERLAY, offsets=False), "Wade")
+    assert manifest["drawable"] and sheet is not None
+    assert manifest["images"]["std_fx1_1_1_0_0"]["ox"] == 0
+
+
 def test_an_effect_that_changes_the_body_is_not_drawn() -> None:
     manifest, sheet = effects.build(effect_swf("Board", BODY), "Board")
     assert sheet is None

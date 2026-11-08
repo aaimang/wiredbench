@@ -2947,3 +2947,19 @@ def test_highlight_and_visibility_record_their_easing() -> None:
     look = engine.furni_looks[50]
     assert (look["highlight"]["easing"], look["highlight"]["since_ms"]) == (1, 250)
     assert look["fade"] == {"easing": 3, "since_ms": 250}
+
+
+def test_water_puts_its_effect_on_whoever_stands_in_it() -> None:
+    document = {
+        "schema": 1,
+        "room": {"width": 20, "height": 20},
+        "furni": [plain(50, "bw_water_2", x=4, y=4)],
+        "avatars": [user(100, "Ann", x=0, y=0)],
+    }
+    facts = {"bw_water_2": {"xdim": 2, "ydim": 2, "water_effect": 28, "can_stand": True}}
+    engine = Engine(document, seed=1, furni_facts=facts)
+    engine.users[100]["details"]["@effect"] = 4
+    engine.apply_input({"type": "move", "user": 100, "x": 5, "y": 5})
+    assert engine.users[100]["details"]["@effect"] == 28, "Splash, anywhere on the 2 by 2 patch"
+    engine.apply_input({"type": "move", "user": 100, "x": 6, "y": 5})
+    assert engine.users[100]["details"]["@effect"] == 4, "the effect worn before comes back"

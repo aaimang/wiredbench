@@ -157,3 +157,15 @@ def test_digit_layers_run_left_to_right_and_need_all_ten() -> None:
 
 def test_transitions_are_not_states() -> None:
     assert build(furni_swf("box"), "box")[0]["states"] == [0, 1]
+
+
+def test_a_room_background_wider_than_the_sheet_still_builds() -> None:
+    from wiredbench.services.swf import _Atlas
+
+    atlas = _Atlas()
+    assert atlas.add(Image.new("RGBA", (30, 20))) == (0, 0)
+    assert atlas.add(Image.new("RGBA", (1600, 1400))) == (0, 21), "on a new row of the widened sheet"
+    sheet = Image.open(io.BytesIO(atlas.render()))
+    assert sheet.width >= 1600
+    with pytest.raises(SwfError):
+        atlas.add(Image.new("RGBA", (5000, 10)))

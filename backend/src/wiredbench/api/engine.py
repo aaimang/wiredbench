@@ -110,6 +110,17 @@ def not_standable(services: Services, sandbox: Sandbox) -> set[str]:
     return found
 
 
+# Habbo's water effects: Splash, Swimming, Wade, wading in a swamp, and the evil splash.
+WATER_EFFECTS = {28, 29, 30, 37, 184}
+
+
+def water_effect(data: dict[str, Any]) -> int:
+    """A water furni's customparams start with the effect it puts on whoever stands in it."""
+    first = str(data.get("customparams") or "").split(",")[0].strip()
+    effect = int(first) if first.isdigit() else 0
+    return effect if effect in WATER_EFFECTS and data.get("canstandon") else 0
+
+
 def furni_facts(services: Services, sandbox: Sandbox) -> dict[str, dict[str, Any]]:
     """What the catalogue says about each furni in a room, for its built-in variables."""
     document = sandbox.document if isinstance(sandbox.document, dict) else {}
@@ -130,6 +141,7 @@ def furni_facts(services: Services, sandbox: Sandbox) -> dict[str, dict[str, Any
             "stackable": bool(data.get("canputstuffon")),
             "category": item.get("category"),
             "name": item.get("name") or classname,
+            "water_effect": water_effect(data),
         }
     return found
 

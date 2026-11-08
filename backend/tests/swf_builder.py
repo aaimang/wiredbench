@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import struct
 import zlib
 
@@ -76,7 +77,9 @@ def furni_swf(base: str, width: int = 40, height: int = 50, compressed: bool = T
     return wrap(tags, compressed)
 
 
-def effect_swf(lib: str, animation: str, extra_aliases: str = "", shadow: str = "") -> bytes:
+def effect_swf(
+    lib: str, animation: str, extra_aliases: str = "", shadow: str = "", offsets: bool = True
+) -> bytes:
     """An effect library: one sprite drawn for direction 0, with frames 0 and 1.
 
     With a shadow name, the library also has that shadow as a black block without an offset.
@@ -91,6 +94,8 @@ def effect_swf(lib: str, animation: str, extra_aliases: str = "", shadow: str = 
       <alias name="h_std_fx1_1_1_4_0" link="h_std_fx1_1_1_0_0" fliph="1" flipv="0"/>
       {extra_aliases}
     </aliases></library></manifest>"""
+    if not offsets:  # Older effects such as Wade list their images without an offset.
+        manifest = re.sub(r'><param key="offset" value="[^"]*"/></asset>', "/>", manifest)
     tags = (
         _image(1, 4, 6, b"\xff\xff\xff\x00")
         + _image(2, 5, 7, b"\xff\x00\xff\xff")

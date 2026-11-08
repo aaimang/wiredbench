@@ -303,6 +303,8 @@ class Engine:
         self.boxes_at: dict[tuple[int, int], list[Box]] = defaultdict(list)
         self.variables: dict[str, dict[str, Holding]] = defaultdict(dict)
         self.definitions: dict[str, dict[str, Any]] = {}
+        # Who stands in water: the water's effect, and the effect they wore before stepping in.
+        self.wet: dict[int, tuple[int, int | None]] = {}
         # Bots: where each one walks, whom it follows, and whether it has caught up with them.
         self.bot_walks: dict[int, dict[str, Any]] = {}
         self.bot_follows: dict[int, int] = {}
@@ -639,8 +641,29 @@ class Engine:
             if user.get("pose") not in (None, pose):
                 changed.append((user["id"], {"std": "stand"}.get(pose, pose)))
             user["pose"] = pose
+            self._wet(user)
         for user_id, action in changed:
             self._perform(user_id, action, 0)
+
+    def _wet(self, user: dict[str, Any]) -> None:
+        """Water furni put their effect on whoever stands in them, as Habbo's do: Wade in a shallow patch,
+        Splash in deep water, Swimming in a pool. Stepping out takes it off and gives back the one before.
+        """
+        top = self._top_furni(user["x"], user["y"])
+        water = _int(self.furni_facts.get(top["classname"], {}).get("water_effect")) if top else 0
+        held = self.wet.get(user["id"])
+        details = user["details"]
+        if water and (held is None or held[0] != water):
+            before = held[1] if held else details.get("@effect")
+            details["@effect"] = water
+            self.wet[user["id"]] = (water, before)
+        elif not water and held is not None:
+            if details.get("@effect") == held[0]:
+                if held[1] is None:
+                    details.pop("@effect", None)
+                else:
+                    details["@effect"] = held[1]
+            del self.wet[user["id"]]
 
     def _turn_back_later(self) -> None:
         """A real room lets a seated user turn for a moment, then turns them back to the seat."""

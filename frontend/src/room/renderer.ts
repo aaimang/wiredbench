@@ -118,6 +118,13 @@ const GLOW_OPACITY = 0.8;
 const FX_GAP_USER = 8;
 const FX_RISE_FURNI = 40;
 const ART_VERSION = 3;
+/**
+ * A layer this far back goes behind the floor. Room backgrounds set their picture to -300000 or deeper
+ * (Habbo's own files); ordinary layers stay within a few hundred.
+ */
+const BACKDROP_Z = -10000;
+/** Matches EFFECT_VERSION on the server, so a rebuilt effect is fetched again. */
+const EFFECT_VERSION = 7;
 const AVATAR_ANCHOR = { x: 32, y: 96 };
 /** Room the server leaves around an avatar drawn with an effect, matching EFFECT_MARGIN there. */
 const EFFECT_MARGIN = { x: 52, top: 90 };
@@ -246,6 +253,8 @@ export class RoomRenderer {
   private floor = new Graphics();
   private marks = new Graphics();
   private layer = new Container({ sortableChildren: true });
+  /** Layers Habbo sets far back, such as a room background's picture, which sit behind the floor. */
+  private backdrop = new Container({ sortableChildren: true });
   private furni = new Map<string, Promise<FurniArt | null>>();
   private furniLoaded = new Map<string, FurniArt | null>();
   private avatars = new Map<string, Texture | null>();
@@ -291,9 +300,10 @@ export class RoomRenderer {
     this.app.canvas.setAttribute("data-testid", "room-canvas");
     this.app.renderer.on("resize", () => this.onChange()); // The room is centred when drawn.
     host.append(this.app.canvas);
+    this.backdrop.zIndex = -3;
     this.floor.zIndex = -2;
     this.marks.zIndex = -1;
-    this.world.addChild(this.floor, this.marks, this.layer);
+    this.world.addChild(this.backdrop, this.floor, this.marks, this.layer);
     this.app.stage.addChild(this.world);
   }
 
@@ -308,9 +318,13 @@ export class RoomRenderer {
     this.effects.set(key, undefined);
     void (async () => {
       try {
-        const manifest = await get<EffectManifest>(`/api/effects/${hotel}/${effect}/manifest`);
+        const manifest = await get<EffectManifest>(
+          `/api/effects/${hotel}/${effect}/manifest?v=${EFFECT_VERSION}`,
+        );
         if (!manifest.drawable) return { manifest, atlas: null };
-        const atlas = await loadTexture(`/api/effects/${hotel}/${effect}/atlas`);
+        const atlas = await loadTexture(
+          `/api/effects/${hotel}/${effect}/atlas?v=${EFFECT_VERSION}`,
+        );
         return { manifest, atlas };
       } catch {
         return null;
@@ -633,6 +647,7 @@ export class RoomRenderer {
     }
     this.drawMarks(scene);
     for (const child of this.layer.removeChildren()) child.destroy({ children: true });
+    for (const child of this.backdrop.removeChildren()) child.destroy({ children: true });
     this.hits = [];
     for (const item of scene.room.furni) this.drawFurni(scene, item);
     for (const avatar of scene.room.avatars) this.drawAvatar(scene, avatar);
@@ -920,6 +935,12 @@ export class RoomRenderer {
       const layerColor = color?.[String(part.layer)];
       if (tint !== null && part.layer >= 0) sprite.tint = tint;
       else if (layerColor) sprite.tint = Number.parseInt(layerColor, 16);
+      if (part.z <= BACKDROP_Z) {
+        // Behind the whole room, deepest first, and never in the way of a click.
+        sprite.zIndex = part.z + order(fx, fy, item.z) / 1e6;
+        this.backdrop.addChild(sprite);
+        continue;
+      }
       sprite.zIndex = order(fx, fy, item.z, part.z);
       this.layer.addChild(sprite);
       if (part.layer >= 0) {

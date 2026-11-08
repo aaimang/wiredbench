@@ -21,6 +21,8 @@ MAX_SWF_BYTES = 32 * 2**20
 MAX_IMAGE_PIXELS = 4096 * 4096
 MAX_TOTAL_PIXELS = 8192 * 8192
 ATLAS_WIDTH = 1024
+# A room background is one picture up to about 1600 pixels wide, so a sheet widens to fit it.
+MAX_ATLAS_WIDTH = 4096
 MAX_ATLAS_HEIGHT = 8192
 SIZE = 64
 SHADOW_ALPHA = 48
@@ -211,14 +213,16 @@ class _Atlas:
         self.placed: dict[int, tuple[int, int]] = {}
         self.images: list[tuple[Image.Image, int, int]] = []
         self.x = self.y = self.row = 0
+        self.width = ATLAS_WIDTH
 
     def add(self, image: Image.Image) -> tuple[int, int]:
         key = id(image)
         if key in self.placed:
             return self.placed[key]
-        if image.width > ATLAS_WIDTH:
+        if image.width > MAX_ATLAS_WIDTH:
             raise SwfError("An image is too wide.")
-        if self.x + image.width > ATLAS_WIDTH:
+        self.width = max(self.width, image.width)
+        if self.x + image.width > self.width:
             self.x, self.y, self.row = 0, self.y + self.row + 1, 0
         if self.y + image.height > MAX_ATLAS_HEIGHT:
             raise SwfError("The furni has too many images.")
@@ -230,7 +234,7 @@ class _Atlas:
         return spot
 
     def render(self) -> bytes:
-        canvas = Image.new("RGBA", (ATLAS_WIDTH, max(1, self.y + self.row)), (0, 0, 0, 0))
+        canvas = Image.new("RGBA", (self.width, max(1, self.y + self.row)), (0, 0, 0, 0))
         for image, x, y in self.images:
             canvas.paste(image, (x, y))
         out = io.BytesIO()

@@ -107,7 +107,8 @@ class AssetCache:
             os.utime(manifest)
             os.utime(atlas)
             return manifest, atlas
-        missing = folder / "furni.missing"
+        # Renamed when the builder learns to draw more, so those furni are tried again at once.
+        missing = folder / "furni.v2.missing"
         if self._is_known_missing(missing):
             return None
         with self._downloads:
