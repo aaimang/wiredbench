@@ -164,15 +164,33 @@ export function standAt(room: RoomDocument, lookup: InfoLookup, x: number, y: nu
   if (info.canSit) return { walkable: true, z, pose: "sit", dir: top.rot };
   // Bed heights in furnidata are for stacking and sit well above the mattress.
   if (info.canLay) {
+    // A bed is lain along its length, head on the pillow at its first row: facing 2 along x, 4 along y.
+    const [width, length] = footprintSize(info, top.rot);
     return {
       walkable: true,
       z: top.z + Math.min(info.height, MAX_LAY_HEIGHT),
       pose: "lay",
-      dir: top.rot,
+      dir: width >= length ? 2 : 4,
     };
   }
   if (info.canStand) return { walkable: true, z, pose: "std" };
   return { walkable: false, z, pose: "std" };
+}
+
+/**
+ * The tile an avatar rests on after walking to a tile. On a bed that is the head row, in the lane of
+ * the tile chosen, so a one-tile-wide bed is lain in the middle and a double bed on one side.
+ */
+export function restTile(
+  room: RoomDocument,
+  lookup: InfoLookup,
+  x: number,
+  y: number,
+): [number, number] {
+  const top = furniAt(room, lookup, x, y).at(-1);
+  if (!top || !lookup(top.classname).canLay) return [x, y];
+  const [width, length] = footprintSize(lookup(top.classname), top.rot);
+  return width >= length ? [top.x, y] : [x, top.y];
 }
 
 /** Where an avatar at rest faces: the way its seat or bed is turned, or its own direction. */
@@ -764,4 +782,15 @@ export function besideTiles(
     }
   }
   return found;
+}
+
+/** Puts anyone lying on a bed onto its head row, as a room saved before this rule may hold them anywhere. */
+export function settleOnBeds(room: RoomDocument, lookup: InfoLookup): void {
+  for (const avatar of room.avatars) {
+    if (avatar.pose !== "lay") continue;
+    const [x, y] = restTile(room, lookup, avatar.x, avatar.y);
+    if (room.avatars.some((other) => other !== avatar && other.x === x && other.y === y)) continue;
+    avatar.x = x;
+    avatar.y = y;
+  }
 }

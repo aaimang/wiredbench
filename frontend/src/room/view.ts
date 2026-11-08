@@ -18,6 +18,7 @@ import {
   normaliseRoom,
   type PlacedAvatar,
   type RoomDocument,
+  restTile,
   standAt,
   UNKNOWN_FURNI,
   withFace,
@@ -439,10 +440,12 @@ class WbRoomView extends HTMLElement {
       // Only the last step sits, so passing over a chair keeps the way the avatar walks.
       const seated = after ? undefined : stand.dir;
       avatar.dir = seated ?? directionBetween([walker.from[0], walker.from[1]], next);
-      Object.assign(avatar, { x: next[0], y: next[1], z: stand.z, pose: stand.pose });
-      walker.from = [next[0], next[1], stand.z];
+      // Arriving on a bed, the avatar lies down on its head row, in the lane it walked to.
+      const [x, y] = after ? next : restTile(this.room, this.lookup, next[0], next[1]);
+      Object.assign(avatar, { x, y, z: stand.z, pose: stand.pose });
+      walker.from = [x, y, stand.z];
       if (!after) this.walker = null;
-      void this.send({ type: "move", x: next[0], y: next[1], dir: avatar.dir });
+      void this.send({ type: "move", x, y, dir: avatar.dir });
       if (!this.walker) return;
     }
   }
