@@ -17,6 +17,7 @@ import {
   fitsInRoom,
   frontTile,
   furniKind,
+  furniWalkTarget,
   glideSteps,
   isFrozen,
   isNextTo,
@@ -525,9 +526,14 @@ class WbRoomView extends HTMLElement {
         }
         this.choose(hit);
         void this.send({ type: "click", furni: hit.id });
-        // As in the hotel, clicking a chair or a box you can stand on walks there too.
+        // As in the hotel, clicking a furni you can stand, sit or lie on walks to the tile clicked on it.
         const clicked = this.room?.furni.find((f) => f.id === hit.id);
-        if (clicked) this.walkTo([clicked.x, clicked.y]);
+        const renderer = this.renderer;
+        const goal =
+          clicked && renderer
+            ? furniWalkTarget(clicked, this.lookup, (height) => renderer.tileAtHeight(x, y, height))
+            : null;
+        if (goal) this.walkTo(goal);
         return;
       }
       if (hit?.kind === "avatar") {

@@ -19,10 +19,29 @@ export function screenToTile(screenX: number, screenY: number): [number, number]
   return [Math.floor((a + b) / 2), Math.floor((b - a) / 2)];
 }
 
+/** How far one tile along x or y, and one tile of height, bring a thing towards Habbo's room camera. */
+const DEPTH_PER_TILE = Math.sqrt(3 / 8);
+const DEPTH_PER_HEIGHT = Math.sqrt(1 / 6);
+
 /**
- * Draw order for things in the room. Nearer tiles draw later, higher things draw over lower ones on the
- * same tile, and the layer value orders the parts of one furni.
+ * Habbo's draw order: higher draws in front. A thing sorts by the tile it stands on and its height, as
+ * Habbo's room camera (turned -135 and 30 degrees) measures how near it is, and `relative` moves it
+ * back: a furni's layer, or an avatar's small step forward. A furni counts from its own tile, the
+ * corner it was placed on, whatever its size, as Habbo's client does.
  */
-export function depth(frontX: number, frontY: number, z: number, layer = 0): number {
-  return (frontX + frontY) * 10000 + z * 100 + layer * 0.01;
+export function depth(x: number, y: number, z: number, relative = 0): number {
+  return DEPTH_PER_TILE * (x + y) + DEPTH_PER_HEIGHT * z - relative;
 }
+
+/**
+ * How far back a furni layer sits, from the z in its file: a thousandth of it, turned round, so a
+ * negative z is further back, and each later layer a thousandth nearer, all times the square root of a
+ * half. The shadow (layer -1) sits one step back.
+ */
+export function layerDepth(layerZ: number, layer: number): number {
+  return (layer < 0 ? 1 : layerZ / -1000 - layer * 0.001) * Math.SQRT1_2;
+}
+
+/** An avatar sorts a hundredth nearer than its tile, or 0.409 further back while lying. */
+export const AVATAR_DEPTH = -0.01;
+export const LYING_DEPTH = -0.409;
