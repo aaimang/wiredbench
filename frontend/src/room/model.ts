@@ -165,7 +165,8 @@ export function standAt(room: RoomDocument, lookup: InfoLookup, x: number, y: nu
   if (info.kind === "gate") return { walkable: top.state !== 0, z: top.z, pose: "std" };
   // Sit and lay heights are the furni's own height, like a stand. A real seat's sit height may differ.
   const z = top.z + info.height;
-  if (info.canSit) return { walkable: true, z, pose: "sit", dir: top.rot };
+  // Habbo never seats anyone diagonally: on a seat turned diagonally, the sitter faces the direction before.
+  if (info.canSit) return { walkable: true, z, pose: "sit", dir: top.rot - (top.rot % 2) };
   // Bed heights in furnidata are for stacking and sit well above the mattress.
   if (info.canLay) {
     // A bed is lain along its length, head on the pillow at its first row: facing 2 along x, 4 along y.

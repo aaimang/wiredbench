@@ -2276,3 +2276,10 @@ def test_users_by_type_finds_only_habbos_in_a_sandbox() -> None:
         )
         say(engine, "go")
         assert set(engine.variables.get("v", {})) == expected, types
+
+
+def test_a_diagonal_seat_turns_its_sitter_to_a_straight_direction() -> None:
+    seat = {"height": 1, "xdim": 1, "ydim": 1, "can_stand": False, "can_sit": True, "can_lay": False}
+    engine = room({**plain(50, x=5, y=6), "rot": 5})
+    engine.furni_facts = {"chair": seat}
+    assert engine._seat_rotation(5, 6) == 4

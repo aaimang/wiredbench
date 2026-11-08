@@ -109,6 +109,8 @@ def main() -> None:
                     print(f"{name} d{direction}: size {ours.size} against {habbo.size}")
                     by_pose.setdefault(name, []).append(0.0)
                     continue
+                if direction % 2 and ("sit" in action or "lay" in action):
+                    continue  # Habbo never sits or lies diagonally, and its image service draws a stander.
                 score, wrong = matched(ours, habbo)
                 by_pose.setdefault(name, []).append(score)
                 if score < 97 and direction != 7:  # Habbo's own direction 7 image has the wrong hair.

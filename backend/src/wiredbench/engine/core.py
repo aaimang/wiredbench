@@ -508,7 +508,9 @@ class Engine:
         if top is None:
             return None
         facts = self.furni_facts.get(top["classname"], {})
-        return _int(top["rot"]) % 8 if facts.get("can_sit") or facts.get("can_lay") else None
+        rot = _int(top["rot"]) % 8
+        # Habbo never seats anyone diagonally: they face the direction before.
+        return rot - rot % 2 if facts.get("can_sit") or facts.get("can_lay") else None
 
     def _seat_users(self) -> None:
         """A user sitting or lying faces the way the furni is turned, as in a real room."""
