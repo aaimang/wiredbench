@@ -25,8 +25,10 @@ import {
   normaliseRoom,
   type PlacedAvatar,
   type RoomDocument,
+  restingHeight,
   restTile,
   standAt,
+  stateHeights,
   syncTemporary,
   UNKNOWN_FURNI,
   usedFromFront,
@@ -182,6 +184,7 @@ class WbRoomView extends HTMLElement {
       canLay: item.data?.canlayon === true,
       canStack: item.data?.canputstuffon !== false,
       kind: furniKind(classname, item.category ?? null, item.hand_items),
+      stateHeights: stateHeights.get(classname),
     };
   };
 
@@ -713,7 +716,7 @@ class WbRoomView extends HTMLElement {
         return {
           x: avatar.x,
           y: avatar.y,
-          z: avatar.z,
+          z: restingHeight(room, this.lookup, avatar),
           // The server turns a seated visitor back to the seat after a moment, as a real room does.
           dir: avatar.dir,
           action: avatar.pose,

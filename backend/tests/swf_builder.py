@@ -34,8 +34,13 @@ def wrap(tags: bytes, compressed: bool = True) -> bytes:
     return b"FWS\x0a" + struct.pack("<I", len(body) + 8) + body
 
 
-def furni_swf(base: str, width: int = 40, height: int = 50, compressed: bool = True) -> bytes:
-    """One furni: directions 2 and 4 (4 is a mirrored copy), two states, a shadow and a tinted layer."""
+def furni_swf(
+    base: str, width: int = 40, height: int = 50, compressed: bool = True, logic: str | None = None
+) -> bytes:
+    """One furni: directions 2 and 4 (4 is a mirrored copy), two states, a shadow and a tinted layer.
+
+    With `logic`, it also has an index naming that logic and a one-tile model.
+    """
     assets = f"""<assets>
       <asset name="{base}_64_a_2_0" x="20" y="40"/>
       <asset name="{base}_64_a_2_1" x="20" y="40"/>
@@ -74,6 +79,14 @@ def furni_swf(base: str, width: int = 40, height: int = 50, compressed: bool = T
             }
         )
     )
+    if logic:
+        tags += (
+            _binary(12, f'<object type="{base}" visualization="furniture_animated" logic="{logic}"/>')
+            + _binary(
+                13, f'<objectData type="{base}"><model><dimensions x="1" y="1" z="1.0"/></model></objectData>'
+            )
+            + _symbols({12: [f"{base}_index"], 13: [f"{base}_{base}_logic"]})
+        )
     return wrap(tags, compressed)
 
 

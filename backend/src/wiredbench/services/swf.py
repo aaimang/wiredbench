@@ -191,6 +191,41 @@ def _find_xml(xml: dict[str, ET.Element], suffix: str) -> ET.Element:
     raise SwfError(f"The file has no {suffix} data.")
 
 
+def _state_heights(
+    xml: dict[str, ET.Element],
+    poses: dict[str, list[dict[str, Any]]],
+    directions: list[int],
+    states: list[int],
+) -> dict[str, float] | None:
+    """For a furni whose height changes with its state, such as a building block, how high each state's
+    top is. Habbo's server sends these heights, so they are measured on the art: the middle of its top
+    face, above the middle of the tiles it covers. None for other furni, which keep furnidata's height.
+    """
+    try:
+        index = _find_xml(xml, "_index")
+    except SwfError:
+        return None
+    if index.get("logic") != "furniture_multiheight":
+        return None
+    try:
+        dimensions = _find_xml(xml, "_logic").find("./model/dimensions")
+    except SwfError:
+        dimensions = None
+    # The middle of a bigger furni's tiles is half a tile lower on screen for each extra tile.
+    drop = (max(_int(dimensions, "x", 1), 1) - 1 + max(_int(dimensions, "y", 1), 1) - 1) * 8
+    heights: dict[str, float] = {}
+    for state in states:
+        parts = [p for p in poses.get(f"{directions[0]}:{state}", []) if p["layer"] >= 0]
+        if not parts:
+            continue
+        top = min(p["dy"] for p in parts)
+        width = max(p["dx"] + p["w"] for p in parts) - min(p["dx"] for p in parts)
+        # A top face as wide as the art is a quarter of that width deep to its middle.
+        middle = top + width / 4
+        heights[str(state)] = round(max(-middle - drop, 0) / Z_PIXELS, 2)
+    return heights
+
+
 def _int(element: ET.Element | None, name: str, default: int = 0) -> int:
     value = element.get(name) if element is not None else None
     return int(value) if value else default
@@ -243,7 +278,9 @@ class _Atlas:
 
 
 # Raised when the shape of a manifest changes, so art built before is built again.
-ART_VERSION = 3
+ART_VERSION = 4
+# Pixels for one unit of height at 64 pixel tiles.
+Z_PIXELS = 32
 MAX_TRACK_FRAMES = 1000
 DIGITS = 10
 
@@ -419,6 +456,7 @@ def _build(swf: ParsedSwf, base: str, animate: bool = True) -> tuple[dict[str, A
 
     manifest = {
         "size": SIZE,
+        "stateHeights": _state_heights(xml, poses, directions, states),
         "directions": directions,
         "states": states,
         "colors": _colors(visualization),

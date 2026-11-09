@@ -44,7 +44,6 @@ import {
   figureAction,
   flightAt,
   footprint,
-  furniAt,
   furniParts,
   type Highlight,
   highlightTint,
@@ -56,11 +55,14 @@ import {
   pickWalkLook,
   type RoomDocument,
   SIXTY_SEVEN_MS,
+  stateHeights,
   tonerColor,
 } from "./model";
 
 export interface FurniManifest extends FurniArtData {
   states: number[];
+  /** Each state's height, for furni whose height changes with its state. */
+  stateHeights?: Record<string, number> | null;
   colors: Record<string, Record<string, string>>;
 }
 
@@ -130,7 +132,7 @@ const GLOW_OPACITY = 0.8;
 /** Space between the head and the first variable shown over it. */
 const FX_GAP_USER = 8;
 const FX_RISE_FURNI = 40;
-const ART_VERSION = 3;
+const ART_VERSION = 4;
 /**
  * A layer this far back goes behind the floor. Room backgrounds set their picture to -300000 or deeper
  * (Habbo's own files); ordinary layers stay within a few hundred.
@@ -437,6 +439,7 @@ export class RoomRenderer {
         }
       })().then((art) => {
         this.furniLoaded.set(key, art);
+        if (art?.manifest.stateHeights) stateHeights.set(classname, art.manifest.stateHeights);
         this.onChange();
         return art;
       });
@@ -1337,19 +1340,15 @@ export class RoomRenderer {
   }
 
   /**
-   * Where an avatar sorts among furni. Someone sitting or lying sorts at the seat's own level, between
-   * its layers: Habbo's furni art gives parts in front of a sitter, such as a chair back seen from
-   * behind, a positive depth and parts behind a negative one.
+   * Where an avatar sorts among furni: by its tile and its height. A sitter sorts where its body is
+   * drawn, half a tile below the seat's top, so it sits inside a seat: a bath's end wall covers the
+   * legs of someone sitting at that end, and only its front rim covers someone at the other.
    */
-  private avatarOrder(scene: Scene, pose: AvatarPose): number {
+  private avatarOrder(pose: AvatarPose): number {
     // A walking avatar sorts by the tile it is nearest, as Habbo's client rounds it.
     const [x, y] = [Math.round(pose.x), Math.round(pose.y)];
-    if (pose.action === "sit" || pose.action === "lay") {
-      const seat = furniAt(scene.room, scene.lookup, Math.round(pose.x), Math.round(pose.y)).at(-1);
-      // A seated or lying avatar counts from the seat's own height, as Habbo places it.
-      if (seat) return depth(x, y, seat.z, pose.action === "lay" ? LYING_DEPTH : AVATAR_DEPTH);
-    }
-    return depth(x, y, pose.z, AVATAR_DEPTH);
+    const z = pose.action === "sit" ? Math.max(pose.z - POSTURE_DROP / Z_UNIT, 0) : pose.z;
+    return depth(x, y, z, pose.action === "lay" ? LYING_DEPTH : AVATAR_DEPTH);
   }
 
   private drawAvatar(scene: Scene, avatar: PlacedAvatar): void {
@@ -1357,7 +1356,7 @@ export class RoomRenderer {
     const centre = tileCentre(pose.x, pose.y, pose.z);
     const { left, top, w, h } = avatarImageAt(pose, centre);
     const selected = scene.selected?.kind === "avatar" && scene.selected.id === avatar.id;
-    const order = this.avatarOrder(scene, pose);
+    const order = this.avatarOrder(pose);
     const changed = this.bodyEffectTexture(avatar, pose);
     const texture =
       changed?.texture ??
@@ -1409,7 +1408,7 @@ export class RoomRenderer {
       bounds: new Rectangle(left + 12, top + 10, w - 24, h - 14),
       ...(avatarSprite ? { sprites: [avatarSprite] } : {}),
       // A click on a seated avatar picks the avatar, even where the seat is drawn over it.
-      order: this.avatarOrder(scene, pose),
+      order: this.avatarOrder(pose),
     });
   }
 }

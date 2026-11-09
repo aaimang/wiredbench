@@ -29,6 +29,7 @@ import {
   footprint,
   frontTile,
   furniAt,
+  furniHeight,
   furniKind,
   furniParts,
   furniWalkTarget,
@@ -48,6 +49,7 @@ import {
   pickWalkLook,
   type RoomDocument,
   restingDir,
+  restingHeight,
   restTile,
   seatedFacing,
   settleOnBeds,
@@ -75,6 +77,16 @@ const INFO: Record<string, FurniInfo> = {
     canSit: false,
     canLay: false,
     canStack: true,
+  },
+  block: {
+    xdim: 1,
+    ydim: 1,
+    height: 1,
+    canStand: true,
+    canSit: false,
+    canLay: false,
+    canStack: true,
+    stateHeights: { "0": 1.25, "1": 0.5 },
   },
   mat: {
     xdim: 1,
@@ -192,6 +204,36 @@ describe("placement", () => {
       ]),
     ).toBe(3);
     expect(stackHeight(r, lookup, [[2, 1]], 2)).toBe(0);
+  });
+
+  it("stands and stacks on a block at its own state's height, and an avatar on it follows the state", () => {
+    const r = room(["block", 1, 1]);
+    expect(standAt(r, lookup, 1, 1).z).toBe(1.25);
+    expect(stackHeight(r, lookup, [[1, 1]])).toBe(1.25);
+    const avatar = { x: 1, y: 1, z: 1.25, pose: "std" as const };
+    (r.furni[0] as PlacedFurni).state = 1;
+    expect(standAt(r, lookup, 1, 1).z).toBe(0.5);
+    expect(restingHeight(r, lookup, avatar)).toBe(0.5);
+    // A state the art has no height for keeps furnidata's.
+    (r.furni[0] as PlacedFurni).state = 7;
+    expect(furniHeight(lookup("block"), 7)).toBe(1);
+  });
+
+  it("keeps an avatar's saved height on furni whose height never changes", () => {
+    expect(restingHeight(room(["mat", 1, 1]), lookup, { x: 1, y: 1, z: 0.3, pose: "std" })).toBe(
+      0.3,
+    );
+  });
+
+  it("sits deeper in Habbo's bathroom baths than their stacking height, at either end", () => {
+    const bath = { ...(INFO.chair as FurniInfo), ydim: 2, height: 0.9 };
+    const baths = (name: string) => (name.startsWith("bathroom_bath") ? bath : lookup(name));
+    const r = room(["bathroom_bath2*3", 1, 1]);
+    expect(standAt(r, baths, 1, 1).z).toBe(1.2);
+    expect(standAt(r, baths, 1, 2).z).toBe(1.2);
+    expect(stackHeight(r, baths, [[1, 1]])).toBe(0.9);
+    // A sitter saved at the old height sits at the new one.
+    expect(restingHeight(r, baths, { x: 1, y: 2, z: 0.9, pose: "sit" })).toBe(1.2);
   });
 
   it("puts nothing on a chair, but on a mat, the floor or the chair's own tile when moving it", () => {

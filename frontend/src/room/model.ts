@@ -3,6 +3,23 @@
 export const MAX_STEP_UP = 1.5;
 const MAX_LAY_HEIGHT = 0.9;
 
+/**
+ * Seats whose sit height differs from their stacking height in furnidata. Habbo's server sends the
+ * sit height, so these are matched by eye: someone in Habbo's bathroom baths sits in the water with
+ * head and shoulders above the rim, at either end and whichever way the bath is turned.
+ */
+const SIT_HEIGHTS: Record<string, number> = {
+  bathroom_bath1: 1.2,
+  bathroom_bath2: 1.2,
+  bathroom_bath3: 1.2,
+  bathroom_bath4: 1.2,
+};
+
+/** How high someone sits on a seat, above the seat's own height. */
+function sitHeight(classname: string, info: FurniInfo, state: number): number {
+  return SIT_HEIGHTS[classname.split("*")[0] ?? ""] ?? furniHeight(info, state);
+}
+
 export interface PlacedFurni {
   id: number;
   classname: string;
@@ -45,11 +62,24 @@ export interface FurniInfo {
   canSit: boolean;
   canLay: boolean;
   canStack: boolean;
+  /** Each state's height, by state, for furni whose height changes with its state. */
+  stateHeights?: Record<string, number>;
   /** How it reacts when used, such as a dice or a gate. Plain furni when left out. */
   kind?: FurniKind;
 }
 
 export type InfoLookup = (classname: string) => FurniInfo;
+
+/**
+ * Each state's height for furni whose height changes with its state, such as a building block, by
+ * classname. Habbo's server sends these, so they are measured on the furni's art once it has loaded.
+ */
+export const stateHeights = new Map<string, Record<string, number>>();
+
+/** How tall a furni is in its current state. */
+export function furniHeight(info: FurniInfo, state = 0): number {
+  return info.stateHeights?.[String(state)] ?? info.height;
+}
 
 /** Used for furni that is missing from the catalogue, so a saved room still opens. */
 export const UNKNOWN_FURNI: FurniInfo = {
@@ -130,7 +160,7 @@ export function stackHeight(
   let top = 0;
   for (const [x, y] of tiles) {
     for (const item of furniAt(room, lookup, x, y, ignoreId)) {
-      top = Math.max(top, item.z + lookup(item.classname).height);
+      top = Math.max(top, item.z + furniHeight(lookup(item.classname), item.state));
     }
   }
   return Math.round(top * 100) / 100;
@@ -164,9 +194,12 @@ export function standAt(room: RoomDocument, lookup: InfoLookup, x: number, y: nu
   // A gate is walked through only while it is open, as in a real room.
   if (info.kind === "gate") return { walkable: top.state !== 0, z: top.z, pose: "std" };
   // Sit and lay heights are the furni's own height, like a stand. A real seat's sit height may differ.
-  const z = top.z + info.height;
+  const z = top.z + furniHeight(info, top.state);
   // Habbo never seats anyone diagonally: on a seat turned diagonally, the sitter faces the direction before.
-  if (info.canSit) return { walkable: true, z, pose: "sit", dir: top.rot - (top.rot % 2) };
+  if (info.canSit) {
+    const seat = top.z + sitHeight(top.classname, info, top.state);
+    return { walkable: true, z: seat, pose: "sit", dir: top.rot - (top.rot % 2) };
+  }
   // Bed heights in furnidata are for stacking and sit well above the mattress.
   if (info.canLay) {
     // A bed is lain along its length, head on the pillow at its first row: facing 2 along x, 4 along y.
@@ -180,6 +213,24 @@ export function standAt(room: RoomDocument, lookup: InfoLookup, x: number, y: nu
   }
   if (info.canStand) return { walkable: true, z, pose: "std" };
   return { walkable: false, z, pose: "std" };
+}
+
+/**
+ * How high an avatar at rest is. On furni whose height changes with its state, that follows the
+ * furni's state, as Habbo moves whoever stands on it, and a sitter is at the seat's sit height, so
+ * rooms saved before a seat's sit height was known still look right. Elsewhere it is the height saved
+ * with the avatar.
+ */
+export function restingHeight(
+  room: RoomDocument,
+  lookup: InfoLookup,
+  avatar: Pick<PlacedAvatar, "x" | "y" | "z" | "pose">,
+): number {
+  const top = furniAt(room, lookup, avatar.x, avatar.y).at(-1);
+  if (!top) return avatar.z;
+  const info = lookup(top.classname);
+  const follows = info.stateHeights !== undefined || (avatar.pose === "sit" && info.canSit);
+  return follows ? standAt(room, lookup, avatar.x, avatar.y).z : avatar.z;
 }
 
 /**
@@ -976,7 +1027,7 @@ export function brandingOffset(dir: number, width: number, height: number): [num
  * lie on, or the point falls outside it.
  */
 export function furniWalkTarget(
-  item: Pick<PlacedFurni, "classname" | "x" | "y" | "z" | "rot">,
+  item: Pick<PlacedFurni, "classname" | "x" | "y" | "z" | "rot"> & { state?: number },
   lookup: InfoLookup,
   tileAtHeight: (height: number) => [number, number],
 ): [number, number] | null {
@@ -984,7 +1035,7 @@ export function furniWalkTarget(
   if (!info.canStand && !info.canSit && !info.canLay) return null;
   const [width, depth] = footprintSize(info, item.rot);
   if (width === 1 && depth === 1) return [item.x, item.y];
-  const top = item.z + Math.max(info.height, 0) - (info.canSit ? 0.5 : 0);
+  const top = item.z + Math.max(furniHeight(info, item.state), 0) - (info.canSit ? 0.5 : 0);
   // On its top first, as Habbo measures it; then at its foot, for a click low on its art.
   for (const height of [top, item.z]) {
     const [x, y] = tileAtHeight(height);
