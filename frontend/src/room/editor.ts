@@ -66,6 +66,7 @@ import {
   type PlacedFurni,
   type RoomDocument,
   restingDir,
+  restingHeight,
   restTile,
   SIGN_MS,
   seatedFacing,
@@ -73,6 +74,7 @@ import {
   stackHeight,
   standAt,
   standUpOffSeats,
+  stateHeights,
   syncTemporary,
   TONERS,
   type TonerSettings,
@@ -369,6 +371,7 @@ class WbEditor extends HTMLElement {
       canLay: data.canlayon === true,
       canStack: data.canputstuffon !== false,
       kind: furniKind(classname, item.category ?? null, item.hand_items),
+      stateHeights: stateHeights.get(classname),
     };
   };
 
@@ -421,7 +424,7 @@ class WbEditor extends HTMLElement {
       return {
         x: avatar.x,
         y: avatar.y,
-        z: avatar.z,
+        z: restingHeight(this.room, this.lookup, avatar),
         dir: this.run ? avatar.dir : restingDir(this.room, this.lookup, avatar),
         action: avatar.pose,
         ...look,

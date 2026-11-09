@@ -169,3 +169,15 @@ def test_a_room_background_wider_than_the_sheet_still_builds() -> None:
     assert sheet.width >= 1600
     with pytest.raises(SwfError):
         atlas.add(Image.new("RGBA", (5000, 10)))
+
+
+def test_a_furni_whose_height_follows_its_state_gets_each_states_height() -> None:
+    # State 0's art is 50 pixels tall from 40 above the tile centre, 40 wide: its top face's middle
+    # is 30 pixels up. State 1 is a different image of the same size and place.
+    manifest, _ = build(furni_swf("block", logic="furniture_multiheight"), "block")
+    assert manifest["stateHeights"] == {"0": round(30 / 32, 2), "1": round(30 / 32, 2)}
+
+
+def test_other_furni_keep_furnidata_height() -> None:
+    assert build(furni_swf("box"), "box")[0]["stateHeights"] is None
+    assert build(furni_swf("box", logic="furniture_multistate"), "box")[0]["stateHeights"] is None
