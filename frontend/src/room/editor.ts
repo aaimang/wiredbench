@@ -215,6 +215,11 @@ class WbEditor extends HTMLElement {
   private flights: RunState["flights"] | null = null;
   private query = "";
   private paletteType = "";
+  /** What the palette shows so far, to ask for the page after it. */
+  private paletteItems: CatalogItem[] = [];
+  /** Counts palette loads, so an answer to an older one is dropped. */
+  private paletteRequest = 0;
+  private paletteObserver: IntersectionObserver | null = null;
   private toolbar = h("div", { class: "toolbar editor-toolbar" });
   private palette = h("aside", { class: "editor-palette" });
   private paletteList = h("div", { class: "palette-list", "data-testid": "palette-list" });
@@ -1814,9 +1819,13 @@ class WbEditor extends HTMLElement {
     return form;
   }
 
-  private async loadPalette(): Promise<void> {
+  /** Loads the first page of the palette, or with `more` the next page under the ones shown. */
+  private async loadPalette(more = false): Promise<void> {
+    const request = ++this.paletteRequest;
+    this.paletteObserver?.disconnect();
     try {
       const searching = this.query.trim() !== "";
+      const offset = more ? this.paletteItems.length : 0;
       const page = await get<ItemPage>("/api/catalog/items", {
         hotel: this.sandbox?.hotel,
         q: this.query,
@@ -1829,8 +1838,11 @@ class WbEditor extends HTMLElement {
               category: this.paletteType.slice(FURNI_PREFIX.length) || undefined,
             }
           : { scope: searching ? "all" : "wired", wired_type: this.paletteType }),
+        offset,
         limit: PALETTE_SIZE,
       });
+      // A newer search or type has started since this one was asked for.
+      if (request !== this.paletteRequest) return;
       if (page.version === null) {
         replace(
           this.paletteList,
@@ -1839,14 +1851,32 @@ class WbEditor extends HTMLElement {
         );
         return;
       }
-      replace(
-        this.paletteList,
-        ...(page.items.length === 0 ? [h("p", { class: "muted" }, t.catalogue.noResults)] : []),
-        ...page.items.map((item) => this.paletteRow(item)),
-        ...(page.total > page.items.length
-          ? [h("p", { class: "muted" }, T.moreResults(page.total - page.items.length))]
-          : []),
+      this.paletteItems = more ? [...this.paletteItems, ...page.items] : page.items;
+      const left = page.total - this.paletteItems.length;
+      const button = h(
+        "button",
+        { class: "btn load-more", "data-testid": "palette-more" },
+        t.catalogue.loadMore(left),
       );
+      button.addEventListener("click", () => void act(button, () => this.loadPalette(true)));
+      if (more) {
+        this.paletteList.querySelector("[data-testid=palette-more]")?.remove();
+        this.paletteList.append(...page.items.map((item) => this.paletteRow(item)));
+      } else {
+        replace(
+          this.paletteList,
+          ...(page.items.length === 0 ? [h("p", { class: "muted" }, t.catalogue.noResults)] : []),
+          ...page.items.map((item) => this.paletteRow(item)),
+        );
+      }
+      if (left > 0 && page.items.length > 0) {
+        this.paletteList.append(button);
+        // Scrolling down to the button loads the next page without a click.
+        this.paletteObserver = new IntersectionObserver((entries) => {
+          if (entries.some((entry) => entry.isIntersecting)) button.click();
+        });
+        this.paletteObserver.observe(button);
+      }
     } catch (error) {
       toast(errorMessage(error), "error");
     }

@@ -452,8 +452,6 @@ export const t = {
       other: "Other",
     } as Record<string, string>,
     noCatalogue: "Download furnidata for this hotel to get furni to place.",
-    moreResults: (count: number) =>
-      `${count.toLocaleString("en")} more. Search to narrow this down.`,
     placingHint: "Click a tile to place. R turns it, Esc stops.",
     cancelPlacing: "Stop placing",
     movingHint: "Click a tile to move it. Esc stops.",
