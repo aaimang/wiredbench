@@ -31,6 +31,7 @@ import {
   UNKNOWN_FURNI,
   usedFromFront,
   usedFromNextTo,
+  WALK_FRAMES_PER_SECOND,
   withFace,
 } from "./model";
 import { type AvatarPose, type Hit, RoomRenderer } from "./renderer";
@@ -41,7 +42,6 @@ const TICK_MS = 250;
 const MAX_TICK_MS = 5000;
 const INSPECT_MS = 1000;
 const SECONDS_PER_STEP = 0.5;
-const WALK_FRAMES_PER_SECOND = 8;
 const CHAT_LINES = 6;
 const BUBBLE_MS = 12_000;
 const BUBBLE_FADE_MS = 400;

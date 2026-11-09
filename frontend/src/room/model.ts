@@ -737,6 +737,8 @@ export interface EffectManifest {
 
 /** Habbo plays effects at about 12 frames a second. */
 export const EFFECT_FRAME_MS = 83;
+/** Habbo's client advances a walking avatar's 4 frames about 12 times a second. */
+export const WALK_FRAMES_PER_SECOND = 12;
 /** Where an avatar image puts Habbo's offset origin, measured from its top. */
 const EFFECT_ORIGIN_Y = 100;
 
