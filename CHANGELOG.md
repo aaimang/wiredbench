@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.11.0](https://github.com/aaimang/wiredbench/compare/v0.10.0...v0.11.0) (2026-11-09)
+
+
+### Features
+
+* bots and the nine bot boxes, hidden chat, a blocked avatar menu, and highlight and visibility easing ([#105](https://github.com/aaimang/wiredbench/issues/105)) ([bd31096](https://github.com/aaimang/wiredbench/commit/bd310961d12c34e15ad12eb8909ec4957709b856))
+* eleven conditions, Valid Moves, Move as Group, Place/Remove Furni, Freeze, and working saved options ([#104](https://github.com/aaimang/wiredbench/issues/104)) ([5f8fd29](https://github.com/aaimang/wiredbench/commit/5f8fd29ca76fdccc4335bb3cbac99de03e44f8e4))
+* movement add-ons (No Animation, Animation Time, Curve, Physics), Echo and Pointer variables, and Link messages ([#103](https://github.com/aaimang/wiredbench/issues/103)) ([67a6eb0](https://github.com/aaimang/wiredbench/commit/67a6eb09e23963f184da9407f772cd1b438d69ab))
+* nine more WIRED boxes, no diagonal sitting, and a View-as teleport test ([#100](https://github.com/aaimang/wiredbench/issues/100)) ([ee6023e](https://github.com/aaimang/wiredbench/commit/ee6023e6d43bf284dd6a539c46f4c51a94c3c565))
+* posture actions, Chase, Flee, Move to Direction, Collision, Click Tile and Furni Name ([#102](https://github.com/aaimang/wiredbench/issues/102)) ([0778497](https://github.com/aaimang/wiredbench/commit/0778497da44acb0e5e0dbe8fab5aeffd75b384d5))
+* Room Background pictures and Background Toner colours, as in Habbo ([#107](https://github.com/aaimang/wiredbench/issues/107)) ([79934a1](https://github.com/aaimang/wiredbench/commit/79934a1caa5d8552e9f9401ddd6c80cdda5d2350))
+* the Workspace furni list loads 60 more at a time ([#111](https://github.com/aaimang/wiredbench/issues/111)) ([905d720](https://github.com/aaimang/wiredbench/commit/905d720346181006929ed0488713d18bfdfc030a))
+* vending machines hand the user a drink or other hand item ([#99](https://github.com/aaimang/wiredbench/issues/99)) ([ddf10c8](https://github.com/aaimang/wiredbench/commit/ddf10c87408e097ab7e81b7f90d62d1557f154ed))
+
+
+### Bug Fixes
+
+* avatars sink in water patches, and room backgrounds draw behind the room ([#106](https://github.com/aaimang/wiredbench/issues/106)) ([23c77df](https://github.com/aaimang/wiredbench/commit/23c77dfab8ca492334ac58d5bb546cf371d02f72))
+* avatars sit in baths and stand on building blocks as in Habbo ([#112](https://github.com/aaimang/wiredbench/issues/112)) ([1373f95](https://github.com/aaimang/wiredbench/commit/1373f9505465a86130627025da3b4b0dc50d2304))
+* avatars walk at 12 frames a second, as in Habbo's client ([#110](https://github.com/aaimang/wiredbench/issues/110)) ([bff6a07](https://github.com/aaimang/wiredbench/commit/bff6a07e2c3254c5b0d2794c9169a7631961f414))
+* draw order, clicks and walking on furni work as in Habbo's client ([#108](https://github.com/aaimang/wiredbench/issues/108)) ([b1d125e](https://github.com/aaimang/wiredbench/commit/b1d125ed45cedac03754f276808a085485c69ddf))
+
+
+### Documentation
+
+* name 94 unnamed WIRED box positions from the client's setup forms ([#109](https://github.com/aaimang/wiredbench/issues/109)) ([a9606a9](https://github.com/aaimang/wiredbench/commit/a9606a9fa1fcf64fe449279a0fca1623e7e53ddc))
+
 ## [0.10.0](https://github.com/aaimang/wiredbench/compare/v0.9.1...v0.10.0) (2026-11-08)
 
 
