@@ -79,6 +79,7 @@ import {
   UNKNOWN_FURNI,
   usedFromFront,
   usedFromNextTo,
+  WALK_FRAMES_PER_SECOND,
   withFace,
 } from "./model";
 import { type AvatarPose, avatarUrl, type Hit, RoomRenderer, type Scene } from "./renderer";
@@ -110,7 +111,6 @@ function lookReady(loading: Promise<void> | undefined): Promise<void> {
     new Promise<void>((done) => setTimeout(done, LOOK_WAIT_MS)),
   ]);
 }
-const WALK_FRAMES_PER_SECOND = 8;
 const AUTOSAVE_MS = 1500;
 /** Marks a palette choice as a furni category rather than a WIRED type. */
 const FURNI_PREFIX = "furni:";
