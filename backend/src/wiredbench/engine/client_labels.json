@@ -1,0 +1,1424 @@
+{
+  "client": {
+    "file": "HabboAir.swf",
+    "sha256": "aeece8c0bf8b7099cca860f3c6977188a2449fa70f6fb79116174f89aeaa2e7c",
+    "read": "2026-11-09"
+  },
+  "boxes": {
+    "wf_act_adjust_clock": {
+      "0": {
+        "label": "clock_seconds",
+        "field": null
+      },
+      "1": {
+        "label": "clock_minutes",
+        "field": null
+      },
+      "3": {
+        "label": "choose_type",
+        "field": null,
+        "options": {
+          "0": "operator.0",
+          "1": "operator.1",
+          "2": "operator.2"
+        }
+      }
+    },
+    "wf_act_bot_follow_avatar": {
+      "0": {
+        "label": "bot.name",
+        "field": null,
+        "options": {
+          "1": "start.following",
+          "0": "stop.following"
+        }
+      }
+    },
+    "wf_act_bot_talk": {
+      "0": {
+        "label": "message",
+        "field": null,
+        "options": {
+          "0": "talk",
+          "1": "shout"
+        }
+      },
+      "1": {
+        "label": "show_message.bubble_width.title",
+        "field": "bubbleWidthDropdown",
+        "options": {
+          "-1": "show_message.bubble_width.-1",
+          "0": "show_message.bubble_width.0",
+          "1": "show_message.bubble_width.1",
+          "2": "show_message.bubble_width.2"
+        }
+      }
+    },
+    "wf_act_bot_talk_to_avatar": {
+      "0": {
+        "label": "message",
+        "field": null,
+        "options": {
+          "1": "whisper",
+          "0": "talk"
+        }
+      },
+      "1": {
+        "label": "show_message.bubble_width.title",
+        "field": "bubbleWidthDropdown",
+        "options": {
+          "-1": "show_message.bubble_width.-1",
+          "0": "show_message.bubble_width.0",
+          "1": "show_message.bubble_width.1",
+          "2": "show_message.bubble_width.2"
+        }
+      }
+    },
+    "wf_act_cancel_transaction": {
+      "0": {
+        "label": "cancel_transaction.match_criteria",
+        "field": null,
+        "options": {
+          "0": "cancel_transaction.match_criteria.0",
+          "1": "cancel_transaction.match_criteria.1"
+        }
+      }
+    },
+    "wf_act_change_var_val": {
+      "1": {
+        "label": "variables.operation.tooltip",
+        "field": null
+      }
+    },
+    "wf_act_click_conf": {
+      "0": {
+        "label": "click_settings.user",
+        "field": null,
+        "options": {
+          "0": "click_settings.user.0",
+          "1": "click_settings.user.1",
+          "2": "click_settings.user.2"
+        }
+      },
+      "1": {
+        "label": "click_settings.furni",
+        "field": null,
+        "options": {
+          "0": "click_settings.furni.0",
+          "1": "click_settings.furni.1"
+        }
+      }
+    },
+    "wf_act_control_clock": {
+      "0": {
+        "label": "clock_control",
+        "field": null,
+        "options": {
+          "0": "clock_control.0",
+          "1": "clock_control.1",
+          "2": "clock_control.2",
+          "3": "clock_control.3",
+          "4": "clock_control.4"
+        }
+      }
+    },
+    "wf_act_freeze": {
+      "0": {
+        "label": "freeze.effect_selection",
+        "field": "effectDropdown"
+      }
+    },
+    "wf_act_give_currency": {
+      "5": {
+        "label": "earnings_category",
+        "field": null
+      }
+    },
+    "wf_act_give_furni": {
+      "5": {
+        "label": "chest_iteration_type",
+        "field": "iterationModeRadioGroup",
+        "options": {
+          "0": "chest_iteration_type.0",
+          "1": "chest_iteration_type.1",
+          "2": "chest_iteration_type.2"
+        }
+      }
+    },
+    "wf_act_give_score": {
+      "0": {
+        "label": "setpoints2",
+        "field": null
+      },
+      "1": {
+        "label": "settimesingame",
+        "field": null
+      }
+    },
+    "wf_act_give_score_tm": {
+      "2": {
+        "label": "team",
+        "field": null,
+        "options": {
+          "1": "team.1",
+          "2": "team.2",
+          "3": "team.3",
+          "4": "team.4"
+        }
+      }
+    },
+    "wf_act_give_var": {
+      "3": {
+        "label": "variables.value_settings.override_existing",
+        "field": "overrideVariable"
+      },
+      "5": {
+        "label": null,
+        "field": "initialValue"
+      }
+    },
+    "wf_act_init_transaction": {
+      "0": {
+        "label": "contract.mode",
+        "field": "transactionMode",
+        "options": {
+          "0": "contract.mode.0",
+          "1": "contract.mode.1",
+          "2": "contract.mode.2"
+        }
+      }
+    },
+    "wf_act_join_team": {
+      "0": {
+        "label": "team",
+        "field": null,
+        "options": {
+          "1": "team.1",
+          "2": "team.2",
+          "3": "team.3",
+          "4": "team.4"
+        }
+      },
+      "1": {
+        "label": "choose_type",
+        "field": null,
+        "options": {
+          "0": "team_type.0",
+          "1": "team_type.1",
+          "2": "team_type.2"
+        }
+      }
+    },
+    "wf_act_log": {
+      "0": {
+        "label": "write_to_logs.log_level.title",
+        "field": null,
+        "options": {
+          "0": "write_to_logs.log_level.0",
+          "1": "write_to_logs.log_level.1",
+          "2": "write_to_logs.log_level.2",
+          "3": "write_to_logs.log_level.3"
+        }
+      }
+    },
+    "wf_act_move_furni_as_group": {
+      "1": {
+        "label": "place_furni.offsets",
+        "field": null
+      },
+      "2": {
+        "label": "place_furni.offsets",
+        "field": null
+      }
+    },
+    "wf_act_move_rotate": {
+      "0": {
+        "label": "movefurni",
+        "field": null,
+        "options": {
+          "0": "movefurni.0"
+        }
+      },
+      "1": {
+        "label": "rotatefurni",
+        "field": null,
+        "options": {
+          "0": "rotatefurni.0",
+          "1": "rotatefurni.1",
+          "2": "rotatefurni.2",
+          "3": "rotatefurni.3"
+        }
+      }
+    },
+    "wf_act_move_rotate_user": {
+      "0": {
+        "label": "moveuser",
+        "field": null,
+        "options": {
+          "-1": "movefurni.0"
+        }
+      },
+      "1": {
+        "label": "rotateuser",
+        "field": null,
+        "options": {
+          "-1": "rotatefurni.0"
+        }
+      }
+    },
+    "wf_act_move_to_dir": {
+      "0": {
+        "label": "startdir",
+        "field": null
+      },
+      "1": {
+        "label": "turn",
+        "field": null
+      },
+      "2": {
+        "label": "user_collide.0",
+        "field": "blockOnCollide"
+      }
+    },
+    "wf_act_neg_log": {
+      "0": {
+        "label": "write_to_logs.log_level.title",
+        "field": null,
+        "options": {
+          "0": "write_to_logs.log_level.0",
+          "1": "write_to_logs.log_level.1",
+          "2": "write_to_logs.log_level.2",
+          "3": "write_to_logs.log_level.3"
+        }
+      }
+    },
+    "wf_act_place_furni": {
+      "1": {
+        "label": "place_furni.target_location.0.info",
+        "field": null,
+        "options": {
+          "0": "place_furni.target_location.0",
+          "1": "place_furni.target_location.1"
+        }
+      },
+      "2": {
+        "label": "place_furni.target_altitude",
+        "field": null,
+        "options": {
+          "0": "place_furni.target_altitude.0",
+          "1": "place_furni.target_altitude.1",
+          "2": "place_furni.target_altitude.2"
+        }
+      }
+    },
+    "wf_act_remove_var": {
+      "0": {
+        "label": null,
+        "field": "mergedType"
+      }
+    },
+    "wf_act_send_message": {
+      "0": {
+        "label": "link.message_source",
+        "field": null,
+        "options": {
+          "0": "link.from_trigger",
+          "1": "link.custom_message"
+        }
+      }
+    },
+    "wf_act_set_altitude": {
+      "0": {
+        "label": "setaltitude",
+        "field": null
+      },
+      "1": {
+        "label": "choose_type",
+        "field": null,
+        "options": {
+          "0": "operator.0",
+          "1": "operator.1",
+          "2": "operator.2"
+        }
+      }
+    },
+    "wf_act_set_highlight": {
+      "5": {
+        "label": "set_furni_highlight.easing",
+        "field": null,
+        "options": {
+          "0": "set_furni_highlight.easing.0",
+          "1": "set_furni_highlight.easing.1",
+          "2": "set_furni_highlight.easing.2",
+          "3": "set_furni_highlight.easing.3",
+          "4": "set_furni_highlight.easing.4"
+        }
+      }
+    },
+    "wf_act_set_visibility": {
+      "3": {
+        "label": "set_furni_transparency.easing",
+        "field": null,
+        "options": {
+          "0": "set_furni_transparency.easing.0",
+          "1": "set_furni_transparency.easing.1",
+          "2": "set_furni_transparency.easing.2",
+          "3": "set_furni_transparency.easing.3",
+          "4": "set_furni_transparency.easing.4"
+        }
+      }
+    },
+    "wf_act_show_message": {
+      "0": {
+        "label": "show_message.visibility_selection.title",
+        "field": null,
+        "options": {
+          "0": "show_message.visibility_selection.0",
+          "1": "show_message.visibility_selection.1"
+        }
+      },
+      "1": {
+        "label": "show_message.style_selection.title",
+        "field": "styleDropdown"
+      },
+      "2": {
+        "label": "show_message.bubble_width.title",
+        "field": "bubbleWidthDropdown",
+        "options": {
+          "-1": "show_message.bubble_width.-1",
+          "0": "show_message.bubble_width.0",
+          "1": "show_message.bubble_width.1",
+          "2": "show_message.bubble_width.2"
+        }
+      }
+    },
+    "wf_act_toggle_state": {
+      "0": {
+        "label": null,
+        "field": "toggleMode"
+      }
+    },
+    "wf_act_user_to_furni": {
+      "0": {
+        "label": "user_move.walkmode",
+        "field": null,
+        "options": {
+          "0": "user_move.walkmode.0",
+          "1": "user_move.walkmode.1",
+          "2": "user_move.walkmode.2"
+        }
+      }
+    },
+    "wf_cnd_actor_dir": {
+      "0": {
+        "label": "direction_selection",
+        "field": "directions"
+      }
+    },
+    "wf_cnd_actor_in_team": {
+      "0": {
+        "label": "team",
+        "field": null,
+        "options": {
+          "0": "team.any",
+          "1": "team.1",
+          "2": "team.2",
+          "3": "team.3",
+          "4": "team.4"
+        }
+      }
+    },
+    "wf_cnd_chest_has_item_type": {
+      "3": {
+        "label": "comparison_selection",
+        "field": "compareRadioGroup"
+      }
+    },
+    "wf_cnd_chest_has_items": {
+      "3": {
+        "label": "comparison_selection",
+        "field": "compareRadioGroup"
+      }
+    },
+    "wf_cnd_counter_time_matches": {
+      "0": {
+        "label": "clock_seconds_elapsed",
+        "field": null
+      },
+      "1": {
+        "label": "clock_minutes_elapsed",
+        "field": null
+      },
+      "3": {
+        "label": "comparison_selection",
+        "field": null,
+        "options": {
+          "0": "comparison.0",
+          "1": "comparison.1",
+          "2": "comparison.2"
+        }
+      }
+    },
+    "wf_cnd_date_rng_active": {
+      "0": {
+        "label": "startdate",
+        "field": null
+      },
+      "1": {
+        "label": "enddate",
+        "field": null
+      }
+    },
+    "wf_cnd_furnis_hv_avtrs": {
+      "0": {
+        "label": "requireall",
+        "field": null,
+        "options": {
+          "0": "requireall.2",
+          "1": "requireall.3"
+        }
+      }
+    },
+    "wf_cnd_has_altitude": {
+      "0": {
+        "label": "setaltitude",
+        "field": null
+      },
+      "1": {
+        "label": "comparison_selection",
+        "field": null,
+        "options": {
+          "0": "comparison.0",
+          "1": "comparison.1",
+          "2": "comparison.2"
+        }
+      }
+    },
+    "wf_cnd_has_furni_on": {
+      "0": {
+        "label": "requireall",
+        "field": null,
+        "options": {
+          "0": "requireall.0",
+          "1": "requireall.1"
+        }
+      }
+    },
+    "wf_cnd_has_var": {
+      "0": {
+        "label": null,
+        "field": "mergedType"
+      }
+    },
+    "wf_cnd_match_date": {
+      "0": {
+        "label": "time.day_selection",
+        "field": null
+      },
+      "1": {
+        "label": "time.year_selection",
+        "field": null
+      },
+      "2": {
+        "label": "time.weekday_selection",
+        "field": "mask"
+      },
+      "5": {
+        "label": "time.month_selection",
+        "field": "mask"
+      }
+    },
+    "wf_cnd_match_time": {
+      "0": {
+        "label": "time.second_selection",
+        "field": null
+      },
+      "1": {
+        "label": "time.minute_selection",
+        "field": null
+      },
+      "2": {
+        "label": "time.hour_selection",
+        "field": null
+      }
+    },
+    "wf_cnd_neg_has_var": {
+      "0": {
+        "label": null,
+        "field": "mergedType"
+      }
+    },
+    "wf_cnd_not_furni_on": {
+      "0": {
+        "label": "requireall",
+        "field": null,
+        "options": {
+          "0": "not_requireall.0",
+          "1": "not_requireall.1"
+        }
+      }
+    },
+    "wf_cnd_not_hv_avtrs": {
+      "0": {
+        "label": "requireall",
+        "field": null,
+        "options": {
+          "1": "not_requireall.2",
+          "0": "not_requireall.3"
+        }
+      }
+    },
+    "wf_cnd_not_in_team": {
+      "0": {
+        "label": "team",
+        "field": null,
+        "options": {
+          "0": "team.any",
+          "1": "team.1",
+          "2": "team.2",
+          "3": "team.3",
+          "4": "team.4"
+        }
+      }
+    },
+    "wf_cnd_not_triggerer_match": {
+      "0": {
+        "label": "usertype",
+        "field": null,
+        "options": {
+          "1": "usertype.1",
+          "2": "usertype.2",
+          "4": "usertype.4"
+        }
+      }
+    },
+    "wf_cnd_not_user_count": {
+      "0": {
+        "label": "usercountmin",
+        "field": null
+      },
+      "1": {
+        "label": "usercountmax",
+        "field": null
+      }
+    },
+    "wf_cnd_not_user_performs_action": {
+      "0": {
+        "label": "action_selection",
+        "field": "actionDropdown"
+      }
+    },
+    "wf_cnd_slc_quantity": {
+      "1": {
+        "label": "setamount2",
+        "field": null
+      },
+      "2": {
+        "label": "comparison_selection",
+        "field": null,
+        "options": {
+          "0": "comparison.0",
+          "1": "comparison.1",
+          "2": "comparison.2"
+        }
+      }
+    },
+    "wf_cnd_team_has_rank": {
+      "0": {
+        "label": "team",
+        "field": null,
+        "options": {
+          "0": "team.triggerer",
+          "1": "team.1",
+          "2": "team.2",
+          "3": "team.3",
+          "4": "team.4"
+        }
+      },
+      "1": {
+        "label": "placement_selection",
+        "field": null,
+        "options": {
+          "0": "placement.1",
+          "1": "placement.2",
+          "2": "placement.3",
+          "3": "placement.4"
+        }
+      }
+    },
+    "wf_cnd_team_has_score": {
+      "0": {
+        "label": "team",
+        "field": null,
+        "options": {
+          "0": "team.triggerer",
+          "1": "team.1",
+          "2": "team.2",
+          "3": "team.3",
+          "4": "team.4"
+        }
+      },
+      "1": {
+        "label": "setscore2",
+        "field": null
+      },
+      "2": {
+        "label": "comparison_selection",
+        "field": null,
+        "options": {
+          "0": "comparison.0",
+          "1": "comparison.1",
+          "2": "comparison.2"
+        }
+      }
+    },
+    "wf_cnd_time_less_than": {
+      "0": {
+        "label": "allowbefore2",
+        "field": null
+      }
+    },
+    "wf_cnd_time_more_than": {
+      "0": {
+        "label": "allowafter2",
+        "field": null
+      }
+    },
+    "wf_cnd_triggerer_match": {
+      "0": {
+        "label": "usertype",
+        "field": null,
+        "options": {
+          "1": "usertype.1",
+          "2": "usertype.2",
+          "4": "usertype.4"
+        }
+      }
+    },
+    "wf_cnd_user_count_in": {
+      "0": {
+        "label": "usercountmin",
+        "field": null
+      },
+      "1": {
+        "label": "usercountmax",
+        "field": null
+      }
+    },
+    "wf_cnd_user_performs_action": {
+      "0": {
+        "label": "action_selection",
+        "field": "actionDropdown"
+      }
+    },
+    "wf_cnd_var_age_match": {
+      "1": {
+        "label": "comparison_selection",
+        "field": null,
+        "options": {
+          "0": "comparison.0",
+          "2": "comparison.2"
+        }
+      },
+      "2": {
+        "label": "variables.compare_value",
+        "field": null,
+        "options": {
+          "0": "variables.compare_value.0",
+          "1": "variables.compare_value.1"
+        }
+      },
+      "5": {
+        "label": "variables.time_selection",
+        "field": "timeUnit",
+        "options": {
+          "0": "variables.duration.0",
+          "1": "variables.duration.1",
+          "2": "variables.duration.2",
+          "3": "variables.duration.3",
+          "4": "variables.duration.4",
+          "5": "variables.duration.5",
+          "6": "variables.duration.6",
+          "7": "variables.duration.7"
+        }
+      }
+    },
+    "wf_cnd_var_val_match": {
+      "1": {
+        "label": "comparison_selection",
+        "field": null
+      }
+    },
+    "wf_slc_furni_altitude": {
+      "0": {
+        "label": "setaltitude",
+        "field": null
+      },
+      "1": {
+        "label": "comparison_selection",
+        "field": null,
+        "options": {
+          "0": "comparison.0",
+          "1": "comparison.1",
+          "2": "comparison.2"
+        }
+      }
+    },
+    "wf_slc_furni_area": {
+      "2": {
+        "label": null,
+        "field": "width"
+      }
+    },
+    "wf_slc_furni_onfurni": {
+      "0": {
+        "label": "selection_type",
+        "field": null,
+        "options": {
+          "0": "onfurni.0",
+          "1": "onfurni.1",
+          "2": "onfurni.2",
+          "3": "onfurni.3"
+        }
+      }
+    },
+    "wf_slc_furni_with_var": {
+      "0": {
+        "label": "comparison_selection",
+        "field": null
+      }
+    },
+    "wf_slc_remote": {
+      "0": {
+        "label": "remote_selection.type",
+        "field": null,
+        "options": {
+          "0": "remote_selection.type.0",
+          "1": "remote_selection.type.1"
+        }
+      }
+    },
+    "wf_slc_users_area": {
+      "2": {
+        "label": null,
+        "field": "width"
+      }
+    },
+    "wf_slc_users_byaction": {
+      "0": {
+        "label": "action_selection",
+        "field": "actionDropdown"
+      }
+    },
+    "wf_slc_users_bytype": {
+      "0": {
+        "label": "usertype",
+        "field": null,
+        "options": {
+          "1": "usertype.1",
+          "2": "usertype.2",
+          "4": "usertype.4"
+        }
+      }
+    },
+    "wf_slc_users_team": {
+      "0": {
+        "label": "team",
+        "field": null,
+        "options": {
+          "0": "team.any",
+          "1": "team.1",
+          "2": "team.2",
+          "3": "team.3",
+          "4": "team.4"
+        }
+      }
+    },
+    "wf_slc_users_with_var": {
+      "0": {
+        "label": "comparison_selection",
+        "field": null
+      }
+    },
+    "wf_trg_at_given_time": {
+      "0": {
+        "label": "settime2",
+        "field": null
+      }
+    },
+    "wf_trg_clock_counter": {
+      "0": {
+        "label": "clock_seconds_elapsed",
+        "field": null
+      },
+      "1": {
+        "label": "clock_minutes_elapsed",
+        "field": "sliderMinutes"
+      }
+    },
+    "wf_trg_period_long": {
+      "0": {
+        "label": "settime3",
+        "field": null
+      }
+    },
+    "wf_trg_period_short": {
+      "0": {
+        "label": "setshorttime",
+        "field": null
+      }
+    },
+    "wf_trg_periodically": {
+      "0": {
+        "label": "settime3",
+        "field": null
+      }
+    },
+    "wf_trg_says_something": {
+      "0": {
+        "label": "chat.onlyowner",
+        "field": null
+      },
+      "1": {
+        "label": "chattriggertype",
+        "field": null,
+        "options": {
+          "0": "chatcontains",
+          "1": "exactmatch",
+          "2": "allmatch"
+        }
+      },
+      "2": {
+        "label": "chat.hide",
+        "field": null
+      }
+    },
+    "wf_trg_score_achieved": {
+      "0": {
+        "label": "setscore2",
+        "field": null
+      },
+      "1": {
+        "label": "team",
+        "field": null,
+        "options": {
+          "0": "team.any",
+          "1": "team.1",
+          "2": "team.2",
+          "3": "team.3",
+          "4": "team.4"
+        }
+      }
+    },
+    "wf_trg_stuff_state": {
+      "0": {
+        "label": "select_options",
+        "field": null,
+        "options": {
+          "1": "state_trigger.1",
+          "0": "state_trigger.0"
+        }
+      }
+    },
+    "wf_trg_user_performs_action": {
+      "0": {
+        "label": "action_selection",
+        "field": "actionDropdown"
+      }
+    },
+    "wf_trg_var_changed": {
+      "3": {
+        "label": null,
+        "field": "mask"
+      }
+    },
+    "wf_var_context": {
+      "0": {
+        "label": "variables.settings.has_value",
+        "field": null
+      }
+    },
+    "wf_var_furni": {
+      "0": {
+        "label": "variables.settings.has_value",
+        "field": null
+      },
+      "1": {
+        "label": "variables.availability",
+        "field": null,
+        "options": {
+          "1": "variables.availability.1",
+          "10": "variables.availability.10"
+        }
+      }
+    },
+    "wf_var_pointer": {
+      "0": {
+        "label": null,
+        "field": "headerSourceType"
+      }
+    },
+    "wf_var_reference": {
+      "0": {
+        "label": "variables.settings.read_only",
+        "field": null
+      }
+    },
+    "wf_var_room": {
+      "0": {
+        "label": "variables.availability",
+        "field": null,
+        "options": {
+          "1": "variables.availability.1",
+          "10": "variables.availability.10",
+          "11": "variables.availability.11"
+        }
+      }
+    },
+    "wf_var_user": {
+      "0": {
+        "label": "variables.availability",
+        "field": null,
+        "options": {
+          "0": "variables.availability.0",
+          "10": "variables.availability.10",
+          "11": "variables.availability.11"
+        }
+      },
+      "1": {
+        "label": "variables.settings.has_value",
+        "field": null
+      }
+    },
+    "wf_xtra_anim_time": {
+      "0": {
+        "label": "setanimationtime2",
+        "field": null
+      }
+    },
+    "wf_xtra_custom_contract": {
+      "1": {
+        "label": "custom_contract.element_type_selection",
+        "field": null,
+        "options": {
+          "0": "custom_contract.element_type_selection.0",
+          "1": "custom_contract.element_type_selection.1"
+        }
+      },
+      "6": {
+        "label": "custom_contract.element_type_selection",
+        "field": null,
+        "options": {
+          "0": "custom_contract.element_type_selection.0",
+          "1": "custom_contract.element_type_selection.1"
+        }
+      }
+    },
+    "wf_xtra_execution_limit": {
+      "0": {
+        "label": "setexecutions",
+        "field": null
+      },
+      "1": {
+        "label": "settimewindow",
+        "field": null
+      }
+    },
+    "wf_xtra_mov_carry_users": {
+      "0": {
+        "label": null,
+        "field": "carryUsersMode"
+      }
+    },
+    "wf_xtra_or_eval": {
+      "1": {
+        "label": "eval_mode",
+        "field": null,
+        "options": {
+          "0": "eval_mode.0",
+          "1": "eval_mode.1",
+          "2": "eval_mode.2",
+          "3": "eval_mode.3",
+          "4": "eval_mode.cmp.0",
+          "5": "eval_mode.cmp.1",
+          "6": "eval_mode.cmp.2"
+        }
+      }
+    },
+    "wf_xtra_random": {
+      "0": {
+        "label": "skipactions",
+        "field": null
+      },
+      "1": {
+        "label": "pickamount",
+        "field": null
+      }
+    },
+    "wf_xtra_rotate_to_dir": {
+      "1": {
+        "label": "projectile.directional_system",
+        "field": "directionalSystemDropdown",
+        "options": {
+          "0": "projectile.directional_system.0",
+          "1": "projectile.directional_system.1",
+          "2": "projectile.directional_system.2",
+          "3": "projectile.directional_system.3"
+        }
+      },
+      "5": {
+        "label": null,
+        "field": "animationTime"
+      },
+      "9": {
+        "label": "projectile.increase_speed.title",
+        "field": null
+      },
+      "10": {
+        "label": "projectile.rotation_offset",
+        "field": null
+      },
+      "11": {
+        "label": "projectile.variable.",
+        "field": "mask"
+      },
+      "14": {
+        "label": "projectile.animation_trajectory",
+        "field": null,
+        "options": {
+          "0": "projectile.animation_trajectory.distance.0",
+          "1": "projectile.animation_trajectory.distance.1",
+          "2": "projectile.animation_trajectory.distance.2"
+        }
+      },
+      "17": {
+        "label": "projectile.animation_trajectory",
+        "field": null
+      }
+    },
+    "wf_xtra_scan_chest_furni_by_type": {
+      "0": {
+        "label": "chest_item_type_scanner",
+        "field": "scanningMode",
+        "options": {
+          "0": "chest_item_type_scanner.0",
+          "1": "chest_item_type_scanner.1"
+        }
+      }
+    },
+    "wf_xtra_var_lvlup_system": {
+      "0": {
+        "label": "create_subvariables",
+        "field": "mask"
+      },
+      "1": {
+        "label": null,
+        "field": "modeOptionGroup"
+      },
+      "3": {
+        "label": null,
+        "field": "maxLevel1"
+      },
+      "4": {
+        "label": null,
+        "field": "maxLevel2"
+      }
+    },
+    "wf_xtra_var_time_util": {
+      "0": {
+        "label": "time_util.subvariable.",
+        "field": "mask"
+      },
+      "1": {
+        "label": "choose_type",
+        "field": "modeDropdown"
+      }
+    },
+    "wf_xtra_varfx_boss": {
+      "0": {
+        "label": null,
+        "field": "sourceType"
+      },
+      "1": {
+        "label": null,
+        "field": "visibility"
+      },
+      "2": {
+        "label": null,
+        "field": "showMode"
+      },
+      "4": {
+        "label": null,
+        "field": "showOnMouseHover"
+      },
+      "5": {
+        "label": null,
+        "field": "showDuration"
+      },
+      "6": {
+        "label": null,
+        "field": "styleId"
+      },
+      "7": {
+        "label": null,
+        "field": "colorId"
+      },
+      "9": {
+        "label": null,
+        "field": "rendererId"
+      },
+      "11": {
+        "label": null,
+        "field": "defaultMinValue"
+      },
+      "13": {
+        "label": null,
+        "field": "defaultMaxValue"
+      },
+      "14": {
+        "label": null,
+        "field": "overrideMinEnabled"
+      },
+      "15": {
+        "label": null,
+        "field": "overrideMaxEnabled"
+      },
+      "16": {
+        "label": null,
+        "field": "overrideMinTarget"
+      },
+      "17": {
+        "label": null,
+        "field": "overrideMaxTarget"
+      },
+      "19": {
+        "label": null,
+        "field": "audienceVariableValue"
+      },
+      "20": {
+        "label": null,
+        "field": "segments"
+      },
+      "22": {
+        "label": null,
+        "field": "stackOrder"
+      }
+    },
+    "wf_xtra_varfx_hp": {
+      "0": {
+        "label": null,
+        "field": "sourceType"
+      },
+      "1": {
+        "label": null,
+        "field": "visibility"
+      },
+      "2": {
+        "label": null,
+        "field": "showMode"
+      },
+      "4": {
+        "label": null,
+        "field": "showOnMouseHover"
+      },
+      "5": {
+        "label": null,
+        "field": "showDuration"
+      },
+      "6": {
+        "label": null,
+        "field": "styleId"
+      },
+      "7": {
+        "label": null,
+        "field": "colorId"
+      },
+      "9": {
+        "label": null,
+        "field": "rendererId"
+      },
+      "11": {
+        "label": null,
+        "field": "defaultMinValue"
+      },
+      "13": {
+        "label": null,
+        "field": "defaultMaxValue"
+      },
+      "14": {
+        "label": null,
+        "field": "overrideMinEnabled"
+      },
+      "15": {
+        "label": null,
+        "field": "overrideMaxEnabled"
+      },
+      "16": {
+        "label": null,
+        "field": "overrideMinTarget"
+      },
+      "17": {
+        "label": null,
+        "field": "overrideMaxTarget"
+      },
+      "19": {
+        "label": null,
+        "field": "audienceVariableValue"
+      },
+      "20": {
+        "label": null,
+        "field": "segments"
+      },
+      "22": {
+        "label": null,
+        "field": "stackOrder"
+      }
+    },
+    "wf_xtra_varfx_levelling": {
+      "21": {
+        "label": null,
+        "field": "subRendererId"
+      }
+    },
+    "wf_xtra_varfx_prog": {
+      "0": {
+        "label": null,
+        "field": "sourceType"
+      },
+      "1": {
+        "label": null,
+        "field": "visibility"
+      },
+      "2": {
+        "label": null,
+        "field": "showMode"
+      },
+      "4": {
+        "label": null,
+        "field": "showOnMouseHover"
+      },
+      "5": {
+        "label": null,
+        "field": "showDuration"
+      },
+      "6": {
+        "label": null,
+        "field": "styleId"
+      },
+      "7": {
+        "label": null,
+        "field": "colorId"
+      },
+      "9": {
+        "label": null,
+        "field": "rendererId"
+      },
+      "11": {
+        "label": null,
+        "field": "defaultMinValue"
+      },
+      "13": {
+        "label": null,
+        "field": "defaultMaxValue"
+      },
+      "14": {
+        "label": null,
+        "field": "overrideMinEnabled"
+      },
+      "15": {
+        "label": null,
+        "field": "overrideMaxEnabled"
+      },
+      "16": {
+        "label": null,
+        "field": "overrideMinTarget"
+      },
+      "17": {
+        "label": null,
+        "field": "overrideMaxTarget"
+      },
+      "19": {
+        "label": null,
+        "field": "audienceVariableValue"
+      },
+      "20": {
+        "label": null,
+        "field": "segments"
+      },
+      "22": {
+        "label": null,
+        "field": "stackOrder"
+      }
+    },
+    "wf_xtra_varfx_status": {
+      "0": {
+        "label": null,
+        "field": "sourceType"
+      },
+      "1": {
+        "label": null,
+        "field": "visibility"
+      },
+      "2": {
+        "label": null,
+        "field": "showMode"
+      },
+      "4": {
+        "label": null,
+        "field": "showOnMouseHover"
+      },
+      "5": {
+        "label": null,
+        "field": "showDuration"
+      },
+      "6": {
+        "label": null,
+        "field": "styleId"
+      },
+      "7": {
+        "label": null,
+        "field": "colorId"
+      },
+      "9": {
+        "label": null,
+        "field": "rendererId"
+      },
+      "11": {
+        "label": null,
+        "field": "defaultMinValue"
+      },
+      "13": {
+        "label": null,
+        "field": "defaultMaxValue"
+      },
+      "14": {
+        "label": null,
+        "field": "overrideMinEnabled"
+      },
+      "15": {
+        "label": null,
+        "field": "overrideMaxEnabled"
+      },
+      "16": {
+        "label": null,
+        "field": "overrideMinTarget"
+      },
+      "17": {
+        "label": null,
+        "field": "overrideMaxTarget"
+      },
+      "19": {
+        "label": null,
+        "field": "audienceVariableValue"
+      },
+      "20": {
+        "label": null,
+        "field": "segments"
+      },
+      "22": {
+        "label": null,
+        "field": "stackOrder"
+      }
+    }
+  }
+}
