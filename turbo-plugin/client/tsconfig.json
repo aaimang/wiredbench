@@ -1,0 +1,23 @@
+{
+    "//": "Type-checking only: the hotel builds the module itself and does not read this file. Run deploy/check-client.sh.",
+    "compilerOptions": {
+        "target": "ES2022",
+        "lib": ["ES2022", "DOM"],
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "jsx": "react-jsx",
+        "strict": true,
+        "noEmit": true,
+        "skipLibCheck": true,
+        "allowImportingTsExtensions": true,
+        "baseUrl": ".",
+        "typeRoots": ["../../vendor/nitro-next/node_modules/@types"],
+        "paths": {
+            "@nitrodevco/client-module-sdk": ["../../vendor/nitro-next/packages/client-module-sdk/src/index.ts"],
+            "@nitrodevco/client-module-sdk/theme": ["../../vendor/nitro-next/packages/client-module-sdk/src/theme.ts"],
+            "react": ["../../vendor/nitro-next/node_modules/@types/react"],
+            "react/jsx-runtime": ["../../vendor/nitro-next/node_modules/@types/react/jsx-runtime"]
+        }
+    },
+    "include": ["src"]
+}

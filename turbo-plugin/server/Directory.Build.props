@@ -1,0 +1,10 @@
+<Project>
+  <!--
+    The editor build writes outside the plugin folder: the hotel refuses a plugin whose folder
+    holds any .dll, since it compiles the plugin from its sources itself.
+  -->
+  <PropertyGroup>
+    <BaseOutputPath>$(MSBuildThisFileDirectory)../../.build/turbo-plugin/bin/</BaseOutputPath>
+    <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)../../.build/turbo-plugin/obj/</BaseIntermediateOutputPath>
+  </PropertyGroup>
+</Project>

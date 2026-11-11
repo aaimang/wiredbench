@@ -1,0 +1,6 @@
+# Wiredbench's words: the hotel gets them as the plugin loads, and staff can change them in the panel.
+wiredbench.window.title=Wiredbench
+wiredbench.window.body=WIRED tools for this room.
+wiredbench.window.connected=Plugin %version% answered player %player%.
+wiredbench.window.waiting=Waiting for the plugin...
+wiredbench.toolbar.tooltip=Wiredbench
