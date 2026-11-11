@@ -2,6 +2,7 @@ import { type ClientModuleWindowProps, useApi } from '@nitrodevco/client-module-
 import { Box, Button, Frame, ThemeText } from '@nitrodevco/client-module-sdk/theme';
 import { useEffect, useState } from 'react';
 
+import { BUTTON } from './theme';
 import { boxName, outcomeName, toRuns, TRACE_READ, TRACE_SET, type TraceStep, traceStore, type TraceView } from './trace';
 
 const WIDTH = 460;
@@ -89,16 +90,17 @@ export const TraceWindow = ({ close }: ClientModuleWindowProps) => {
             resizeDirection="none"
             onClose={ close }
             layout={ { width: WIDTH, height: HEIGHT } }>
-            <Box layout={ { flexDirection: 'column', gap: 8, padding: 10, width: WIDTH - 2 } }>
+            <Box layout={ { flexDirection: 'column', gap: 10, padding: 12, width: WIDTH - 2 } }>
                 <Box layout={ { flexDirection: 'row', gap: 6, alignItems: 'center' } }>
                     <Button
-                        variant="101"
+                        variant={ view.enabled ? BUTTON.dark : BUTTON.green }
+                        layout={ { width: 80 } }
                         disabled={ !view.roomId || !view.allowed }
                         onPointerTap={ () => api.messages.send(TRACE_SET, { enabled: !view.enabled }) }>
-                        <ThemeText text={ view.enabled ? text('turn_off', 'Stop') : text('turn_on', 'Start') } textStyle="u_regular" />
+                        <ThemeText text={ view.enabled ? text('turn_off', 'Stop') : text('turn_on', 'Start') } />
                     </Button>
-                    <Button variant="101" onPointerTap={ () => traceStore.clear() }>
-                        <ThemeText text={ text('clear', 'Clear') } textStyle="u_regular" />
+                    <Button variant={ BUTTON.plain } layout={ { width: 80 } } onPointerTap={ () => traceStore.clear() }>
+                        <ThemeText text={ text('clear', 'Clear') } />
                     </Button>
                 </Box>
                 <ThemeText text={ status } textStyle="u_bold" />

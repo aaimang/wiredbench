@@ -16,5 +16,8 @@ public sealed class WiredbenchPlugin : TurboPlugin
         services.AddSingleton<IPluginAdmin, WiredbenchAdmin>();
         services.AddSingleton<WiredKits>();
         services.AddSingleton<Sandbox>();
+        services.AddSingleton<Presets.PresetLibrary>();
+        services.AddSingleton<Presets.PresetTransfer>();
+        services.AddSingleton<Presets.PresetPicks>();
     }
 }

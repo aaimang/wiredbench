@@ -1,0 +1,7 @@
+<Project>
+  <!-- Build output under the repository's /.build/, beside the plugin's own editor build. -->
+  <PropertyGroup>
+    <BaseOutputPath>$(MSBuildThisFileDirectory)../../.build/plugin-tests/bin/</BaseOutputPath>
+    <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)../../.build/plugin-tests/obj/</BaseIntermediateOutputPath>
+  </PropertyGroup>
+</Project>

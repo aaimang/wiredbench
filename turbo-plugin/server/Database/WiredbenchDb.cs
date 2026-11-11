@@ -15,6 +15,8 @@ namespace Wiredbench;
 public sealed class WiredbenchDb : PluginDbContextBase<WiredbenchDb>
 {
     public DbSet<SavedLayoutRow> Layouts => Set<SavedLayoutRow>();
+
+    public DbSet<PresetRow> Presets => Set<PresetRow>();
 }
 
 /// <summary>A sandbox room's saved layout: what Reset puts the room back to.</summary>
@@ -31,6 +33,30 @@ public sealed class SavedLayoutRow
 
     public int ItemCount { get; set; }
 
+    public int SavedBy { get; set; }
+
+    public DateTime SavedAt { get; set; }
+}
+
+/// <summary>A G-Presets file in the preset library: pasted in the panel or exported from a room.</summary>
+[Table("presets")]
+public sealed class PresetRow
+{
+    [Key]
+    public int Id { get; set; }
+
+    [MaxLength(64)]
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>The file, as G-Presets JSON.</summary>
+    [Column(TypeName = "longtext")]
+    public string Json { get; set; } = string.Empty;
+
+    public int FurniCount { get; set; }
+
+    public int BoxCount { get; set; }
+
+    /// <summary>The player who pasted or exported it.</summary>
     public int SavedBy { get; set; }
 
     public DateTime SavedAt { get; set; }

@@ -22,6 +22,41 @@ namespace Wiredbench.Database.Migrations
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
+            modelBuilder.Entity("Wiredbench.PresetRow", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BoxCount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("FurniCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Json")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("varchar(64)");
+
+                    b.Property<DateTime>("SavedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("SavedBy")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("wiredbench_presets");
+                });
+
             modelBuilder.Entity("Wiredbench.SavedLayoutRow", b =>
                 {
                     b.Property<int>("RoomId")

@@ -6,11 +6,14 @@
  * - the window asks the plugin for its status (`wiredbench.hello`) and shows the answer;
  * - the Trace window (its button, or the `wiredbench/trace` link) shows the room's wired trace;
  * - the Sandbox window (its button, or the `wiredbench/sandbox` link) saves and resets the room and
- *   gives wired kits.
+ *   gives wired kits;
+ * - the Presets window (its button, or the `wiredbench/presets` link) imports and exports G-Presets files.
  */
 import { assetUrl, defineModule } from '@nitrodevco/client-module-sdk';
 
 import { STATUS, statusStore, toStatus } from './messages';
+import { PRESETS_STATE, presetsStore, toPresetsState } from './presets';
+import { PresetsWindow } from './PresetsWindow';
 import { SANDBOX_STATE, sandboxStore, toSandboxState } from './sandbox';
 import { SandboxWindow } from './SandboxWindow';
 import { TRACE_STATE, traceStore, toTraceState } from './trace';
@@ -23,10 +26,12 @@ export default defineModule({
 
         api.messages.on(TRACE_STATE, data => traceStore.apply(toTraceState(data)));
         api.messages.on(SANDBOX_STATE, data => sandboxStore.set(toSandboxState(data)));
+        api.messages.on(PRESETS_STATE, data => presetsStore.set(toPresetsState(data)));
 
         api.windows.register('main', WiredbenchWindow);
         api.windows.register('trace', TraceWindow);
         api.windows.register('sandbox', SandboxWindow);
+        api.windows.register('presets', PresetsWindow);
         api.toolbar.add({
             id: 'wiredbench',
             icon: assetUrl('wiredbench.png'),
@@ -37,6 +42,7 @@ export default defineModule({
             if (link === 'wiredbench/open') api.windows.open('main');
             if (link === 'wiredbench/trace') api.windows.open('trace');
             if (link === 'wiredbench/sandbox') api.windows.open('sandbox');
+            if (link === 'wiredbench/presets') api.windows.open('presets');
         });
     },
 });
