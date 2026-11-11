@@ -1,5 +1,5 @@
 import { type ClientModuleWindowProps, useApi } from '@nitrodevco/client-module-sdk';
-import { Box, Frame, ThemeText } from '@nitrodevco/client-module-sdk/theme';
+import { Box, Button, Frame, ThemeText } from '@nitrodevco/client-module-sdk/theme';
 import { useEffect, useState } from 'react';
 
 import { HELLO, type Status, statusStore } from './messages';
@@ -27,7 +27,7 @@ export const WiredbenchWindow = ({ close }: ClientModuleWindowProps) => {
             centered
             resizeDirection="none"
             onClose={close}
-            layout={{ width: 280, height: 120 }}>
+            layout={{ width: 280, height: 150 }}>
             <Box layout={{ flexDirection: 'column', gap: 8, padding: 10, width: 278 }}>
                 <ThemeText
                     text={text('body', 'WIRED tools for this room.')}
@@ -37,6 +37,9 @@ export const WiredbenchWindow = ({ close }: ClientModuleWindowProps) => {
                         ? text('connected', 'Plugin %version% answered player %player%.', { version: status.version, player: String(status.playerId) })
                         : text('waiting', 'Waiting for the plugin...')}
                     textStyle="u_bold" />
+                <Button variant="101" onPointerTap={() => api.windows.open('trace')}>
+                    <ThemeText text={text('open_trace', 'Wired trace')} textStyle="u_regular" />
+                </Button>
             </Box>
         </Frame>
     );
