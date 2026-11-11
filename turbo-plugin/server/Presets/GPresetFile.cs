@@ -214,13 +214,16 @@ public sealed class GPresetFile
         var file = new GPresetFile(
             new JsonObject
             {
-                ["floorplan"] = floorPlan,
                 ["bindings"] = new JsonArray(),
                 ["furni"] = new JsonArray(),
                 ["wired"] = new JsonObject(),
             },
             created: true
         );
+
+        // G-Presets writes no floor plan; one is kept only when there is one.
+        if (floorPlan.Length > 0)
+            file._root["floorplan"] = floorPlan;
 
         file.Furni = [.. furni];
         file.Boxes = [.. boxes];
@@ -250,14 +253,18 @@ public sealed class GPresetFile
 
             x["id"] = item.Id;
             x["className"] = item.ClassName;
-            Set(x, "rotation", item.Rotation, item.Rotation == 0);
+            // A furni the file did not have gets every field G-Presets reads (rotation and z
+            // are required there); one it had keeps the fields it had.
+            var isNewFurni = old is null;
+
+            Set(x, "rotation", item.Rotation, item.Rotation == 0 && !isNewFurni);
             Set(x, "state", item.State, item.State.Length == 0);
 
             var location = x["location"] as JsonObject ?? new JsonObject();
 
             location["x"] = item.X;
             location["y"] = item.Y;
-            Set(location, "z", Number(item.Z), item.Z == 0);
+            Set(location, "z", Number(item.Z), item.Z == 0 && !isNewFurni);
             x["location"] = location;
             furni.Add(x);
         }
@@ -287,23 +294,26 @@ public sealed class GPresetFile
                     : new JsonObject();
 
                 x["wiredId"] = box.WiredId;
-                Set(x, "options", Array(box.Options), box.Options.IsEmpty);
-                Set(x, "config", box.Config, box.Config.Length == 0);
-                Set(x, "items", Array(box.Items), box.Items.IsEmpty);
-                Set(x, "secondItems", Array(box.SecondItems), box.SecondItems.IsEmpty);
-                Set(x, "furniSources", Array(box.FurniSources), box.FurniSources.IsEmpty);
-                Set(x, "userSources", Array(box.UserSources), box.UserSources.IsEmpty);
+                // A box the file did not have gets every field G-Presets writes (options, config
+                // and items are required there); one it had keeps the fields it had.
+                var isNew = !oldBoxes[section].ContainsKey(box.WiredId);
+
+                Set(x, "options", Array(box.Options), box.Options.IsEmpty && !isNew);
+                Set(x, "config", box.Config, box.Config.Length == 0 && !isNew);
+                Set(x, "items", Array(box.Items), box.Items.IsEmpty && !isNew);
+                Set(x, "secondItems", Array(box.SecondItems), box.SecondItems.IsEmpty && !isNew);
+                Set(x, "furniSources", Array(box.FurniSources), box.FurniSources.IsEmpty && !isNew);
+                Set(x, "userSources", Array(box.UserSources), box.UserSources.IsEmpty && !isNew);
                 Set(
                     x,
                     "variableIds",
                     new JsonArray([.. box.VariableIds.Select(v => (JsonNode)v)]),
-                    box.VariableIds.IsEmpty
+                    box.VariableIds.IsEmpty && !isNew
                 );
 
-                Set(x, "variableId", box.VariableId, box.VariableId.Length == 0);
+                Set(x, "variableId", box.VariableId, box.VariableId.Length == 0 && !(isNew && section == "variables"));
 
                 // A new box carries the switches of its section, as G-Presets writes them.
-                var isNew = !oldBoxes[section].ContainsKey(box.WiredId);
 
                 if (section == "effects")
                     Set(x, "delay", box.Delay, box.Delay == 0 && !isNew);

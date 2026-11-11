@@ -79,6 +79,38 @@ public sealed class PresetExportTests
         Assert.Equal(new Dictionary<string, string> { ["picked_item"] = "9001" }, read.VariablesMap);
     }
 
+    // G-Presets' reader requires a furni's name, rotation and z, a box's options, config and
+    // items, and the bindings list, so a file Wiredbench writes has them all, defaults included.
+    [Fact]
+    public void A_written_file_has_every_field_g_presets_requires()
+    {
+        var fridge = _hotel.Inventory.AddFurniture("ktchn_fridge").DefinitionId;
+        var trigger = _hotel.Inventory.AddFurniture("wf_trg_state_changed").DefinitionId;
+        var layout = new RoomLayoutSnapshot { Items = [Item(500, 3, 3, 0), Item(501, 4, 3, 0)] };
+        var definitions = new Dictionary<int, int> { [500] = fridge, [501] = trigger };
+
+        var json = System.Text.Json.Nodes.JsonNode.Parse(
+            new PresetTransfer(_hotel, null!)
+                .ToFile(layout, definitions, [Box(501, WiredType.Trigger, "wf_trg_state_changed")], [])
+                .ToJson()
+        )!;
+
+        foreach (var furni in json["furni"]!.AsArray())
+        {
+            Assert.NotNull(furni!["name"]);
+            Assert.NotNull(furni["rotation"]);
+            Assert.NotNull(furni["location"]!["z"]);
+        }
+
+        var box = json["wired"]!["triggers"]![0]!;
+        Assert.Equal("[]", box["options"]!.ToJsonString());
+        Assert.Equal("", (string)box["config"]!);
+        Assert.Equal("[]", box["items"]!.ToJsonString());
+        Assert.NotNull(json["bindings"]);
+        Assert.NotNull(json["wired"]!["effects"]);
+        Assert.Null(json["floorplan"]);
+    }
+
     private static RoomLayoutItemSnapshot Item(int id, int x, int y, int z, int state = 0) =>
         new()
         {
