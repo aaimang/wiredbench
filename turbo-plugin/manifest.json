@@ -3,7 +3,10 @@
     "Key": "wiredbench",
     "Version": "0.1.0",
     "Author": "aaimang",
-    "Sources": ["server/**/*.cs"],
+    "TablePrefix": "wiredbench_",
+    "Sources": [
+        "server/**/*.cs"
+    ],
     "Dependencies": [],
     "ApiVersion": 1
 }

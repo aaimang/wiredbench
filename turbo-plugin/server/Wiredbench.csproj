@@ -3,7 +3,7 @@
     The plugin's server half, for the editor and `dotnet build`: the hotel compiles server/**/*.cs
     itself as it loads the plugin (vendor/turbo-cloud docs/plugin-loading.md). This project builds
     against what the hotel compiles plugins with, so a build that fails here fails there too.
-    TurboBin is the vendored server's build output; deploy/build.sh makes it.
+    TurboBin is the vendored server's build output; deploy/setup.sh makes it.
   -->
   <PropertyGroup>
     <TurboBin Condition="'$(TurboBin)' == ''">$(MSBuildThisFileDirectory)../../vendor/turbo-cloud/Turbo.Main/bin/Debug/net10.0</TurboBin>
@@ -13,4 +13,8 @@
     <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>Wiredbench</RootNamespace>
   </PropertyGroup>
+  <ItemGroup Condition="'$(DesignTime)' == 'true'">
+    <!-- dotnet ef (the saved layouts' migrations), at the server's EF Core version. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.19" PrivateAssets="all" />
+  </ItemGroup>
 </Project>

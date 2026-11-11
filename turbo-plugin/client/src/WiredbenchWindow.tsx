@@ -27,7 +27,7 @@ export const WiredbenchWindow = ({ close }: ClientModuleWindowProps) => {
             centered
             resizeDirection="none"
             onClose={close}
-            layout={{ width: 280, height: 150 }}>
+            layout={{ width: 280, height: 160 }}>
             <Box layout={{ flexDirection: 'column', gap: 8, padding: 10, width: 278 }}>
                 <ThemeText
                     text={text('body', 'WIRED tools for this room.')}
@@ -37,9 +37,14 @@ export const WiredbenchWindow = ({ close }: ClientModuleWindowProps) => {
                         ? text('connected', 'Plugin %version% answered player %player%.', { version: status.version, player: String(status.playerId) })
                         : text('waiting', 'Waiting for the plugin...')}
                     textStyle="u_bold" />
-                <Button variant="101" onPointerTap={() => api.windows.open('trace')}>
-                    <ThemeText text={text('open_trace', 'Wired trace')} textStyle="u_regular" />
-                </Button>
+                <Box layout={{ flexDirection: 'row', gap: 6 }}>
+                    <Button variant="101" onPointerTap={() => api.windows.open('trace')}>
+                        <ThemeText text={text('open_trace', 'Wired trace')} textStyle="u_regular" />
+                    </Button>
+                    <Button variant="101" onPointerTap={() => api.windows.open('sandbox')}>
+                        <ThemeText text={text('open_sandbox', 'Sandbox')} textStyle="u_regular" />
+                    </Button>
+                </Box>
             </Box>
         </Frame>
     );

@@ -11,6 +11,10 @@ namespace Wiredbench;
 /// </summary>
 public sealed class WiredbenchPlugin : TurboPlugin
 {
-    protected override void Services(IServiceCollection services) =>
+    protected override void Services(IServiceCollection services)
+    {
         services.AddSingleton<IPluginAdmin, WiredbenchAdmin>();
+        services.AddSingleton<WiredKits>();
+        services.AddSingleton<Sandbox>();
+    }
 }
