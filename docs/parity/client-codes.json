@@ -1,0 +1,629 @@
+{
+  "source": {
+    "file": "HabboAir.swf",
+    "sha256": "aeece8c0bf8b"
+  },
+  "codes": {
+    "trigger": {
+      "0": [
+        "AVATAR_SAYS_SOMETHING"
+      ],
+      "1": [
+        "UnknownVarFromTriggerConfCodes_Int_1"
+      ],
+      "2": [
+        "UnknownVarFromTriggerConfCodes_Int_2"
+      ],
+      "3": [
+        "TRIGGER_ONCE"
+      ],
+      "4": [
+        "USE_STUFF"
+      ],
+      "6": [
+        "TRIGGER_PERIODICALLY"
+      ],
+      "7": [
+        "AVATAR_ENTERS_ROOM"
+      ],
+      "8": [
+        "GAME_STARTS"
+      ],
+      "9": [
+        "GAME_ENDS"
+      ],
+      "10": [
+        "SCORE_ACHIEVED"
+      ],
+      "11": [
+        "AVATAR_CAUGHT"
+      ],
+      "12": [
+        "PERIODIC_LONG"
+      ],
+      "13": [
+        "BOT_DESTINATION_REACHED"
+      ],
+      "14": [
+        "BOT_AVATAR_REACHED"
+      ],
+      "15": [
+        "CLOCK_REACH_TIME"
+      ],
+      "16": [
+        "UnknownVarFromTriggerConfCodes_Int_3"
+      ],
+      "17": [
+        "RECEIVE_SIGNAL"
+      ],
+      "18": [
+        "AVATAR_CLICKS_FURNI"
+      ],
+      "19": [
+        "PERIODIC_SHORT"
+      ],
+      "20": [
+        "STATE_CHANGE"
+      ],
+      "21": [
+        "UnknownVarFromTriggerConfCodes_Int_4"
+      ],
+      "22": [
+        "VARIABLE_UPDATE"
+      ],
+      "23": [
+        "AVATAR_LEAVES_ROOM"
+      ],
+      "24": [
+        "USER_CLICKS_USER"
+      ],
+      "25": [
+        "TRANSACTION_COMPLETED"
+      ],
+      "26": [
+        "TRANSACTION_FAILED"
+      ],
+      "28": [
+        "INITIALIZATION"
+      ],
+      "29": [
+        "RECEIVE_LINK_MESSAGE"
+      ],
+      "30": [
+        "RECEIVE_LINK_DATAFRAME"
+      ]
+    },
+    "action": {
+      "0": [
+        "TOGGLE_FURNI_STATE"
+      ],
+      "1": [
+        "RESET"
+      ],
+      "3": [
+        "UnknownVarFromActionTypeCodes_Int_1"
+      ],
+      "4": [
+        "MOVE_FURNI"
+      ],
+      "6": [
+        "GIVE_SCORE"
+      ],
+      "7": [
+        "CHAT"
+      ],
+      "8": [
+        "UnknownVarFromActionTypeCodes_Int_2"
+      ],
+      "9": [
+        "JOIN_TEAM"
+      ],
+      "10": [
+        "LEAVE_TEAM"
+      ],
+      "11": [
+        "CHASE"
+      ],
+      "12": [
+        "FLEE"
+      ],
+      "13": [
+        "MOVE_TO_DIRECTION"
+      ],
+      "14": [
+        "GIVE_SCORE_TO_PREDEFINED_TEAM"
+      ],
+      "15": [
+        "TOGGLE_TO_RANDOM_STATE"
+      ],
+      "16": [
+        "MOVE_FURNI_TO"
+      ],
+      "17": [
+        "GIVE_REWARD"
+      ],
+      "18": [
+        "CALL_ANOTHER_STACK"
+      ],
+      "19": [
+        "KICK_FROM_ROOM"
+      ],
+      "20": [
+        "MUTE_USER"
+      ],
+      "21": [
+        "BOT_TELEPORT"
+      ],
+      "22": [
+        "BOT_MOVE"
+      ],
+      "23": [
+        "BOT_TALK"
+      ],
+      "24": [
+        "BOT_GIVE_HAND_ITEM"
+      ],
+      "25": [
+        "BOT_FOLLOW_AVATAR"
+      ],
+      "26": [
+        "BOT_CHANGE_FIGURE"
+      ],
+      "27": [
+        "BOT_TALK_DIRECT_TO_AVTR"
+      ],
+      "28": [
+        "CONTROL_CLOCK"
+      ],
+      "29": [
+        "SET_FURNI_ALTITUDE"
+      ],
+      "30": [
+        "SEND_SIGNAL"
+      ],
+      "31": [
+        "FREEZE_USER"
+      ],
+      "32": [
+        "UNFREEZE_USER"
+      ],
+      "33": [
+        "RELATIVE_FURNI_MOVE"
+      ],
+      "34": [
+        "MOVE_FURNI_TO_FURNI"
+      ],
+      "35": [
+        "MOVE_FURNI_TO_USER"
+      ],
+      "36": [
+        "NEG_CALL_ANOTHER_STACK"
+      ],
+      "37": [
+        "NEG_SEND_SIGNAL"
+      ],
+      "38": [
+        "ADJUST_CLOCK"
+      ],
+      "39": [
+        "GIVE_VARIABLE"
+      ],
+      "40": [
+        "REMOVE_VARIABLE"
+      ],
+      "41": [
+        "CHANGE_VARIABLE"
+      ],
+      "42": [
+        "MOVE_USER"
+      ],
+      "43": [
+        "MOVE_USER_TO_FURNI"
+      ],
+      "44": [
+        "TELEPORT_TO_ROOM"
+      ],
+      "45": [
+        "GIVE_CURRENCY_FROM_CHEST"
+      ],
+      "46": [
+        "GIVE_FURNI_FROM_CHEST"
+      ],
+      "47": [
+        "INITIATE_TRANSACTION"
+      ],
+      "48": [
+        "CANCEL_TRANSACTION"
+      ],
+      "49": [
+        "UnknownVarFromActionTypeCodes_Int_3"
+      ],
+      "50": [
+        "UnknownVarFromActionTypeCodes_Int_4"
+      ],
+      "51": [
+        "PROGRESS_ACHIEVEMENT"
+      ],
+      "52": [
+        "GIVE_EFFECT"
+      ],
+      "53": [
+        "OVERRIDE_HEIGHT"
+      ],
+      "54": [
+        "UnknownVarFromActionTypeCodes_Int_5"
+      ],
+      "55": [
+        "PLACE_FURNI"
+      ],
+      "56": [
+        "REMOVE_FURNI"
+      ],
+      "57": [
+        "MOVE_AS_GROUP"
+      ],
+      "58": [
+        "PROGRESS_REWARD_TRACK"
+      ],
+      "59": [
+        "RESET_REWARD_TRACK"
+      ],
+      "61": [
+        "SET_FURNI_TRANSPARENCY"
+      ],
+      "62": [
+        "SET_FURNI_HIGHLIGHT"
+      ],
+      "63": [
+        "SEND_LINK_MESSAGE"
+      ],
+      "64": [
+        "SEND_LINK_DATAFRAME"
+      ]
+    },
+    "condition": {
+      "0": [
+        "STATES_MATCH"
+      ],
+      "1": [
+        "FURNIS_HAVE_AVATARS"
+      ],
+      "2": [
+        "TRIGGERER_IS_ON_FURNI"
+      ],
+      "3": [
+        "TIME_ELAPSED_MORE"
+      ],
+      "4": [
+        "TIME_ELAPSED_LESS"
+      ],
+      "5": [
+        "USER_COUNT_IN"
+      ],
+      "6": [
+        "ACTOR_IS_IN_TEAM"
+      ],
+      "7": [
+        "HAS_STACKED_FURNIS"
+      ],
+      "8": [
+        "STUFF_TYPE_MATCHES"
+      ],
+      "10": [
+        "ACTOR_IS_GROUP_MEMBER"
+      ],
+      "11": [
+        "ACTOR_IS_WEARING_BADGE"
+      ],
+      "12": [
+        "ACTOR_IS_WEARING_EFFECT"
+      ],
+      "13": [
+        "NOT_STATES_MATCH"
+      ],
+      "14": [
+        "NOT_FURNIS_HAVE_AVATARS"
+      ],
+      "15": [
+        "NOT_TRIGGERER_IS_ON_FURNI"
+      ],
+      "16": [
+        "NOT_USER_COUNT_IN"
+      ],
+      "17": [
+        "NOT_ACTOR_IS_IN_TEAM"
+      ],
+      "18": [
+        "NOT_HAS_STACKED_FURNIS"
+      ],
+      "19": [
+        "NOT_STUFF_TYPE_MATCHES"
+      ],
+      "21": [
+        "NOT_ACTOR_IS_GROUP_MEMBER"
+      ],
+      "22": [
+        "NOT_ACTOR_IS_WEARING_BADGE"
+      ],
+      "23": [
+        "NOT_ACTOR_IS_WEARING_EFFECT"
+      ],
+      "24": [
+        "DATE_RANGE_ACTIVE"
+      ],
+      "25": [
+        "ACTOR_HAS_HANDITEM"
+      ],
+      "26": [
+        "TRIGGERER_MATCHES"
+      ],
+      "27": [
+        "NOT_TRIGGERER_MATCHES"
+      ],
+      "28": [
+        "TIME_MATCHES"
+      ],
+      "29": [
+        "DATE_MATCHES"
+      ],
+      "30": [
+        "NOT_HAS_HANDITEM"
+      ],
+      "31": [
+        "TEAM_IS_WINNING"
+      ],
+      "32": [
+        "PERFORMING_ACTION"
+      ],
+      "33": [
+        "NOT_PERFORMING_ACTION"
+      ],
+      "34": [
+        "TEAM_HAS_SCORE"
+      ],
+      "35": [
+        "CLOCK_TIME_MATCHES"
+      ],
+      "36": [
+        "FURNI_HAS_ALTITUDE"
+      ],
+      "37": [
+        "USER_DIRECTION"
+      ],
+      "38": [
+        "INPUT_SOURCE_QUANTITY"
+      ],
+      "39": [
+        "CAN_PERFORM_MOVE"
+      ],
+      "40": [
+        "UnknownConstFromVariableFxVisibilityIds_Int_1"
+      ],
+      "41": [
+        "NOT_HAS_VARIABLE"
+      ],
+      "42": [
+        "VARIABLE_VALUE"
+      ],
+      "43": [
+        "VARIABLE_AGE"
+      ],
+      "44": [
+        "USER_LEVEL"
+      ],
+      "45": [
+        "CHEST_HAS_ITEMS"
+      ],
+      "46": [
+        "CHEST_HAS_ITEM_TYPES"
+      ]
+    },
+    "selector": {
+      "0": [
+        "FURNI_BY_TYPE"
+      ],
+      "1": [
+        "UnknownVarFromSelectorCodes_Int_1"
+      ],
+      "2": [
+        "USERS_BY_TYPE"
+      ],
+      "3": [
+        "USERS_IN_TEAM"
+      ],
+      "4": [
+        "FURNI_ON_FURNI"
+      ],
+      "5": [
+        "FURNI_FROM_SIGNAL"
+      ],
+      "6": [
+        "UnknownVarFromSelectorCodes_Int_2"
+      ],
+      "7": [
+        "UnknownVarFromSelectorCodes_Int_3"
+      ],
+      "8": [
+        "USERS_ON_FURNI"
+      ],
+      "9": [
+        "USERS_PERFORMING_ACTION"
+      ],
+      "10": [
+        "USERS_FROM_SIGNAL"
+      ],
+      "11": [
+        "USERS_BY_NAME"
+      ],
+      "12": [
+        "USERS_IN_NEIGHBORHOOD"
+      ],
+      "13": [
+        "USERS_IN_AREA"
+      ],
+      "14": [
+        "USERS_WITH_HANDITEM"
+      ],
+      "15": [
+        "USERS_IN_GROUP"
+      ],
+      "16": [
+        "FURNI_WITH_ALTITUDE"
+      ],
+      "17": [
+        "UnknownVarFromSelectorCodes_Int_4"
+      ],
+      "18": [
+        "USERS_WITH_VARIABLE"
+      ],
+      "19": [
+        "REMOTE_SELECTOR"
+      ]
+    },
+    "addon": {
+      "0": [
+        "CONDITION_EVALUATION"
+      ],
+      "1": [
+        "UnknownVarFromAddonCodes_Int_1"
+      ],
+      "2": [
+        "UnknownVarFromAddonCodes_Int_2"
+      ],
+      "5": [
+        "UnknownVarFromAddonCodes_Int_3"
+      ],
+      "6": [
+        "NO_MOVE_ANIMATION"
+      ],
+      "7": [
+        "UnknownVarFromAddonCodes_Int_4"
+      ],
+      "8": [
+        "CARRY_USERS"
+      ],
+      "9": [
+        "ANIMATION_TIME"
+      ],
+      "10": [
+        "FURNI_SELECTOR_FILTER"
+      ],
+      "11": [
+        "USER_SELECTOR_FILTER"
+      ],
+      "12": [
+        "FURNI_VARIABLE_FILTER"
+      ],
+      "13": [
+        "USER_VARIABLE_FILTER"
+      ],
+      "14": [
+        "USERNAME_PLACEHOLDER"
+      ],
+      "15": [
+        "VARIABLE_PLACEHOLDER"
+      ],
+      "16": [
+        "VARIABLE_CAPTURER"
+      ],
+      "17": [
+        "EXECUTE_IN_ORDER"
+      ],
+      "18": [
+        "CHEST_ITEM_TYPE_SCANNER"
+      ],
+      "19": [
+        "FURNI_NAME_PLACEHOLDER"
+      ],
+      "20": [
+        "CUSTOM_CONTRACT"
+      ],
+      "21": [
+        "PROJECTILE"
+      ],
+      "22": [
+        "JUMP_STRENGTH"
+      ],
+      "1000": [
+        "VARIABLE_TEXT_CONVERTER"
+      ],
+      "1001": [
+        "VARIABLE_LEVEL_UP"
+      ],
+      "1002": [
+        "VARIABLE_TIME_UTIL"
+      ],
+      "1003": [
+        "VARIABLE_ADDON_SHARE"
+      ],
+      "1004": [
+        "VARIABLE_ADDON_IMPORT"
+      ],
+      "1005": [
+        "VARIABLE_LEADERBOARD"
+      ],
+      "1200": [
+        "VARIABLE_FX_HEALTH_POINTS"
+      ],
+      "1201": [
+        "VARIABLE_FX_PROGRESS_BAR"
+      ],
+      "1202": [
+        "VARIABLE_FX_LEVELLING_PROGRESS"
+      ],
+      "1203": [
+        "VARIABLE_FX_STATUS_BAR"
+      ],
+      "1204": [
+        "VARIABLE_FX_BOSS_BAR"
+      ],
+      "1205": [
+        "VARIABLE_FX_NUMBER_DISPLAY"
+      ],
+      "2000": [
+        "GLOBAL_PLACEHOLDER"
+      ],
+      "2001": [
+        "ACHIEVEMENT_ENABLER"
+      ],
+      "2002": [
+        "VARIABLES_WEB_API"
+      ],
+      "2003": [
+        "LINK_SPEAKER"
+      ]
+    },
+    "variable": {
+      "0": [
+        "UnknownVarFromVariableCodes_Int_1"
+      ],
+      "1": [
+        "USER_VARIABLE"
+      ],
+      "2": [
+        "GLOBAL_VARIABLE"
+      ],
+      "3": [
+        "CONTEXT_VARIABLE"
+      ],
+      "4": [
+        "REFERENCE_VARIABLE"
+      ],
+      "5": [
+        "UnknownVarFromVariableCodes_Int_2"
+      ],
+      "6": [
+        "UnknownVarFromVariableCodes_Int_3"
+      ],
+      "7": [
+        "ECHO_VARIABLE"
+      ],
+      "8": [
+        "UnknownVarFromVariableCodes_Int_4"
+      ],
+      "9": [
+        "UnknownVarFromVariableCodes_Int_5"
+      ]
+    }
+  }
+}

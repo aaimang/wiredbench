@@ -59,3 +59,17 @@ dotnet build turbo-plugin/server/Wiredbench.csproj
 ```bash
 deploy/check-client.sh
 ```
+
+## WIRED box parity
+
+`python scripts/parity.py` checks every wired code the Habbo client knows against the pinned Turbo's
+boxes, nitro-next's editors and (with `--hotel-db`) the hotel's furni. It writes the report the
+admin panel's **Wiredbench → Parity** page shows (`turbo-plugin/data/parity.json`) and a summary
+(`docs/parity/README.md`).
+
+- After a new Habbo client build: `uv run python scripts/parity.py --swf path/to/HabboAir.swf --hotel-db`.
+  This refreshes the committed client code list (`docs/parity/client-codes.json`); the SWF itself is
+  never committed.
+- `uv run python scripts/parity.py --check` only reads, and fails when a client code has no Turbo box
+  or no nitro-next editor, or two boxes claim one code. CI runs it once the repository variable
+  `PARITY_SUBMODULES` is `true` (the pinned turbo-cloud commit has to be fetchable first).

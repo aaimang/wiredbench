@@ -14,7 +14,8 @@ namespace Wiredbench;
 /// Wiredbench code runs in the panel. Staff need <c>plugin.wiredbench.view</c> to see them, and
 /// <c>plugin.wiredbench.presets</c> to add or delete presets.
 /// </summary>
-public sealed class WiredbenchAdmin(PluginManifest manifest, PresetLibrary library) : IPluginAdmin
+public sealed class WiredbenchAdmin(PluginManifest manifest, PresetLibrary library, ParityReport parity)
+    : IPluginAdmin
 {
     private const int PAGE_SIZE = 50;
 
@@ -132,6 +133,45 @@ public sealed class WiredbenchAdmin(PluginManifest manifest, PresetLibrary libra
                     : PluginAdminResult.NotFound("There is no such preset.")
         );
 
+        admin.Map("GET", "parity/summary", view, (_, _) => Task.FromResult(PluginAdminResult.Ok(parity.Summary())));
+
+        admin.Map(
+            "GET",
+            "parity/codes",
+            view,
+            (request, _) =>
+            {
+                var kind = request.Query.TryGetValue("kind", out var k) && k != "all" ? k : null;
+                var gapsOnly = request.Query.TryGetValue("gaps", out var g) && g is "true" or "1";
+                var rows = parity.Rows(kind, gapsOnly);
+                var page = request.Query.TryGetValue("page", out var p) && int.TryParse(p, out var n) ? Math.Max(n, 1) : 1;
+
+                return Task.FromResult(
+                    PluginAdminResult.Ok(
+                        new
+                        {
+                            items = rows.Skip((page - 1) * PAGE_SIZE)
+                                .Take(PAGE_SIZE)
+                                .Select(x => new
+                                {
+                                    id = $"{x.Kind}-{x.Code}",
+                                    kind = x.Kind,
+                                    code = x.Code,
+                                    name = x.Name,
+                                    client = x.Client,
+                                    editors = x.Editors,
+                                    boxes = x.Boxes,
+                                    furni = x.Furni,
+                                    gaps = x.Gaps,
+                                }),
+                            total = rows.Count,
+                            pageSize = PAGE_SIZE,
+                        }
+                    )
+                );
+            }
+        );
+
         admin.Page(
             new PluginAdminPage(
                 "overview",
@@ -195,6 +235,49 @@ public sealed class WiredbenchAdmin(PluginManifest manifest, PresetLibrary libra
                     ),
                 ],
                 Description: "G-Presets files for the Sandbox window"
+            )
+        );
+
+        var kindFilter = new PluginAdminField(
+            "kind",
+            "Kind",
+            "select",
+            Options: ["all", "trigger", "action", "condition", "selector", "addon", "variable"]
+        );
+
+        admin.Page(
+            new PluginAdminPage(
+                "parity",
+                "Parity",
+                view,
+                [
+                    new PluginAdminBlock(
+                        "text",
+                        Text: "Every wired code the Habbo client has an editor for, against this hotel's Turbo "
+                            + "boxes, the client's nitro-next editors and the hotel's furni. The report is written "
+                            + "by **python scripts/parity.py** (with **--swf** for a new client build and "
+                            + "**--hotel-db** for the furni) and shows here when the plugin reloads."
+                    ),
+                    new PluginAdminBlock("stats", Title: "Summary", Endpoint: "parity/summary"),
+                    new PluginAdminBlock(
+                        "table",
+                        Title: "Codes",
+                        Endpoint: "parity/codes",
+                        Columns:
+                        [
+                            new PluginAdminColumn("kind", "Kind"),
+                            new PluginAdminColumn("code", "Code", "number"),
+                            new PluginAdminColumn("name", "Name"),
+                            new PluginAdminColumn("client", "In the client", "bool"),
+                            new PluginAdminColumn("editors", "Nitro editors", "number"),
+                            new PluginAdminColumn("boxes", "Turbo box"),
+                            new PluginAdminColumn("furni", "Furni"),
+                            new PluginAdminColumn("gaps", "Gaps", "badge"),
+                        ],
+                        Filters: [kindFilter, new PluginAdminField("gaps", "Only codes with a gap", "bool")]
+                    ),
+                ],
+                Description: "WIRED boxes: client, Turbo, Nitro and furni"
             )
         );
 

@@ -19,5 +19,6 @@ public sealed class WiredbenchPlugin : TurboPlugin
         services.AddSingleton<Presets.PresetLibrary>();
         services.AddSingleton<Presets.PresetTransfer>();
         services.AddSingleton<Presets.PresetPicks>();
+        services.AddSingleton<ParityReport>();
     }
 }

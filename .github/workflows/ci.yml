@@ -13,6 +13,22 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  parity:
+    # Every wired code the Habbo client knows against the pinned Turbo's boxes and nitro-next's
+    # editors (scripts/parity.py --check; the client's codes are the committed
+    # docs/parity/client-codes.json). It needs both submodules: set the repository variable
+    # PARITY_SUBMODULES to true once the pinned turbo-cloud commit can be fetched.
+    name: WIRED box parity
+    if: ${{ vars.PARITY_SUBMODULES == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: true
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+      - run: uv sync --frozen
+      - run: uv run python scripts/parity.py --check
+
   backend:
     name: Backend (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
