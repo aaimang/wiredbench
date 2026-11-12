@@ -1,3 +1,4 @@
+using Turbo.Primitives.Rooms.Snapshots.Furniture;
 using Turbo.Primitives.Players;
 using Turbo.Primitives.Rooms;
 using Turbo.Primitives.Rooms.Wired.Variable;
@@ -124,7 +125,7 @@ public sealed class PresetImportTests
           ],
           "wired": {
             "triggers": [], "conditions": [],
-            "effects": [ { "wiredId": 3, "variableIds": ["500", "-240", "n", "777", "s500-3", "~131"] } ],
+            "effects": [ { "wiredId": 3, "variableIds": ["500", "-240", "n", "777", "s500-3", "~131", "s500-3-2", "s-240-3"] } ],
             "variables": [ { "wiredId": 4, "config": "picked_item", "options": [1], "variableId": "500" } ]
           }
         }
@@ -147,10 +148,22 @@ public sealed class PresetImportTests
         var picked = WiredVariableId.OfBox(furni[context]).ToString();
 
         Assert.Equal(
-            [picked, "-240", "0", "0", $"s{picked}-{furni[_effect]}", "~131"],
+            [picked, "-240", "0", "0", $"s{picked}-{furni[_effect]}", "~131", $"s{picked}-{furni[_effect]}-2", $"s-240-{furni[_effect]}"],
             effect.VariableIds
         );
         Assert.Contains("1 variables the file names were not found in this room (777)", result.Message);
+    }
+
+    // G-Presets' importer puts a file's heights above the lowest floor of the tiles it lands on.
+    [Fact]
+    public void Heights_go_above_the_lowest_floor_where_the_furni_land()
+    {
+        var target = new RoomLayoutSnapshot { Items = [], FloorWidth = 4, FloorLevels = [-1, 300, 200, 400] };
+        GPresetFurni At(int x) => new(1, "x", x, 0, 0, 0, "0");
+
+        Assert.Equal(200, PresetTransfer.FloorUnder(target, [At(1), At(3)]));
+        Assert.Equal(300, PresetTransfer.FloorUnder(target, [At(0), At(1)]));
+        Assert.Equal(0, PresetTransfer.FloorUnder(new RoomLayoutSnapshot { Items = [] }, [At(1)]));
     }
 
     // A Match Snapshot box bound to the fridge in state 1 at (4, 4): the fridge is moved and

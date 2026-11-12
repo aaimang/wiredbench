@@ -12,6 +12,9 @@ export const PRESETS_IMPORT = 'wiredbench.presets.import';
 /** Client to server: import preset `id` at the next floor tile I click. */
 export const PRESETS_PICK = 'wiredbench.presets.pick';
 
+/** Client to server: delete preset `id` from the library (players holding plugin.wiredbench.presets). */
+export const PRESETS_DELETE = 'wiredbench.presets.delete';
+
 /** Client to server: save the room I am in to the library as `name`. */
 export const PRESETS_EXPORT = 'wiredbench.presets.export';
 
@@ -30,9 +33,11 @@ export interface PresetsState {
     roomId: number;
     presets: PresetItem[];
     message: string;
+    /** Whether the player may delete presets. */
+    canDelete: boolean;
 }
 
-export const EMPTY_PRESETS: PresetsState = { roomId: 0, presets: [], message: '' };
+export const EMPTY_PRESETS: PresetsState = { roomId: 0, presets: [], message: '', canDelete: false };
 
 const toItem = (data: unknown): PresetItem | null => {
     if (!data || (typeof data !== 'object')) return null;
@@ -52,7 +57,7 @@ export const toPresetsState = (data: Record<string, unknown>): PresetsState | nu
 
     if (presets.some(x => x === null)) return null;
 
-    return { roomId: data.roomId, presets: presets as PresetItem[], message: data.message };
+    return { roomId: data.roomId, presets: presets as PresetItem[], message: data.message, canDelete: data.canDelete === true };
 };
 
 /** The name an export is saved under: there is no text input in a module window. */

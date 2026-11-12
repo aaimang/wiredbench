@@ -24,16 +24,30 @@ public sealed record PresetsImportMessage(int Id, bool NewRoom) : IPluginMessage
 [PluginMessage("wiredbench.presets.export")]
 public sealed record PresetsExportMessage(string Name) : IPluginMessage;
 
+/// <summary>
+/// Client to server: delete preset <paramref name="Id"/> from the library; for players holding
+/// <c>plugin.wiredbench.presets</c>, as the panel's Delete.
+/// </summary>
+[PluginMessage("wiredbench.presets.delete")]
+public sealed record PresetsDeleteMessage(int Id) : IPluginMessage;
+
 /// <summary>A preset as the window lists it.</summary>
 public sealed record PresetItem(int Id, string Name, int Furni, int Boxes, string SavedAt);
 
 /// <summary>Server to client: the room the player is in (0 for none), the library and what the last request did.</summary>
 [PluginMessage("wiredbench.presets.state")]
-public sealed record PresetsStateMessage(int RoomId, ImmutableArray<PresetItem> Presets, string Message)
-    : IPluginMessage;
+public sealed record PresetsStateMessage(
+    int RoomId,
+    ImmutableArray<PresetItem> Presets,
+    string Message,
+    bool CanDelete
+) : IPluginMessage;
 
 internal static class PresetsReply
 {
+    /// <summary>Who may delete presets: the panel's own node for the library.</summary>
+    public const string MANAGE_PERMISSION = "plugin.wiredbench.presets";
+
     // The newest presets the window lists.
     private const int MAX_LISTED = 30;
 
@@ -67,7 +81,8 @@ internal static class PresetsReply
                             .Take(MAX_LISTED)
                             .Select(x => new PresetItem(x.Id, x.Name, x.FurniCount, x.BoxCount, x.SavedAt.ToString("yyyy-MM-dd HH:mm"))),
                     ],
-                    message
+                    message,
+                    await hotel.Players.HasPermissionAsync(player, MANAGE_PERMISSION, ct).ConfigureAwait(false)
                 ),
                 ct
             )
@@ -108,6 +123,26 @@ public sealed class PresetsExportHandler(IHotel hotel, PresetLibrary library, Pr
     public async ValueTask HandleAsync(PresetsExportMessage message, PluginMessageContext ctx, CancellationToken ct)
     {
         var report = await transfer.ExportAsync(ctx.PlayerId, message.Name, ct).ConfigureAwait(false);
+
+        await PresetsReply.SendAsync(hotel, library, ctx, report, ct).ConfigureAwait(false);
+    }
+}
+
+public sealed class PresetsDeleteHandler(IHotel hotel, PresetLibrary library)
+    : IPluginMessageHandler<PresetsDeleteMessage>
+{
+    public async ValueTask HandleAsync(PresetsDeleteMessage message, PluginMessageContext ctx, CancellationToken ct)
+    {
+        string report;
+
+        if (!await hotel.Players.HasPermissionAsync(ctx.PlayerId, PresetsReply.MANAGE_PERMISSION, ct).ConfigureAwait(false))
+            report = "You may not delete presets.";
+        else if (await library.GetAsync(message.Id, ct).ConfigureAwait(false) is not { } preset)
+            report = "That preset is no longer in the library.";
+        else
+            report = await library.DeleteAsync(preset.Id, ct).ConfigureAwait(false)
+                ? $"Deleted \"{preset.Name}\"."
+                : "That preset is no longer in the library.";
 
         await PresetsReply.SendAsync(hotel, library, ctx, report, ct).ConfigureAwait(false);
     }

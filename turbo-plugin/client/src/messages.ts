@@ -11,7 +11,7 @@ export const HELLO = 'wiredbench.hello';
 export const STATUS = 'wiredbench.status';
 
 /** `wiredbench.status`'s fields, as the server sends its schema (`StatusMessage`, camelCase). */
-export const STATUS_SCHEMA = [ [ 'version', 'string' ], [ 'playerId', 'int' ] ] as const;
+export const STATUS_SCHEMA = [ [ 'version', 'string' ], [ 'playerId', 'int' ], [ 'playerName', 'string' ] ] as const;
 
 export type Status = ClientModuleMessageOf<typeof STATUS_SCHEMA>;
 
@@ -19,7 +19,7 @@ export type Status = ClientModuleMessageOf<typeof STATUS_SCHEMA>;
 export const toStatus = (data: Record<string, unknown>): Status | null => {
     if ((typeof data.version !== 'string') || (typeof data.playerId !== 'number')) return null;
 
-    return { version: data.version, playerId: data.playerId };
+    return { version: data.version, playerId: data.playerId, playerName: (typeof data.playerName === 'string') ? data.playerName : '' };
 };
 
 type Listener = (status: Status | null) => void;

@@ -115,8 +115,12 @@ public sealed class PresetTransfer(IHotel hotel, PresetLibrary library)
         else
             return new(null, "Enter a room first.");
 
-        if (await hotel.Rooms.CaptureLayoutAsync(room, player, ct).ConfigureAwait(false) is null)
+        if (await hotel.Rooms.CaptureLayoutAsync(room, player, ct).ConfigureAwait(false) is not { } target)
             return new(room.Value, "You may not change the wired of this room.");
+
+        // G-Presets' heights: a file's are above the lowest floor of what was copied, so they go
+        // above the lowest floor of the tiles they land on.
+        var floor = FloorUnder(target, file.Furni);
 
         var report = new List<string>();
         var ids = await ChooseItemsAsync(player, file, report, ct).ConfigureAwait(false);
@@ -131,7 +135,7 @@ public sealed class PresetTransfer(IHotel hotel, PresetLibrary library)
                         ItemId = ids[x.Id],
                         X = x.X,
                         Y = x.Y,
-                        Z = (int)Math.Round(x.Z * 100),
+                        Z = (int)Math.Round(x.Z * 100) + floor,
                         Rotation = x.Rotation,
                         State = int.TryParse(x.State, NumberStyles.Integer, CultureInfo.InvariantCulture, out var state) ? state : 0,
                     }),
@@ -495,13 +499,13 @@ public sealed class PresetTransfer(IHotel hotel, PresetLibrary library)
             }
         }
 
-        /// <summary>The variable a sub-variable id <c>sX-Y</c> is of (<c>X</c>); any other id itself.</summary>
+        /// <summary>The variable a sub-variable id <c>sX-Y[-I]</c> is of (<c>X</c>); any other id itself.</summary>
         public static string Root(string id) =>
-            id.StartsWith('s') && id.IndexOf('-') is > 1 and var dash ? id[1..dash] : id;
+            WiredVariableId.TryParseSub(id, out var parent, out _, out _) ? parent : id;
 
         /// <summary>
         /// G-Presets' rule: <c>0</c>, a built-in <c>-N</c> and a smart <c>~N</c> stay; a
-        /// sub-variable <c>sX-Y</c> takes this room's variable and furni; any other is this room's
+        /// sub-variable <c>sX-Y[-I]</c> takes this room's variable and furni; any other is this room's
         /// variable of that name, or the empty <c>0</c> (<c>n</c>, the client's empty slot, too).
         /// </summary>
         public string Correct(string id, Dictionary<int, int> placed, SortedSet<string> unmapped)
@@ -509,15 +513,21 @@ public sealed class PresetTransfer(IHotel hotel, PresetLibrary library)
             if (id is "0" || id.StartsWith('-') || id.StartsWith('~'))
                 return id;
 
-            if (id.StartsWith('s') && id.IndexOf('-') is > 1 and var dash)
+            if (id.StartsWith('s'))
             {
-                var variable = _real.GetValueOrDefault(id[1..dash], "0");
-                var furni = int.TryParse(id[(dash + 1)..], NumberStyles.Integer, CultureInfo.InvariantCulture, out var f)
-                    && placed.TryGetValue(f, out var item)
-                        ? item
-                        : 0;
+                if (!WiredVariableId.TryParseSub(id, out var parent, out var addon, out var index))
+                {
+                    unmapped.Add(id);
 
-                return variable == "0" || furni == 0 ? "0" : $"s{variable}-{furni}";
+                    return "0";
+                }
+
+                // The parent as this room names it (a built-in or smart one is the same everywhere),
+                // and the add-on as it was placed; the index stays.
+                var variable = parent.StartsWith('-') || parent.StartsWith('~') ? parent : _real.GetValueOrDefault(parent, "0");
+                var furni = placed.GetValueOrDefault(addon);
+
+                return variable == "0" || furni == 0 ? "0" : WiredVariableId.SubText(variable, furni, index);
             }
 
             if (_real.TryGetValue(id, out var real))
@@ -559,14 +569,18 @@ public sealed class PresetTransfer(IHotel hotel, PresetLibrary library)
         var ids = furni.Select((x, i) => (x.Item.ItemId, Id: i + 1)).ToDictionary(x => x.ItemId, x => x.Id);
         var minX = furni.Min(x => x.Item.X);
         var minY = furni.Min(x => x.Item.Y);
+        // G-Presets' heights: above the lowest floor of the area taken.
+        var floor = layout.LowestFloorLevel(minX, minY, furni.Max(x => x.Item.X), furni.Max(x => x.Item.Y));
         var created = variables
             .Where(x => x.Type == WiredVariableType.Created)
             .GroupBy(x => x.Name, StringComparer.Ordinal)
             .ToImmutableDictionary(x => x.Key, x => x.First().Id, StringComparer.Ordinal);
         var bindings = new List<GPresetBinding>();
         var fileBoxes = new List<GPresetBox>();
+        var boxList = boxes.ToList();
+        var subs = SubVariables(layout, boxList, created);
 
-        foreach (var box in boxes.Where(x => ids.ContainsKey(x.ItemId)))
+        foreach (var box in boxList.Where(x => ids.ContainsKey(x.ItemId)))
         {
             var wiredId = ids[box.ItemId];
             var config = box.StringParam;
@@ -594,7 +608,7 @@ public sealed class PresetTransfer(IHotel hotel, PresetLibrary library)
                 [.. box.StuffIds2.Where(ids.ContainsKey).Select(x => ids[x])],
                 [.. box.FurniSources.Select(x => x.IsEmpty ? 0 : x[0])],
                 [.. box.UserSources.Select(x => x.IsEmpty ? 0 : x[0])],
-                [.. box.VariableIds.Select(id => RenumberSubVariable(id, ids))],
+                [.. box.VariableIds.Select(id => ToFileVariableId(id, ids, subs))],
                 box.Delay,
                 box.Quantifier,
                 box.Filter,
@@ -614,7 +628,7 @@ public sealed class PresetTransfer(IHotel hotel, PresetLibrary library)
                 x.Furniture!.Name,
                 x.Item.X - minX,
                 x.Item.Y - minY,
-                x.Item.Z / 100.0,
+                Math.Max(0, x.Item.Z - floor) / 100.0,
                 x.Item.Rotation,
                 x.Item.State.ToString(CultureInfo.InvariantCulture)
             )),
@@ -664,14 +678,66 @@ public sealed class PresetTransfer(IHotel hotel, PresetLibrary library)
         }
     }
 
-    /// <summary>A sub-variable id <c>sX-Y</c> with its furni <c>Y</c> numbered as the file numbers it.</summary>
-    private static string RenumberSubVariable(string id, Dictionary<int, int> ids) =>
-        id.StartsWith('s')
-        && id.IndexOf('-') is > 1 and var dash
-        && int.TryParse(id[(dash + 1)..], NumberStyles.Integer, CultureInfo.InvariantCulture, out var furni)
-        && ids.TryGetValue(furni, out var renumbered)
-            ? $"{id[..dash]}-{renumbered}"
+    /// <summary>
+    /// The lowest floor level, in hundredths, under the area <paramref name="furni"/> cover in
+    /// <paramref name="layout"/>'s room: what G-Presets measures a copy's heights from.
+    /// </summary>
+    public static int FloorUnder(RoomLayoutSnapshot layout, IEnumerable<GPresetFurni> furni)
+    {
+        var list = furni.ToList();
+
+        return list.Count == 0
+            ? 0
+            : layout.LowestFloorLevel(list.Min(x => x.X), list.Min(x => x.Y), list.Max(x => x.X), list.Max(x => x.Y));
+    }
+
+    /// <summary>
+    /// A variable id as the file writes it: this room's sub-variable (an add-on's
+    /// <c>OfBox(addon, index)</c>) as G-Presets' <c>s&lt;parent&gt;-&lt;add-on&gt;[-&lt;index&gt;]</c>
+    /// with the add-on numbered as the file numbers it; any other id as it is.
+    /// </summary>
+    private static string ToFileVariableId(string id, Dictionary<int, int> ids, IReadOnlyDictionary<string, (string Parent, int Addon, int Index)> subs)
+    {
+        if (subs.TryGetValue(id, out var sub))
+            return ids.TryGetValue(sub.Addon, out var addon) ? WiredVariableId.SubText(sub.Parent, addon, sub.Index) : "0";
+
+        return WiredVariableId.TryParseSub(id, out var parent, out var furni, out var index) && ids.TryGetValue(furni, out var renumbered)
+            ? WiredVariableId.SubText(parent, renumbered, index)
             : id;
+    }
+
+    // An add-on derives at most this many sub-variables (the level-up add-on's mask is a byte's worth or so).
+    private const int MAX_SUB_VARIABLES = 16;
+
+    /// <summary>
+    /// This room's sub-variables, by the id boxes name them with: each add-on's
+    /// <c>OfBox(addon, index)</c>, with the file id of the variable box on the add-on's tile.
+    /// </summary>
+    private static Dictionary<string, (string Parent, int Addon, int Index)> SubVariables(
+        RoomLayoutSnapshot layout,
+        IReadOnlyList<WiredBoxSettingsSnapshot> boxes,
+        IReadOnlyDictionary<string, string> created
+    )
+    {
+        var at = layout.Items.ToDictionary(x => x.ItemId, x => (x.X, x.Y));
+        var variableBoxes = boxes.Where(x => x.WiredType == WiredType.Variable && at.ContainsKey(x.ItemId)).ToList();
+        var subs = new Dictionary<string, (string, int, int)>(StringComparer.Ordinal);
+
+        foreach (var addon in boxes.Where(x => x.WiredType == WiredType.Addon && at.ContainsKey(x.ItemId)))
+        {
+            var parent = variableBoxes.FirstOrDefault(x => at[x.ItemId] == at[addon.ItemId]);
+
+            if (parent is null)
+                continue;
+
+            var parentId = created.GetValueOrDefault(parent.StringParam, WiredVariableId.OfBox(parent.ItemId).ToString());
+
+            for (var index = 0; index < MAX_SUB_VARIABLES; index++)
+                subs[WiredVariableId.OfBox(addon.ItemId, index).ToString()] = (parentId, addon.ItemId, index);
+        }
+
+        return subs;
+    }
 
     private async Task<bool> ArriveAsync(PlayerId player, RoomId room, CancellationToken ct)
     {

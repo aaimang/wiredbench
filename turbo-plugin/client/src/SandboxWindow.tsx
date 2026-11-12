@@ -3,25 +3,26 @@ import { Box, Button, Frame, ThemeText } from '@nitrodevco/client-module-sdk/the
 import { useEffect, useState } from 'react';
 
 import { SANDBOX_KIT, SANDBOX_READ, SANDBOX_RESET, SANDBOX_SAVE, sandboxStore, type SandboxState } from './sandbox';
-import { BUTTON } from './theme';
+import { BUTTON, TEXT } from './theme';
+import { Hint, Section, WindowHeader } from './ui';
 
-const WIDTH = 340;
-const HEIGHT = 330;
+const WIDTH = 360;
+const HEIGHT = 440;
 const PADDING = 12;
 const INNER = WIDTH - (PADDING * 2) - 2;
-const KIT_COLUMNS = 2;
+const SECTION_INNER = INNER - 16;
 const GAP = 6;
-const KIT_WIDTH = Math.floor((INNER - (GAP * (KIT_COLUMNS - 1))) / KIT_COLUMNS);
+const HALF = Math.floor((SECTION_INNER - GAP) / 2);
 
-/** A kit's name when the hotel's texts do not have it. */
-const KIT_LABELS: Record<string, string> = {
-    triggers: 'Triggers',
-    effects: 'Effects',
-    conditions: 'Conditions',
-    selectors: 'Selectors',
-    addons: 'Add-ons',
-    variables: 'Variables',
-    furni: 'Wired furni',
+/** A kit's name when the hotel's texts do not have it, singular and plural. */
+const KIT_LABELS: Record<string, [ string, string ]> = {
+    triggers: [ 'trigger', 'triggers' ],
+    effects: [ 'effect', 'effects' ],
+    conditions: [ 'condition', 'conditions' ],
+    selectors: [ 'selector', 'selectors' ],
+    addons: [ 'add-on', 'add-ons' ],
+    variables: [ 'variable', 'variables' ],
+    furni: [ 'wired furni', 'wired furni' ],
 };
 
 /**
@@ -52,13 +53,15 @@ export const SandboxWindow = ({ close }: ClientModuleWindowProps) => {
         api.messages.send(name, data);
     };
 
-    const status = !state.roomId
+    const subtitle = !state.roomId
         ? text('no_room', 'Enter a room to use it as a sandbox.')
         : !state.allowed
-            ? text('not_allowed', 'You may not change the wired of this room.')
-            : state.hasSaved
-                ? text('saved', 'Saved %at%: %count% furni.', { at: state.savedAt, count: String(state.savedItems) })
-                : text('not_saved', 'Not saved yet. Build the room, then save it.');
+            ? text('not_allowed', 'You may not change the wired of room %room%.', { room: String(state.roomId) })
+            : text('subtitle', 'Room %room%: build, save, test, reset.', { room: String(state.roomId) });
+
+    const saved = state.hasSaved
+        ? text('saved', '%count% furni saved, %at%', { count: String(state.savedItems), at: state.savedAt })
+        : text('not_saved', 'Nothing saved yet');
 
     const canBuild = !busy && !!state.roomId && state.allowed;
     const canReset = canBuild && state.hasSaved;
@@ -73,45 +76,57 @@ export const SandboxWindow = ({ close }: ClientModuleWindowProps) => {
             onClose={ close }
             layout={ { width: WIDTH, height: HEIGHT } }>
             <Box layout={ { flexDirection: 'column', gap: 10, padding: PADDING, width: WIDTH - 2 } }>
-                <ThemeText text={ status } textStyle="u_bold" textOptions={ { wordWrap: true, wordWrapWidth: INNER } } />
-                <Box layout={ { flexDirection: 'row', gap: GAP } }>
-                    <Button variant={ BUTTON.green } disabled={ !canBuild } layout={ { width: KIT_WIDTH } } onPointerTap={ () => send(SANDBOX_SAVE, {}) }>
-                        <ThemeText text={ text('save', 'Save room') } />
-                    </Button>
-                    <Button variant={ BUTTON.dark } disabled={ !canReset } layout={ { width: KIT_WIDTH } } onPointerTap={ () => send(SANDBOX_RESET, { putBackPickedUp: putBack }) }>
-                        <ThemeText text={ text('reset', 'Reset room') } />
-                    </Button>
-                </Box>
-                <Box layout={ { flexDirection: 'row', gap: 8, alignItems: 'center' } }>
-                    <Button variant={ BUTTON.plain } disabled={ !canReset } layout={ { width: 22 } } onPointerTap={ () => setPutBack(!putBack) }>
-                        <ThemeText text={ putBack ? 'x' : ' ' } />
-                    </Button>
-                    <ThemeText
-                        text={ text('put_back', 'Reset also places furni I picked up') }
-                        textStyle="u_regular"
-                        textOptions={ { wordWrap: true, wordWrapWidth: INNER - 30 } } />
-                </Box>
-                { state.canTakeKits && (
-                    <Box layout={ { flexDirection: 'column', gap: GAP, marginTop: 4 } }>
-                        <ThemeText text={ text('kits', 'Wired kits: one of each, to your inventory') } textStyle="u_bold" />
-                        <Box layout={ { flexDirection: 'row', flexWrap: 'wrap', gap: GAP, width: INNER } }>
-                            { state.kits.map(kit => (
-                                <Button
-                                    key={ kit.kind }
-                                    variant={ BUTTON.plain }
-                                    disabled={ busy || !kit.count }
-                                    layout={ { width: KIT_WIDTH } }
-                                    onPointerTap={ () => send(SANDBOX_KIT, { kind: kit.kind }) }>
-                                    <ThemeText text={ `${ text(`kit.${ kit.kind }`, KIT_LABELS[kit.kind] ?? kit.kind) } (${ kit.count })` } />
-                                </Button>
-                            )) }
+                <WindowHeader icon="sandbox" title={ text('header', 'Sandbox') } subtitle={ subtitle } width={ INNER } onIcon={ () => api.windows.open('main') } />
+                <Section title={ text('layout', 'Room layout') } width={ INNER }>
+                    <ThemeText text={ saved } textStyle="u_bold" textOptions={ { fill: state.hasSaved ? TEXT.good : TEXT.hint } } />
+                    <Box layout={ { flexDirection: 'row', gap: GAP } }>
+                        <Box layout={ { flexDirection: 'column', gap: 3, width: HALF } }>
+                            <Button variant={ BUTTON.green } disabled={ !canBuild } tooltip={ text('save_tip', 'Store where every floor furni stands, and its state') } layout={ { width: HALF } } onPointerTap={ () => send(SANDBOX_SAVE, {}) }>
+                                <ThemeText text={ text('save', 'Save room') } />
+                            </Button>
+                            <Hint text={ text('save_hint', 'Remember this layout.') } width={ HALF } />
+                        </Box>
+                        <Box layout={ { flexDirection: 'column', gap: 3, width: HALF } }>
+                            <Button variant={ BUTTON.dark } disabled={ !canReset } tooltip={ text('reset_tip', 'Move, turn and switch furni back as saved') } layout={ { width: HALF } } onPointerTap={ () => send(SANDBOX_RESET, { putBackPickedUp: putBack }) }>
+                                <ThemeText text={ text('reset', 'Reset room') } />
+                            </Button>
+                            <Hint text={ text('reset_hint', 'Put it back after a test.') } width={ HALF } />
                         </Box>
                     </Box>
+                    <Box layout={ { flexDirection: 'row', gap: 8, alignItems: 'center' } }>
+                        <Button variant={ BUTTON.plain } disabled={ !canReset } tooltip={ text('put_back_tip', 'Also place saved furni you picked up, from your inventory') } layout={ { width: 22 } } onPointerTap={ () => setPutBack(!putBack) }>
+                            <ThemeText text={ putBack ? 'x' : ' ' } />
+                        </Button>
+                        <Hint text={ text('put_back', 'Reset also places furni I picked up') } width={ SECTION_INNER - 30 } fill={ TEXT.title } />
+                    </Box>
+                </Section>
+                { state.canTakeKits && (
+                    <Section title={ text('kits', 'Wired kits') } width={ INNER }>
+                        <Hint text={ text('kits_hint', 'One of each box, to your inventory.') } width={ SECTION_INNER } />
+                        <Box layout={ { flexDirection: 'row', flexWrap: 'wrap', gap: GAP, width: SECTION_INNER } }>
+                            { state.kits.map(kit => {
+                                const [ one, many ] = KIT_LABELS[kit.kind] ?? [ kit.kind, kit.kind ];
+                                const label = text(`kit.${ kit.kind }`, `%count% ${ kit.count === 1 ? one : many }`, { count: String(kit.count) });
+
+                                return (
+                                    <Button
+                                        key={ kit.kind }
+                                        variant={ BUTTON.plain }
+                                        disabled={ busy || !kit.count }
+                                        tooltip={ text('kit_tip', 'Give me %count% %kind%, one of each', { count: String(kit.count), kind: many }) }
+                                        layout={ { width: HALF } }
+                                        onPointerTap={ () => send(SANDBOX_KIT, { kind: kit.kind }) }>
+                                        <ThemeText text={ label } />
+                                    </Button>
+                                );
+                            }) }
+                        </Box>
+                    </Section>
                 ) }
                 { (busy || state.message) && (
                     <ThemeText
                         text={ busy ? text('working', 'Working...') : state.message }
-                        textStyle="u_regular"
+                        textStyle="u_bold"
                         textOptions={ { wordWrap: true, wordWrapWidth: INNER } } />
                 ) }
             </Box>

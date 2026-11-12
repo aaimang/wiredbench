@@ -4,12 +4,14 @@ import { useEffect, useState } from 'react';
 
 import { HELLO, type Status, statusStore } from './messages';
 import { BUTTON } from './theme';
+import { Hint, Icon, Section, WindowHeader } from './ui';
 
-const WIDTH = 300;
+const WIDTH = 330;
 const PADDING = 12;
-const BUTTON_WIDTH = Math.floor((WIDTH - (PADDING * 2) - 2 - 12) / 3);
+const INNER = WIDTH - (PADDING * 2) - 2;
+const TILE = Math.floor((INNER - 16 - 12) / 3);
 
-/** Wiredbench's window: the plugin's version, and the way into its tools. */
+/** The Wiredbench window: who the plugin answered, and the way into its tools. */
 export const WiredbenchWindow = ({ close }: ClientModuleWindowProps) => {
     const api = useApi();
     const [ status, setStatus ] = useState<Status | null>(statusStore.current);
@@ -24,6 +26,12 @@ export const WiredbenchWindow = ({ close }: ClientModuleWindowProps) => {
 
     const text = (key: string, fallback: string, replacements?: Record<string, string>) => api.texts.get(`wiredbench.window.${ key }`, fallback, replacements);
 
+    const tools = [
+        { window: 'trace', icon: 'trace', label: text('open_trace', 'Wired trace'), tooltip: text('open_trace_tip', 'Follow each stack run: its conditions and effects') },
+        { window: 'sandbox', icon: 'sandbox', label: text('open_sandbox', 'Sandbox'), tooltip: text('open_sandbox_tip', 'Save this room, reset it, take wired kits') },
+        { window: 'presets', icon: 'presets', label: text('open_presets', 'Presets'), tooltip: text('open_presets_tip', 'Import and export G-Presets files') },
+    ];
+
     return (
         <Frame
             id={ `${ api.key }-main` }
@@ -32,25 +40,26 @@ export const WiredbenchWindow = ({ close }: ClientModuleWindowProps) => {
             centered
             resizeDirection="none"
             onClose={ close }
-            layout={ { width: WIDTH, height: 150 } }>
+            layout={ { width: WIDTH, height: 228 } }>
             <Box layout={ { flexDirection: 'column', gap: 10, padding: PADDING, width: WIDTH - 2 } }>
-                <ThemeText text={ text('body', 'WIRED tools for this room.') } textStyle="u_regular" />
-                <ThemeText
-                    text={ status
-                        ? text('version', 'Version %version%, connected as player %player%.', { version: status.version, player: String(status.playerId) })
-                        : text('waiting', 'Waiting for the plugin...') }
-                    textStyle="u_bold" />
-                <Box layout={ { flexDirection: 'row', gap: 6 } }>
-                    <Button variant={ BUTTON.plain } layout={ { width: BUTTON_WIDTH } } onPointerTap={ () => api.windows.open('trace') }>
-                        <ThemeText text={ text('open_trace', 'Wired trace') } />
-                    </Button>
-                    <Button variant={ BUTTON.plain } layout={ { width: BUTTON_WIDTH } } onPointerTap={ () => api.windows.open('sandbox') }>
-                        <ThemeText text={ text('open_sandbox', 'Sandbox') } />
-                    </Button>
-                    <Button variant={ BUTTON.plain } layout={ { width: BUTTON_WIDTH } } onPointerTap={ () => api.windows.open('presets') }>
-                        <ThemeText text={ text('open_presets', 'Presets') } />
-                    </Button>
-                </Box>
+                <WindowHeader
+                    icon="wiredbench"
+                    title={ text('header', 'Wiredbench') }
+                    width={ INNER }
+                    subtitle={ status
+                        ? text('version', 'Version %version%, connected as %name% (%player%)', { version: status.version, name: status.playerName || '?', player: String(status.playerId) })
+                        : text('waiting', 'Waiting for the plugin...') } />
+                <Section title={ text('tools', 'Tools') } width={ INNER }>
+                    <Box layout={ { flexDirection: 'row', gap: 6 } }>
+                        { tools.map(tool => (
+                            <Button key={ tool.window } variant={ BUTTON.plain } tooltip={ tool.tooltip } layout={ { width: TILE, height: 58, flexDirection: 'column', gap: 2 } } onPointerTap={ () => api.windows.open(tool.window) }>
+                                <Icon name={ tool.icon } size={ 28 } />
+                                <ThemeText text={ tool.label } textStyle="u_bold" />
+                            </Button>
+                        )) }
+                    </Box>
+                    <Hint text={ text('tools_hint', 'WIRED tools for the room you are in.') } width={ INNER - 16 } />
+                </Section>
             </Box>
         </Frame>
     );

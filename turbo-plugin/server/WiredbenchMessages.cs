@@ -1,5 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Turbo.Contracts.Hotel;
 using Turbo.Contracts.Plugins;
 using Turbo.Primitives.Plugins.Messages;
 
@@ -13,18 +14,25 @@ namespace Wiredbench;
 [PluginMessage("wiredbench.hello")]
 public sealed record HelloMessage() : IPluginMessage;
 
-/// <summary>Server to client: the plugin's version and the player it answered.</summary>
+/// <summary>Server to client: the plugin's version and the player it answered, by id and name.</summary>
 [PluginMessage("wiredbench.status")]
-public sealed record StatusMessage(string Version, int PlayerId) : IPluginMessage;
+public sealed record StatusMessage(string Version, int PlayerId, string PlayerName) : IPluginMessage;
 
 /// <summary>Answers the session that asked; found as the plugin loads.</summary>
-public sealed class HelloHandler(PluginManifest manifest) : IPluginMessageHandler<HelloMessage>
+public sealed class HelloHandler(PluginManifest manifest, IHotel hotel) : IPluginMessageHandler<HelloMessage>
 {
     public async ValueTask HandleAsync(
         HelloMessage message,
         PluginMessageContext ctx,
         CancellationToken ct
-    ) =>
-        await ctx.ReplyAsync(new StatusMessage(manifest.Version, ctx.PlayerId.Value), ct)
+    )
+    {
+        var player = await hotel.Players.GetAsync(ctx.PlayerId, ct).ConfigureAwait(false);
+
+        await ctx.ReplyAsync(
+                new StatusMessage(manifest.Version, ctx.PlayerId.Value, player?.Name ?? string.Empty),
+                ct
+            )
             .ConfigureAwait(false);
+    }
 }

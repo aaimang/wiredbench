@@ -50,6 +50,23 @@ Wiredbench icon on the toolbar opens its window.
 The plugin is loaded from `turbo-plugin/` through `Turbo:Plugin:DevPluginPaths`, so the hotel
 reloads it when its files change.
 
+The client reads this hotel's furnidata and product data through the `/gamedata` proxy (the rest
+of its gamedata still comes from nitrodev.co): the furnidata carries the hotel's own catalogue
+offer ids, which the infostand's **Buy** and Builders Club **Place more** send. Set
+`WB_HOTEL_GAMEDATA` before `deploy/client.sh` to change which files (`furnidata,productdata,texts`,
+or `none`).
+
+## In the hotel
+
+- **Toolbar**: the Wiredbench window opens the Wired trace, Sandbox and Presets windows.
+- **`:copy <name> [COM|BR|TR|DE|ES|FI|FR|IT|NL]`** wears a Habbo's look, read from that hotel's
+  public API, and keeps it in your wardrobe (the first empty slot). `:copy help` whispers how.
+  The lookup runs after the command answers, with an 8 second limit, so the room never waits on
+  it; what goes wrong is whispered. Ranks lose it with a denial of `wiredbench.command.copy`.
+- **Panel**: the Wiredbench page shows WIRED use across loaded rooms (boxes, stacks, usage against
+  the cap, executions, running time, errors), with a room filter. G-Presets takes a `.json` upload
+  or a paste; a preset's page renames it, replaces its file or deletes it.
+
 ## Behaviour against the Python engine
 
 `docs/behaviour/README.md` compares the old Python engine with Turbo on every room the engine's own
@@ -81,6 +98,18 @@ cd vendor/turbo-cloud && WB_BEHAVIOUR_SCENARIOS=$PWD/../../docs/behaviour/scenar
 ```bash
 uv run python scripts/behaviour.py report
 ```
+
+## Versions
+
+Every change under `turbo-plugin/` raises `manifest.json`'s `Version` and adds its heading to
+`turbo-plugin/CHANGELOG.md`:
+
+```bash
+uv run python scripts/plugin_version.py --bump patch
+```
+
+CI runs `scripts/plugin_version.py --check`; the plugin's tests check the client and server name
+the same messages and that the changelog names the version.
 
 ## Check it
 

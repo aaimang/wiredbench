@@ -28,10 +28,14 @@ export interface TraceStep {
     boxLogic: string;
     boxCode: number;
     detail: string;
+    /** When it happened, in the room's wired time zone ("17:44:05"). */
+    time: string;
 }
 
 export interface TraceState {
     roomId: number;
+    roomName: string;
+    timeZone: string;
     allowed: boolean;
     enabled: boolean;
     lastId: number;
@@ -48,7 +52,7 @@ const toStep = (data: unknown): TraceStep | null => {
     if (!isNumber(x.id) || !isNumber(x.runId) || !isNumber(x.stackId) || !isNumber(x.step) || !isNumber(x.outcome) || !isNumber(x.boxId) || !isNumber(x.boxCode)) return null;
     if ((typeof x.boxLogic !== 'string') || (typeof x.detail !== 'string')) return null;
 
-    return { id: x.id, runId: x.runId, stackId: x.stackId, step: x.step, outcome: x.outcome, boxId: x.boxId, boxLogic: x.boxLogic, boxCode: x.boxCode, detail: x.detail };
+    return { id: x.id, runId: x.runId, stackId: x.stackId, step: x.step, outcome: x.outcome, boxId: x.boxId, boxLogic: x.boxLogic, boxCode: x.boxCode, detail: x.detail, time: (typeof x.time === 'string') ? x.time : '' };
 };
 
 /** `wiredbench.trace.state` as the client hands it over, or null when it is not one. */
@@ -59,7 +63,15 @@ export const toTraceState = (data: Record<string, unknown>): TraceState | null =
 
     if (steps.some(x => x === null)) return null;
 
-    return { roomId: data.roomId, allowed: data.allowed, enabled: data.enabled, lastId: data.lastId, steps: steps as TraceStep[] };
+    return {
+        roomId: data.roomId,
+        roomName: (typeof data.roomName === 'string') ? data.roomName : '',
+        timeZone: (typeof data.timeZone === 'string') ? data.timeZone : '',
+        allowed: data.allowed,
+        enabled: data.enabled,
+        lastId: data.lastId,
+        steps: steps as TraceStep[],
+    };
 };
 
 /** One stack run as the window shows it: its stack line, the conditions asked and the effects. */
@@ -100,13 +112,15 @@ export const MAX_KEPT_STEPS = 400;
 
 export interface TraceView {
     roomId: number;
+    roomName: string;
+    timeZone: string;
     allowed: boolean;
     enabled: boolean;
     lastId: number;
     steps: TraceStep[];
 }
 
-export const EMPTY_VIEW: TraceView = { roomId: 0, allowed: false, enabled: false, lastId: 0, steps: [] };
+export const EMPTY_VIEW: TraceView = { roomId: 0, roomName: '', timeZone: '', allowed: false, enabled: false, lastId: 0, steps: [] };
 
 /** The view after a state message: a new room starts over, the same room adds the new steps. */
 export const applyState = (view: TraceView, state: TraceState): TraceView => {
@@ -115,7 +129,7 @@ export const applyState = (view: TraceView, state: TraceState): TraceView => {
     const fresh = state.steps.filter(x => !kept.length || (x.id > kept[kept.length - 1].id));
     const steps = [ ...kept, ...fresh ].slice(-MAX_KEPT_STEPS);
 
-    return { roomId: state.roomId, allowed: state.allowed, enabled: state.enabled, lastId: Math.max(sameRoom ? view.lastId : 0, state.lastId), steps };
+    return { roomId: state.roomId, roomName: state.roomName, timeZone: state.timeZone, allowed: state.allowed, enabled: state.enabled, lastId: Math.max(sameRoom ? view.lastId : 0, state.lastId), steps };
 };
 
 type Listener = (view: TraceView) => void;

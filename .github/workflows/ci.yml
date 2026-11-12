@@ -29,6 +29,21 @@ jobs:
       - run: uv sync --frozen
       - run: uv run python scripts/parity.py --check
 
+  plugin-version:
+    # A change to turbo-plugin/ raises manifest.json's Version and adds its CHANGELOG.md heading
+    # (python scripts/plugin_version.py --bump patch).
+    name: Plugin version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+      - run: uv run --no-project python scripts/plugin_version.py --check --base "origin/${{ github.base_ref || 'main' }}"
+        if: ${{ github.event_name == 'pull_request' }}
+      - run: uv run --no-project python scripts/plugin_version.py --check --base "${{ github.event.before }}"
+        if: ${{ github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000' }}
+
   backend:
     name: Backend (${{ matrix.os }})
     runs-on: ${{ matrix.os }}

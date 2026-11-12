@@ -32,17 +32,20 @@ public sealed record TraceStep(
     int BoxId,
     string BoxLogic,
     int BoxCode,
-    string Detail
+    string Detail,
+    string Time
 );
 
 /// <summary>
 /// Server to client: the trace of the room the player is in (<paramref name="RoomId"/> 0 when in
-/// none), whether they may read it, whether it is on, the last step the room recorded and the steps
-/// after the one asked for.
+/// none) and its name, the room's wired time zone each step's time is in, whether they may read
+/// it, whether it is on, the last step the room recorded and the steps after the one asked for.
 /// </summary>
 [PluginMessage("wiredbench.trace.state")]
 public sealed record TraceStateMessage(
     int RoomId,
+    string RoomName,
+    string TimeZone,
     bool Allowed,
     bool Enabled,
     long LastId,
@@ -95,6 +98,8 @@ internal static class TraceReply
         await ctx.ReplyAsync(
                 new TraceStateMessage(
                     room?.Value ?? 0,
+                    room is { } named ? (await hotel.Rooms.GetAsync(named, ct).ConfigureAwait(false))?.Name ?? string.Empty : string.Empty,
+                    trace?.TimeZone ?? string.Empty,
                     trace is not null,
                     trace?.Enabled ?? false,
                     trace?.LastId ?? 0,
@@ -106,5 +111,5 @@ internal static class TraceReply
     }
 
     private static TraceStep ToStep(WiredTraceEntrySnapshot x) =>
-        new(x.Id, x.RunId, x.StackId, x.Step, x.Outcome, x.BoxId, x.BoxLogic, x.BoxCode, x.Detail);
+        new(x.Id, x.RunId, x.StackId, x.Step, x.Outcome, x.BoxId, x.BoxLogic, x.BoxCode, x.Detail, x.AtText);
 }

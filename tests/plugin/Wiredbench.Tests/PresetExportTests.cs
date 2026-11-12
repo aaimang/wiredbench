@@ -79,6 +79,38 @@ public sealed class PresetExportTests
         Assert.Equal(new Dictionary<string, string> { ["picked_item"] = "9001" }, read.VariablesMap);
     }
 
+    // G-Presets measures heights from the lowest floor of the area taken (GPresetExporter's
+    // lowestFloorPoint), and names a sub-variable s<parent>-<add-on>.
+    [Fact]
+    public void Heights_are_above_the_lowest_floor_and_sub_variables_are_named_as_habbo_does()
+    {
+        var context = _hotel.Inventory.AddFurniture("wf_var_context").DefinitionId;
+        var levelUp = _hotel.Inventory.AddFurniture("wf_xtra_var_lvlup_system").DefinitionId;
+        var give = _hotel.Inventory.AddFurniture("wf_act_give_var").DefinitionId;
+
+        // Floor levels 1 and 2 under the area, none (-1) beside it.
+        var layout = new RoomLayoutSnapshot
+        {
+            Items = [Item(600, 1, 0, 100), Item(601, 1, 0, 150), Item(602, 2, 0, 200)],
+            FloorWidth = 3,
+            FloorLevels = [-1, 100, 200],
+        };
+        var definitions = new Dictionary<int, int> { [600] = context, [601] = levelUp, [602] = give };
+        var sub = Turbo.Primitives.Rooms.Wired.Variable.WiredVariableId.OfBox(601, 2).ToString();
+        var boxes = new[]
+        {
+            Box(600, WiredType.Variable, "wf_var_context") with { StringParam = "score" },
+            Box(601, WiredType.Addon, "wf_xtra_var_lvlup_system"),
+            Box(602, WiredType.Action, "wf_act_give_var") with { VariableIds = [sub] },
+        };
+        var variables = new[] { new HotelWiredVariable("9001", "score", WiredVariableType.Created) };
+
+        var read = GPresetFile.Parse(new PresetTransfer(_hotel, null!).ToFile(layout, definitions, boxes, variables).ToJson());
+
+        Assert.Equal([0, 0.5, 1], read.Furni.Select(x => x.Z));
+        Assert.Equal(["s9001-2-2"], read.Boxes.Single(x => x.WiredId == 3).VariableIds);
+    }
+
     // G-Presets' reader requires a furni's name, rotation and z, a box's options, config and
     // items, and the bindings list, so a file Wiredbench writes has them all, defaults included.
     [Fact]
