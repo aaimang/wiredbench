@@ -1,0 +1,87 @@
+{
+  "bindings": [],
+  "furni": [
+    {
+      "name": "wf_floor_switch1[0]",
+      "className": "wf_floor_switch1",
+      "id": 1,
+      "location": {
+        "x": 2,
+        "y": 4,
+        "z": 0
+      },
+      "rotation": 0
+    },
+    {
+      "name": "rela_candle1[0]",
+      "className": "rela_candle1",
+      "id": 2,
+      "location": {
+        "x": 6,
+        "y": 4,
+        "z": 0
+      },
+      "rotation": 0
+    },
+    {
+      "name": "wf_trg_state_changed[0]",
+      "className": "wf_trg_state_changed",
+      "id": 3,
+      "location": {
+        "x": 4,
+        "y": 2,
+        "z": 0
+      },
+      "rotation": 0
+    },
+    {
+      "name": "wf_act_toggle_state[0]",
+      "className": "wf_act_toggle_state",
+      "id": 4,
+      "location": {
+        "x": 4,
+        "y": 2,
+        "z": 0.65
+      },
+      "rotation": 0
+    }
+  ],
+  "wired": {
+    "triggers": [
+      {
+        "secondItems": [],
+        "furniSources": [
+          100
+        ],
+        "userSources": [],
+        "variableIds": [],
+        "options": [],
+        "config": "",
+        "items": [
+          1
+        ],
+        "wiredId": 3
+      }
+    ],
+    "conditions": [],
+    "effects": [
+      {
+        "secondItems": [],
+        "furniSources": [
+          100
+        ],
+        "userSources": [],
+        "variableIds": [],
+        "options": [
+          0
+        ],
+        "config": "",
+        "items": [
+          2
+        ],
+        "delay": 0,
+        "wiredId": 4
+      }
+    ]
+  }
+}

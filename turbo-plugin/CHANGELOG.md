@@ -4,6 +4,16 @@ Every change to `turbo-plugin/` raises `manifest.json`'s `Version` and adds its 
 (`python scripts/plugin_version.py --bump patch`; CI runs `--check`). The client module shows the
 version the server sends, so a player sees the plugin they are talking to.
 
+## 0.3.0 (2026-11-13)
+
+- Check room: a new window (and Wiredbench tool) finds wired that cannot work as built, without
+  running it: picks of furni no longer in the room, a slot or antenna with nothing picked, a
+  keyword trigger with no keyword, a stack nothing starts or that does nothing, a selector's or
+  signal's targets read without one, a signal no one sends or receives, and a variable no box
+  makes. Ported from WiredBench's Python app.
+- Tutorials: the old app's five example rooms (switch, signal relay, score counter, visitor view,
+  time tracking) are G-Presets files in `data/presets`, added to the library as the plugin loads.
+
 ## 0.2.0 (2026-11-12)
 
 - Windows: icons and headers, tooltips on every button, red for delete or stop, green for run

@@ -12,40 +12,14 @@ repos:
         entry: uv run ruff format
         language: system
         types: [python]
-        exclude: ^spikes/
       - id: ruff-check
         name: ruff check
         entry: uv run ruff check --fix
         language: system
         types: [python]
-        exclude: ^spikes/
-      - id: mypy
-        name: mypy
-        entry: uv run mypy
-        language: system
-        pass_filenames: false
-        files: ^backend/src/.*\.py$
       - id: pytest
-        name: backend tests
+        name: script tests
         entry: uv run pytest -x
         language: system
         pass_filenames: false
-        files: ^(backend/|pyproject\.toml|uv\.lock)
-      - id: docs
-        name: generated README sections
-        entry: uv run python scripts/gen_docs.py --check
-        language: system
-        pass_filenames: false
-        files: ^(backend/src/|README\.md|scripts/)
-      - id: frontend-check
-        name: frontend types and lint
-        entry: npm --prefix frontend run check
-        language: system
-        pass_filenames: false
-        files: ^frontend/
-      - id: frontend-test
-        name: frontend tests
-        entry: npm --prefix frontend test
-        language: system
-        pass_filenames: false
-        files: ^frontend/
+        files: ^(scripts/|tests/scripts/|turbo-plugin/manifest\.json|turbo-plugin/CHANGELOG\.md|pyproject\.toml|uv\.lock)

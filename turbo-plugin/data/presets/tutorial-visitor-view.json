@@ -1,0 +1,967 @@
+{
+  "bindings": [],
+  "furni": [
+    {
+      "name": "chair_norja[0]",
+      "className": "chair_norja",
+      "id": 1,
+      "location": {
+        "x": 1,
+        "y": 4,
+        "z": 0
+      },
+      "rotation": 0
+    },
+    {
+      "name": "chair_norja[0]",
+      "className": "chair_norja",
+      "id": 2,
+      "location": {
+        "x": 1,
+        "y": 7,
+        "z": 0
+      },
+      "rotation": 0
+    },
+    {
+      "name": "rela_candle1[0]",
+      "className": "rela_candle1",
+      "id": 3,
+      "location": {
+        "x": 9,
+        "y": 4,
+        "z": 0
+      },
+      "rotation": 0
+    },
+    {
+      "name": "wf_floor_switch1[0]",
+      "className": "wf_floor_switch1",
+      "id": 4,
+      "location": {
+        "x": 9,
+        "y": 7,
+        "z": 0
+      },
+      "rotation": 0
+    },
+    {
+      "name": "wf_trg_says_something[0]",
+      "className": "wf_trg_says_something",
+      "id": 100,
+      "location": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "rotation": 0
+    },
+    {
+      "name": "wf_act_rel_mov[0]",
+      "className": "wf_act_rel_mov",
+      "id": 101,
+      "location": {
+        "x": 0,
+        "y": 0,
+        "z": 0.65
+      },
+      "rotation": 0
+    },
+    {
+      "name": "wf_xtra_rotate_to_dir[0]",
+      "className": "wf_xtra_rotate_to_dir",
+      "id": 102,
+      "location": {
+        "x": 0,
+        "y": 0,
+        "z": 1.3
+      },
+      "rotation": 0
+    },
+    {
+      "name": "wf_trg_says_something[0]",
+      "className": "wf_trg_says_something",
+      "id": 110,
+      "location": {
+        "x": 1,
+        "y": 0,
+        "z": 0
+      },
+      "rotation": 0
+    },
+    {
+      "name": "wf_act_rel_mov[0]",
+      "className": "wf_act_rel_mov",
+      "id": 111,
+      "location": {
+        "x": 1,
+        "y": 0,
+        "z": 0.65
+      },
+      "rotation": 0
+    },
+    {
+      "name": "wf_xtra_rotate_to_dir[0]",
+      "className": "wf_xtra_rotate_to_dir",
+      "id": 112,
+      "location": {
+        "x": 1,
+        "y": 0,
+        "z": 1.3
+      },
+      "rotation": 0
+    },
+    {
+      "name": "wf_trg_says_something[0]",
+      "className": "wf_trg_says_something",
+      "id": 120,
+      "location": {
+        "x": 2,
+        "y": 0,
+        "z": 0
+      },
+      "rotation": 0
+    },
+    {
+      "name": "wf_act_rel_mov[0]",
+      "className": "wf_act_rel_mov",
+      "id": 121,
+      "location": {
+        "x": 2,
+        "y": 0,
+        "z": 0.65
+      },
+      "rotation": 0
+    },
+    {
+      "name": "wf_trg_says_something[0]",
+      "className": "wf_trg_says_something",
+      "id": 130,
+      "location": {
+        "x": 3,
+        "y": 0,
+        "z": 0
+      },
+      "rotation": 0
+    },
+    {
+      "name": "wf_act_rel_mov[0]",
+      "className": "wf_act_rel_mov",
+      "id": 131,
+      "location": {
+        "x": 3,
+        "y": 0,
+        "z": 0.65
+      },
+      "rotation": 0
+    },
+    {
+      "name": "wf_trg_says_something[0]",
+      "className": "wf_trg_says_something",
+      "id": 140,
+      "location": {
+        "x": 4,
+        "y": 0,
+        "z": 0
+      },
+      "rotation": 0
+    },
+    {
+      "name": "wf_act_set_highlight[0]",
+      "className": "wf_act_set_highlight",
+      "id": 141,
+      "location": {
+        "x": 4,
+        "y": 0,
+        "z": 0.65
+      },
+      "rotation": 0
+    },
+    {
+      "name": "wf_trg_says_something[0]",
+      "className": "wf_trg_says_something",
+      "id": 150,
+      "location": {
+        "x": 5,
+        "y": 0,
+        "z": 0
+      },
+      "rotation": 0
+    },
+    {
+      "name": "wf_act_set_visibility[0]",
+      "className": "wf_act_set_visibility",
+      "id": 151,
+      "location": {
+        "x": 5,
+        "y": 0,
+        "z": 0.65
+      },
+      "rotation": 0
+    },
+    {
+      "name": "wf_trg_says_something[0]",
+      "className": "wf_trg_says_something",
+      "id": 160,
+      "location": {
+        "x": 6,
+        "y": 0,
+        "z": 0
+      },
+      "rotation": 0
+    },
+    {
+      "name": "wf_act_set_visibility[0]",
+      "className": "wf_act_set_visibility",
+      "id": 161,
+      "location": {
+        "x": 6,
+        "y": 0,
+        "z": 0.65
+      },
+      "rotation": 0
+    },
+    {
+      "name": "wf_trg_says_something[0]",
+      "className": "wf_trg_says_something",
+      "id": 170,
+      "location": {
+        "x": 7,
+        "y": 0,
+        "z": 0
+      },
+      "rotation": 0
+    },
+    {
+      "name": "wf_act_give_var[0]",
+      "className": "wf_act_give_var",
+      "id": 171,
+      "location": {
+        "x": 7,
+        "y": 0,
+        "z": 0.65
+      },
+      "rotation": 0
+    },
+    {
+      "name": "wf_trg_says_something[0]",
+      "className": "wf_trg_says_something",
+      "id": 180,
+      "location": {
+        "x": 8,
+        "y": 0,
+        "z": 0
+      },
+      "rotation": 0
+    },
+    {
+      "name": "wf_act_move_rotate_user[0]",
+      "className": "wf_act_move_rotate_user",
+      "id": 181,
+      "location": {
+        "x": 8,
+        "y": 0,
+        "z": 0.65
+      },
+      "rotation": 0
+    },
+    {
+      "name": "wf_trg_says_something[0]",
+      "className": "wf_trg_says_something",
+      "id": 190,
+      "location": {
+        "x": 9,
+        "y": 0,
+        "z": 0
+      },
+      "rotation": 0
+    },
+    {
+      "name": "wf_act_move_rotate_user[0]",
+      "className": "wf_act_move_rotate_user",
+      "id": 191,
+      "location": {
+        "x": 9,
+        "y": 0,
+        "z": 0.65
+      },
+      "rotation": 0
+    },
+    {
+      "name": "wf_act_move_rotate_user[0]",
+      "className": "wf_act_move_rotate_user",
+      "id": 192,
+      "location": {
+        "x": 9,
+        "y": 0,
+        "z": 1.3
+      },
+      "rotation": 0
+    },
+    {
+      "name": "wf_act_move_rotate_user[0]",
+      "className": "wf_act_move_rotate_user",
+      "id": 193,
+      "location": {
+        "x": 9,
+        "y": 0,
+        "z": 1.95
+      },
+      "rotation": 0
+    },
+    {
+      "name": "wf_trg_click_furni[0]",
+      "className": "wf_trg_click_furni",
+      "id": 200,
+      "location": {
+        "x": 10,
+        "y": 0,
+        "z": 0
+      },
+      "rotation": 0
+    },
+    {
+      "name": "wf_act_show_message[0]",
+      "className": "wf_act_show_message",
+      "id": 201,
+      "location": {
+        "x": 10,
+        "y": 0,
+        "z": 0.65
+      },
+      "rotation": 0
+    },
+    {
+      "name": "wf_trg_state_changed[0]",
+      "className": "wf_trg_state_changed",
+      "id": 210,
+      "location": {
+        "x": 11,
+        "y": 0,
+        "z": 0
+      },
+      "rotation": 0
+    },
+    {
+      "name": "wf_act_toggle_state[0]",
+      "className": "wf_act_toggle_state",
+      "id": 211,
+      "location": {
+        "x": 11,
+        "y": 0,
+        "z": 0.65
+      },
+      "rotation": 0
+    },
+    {
+      "name": "wf_var_user[0]",
+      "className": "wf_var_user",
+      "id": 220,
+      "location": {
+        "x": 0,
+        "y": 2,
+        "z": 0
+      },
+      "rotation": 0
+    },
+    {
+      "name": "wf_xtra_varfx_number[0]",
+      "className": "wf_xtra_varfx_number",
+      "id": 221,
+      "location": {
+        "x": 0,
+        "y": 2,
+        "z": 0.65
+      },
+      "rotation": 0
+    }
+  ],
+  "wired": {
+    "triggers": [
+      {
+        "secondItems": [],
+        "furniSources": [],
+        "userSources": [],
+        "variableIds": [],
+        "options": [
+          0,
+          1,
+          1
+        ],
+        "config": "throw",
+        "items": [],
+        "wiredId": 100
+      },
+      {
+        "secondItems": [],
+        "furniSources": [],
+        "userSources": [],
+        "variableIds": [],
+        "options": [
+          0,
+          1,
+          1
+        ],
+        "config": "throw back",
+        "items": [],
+        "wiredId": 110
+      },
+      {
+        "secondItems": [],
+        "furniSources": [],
+        "userSources": [],
+        "variableIds": [],
+        "options": [
+          0,
+          1,
+          1
+        ],
+        "config": "slide",
+        "items": [],
+        "wiredId": 120
+      },
+      {
+        "secondItems": [],
+        "furniSources": [],
+        "userSources": [],
+        "variableIds": [],
+        "options": [
+          0,
+          1,
+          1
+        ],
+        "config": "slide back",
+        "items": [],
+        "wiredId": 130
+      },
+      {
+        "secondItems": [],
+        "furniSources": [],
+        "userSources": [],
+        "variableIds": [],
+        "options": [
+          0,
+          1,
+          1
+        ],
+        "config": "glow",
+        "items": [],
+        "wiredId": 140
+      },
+      {
+        "secondItems": [],
+        "furniSources": [],
+        "userSources": [],
+        "variableIds": [],
+        "options": [
+          0,
+          1,
+          1
+        ],
+        "config": "hide",
+        "items": [],
+        "wiredId": 150
+      },
+      {
+        "secondItems": [],
+        "furniSources": [],
+        "userSources": [],
+        "variableIds": [],
+        "options": [
+          0,
+          1,
+          1
+        ],
+        "config": "show",
+        "items": [],
+        "wiredId": 160
+      },
+      {
+        "secondItems": [],
+        "furniSources": [],
+        "userSources": [],
+        "variableIds": [],
+        "options": [
+          0,
+          1,
+          1
+        ],
+        "config": "hp",
+        "items": [],
+        "wiredId": 170
+      },
+      {
+        "secondItems": [],
+        "furniSources": [],
+        "userSources": [],
+        "variableIds": [],
+        "options": [
+          0,
+          1,
+          1
+        ],
+        "config": "step",
+        "items": [],
+        "wiredId": 180
+      },
+      {
+        "secondItems": [],
+        "furniSources": [],
+        "userSources": [],
+        "variableIds": [],
+        "options": [
+          0,
+          1,
+          1
+        ],
+        "config": "jump",
+        "items": [],
+        "wiredId": 190
+      },
+      {
+        "secondItems": [],
+        "furniSources": [
+          100
+        ],
+        "userSources": [],
+        "variableIds": [],
+        "options": [],
+        "config": "",
+        "items": [
+          4
+        ],
+        "wiredId": 200
+      },
+      {
+        "secondItems": [],
+        "furniSources": [
+          100
+        ],
+        "userSources": [],
+        "variableIds": [],
+        "options": [],
+        "config": "",
+        "items": [
+          4
+        ],
+        "wiredId": 210
+      }
+    ],
+    "conditions": [],
+    "effects": [
+      {
+        "secondItems": [],
+        "furniSources": [
+          100
+        ],
+        "userSources": [],
+        "variableIds": [],
+        "options": [
+          4,
+          0
+        ],
+        "config": "",
+        "items": [
+          1
+        ],
+        "delay": 0,
+        "wiredId": 101
+      },
+      {
+        "secondItems": [],
+        "furniSources": [
+          100
+        ],
+        "userSources": [],
+        "variableIds": [],
+        "options": [
+          -4,
+          0
+        ],
+        "config": "",
+        "items": [
+          1
+        ],
+        "delay": 0,
+        "wiredId": 111
+      },
+      {
+        "secondItems": [],
+        "furniSources": [
+          100
+        ],
+        "userSources": [],
+        "variableIds": [],
+        "options": [
+          2,
+          0
+        ],
+        "config": "",
+        "items": [
+          2
+        ],
+        "delay": 0,
+        "wiredId": 121
+      },
+      {
+        "secondItems": [],
+        "furniSources": [
+          100
+        ],
+        "userSources": [],
+        "variableIds": [],
+        "options": [
+          -2,
+          0
+        ],
+        "config": "",
+        "items": [
+          2
+        ],
+        "delay": 0,
+        "wiredId": 131
+      },
+      {
+        "secondItems": [],
+        "furniSources": [
+          100
+        ],
+        "userSources": [
+          0,
+          0
+        ],
+        "variableIds": [],
+        "options": [
+          1,
+          0,
+          100,
+          16777215,
+          0,
+          4,
+          0
+        ],
+        "config": "",
+        "items": [
+          3
+        ],
+        "delay": 0,
+        "wiredId": 141
+      },
+      {
+        "secondItems": [],
+        "furniSources": [
+          100
+        ],
+        "userSources": [
+          0,
+          0
+        ],
+        "variableIds": [],
+        "options": [
+          1,
+          100,
+          0,
+          4,
+          0
+        ],
+        "config": "",
+        "items": [
+          3
+        ],
+        "delay": 0,
+        "wiredId": 151
+      },
+      {
+        "secondItems": [],
+        "furniSources": [
+          100
+        ],
+        "userSources": [
+          0,
+          0
+        ],
+        "variableIds": [],
+        "options": [
+          1,
+          0,
+          0,
+          4,
+          0
+        ],
+        "config": "",
+        "items": [
+          3
+        ],
+        "delay": 0,
+        "wiredId": 161
+      },
+      {
+        "secondItems": [],
+        "furniSources": [
+          0,
+          200
+        ],
+        "userSources": [
+          0,
+          200
+        ],
+        "variableIds": [
+          "900001",
+          "0"
+        ],
+        "options": [
+          1,
+          0,
+          40,
+          0,
+          0,
+          -10,
+          0
+        ],
+        "config": "",
+        "items": [],
+        "delay": 0,
+        "wiredId": 171
+      },
+      {
+        "secondItems": [],
+        "furniSources": [],
+        "userSources": [
+          0
+        ],
+        "variableIds": [],
+        "options": [
+          2,
+          -1
+        ],
+        "config": "",
+        "items": [],
+        "delay": 0,
+        "wiredId": 181
+      },
+      {
+        "secondItems": [],
+        "furniSources": [],
+        "userSources": [
+          0
+        ],
+        "variableIds": [],
+        "options": [
+          2,
+          -1
+        ],
+        "config": "",
+        "items": [],
+        "delay": 0,
+        "wiredId": 191
+      },
+      {
+        "secondItems": [],
+        "furniSources": [],
+        "userSources": [
+          0
+        ],
+        "variableIds": [],
+        "options": [
+          2,
+          -1
+        ],
+        "config": "",
+        "items": [],
+        "delay": 0,
+        "wiredId": 192
+      },
+      {
+        "secondItems": [],
+        "furniSources": [],
+        "userSources": [
+          0
+        ],
+        "variableIds": [],
+        "options": [
+          2,
+          -1
+        ],
+        "config": "",
+        "items": [],
+        "delay": 0,
+        "wiredId": 193
+      },
+      {
+        "secondItems": [],
+        "furniSources": [],
+        "userSources": [
+          0
+        ],
+        "variableIds": [],
+        "options": [
+          0,
+          202,
+          -1
+        ],
+        "config": "You clicked the switch.",
+        "items": [],
+        "delay": 0,
+        "wiredId": 201
+      },
+      {
+        "secondItems": [],
+        "furniSources": [
+          100
+        ],
+        "userSources": [],
+        "variableIds": [],
+        "options": [
+          0
+        ],
+        "config": "",
+        "items": [
+          3
+        ],
+        "delay": 0,
+        "wiredId": 211
+      }
+    ],
+    "addons": [
+      {
+        "secondItems": [],
+        "furniSources": [
+          901,
+          0,
+          0
+        ],
+        "userSources": [
+          0,
+          0,
+          0
+        ],
+        "variableIds": [
+          "0",
+          "0"
+        ],
+        "options": [
+          1,
+          1,
+          0,
+          0,
+          100,
+          -20,
+          1,
+          1,
+          0,
+          4,
+          0,
+          0,
+          1,
+          1,
+          0,
+          0,
+          1,
+          -20,
+          50
+        ],
+        "config": "",
+        "items": [],
+        "wiredId": 102
+      },
+      {
+        "secondItems": [],
+        "furniSources": [
+          901,
+          0,
+          0
+        ],
+        "userSources": [
+          0,
+          0,
+          0
+        ],
+        "variableIds": [
+          "0",
+          "0"
+        ],
+        "options": [
+          1,
+          1,
+          0,
+          0,
+          100,
+          -20,
+          1,
+          1,
+          0,
+          4,
+          0,
+          0,
+          1,
+          1,
+          0,
+          0,
+          1,
+          -20,
+          50
+        ],
+        "config": "",
+        "items": [],
+        "wiredId": 112
+      },
+      {
+        "secondItems": [],
+        "furniSources": [],
+        "userSources": [],
+        "variableIds": [
+          "0",
+          "0",
+          "0"
+        ],
+        "options": [
+          1,
+          2,
+          0,
+          7,
+          0,
+          3000,
+          0,
+          -1,
+          -1,
+          -1,
+          0,
+          0,
+          0,
+          100,
+          0,
+          0,
+          1,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "config": "",
+        "items": [],
+        "wiredId": 221
+      }
+    ],
+    "variables": [
+      {
+        "secondItems": [],
+        "furniSources": [],
+        "userSources": [],
+        "variableIds": [],
+        "options": [
+          0,
+          0
+        ],
+        "config": "hp",
+        "items": [],
+        "wiredId": 220,
+        "variableId": "900001"
+      }
+    ],
+    "variables_map": {
+      "hp": "900001"
+    }
+  }
+}

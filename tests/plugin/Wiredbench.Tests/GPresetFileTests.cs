@@ -6,7 +6,7 @@ namespace Wiredbench.Tests;
 
 /// <summary>
 /// G-Presets files read and written back. The sample is WiredBench's own made-up preset
-/// (backend/tests/test_exchange.py): the shapes seen in real files, with fields nobody knows
+/// (from the removed Python app's exchange tests): the shapes seen in real files, with fields nobody knows
 /// (<c>somethingNew</c>, an add-on's <c>futureField</c>, a box with no furni), which must survive.
 /// </summary>
 public sealed class GPresetFileTests

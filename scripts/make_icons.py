@@ -1,6 +1,6 @@
 """Draws Wiredbench's client and panel icons (turbo-plugin/wwwroot/*.png) from the Wiredbench mark.
 
-Every icon is the mark of frontend/public/favicon.svg: a dark isometric WIRED tile with a light top,
+Every icon is the mark of docs/wiredbench-logo.svg: a dark isometric WIRED tile with a light top,
 and a red sign on it saying what the window is for. Drawn at four times the size and scaled down, so
 the edges are smooth at 32 x 32.
 
@@ -29,7 +29,7 @@ def _s(points: list[tuple[float, float]]) -> list[tuple[float, float]]:
 
 
 def _tile(draw: ImageDraw.ImageDraw) -> None:
-    # favicon.svg: M16 5 30 12.5v7L16 27 2 19.5v-7z, and the top M16 7.8 25.8 13 16 18.2 6.2 13z.
+    # wiredbench-logo.svg: M16 5 30 12.5v7L16 27 2 19.5v-7z, and the top M16 7.8 25.8 13 16 18.2 6.2 13z.
     draw.polygon(_s([(16, 5), (30, 12.5), (30, 19.5), (16, 27), (2, 19.5), (2, 12.5)]), fill=DARK)
     draw.polygon(_s([(16, 7.8), (25.8, 13), (16, 18.2), (6.2, 13)]), fill=TOP)
 
@@ -77,12 +77,21 @@ def parity(draw: ImageDraw.ImageDraw) -> None:
     _line(draw, [(11.5, 13), (14.6, 15), (20.5, 10.6)])
 
 
+def check(draw: ImageDraw.ImageDraw) -> None:
+    """A warning mark: wired that cannot work as built."""
+    _line(draw, [(16, 9.2), (16, 12.6)], 2.2)
+    r = 1.2 * SCALE
+    cx, cy = 16 * SCALE, 15.4 * SCALE
+    draw.ellipse((cx - r, cy - r, cx + r, cy + r), fill=RED)
+
+
 ICONS: dict[str, Callable[[ImageDraw.ImageDraw], None]] = {
     "wiredbench": pulse,
     "trace": trace,
     "sandbox": sandbox,
     "presets": presets,
     "parity": parity,
+    "check": check,
 }
 
 

@@ -4,8 +4,27 @@ Wiredbench (working name) is a self-hosted browser sandbox for building, running
 debugging Habbo WIRED. It targets Habbo Classic by exporting setups to real rooms through
 G-Presets.
 
-- **Status:** Phases 1 and 2 merged. Phase 3 (engine) built. Phase 0 results are in
-  [spikes/RESULTS.md](spikes/RESULTS.md).
+> **History.** This is the plan of Wiredbench's own web app, kept as it was. On 2026-11-11
+> Wiredbench moved onto the Turbo hotel as a plugin, and on 2026-11-13 the app (its frontend, its
+> Python engine and its spikes) was removed. Paths below such as `backend/`, `frontend/` and
+> `spikes/` no longer exist; git history has them. See [docs/turbo.md](docs/turbo.md) for the
+> plugin and [docs/phase7-audit.md](docs/phase7-audit.md) for where each part went.
+>
+> The Turbo phases:
+>
+> | Phase | Work | Status |
+> |---|---|---|
+> | 1 | The plugin and client module in Turbo | Done |
+> | 2 | Wired trace window | Done |
+> | 3 | Sandbox: save, reset, wired kits | Done |
+> | 4 | G-Presets import, export and the preset library | Done |
+> | 5 | WIRED box parity report and admin page | Done |
+> | 6 | Behaviour comparison, Python engine against Turbo | Done |
+> | 7 | Room check and tutorials in the plugin; the old app removed | Done |
+> | 8 | Pause and step through a stack run (optional) | Open |
+
+- **Status (app, before the move):** Phases 1 and 2 merged. Phase 3 (engine) built. Phase 0
+  results were in `spikes/RESULTS.md`.
 - **Revision:** 2026-10-31, updated with Phase 3 results.
 
 ## 1. Decisions

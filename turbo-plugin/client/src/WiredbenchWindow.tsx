@@ -6,10 +6,10 @@ import { HELLO, type Status, statusStore } from './messages';
 import { BUTTON } from './theme';
 import { Hint, Icon, Section, WindowHeader } from './ui';
 
-const WIDTH = 330;
+const WIDTH = 400;
 const PADDING = 12;
 const INNER = WIDTH - (PADDING * 2) - 2;
-const TILE = Math.floor((INNER - 16 - 12) / 3);
+const TILE = Math.floor((INNER - 16 - 18) / 4);
 
 /** The Wiredbench window: who the plugin answered, and the way into its tools. */
 export const WiredbenchWindow = ({ close }: ClientModuleWindowProps) => {
@@ -30,6 +30,7 @@ export const WiredbenchWindow = ({ close }: ClientModuleWindowProps) => {
         { window: 'trace', icon: 'trace', label: text('open_trace', 'Wired trace'), tooltip: text('open_trace_tip', 'Follow each stack run: its conditions and effects') },
         { window: 'sandbox', icon: 'sandbox', label: text('open_sandbox', 'Sandbox'), tooltip: text('open_sandbox_tip', 'Save this room, reset it, take wired kits') },
         { window: 'presets', icon: 'presets', label: text('open_presets', 'Presets'), tooltip: text('open_presets_tip', 'Import and export G-Presets files') },
+        { window: 'check', icon: 'check', label: text('open_check', 'Check'), tooltip: text('open_check_tip', 'Find wired that cannot work as built, without running it') },
     ];
 
     return (

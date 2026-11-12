@@ -12,24 +12,22 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# The jobs that need the submodules (Turbo and nitro-next) are off until they can be fetched. They
+# are private copies under aaimang/: add a secret SUBMODULES_TOKEN that can read
+# aaimang/turbo-cloud, turbo-admin and nitro-next, then set the repository variable SUBMODULES to
+# true.
+
 jobs:
-  parity:
-    # Every wired code the Habbo client knows against the pinned Turbo's boxes and nitro-next's
-    # editors (scripts/parity.py --check; the client's codes are the committed
-    # docs/parity/client-codes.json). It needs both submodules, which are private copies under
-    # aaimang/: add a secret SUBMODULES_TOKEN that can read aaimang/turbo-cloud, turbo-admin and
-    # nitro-next, then set the repository variable PARITY_SUBMODULES to true.
-    name: WIRED box parity
-    if: ${{ vars.PARITY_SUBMODULES == 'true' }}
+  scripts:
+    name: Scripts
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          submodules: true
-          token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
       - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
       - run: uv sync --frozen
-      - run: uv run python scripts/parity.py --check
+      - run: uv run ruff format --check scripts tests/scripts
+      - run: uv run ruff check scripts tests/scripts
+      - run: uv run pytest
 
   plugin-version:
     # A change to turbo-plugin/ raises manifest.json's Version and adds its CHANGELOG.md heading
@@ -46,84 +44,34 @@ jobs:
       - run: uv run --no-project python scripts/plugin_version.py --check --base "${{ github.event.before }}"
         if: ${{ github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000' }}
 
-  backend:
-    name: Backend (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
-      - run: uv sync --frozen
-      - run: uv run ruff format --check backend scripts
-      - run: uv run ruff check backend scripts
-      - run: uv run mypy
-      - run: uv run python scripts/gen_docs.py --check
-      - run: uv run pytest --cov --cov-report=term
-      - name: Coverage summary
-        if: always()
-        shell: bash
-        run: uv run coverage report --format=markdown >> "$GITHUB_STEP_SUMMARY" || true
-
-  frontend:
-    name: Frontend (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-    defaults:
-      run:
-        working-directory: frontend
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: 24
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-      - run: npm ci
-      - run: npm run check
-      - run: npm test
-      - run: npm run build
-
-  e2e:
-    name: Browser tests
+  plugin:
+    # The plugin's tests (tests/plugin) against the pinned Turbo, built as deploy/setup.sh builds it.
+    name: Plugin tests
+    if: ${{ vars.SUBMODULES == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-      - run: uv sync --frozen
-      - run: npm ci
-        working-directory: frontend
-      - run: npm run build
-        working-directory: frontend
-      - run: npx playwright install --with-deps chromium
-        working-directory: frontend
-      - run: npx playwright test
-        working-directory: frontend
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        if: failure()
+          submodules: true
+          token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
-          name: playwright-results
-          path: frontend/test-results
-          retention-days: 7
+          global-json-file: vendor/turbo-cloud/global.json
+      - run: dotnet build vendor/turbo-cloud/Turbo.Main/Turbo.Main.csproj
+      - run: dotnet test tests/plugin/Wiredbench.Tests
 
-  docker:
-    name: Docker build and smoke test
+  parity:
+    # Every wired code the Habbo client knows against the pinned Turbo's boxes and nitro-next's
+    # editors (scripts/parity.py --check; the client's codes are the committed
+    # docs/parity/client-codes.json).
+    name: WIRED box parity
+    if: ${{ vars.SUBMODULES == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - run: docker compose up --build --detach --wait --wait-timeout 90
-      - name: Smoke test
-        run: bash scripts/docker_smoke.sh
-      - name: Logs on failure
-        if: failure()
-        run: docker compose logs
+        with:
+          submodules: true
+          token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+      - run: uv sync --frozen
+      - run: uv run python scripts/parity.py --check

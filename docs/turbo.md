@@ -1,8 +1,9 @@
 # Wiredbench on Turbo
 
-Wiredbench is moving from its own room drawing to the Turbo hotel and its Nitro client. It runs as
-a Turbo plugin (`turbo-plugin/`) with a client module, so you build and debug WIRED in the
-hotel's own client and manage it from Turbo's admin panel.
+Wiredbench runs as a Turbo plugin (`turbo-plugin/`) with a Nitro client module: you build and debug
+WIRED in the hotel's own client and manage it from Turbo's admin panel. Its own room drawing,
+Python engine and web app were removed in Phase 7 (2026-11-13); `docs/phase7-audit.md` says where
+each of their parts went.
 
 ## What is where
 
@@ -12,12 +13,19 @@ hotel's own client and manage it from Turbo's admin panel.
 | `turbo-plugin/server/` | C# the hotel compiles as it loads the plugin: messages, admin pages |
 | `turbo-plugin/client/src/` | The client module the hotel builds into `wiredbench.js` |
 | `turbo-plugin/wwwroot/`, `gamedata/` | Its icon and its texts |
+| `turbo-plugin/data/` | The parity report, the wired kits and the tutorial rooms (`presets/`) |
+| `tests/plugin/` | The plugin's tests, against Turbo's test doubles |
+| `tests/turbo-replay/` | The behaviour replay test, copied into Turbo to run |
+| `scripts/`, `tests/scripts/` | Parity, the plugin version, icons, the behaviour report, Web API checks |
 | `vendor/turbo-cloud` | Turbo, the server and (nested) its admin panel, pinned by commit |
 | `vendor/nitro-next` | The Nitro client, pinned by commit |
 | `deploy/` | Scripts to set up and run all three |
 
 `vendor/` holds git submodules, not copies: Turbo and Nitro carry no licence, so their code stays
-in their own repositories under their own terms, and Wiredbench's MIT licence does not cover it.
+in repositories of their own, and Wiredbench's MIT licence does not cover it. The submodules point
+at private copies under `aaimang/` (`turbo-cloud` on `wiredbench-seams`, its `turbo-admin` on
+`wiredbench-panel`, `nitro-next` on `wiredbench-ui`), which hold Wiredbench's changes to them;
+cloning them needs read access to those repositories.
 
 ## Run it
 
@@ -58,7 +66,15 @@ or `none`).
 
 ## In the hotel
 
-- **Toolbar**: the Wiredbench window opens the Wired trace, Sandbox and Presets windows.
+- **Toolbar**: the Wiredbench window opens the Wired trace, Sandbox, Presets and Check windows.
+- **Check room** reads every wired box in the room and lists what cannot work as built, without
+  running it: errors (picks of furni no longer in the room, a slot or antenna with nothing picked,
+  a keyword trigger with no keyword, a variable no box makes) and warnings (a stack nothing starts
+  or that does nothing, a selector's or a signal's targets read without one, a signal no one sends
+  or receives). A box that names a variable has its slots left alone: which it reads depends on
+  the variable.
+- **Tutorials**: the preset library gets five example rooms (`turbo-plugin/data/presets`) as the
+  plugin loads, any it lacks by name, so a deleted one comes back at the next load.
 - **`:copy <name> [COM|BR|TR|DE|ES|FI|FR|IT|NL]`** wears a Habbo's look, read from that hotel's
   public API, and keeps it in your wardrobe (the first empty slot). `:copy help` whispers how.
   The lookup runs after the command answers, with an 8 second limit, so the room never waits on
@@ -77,15 +93,9 @@ or open until a Habbo capture settles it), or a note on what the replay cannot c
 inputs it does not send).
 
 `docs/behaviour/scenarios.json` is the Python engine's answer for each room, recorded on 2026-11-12.
-It is the reference Turbo is checked against once the Python engine is gone: only the last three
-commands below need Turbo, and the first needs the Python engine. To write it all again:
-
-```bash
-uv run python scripts/behaviour.py record
-```
-
-The Turbo replay test is kept in `tests/turbo-replay/`, since turbo-cloud is a submodule this
-repository does not commit to; copy it into the submodule before running it:
+The engine is gone, so the file is kept as it was: it is what Turbo is checked against. The Turbo
+replay test is kept in `tests/turbo-replay/`, not in turbo-cloud; copy it into the submodule before
+running it:
 
 ```bash
 cp tests/turbo-replay/WiredbenchBehaviourReplayTests.cs vendor/turbo-cloud/Turbo.Tests/Rooms/
@@ -118,6 +128,14 @@ dotnet build turbo-plugin/server/Wiredbench.csproj
 ```
 
 ```bash
+dotnet test tests/plugin/Wiredbench.Tests
+```
+
+```bash
+uv run pytest
+```
+
+```bash
 deploy/check-client.sh
 ```
 
@@ -133,4 +151,13 @@ admin panel's **Wiredbench → Parity** page shows (`turbo-plugin/data/parity.js
   never committed.
 - `uv run python scripts/parity.py --check` only reads, and fails when a client code has no Turbo box
   or no nitro-next editor, or two boxes claim one code. CI runs it once the repository variable
-  `PARITY_SUBMODULES` is `true` (the pinned turbo-cloud commit has to be fetchable first).
+  `SUBMODULES` is `true` and the secret `SUBMODULES_TOKEN` can read the private submodules; the plugin
+tests run in CI on the same terms.
+
+## WIRED Web API
+
+Turbo answers Habbo's WIRED Web API on its public API (`http://127.0.0.1:8092/api/public/rooms/<id>`).
+`scripts/live_check.py` records how a room's API answers, a Habbo hotel's or, with
+`WB_LIVE_CHECK_BASE_URL=http://127.0.0.1:8092`, Turbo's, so the two can be compared.
+`scripts/wrapper_check.py` runs the official `wired-api-python` wrapper against a Turbo room; each
+script's top says what to set up.
