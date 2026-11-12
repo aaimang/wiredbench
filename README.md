@@ -41,8 +41,9 @@ The toolbar's Wiredbench icon opens the window above; each tool has its own wind
 
 ## Run it
 
-Needs .NET SDK 10, Node 24 and MariaDB with a Turbo database. See [docs/turbo.md](docs/turbo.md)
-for setting up and running Turbo, the client and the panel with this plugin, and for the scripts.
+Needs .NET SDK 10, Node 24 and MariaDB with a Turbo database, on macOS, Linux or Windows (the
+`deploy\*.ps1` scripts). See [docs/turbo.md](docs/turbo.md) for setting up and running Turbo, the
+client and the panel with this plugin, and for the scripts.
 
 `vendor/` holds Turbo and the Nitro client as git submodules. They carry no licence, so they are
 private copies under their own terms and are not part of this repository.

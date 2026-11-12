@@ -75,3 +75,27 @@ jobs:
       - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
       - run: uv sync --frozen
       - run: uv run python scripts/parity.py --check
+
+  windows:
+    # The Windows deploy scripts on a Windows machine: setup.ps1 fetches the submodules, builds
+    # Turbo and installs the panel's and the client's packages; check-client.ps1 type-checks the
+    # plugin's client module; then the plugin's tests run against that Turbo build.
+    name: Windows
+    if: ${{ vars.SUBMODULES == 'true' }}
+    runs-on: windows-latest
+    steps:
+      # Every level of submodules here, with the token: the checkout's credentials reach only what
+      # it clones itself, and setup.ps1 also wants Turbo's own turbo-admin (private too).
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: recursive
+          token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: vendor/turbo-cloud/global.json
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - run: pwsh -NoProfile -File deploy/setup.ps1
+      - run: pwsh -NoProfile -File deploy/check-client.ps1
+      - run: dotnet test tests/plugin/Wiredbench.Tests

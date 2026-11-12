@@ -14,8 +14,5 @@ dotnet build "$TURBO/Turbo.Main/Turbo.Main.csproj"
 
 (cd "$TURBO/turbo-admin" && corepack yarn install)
 (cd "$NITRO" && corepack yarn install)
-# The install rewrites the pinned lockfile; keep the submodule at its pinned commit.
-git -C "$NITRO" checkout -- yarn.lock
-git -C "$TURBO/turbo-admin" checkout -- yarn.lock
 
 echo "Done. Start the hotel with deploy/turbo.sh, then deploy/client.sh and deploy/panel.sh."
