@@ -18,8 +18,4 @@ foreach ($app in @($Panel, $Nitro)) {
     try { Invoke-Checked corepack yarn install } finally { Pop-Location }
 }
 
-# The install rewrites the pinned lockfile; keep the submodules at their pinned commits.
-Invoke-Checked git -C $Nitro checkout '--' yarn.lock
-Invoke-Checked git -C $Panel checkout '--' yarn.lock
-
 Write-Host 'Done. Start the hotel with deploy\turbo.ps1, then deploy\client.ps1 and deploy\panel.ps1.'
