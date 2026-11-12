@@ -18,6 +18,10 @@ if [ -n "${WB_DB_CONNECTION:-}" ]; then
     export TURBO__Turbo__Database__ConnectionString="$WB_DB_CONNECTION"
 fi
 
+# The hotel's name (Turbo:Web:HotelName): the public site shows it, and gamedata variables bound to
+# it in the panel take it. WB_HOTEL_NAME changes it.
+export TURBO__Turbo__Web__HotelName="${WB_HOTEL_NAME:-Wiredbench}"
+
 if [ -n "${WB_OWNER_NAME:-}" ]; then
     export TURBO__Turbo__Owner__Name="$WB_OWNER_NAME"
 fi

@@ -54,7 +54,7 @@ export const WiredbenchWindow = ({ close }: ClientModuleWindowProps) => {
                     <Box layout={ { flexDirection: 'row', gap: 6 } }>
                         { tools.map(tool => (
                             <Button key={ tool.window } variant={ BUTTON.plain } tooltip={ tool.tooltip } layout={ { width: TILE, height: 58, flexDirection: 'column', gap: 2 } } onPointerTap={ () => api.windows.open(tool.window) }>
-                                <Icon name={ tool.icon } size={ 28 } />
+                                <Icon name={ tool.icon } size={ 32 } />
                                 <ThemeText text={ tool.label } textStyle="u_bold" />
                             </Button>
                         )) }

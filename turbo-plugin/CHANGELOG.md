@@ -4,6 +4,24 @@ Every change to `turbo-plugin/` raises `manifest.json`'s `Version` and adds its 
 (`python scripts/plugin_version.py --bump patch`; CI runs `--check`). The client module shows the
 version the server sends, so a player sees the plugin they are talking to.
 
+Releases continue the numbering of Wiredbench's old web app, whose last was v0.11.0: the plugin's
+first release is 0.12.0. The 0.2.0 to 0.3.0 headings below were never released on their own.
+
+## 0.12.0 (2026-11-13)
+
+Wiredbench's first release as a Turbo plugin. The web app of v0.11.0 (room editor, Python engine,
+WIRED Web API mock) is gone; its parts now live in the plugin, Turbo and its Nitro client.
+
+- Windows in the hotel's own client: Wired trace, Sandbox (save, reset, wired kits), Presets
+  (G-Presets import, export and a library with five tutorial rooms) and Check room.
+- `:copy <name> <hotel>` wears a Habbo user's look and keeps it in the wardrobe.
+- Admin panel pages: WIRED use across loaded rooms, the preset library, and box parity with the
+  Habbo client.
+- New icons, pixel art in the look of Habbo's WIRED banners: the mark is a cyan W standing on a
+  dark WIRED box rimmed in white (`toolbar.png` fills the toolbar's icon slot, `wiredbench.png`
+  the windows and the panel), and each tool shows its sign in front of its WIRED box. The tool
+  tiles draw them at their full 32 pixels.
+
 ## 0.3.0 (2026-11-13)
 
 - Check room: a new window (and Wiredbench tool) finds wired that cannot work as built, without

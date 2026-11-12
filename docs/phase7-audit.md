@@ -102,5 +102,6 @@ Done as proposed, except where this says otherwise.
   disk for its owner.
 - **CI:** the plugin tests and parity run once the repository variable `SUBMODULES` is `true` and
   the secret `SUBMODULES_TOKEN` can read the private submodules.
-- **Releases:** a plugin version reaching `main` is released as `plugin-v<version>` (the app's own
-  tags already use `v0.x`), with its changelog section and the plugin as a zip.
+- **Releases:** a plugin version reaching `main` is released as `v<version>`, continuing the old
+  app's numbering (its last was v0.11.0, so the plugin's first is v0.12.0), with its changelog
+  section and the plugin as a zip.

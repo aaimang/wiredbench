@@ -2,7 +2,7 @@
  * Wiredbench's client module: the hotel builds it from client/src into `wiredbench.js`, and every
  * client that runs modules loads it.
  *
- * - a toolbar icon (wwwroot/wiredbench.png) and the `wiredbench/open` link open the window;
+ * - a toolbar icon (wwwroot/toolbar.png) and the `wiredbench/open` link open the window;
  * - the window asks the plugin for its status (`wiredbench.hello`) and shows the answer;
  * - the Trace window (its button, or the `wiredbench/trace` link) shows the room's wired trace;
  * - the Sandbox window (its button, or the `wiredbench/sandbox` link) saves and resets the room and
@@ -39,7 +39,7 @@ export default defineModule({
         api.windows.register('check', CheckWindow);
         api.toolbar.add({
             id: 'wiredbench',
-            icon: assetUrl('wiredbench.png'),
+            icon: assetUrl('toolbar.png'),
             tooltip: api.texts.get('wiredbench.toolbar.tooltip', 'Wiredbench'),
             onClick: () => api.windows.toggle('main'),
         });
