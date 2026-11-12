@@ -58,6 +58,10 @@ Wiredbench icon on the toolbar opens its window.
 The plugin is loaded from `turbo-plugin/` through `Turbo:Plugin:DevPluginPaths`, so the hotel
 reloads it when its files change.
 
+The hotel is named **Wiredbench** (`Turbo:Web:HotelName`, set by `deploy/turbo.sh`; `WB_HOTEL_NAME`
+changes it), and the client's tab reads **Wiredbench: Local Sandbox for Habbo WIREDs**
+(`deploy/client.vite.config.mts`; `WB_CLIENT_TITLE` changes it).
+
 The client reads this hotel's furnidata and product data through the `/gamedata` proxy (the rest
 of its gamedata still comes from nitrodev.co): the furnidata carries the hotel's own catalogue
 offer ids, which the infostand's **Buy** and Builders Club **Place more** send. Set

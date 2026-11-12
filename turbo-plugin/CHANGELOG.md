@@ -4,6 +4,13 @@ Every change to `turbo-plugin/` raises `manifest.json`'s `Version` and adds its 
 (`python scripts/plugin_version.py --bump patch`; CI runs `--check`). The client module shows the
 version the server sends, so a player sees the plugin they are talking to.
 
+## 0.3.1 (2026-11-13)
+
+- New icons, pixel art in the look of Habbo's WIRED banners: the mark is a cyan W standing on a
+  dark WIRED box rimmed in white (`toolbar.png` fills the toolbar's icon slot, `wiredbench.png`
+  the windows and the panel), and each tool shows its sign in front of its WIRED box. The tool
+  tiles draw them at their full 32 pixels.
+
 ## 0.3.0 (2026-11-13)
 
 - Check room: a new window (and Wiredbench tool) finds wired that cannot work as built, without

@@ -3,11 +3,14 @@
  * the client's origin goes to Turbo's gamedata host. Turbo hands out gamedata and client module
  * addresses on the origin a request came to, so the plugin's module is then same-origin and the
  * client runs it without listing another host in `client.modules.hosts`. The page also reads
- * this hotel's furnidata and product data from it (`hotelGamedata`).
+ * this hotel's furnidata and product data from it (`hotelGamedata`), and its tab is titled
+ * Wiredbench's with Wiredbench's icon (`pageTitle`).
  *
  * It imports nothing by package name: deploy/ has no node_modules, and the client's config brings
  * its own imports from where it lives.
  */
+import { readFileSync } from 'node:fs';
+
 import nitro from '../vendor/nitro-next/packages/nitro-react/vite.config.ts';
 
 type Env = { command: 'build' | 'serve'; mode: string; isSsrBuild?: boolean; isPreview?: boolean };
@@ -50,12 +53,39 @@ const hotelGamedata = () => ({
     },
 });
 
+/** The client's tab title; `WB_CLIENT_TITLE` changes it. */
+const TITLE = process.env.WB_CLIENT_TITLE || 'Wiredbench: Local Sandbox for Habbo WIREDs';
+
+const escapeHtml = (text: string) => text.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c] ?? c);
+
+/** The tab's icon: the plugin's mark (turbo-plugin/wwwroot/wiredbench.png, drawn by scripts/make_icons.py). */
+const ICON = new URL('../turbo-plugin/wwwroot/wiredbench.png', import.meta.url);
+
+const iconHref = () => {
+    try {
+        return `data:image/png;base64,${ readFileSync(ICON).toString('base64') }`;
+    } catch {
+        return null;
+    }
+};
+
+/** index.html's `<title>Nitro</title>` and its favicon, as the hotel's. */
+const pageTitle = () => ({
+    name: 'wiredbench-page-title',
+    transformIndexHtml: (html: string) => {
+        const href = iconHref();
+        const titled = html.replace(/<title>[^<]*<\/title>/, `<title>${ escapeHtml(TITLE) }</title>`);
+
+        return href ? titled.replace(/<link rel="icon"[^>]*>/, `<link rel="icon" type="image/png" href="${ href }" />`) : titled;
+    },
+});
+
 export default async (env: Env): Promise<Config> => {
     const base: Config = typeof nitro === 'function' ? await (nitro as (env: Env) => Config | Promise<Config>)(env) : await (nitro as Config);
 
     return {
         ...base,
-        plugins: [ ...((base.plugins as unknown[]) ?? []), hotelGamedata() ],
+        plugins: [ ...((base.plugins as unknown[]) ?? []), hotelGamedata(), pageTitle() ],
         server: {
             ...base.server,
             proxy: {
