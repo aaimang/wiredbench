@@ -1,5 +1,8 @@
 # Changelog
 
+From v0.12.0, Wiredbench is a Turbo plugin and its changes are in
+[turbo-plugin/CHANGELOG.md](turbo-plugin/CHANGELOG.md). This file is the old web app's, up to v0.11.0.
+
 ## [0.11.0](https://github.com/aaimang/wiredbench/compare/v0.10.0...v0.11.0) (2026-11-09)
 
 

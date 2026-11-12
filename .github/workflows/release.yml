@@ -10,8 +10,8 @@ permissions:
 jobs:
   plugin:
     # A version of the plugin (turbo-plugin/manifest.json) that reaches main and has no release yet
-    # gets one: tag plugin-v<version>, its notes from turbo-plugin/CHANGELOG.md, and the plugin's folder as
-    # a zip to drop into a hotel's plugins.
+    # gets one: tag v<version>, continuing the old app's numbering (its last was v0.11.0), its notes
+    # from turbo-plugin/CHANGELOG.md, and the plugin's folder as a zip to drop into a hotel's plugins.
     name: Plugin release
     runs-on: ubuntu-latest
     permissions:
@@ -25,12 +25,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          if gh release view "plugin-v$VERSION" > /dev/null 2>&1; then
-            echo "plugin-v$VERSION is out already."
+          if gh release view "v$VERSION" > /dev/null 2>&1; then
+            echo "v$VERSION is out already."
             exit 0
           fi
           awk -v heading="## $VERSION " 'index($0, heading) == 1 { found = 1; next } /^## / { found = 0 } found' \
             turbo-plugin/CHANGELOG.md > notes.md
           (cd turbo-plugin && zip -qr "../wiredbench-plugin-$VERSION.zip" . -x 'bin/*' 'obj/*' '*/bin/*' '*/obj/*')
-          gh release create "plugin-v$VERSION" "wiredbench-plugin-$VERSION.zip" \
-            --title "Wiredbench $VERSION" --notes-file notes.md --target "$GITHUB_SHA"
+          gh release create "v$VERSION" "wiredbench-plugin-$VERSION.zip" \
+            --title "v$VERSION" --notes-file notes.md --target "$GITHUB_SHA"
