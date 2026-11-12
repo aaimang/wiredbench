@@ -84,9 +84,11 @@ jobs:
     if: ${{ vars.SUBMODULES == 'true' }}
     runs-on: windows-latest
     steps:
+      # Every level of submodules here, with the token: the checkout's credentials reach only what
+      # it clones itself, and setup.ps1 also wants Turbo's own turbo-admin (private too).
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          submodules: true
+          submodules: recursive
           token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
