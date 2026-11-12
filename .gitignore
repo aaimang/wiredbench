@@ -27,3 +27,6 @@ frontend/playwright-report/
 /.worktrees/
 .claude/
 .DS_Store
+
+# Turbo plugin editor build (kept out of turbo-plugin/: the hotel refuses .dll files there)
+/.build/

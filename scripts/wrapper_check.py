@@ -1,55 +1,32 @@
 #!/usr/bin/env python3
-"""Runs the official wired-api-python wrapper against the app's mock API over real HTTP.
+"""Runs the official wired-api-python wrapper against Turbo's WIRED Web API over real HTTP.
 
-uv run --with wired-api-python==0.1.4 python scripts/wrapper_check.py
+uv run --no-project --with wired-api-python==0.1.4 --with httpx python scripts/wrapper_check.py
+
+Set up a room in a running Turbo first: a "Variable Global Add-on: Web API" box (its keys), a user
+variable box named score and a room variable box named clock, and a user standing in the room.
+Then set WB_WRAPPER_ROOM_ID, WB_WRAPPER_READ_KEY, WB_WRAPPER_WRITE_KEY, WB_WRAPPER_USER_ID and
+WB_WRAPPER_USER_NAME (that user), and WB_WRAPPER_BASE_URL when the public API is not at
+http://127.0.0.1:8092. Exits 1 when a step fails.
 """
 
-import socket
+import os
 import sys
-import tempfile
-import threading
-import time
-from pathlib import Path
 
-import httpx
-import uvicorn
 from wired_api_python import HabboApiException, HabboPublicAPI, UserTargetKind
 
-from wiredbench.app import create_app
-from wiredbench.config import Settings
-from wiredbench.engine.tutorials import AVATAR
-
-with socket.socket() as probe:
-    probe.bind(("127.0.0.1", 0))
-    port = probe.getsockname()[1]
-tmp = Path(tempfile.mkdtemp())
-base = f"http://127.0.0.1:{port}"
-settings = Settings(_env_file=None, data_dir=tmp / "d", public_url=base)
-app = create_app(settings)  # Generates the first admin password, which is all this needs.
-server = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=port, log_level="warning"))
-threading.Thread(target=server.run, daemon=True).start()
-while not server.started:
-    time.sleep(0.02)
-
-admin = httpx.Client(base_url=base)
-admin.headers["X-CSRF-Token"] = admin.post(
-    "/api/auth/login",
-    json={"username": "admin", "password": settings.initial_password_path.read_text().strip()},
-).json()["csrf_token"]
-room = admin.post("/api/tutorials/time-tracking", json={}).json()["id"]
-document = admin.get(f"/api/sandboxes/{room}").json()["document"]
-document["furni"] += [
-    {"id": 901, "classname": "wf_var_user", "x": 1, "y": 9, "z": 0, "wired": {"variable": "score"}},
-    {"id": 903, "classname": "wf_var_room", "x": 3, "y": 9, "z": 0, "wired": {"variable": "clock"}},
-]
-saved = admin.put(f"/api/sandboxes/{room}/document", json={"document": document, "base_revision": 2})
-if saved.status_code != 200:
-    raise SystemExit(saved.text)
-keys = admin.post(f"/api/sandboxes/{room}/api-keys", json={}).json()
-admin.post(f"/api/sandboxes/{room}/run", json={"seed": 1})
+try:
+    room = int(os.environ["WB_WRAPPER_ROOM_ID"])
+    read_key = os.environ["WB_WRAPPER_READ_KEY"]
+    write_key = os.environ["WB_WRAPPER_WRITE_KEY"]
+    AVATAR = int(os.environ["WB_WRAPPER_USER_ID"])
+    user_name = os.environ["WB_WRAPPER_USER_NAME"]
+except KeyError as missing:
+    raise SystemExit(f"Missing {missing.args[0]}") from None
+base = os.environ.get("WB_WRAPPER_BASE_URL", "http://127.0.0.1:8092").rstrip("/")
 
 api = HabboPublicAPI(base + "/")
-wired = api.variables(room, keys["read_key"], keys["write_key"])
+wired = api.variables(room, read_key, write_key)
 users = wired.user()
 KIND = UserTargetKind.USERS
 
@@ -79,7 +56,7 @@ steps = {
     "get_variable": lambda: users.get_variable("score", KIND, AVATAR),
     "list_holders": lambda: users.list_holders("score", KIND),
     "count_holders": lambda: users.count_holders("score", KIND),
-    "profile_by_name": lambda: users.get_profile_by_username("worker"),
+    "profile_by_name": lambda: users.get_profile_by_username(user_name),
     "batch": batch,
     "global_change": lambda: wired.global_().change_variable("clock", 3),
     "global_get": lambda: wired.global_().get_variable("clock"),
@@ -94,5 +71,4 @@ for name, step in steps.items():
     except Exception as exc:
         failed += 1
         print("FAIL", name, type(exc).__name__, str(exc)[:160])
-server.should_exit = True
 sys.exit(1 if failed else 0)

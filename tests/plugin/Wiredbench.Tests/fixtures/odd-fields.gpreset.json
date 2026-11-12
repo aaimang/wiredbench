@@ -1,0 +1,182 @@
+{
+  "bindings": [],
+  "floorplan": "000\r000\r000",
+  "recolorables": {
+    "kept": true
+  },
+  "somethingNew": [
+    1,
+    2
+  ],
+  "furni": [
+    {
+      "rotation": 4,
+      "name": "fridge[0]",
+      "className": "ktchn_fridge",
+      "id": 1,
+      "state": "0",
+      "location": {
+        "x": 0,
+        "y": 2,
+        "z": 0
+      }
+    },
+    {
+      "rotation": 6,
+      "name": "wf[0]",
+      "className": "wf_trg_state_changed",
+      "id": 2,
+      "location": {
+        "x": 1,
+        "y": 0,
+        "z": 0.5
+      }
+    },
+    {
+      "rotation": 0,
+      "name": "act[0]",
+      "className": "wf_act_toggle_state",
+      "id": 3,
+      "state": "weird",
+      "variables": {
+        "100": 0
+      },
+      "location": {
+        "x": 1,
+        "y": 0,
+        "z": 1.15
+      }
+    },
+    {
+      "rotation": 0,
+      "name": "var[0]",
+      "className": "wf_var_room",
+      "id": 4,
+      "location": {
+        "x": 2,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "rotation": 0,
+      "name": "odd[0]",
+      "className": "wf_xtra_new_thing",
+      "id": 5,
+      "location": {
+        "x": 2,
+        "y": 1,
+        "z": 0
+      }
+    },
+    {
+      "rotation": 0,
+      "name": "give[0]",
+      "className": "wf_act_give_var",
+      "id": 6,
+      "location": {
+        "x": 2,
+        "y": 2,
+        "z": 0
+      }
+    }
+  ],
+  "wired": {
+    "triggers": [
+      {
+        "secondItems": [],
+        "furniSources": [
+          100
+        ],
+        "wiredId": 2,
+        "userSources": [],
+        "variableIds": [],
+        "options": [],
+        "config": "",
+        "items": [
+          1
+        ]
+      }
+    ],
+    "effects": [
+      {
+        "secondItems": [],
+        "furniSources": [
+          200
+        ],
+        "wiredId": 3,
+        "userSources": [],
+        "delay": 5,
+        "variableIds": [],
+        "options": [
+          0
+        ],
+        "config": "",
+        "items": []
+      },
+      {
+        "secondItems": [],
+        "furniSources": [
+          100
+        ],
+        "wiredId": 6,
+        "userSources": [
+          200
+        ],
+        "delay": 0,
+        "variableIds": [
+          "700"
+        ],
+        "options": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "config": "",
+        "items": []
+      }
+    ],
+    "variables": [
+      {
+        "secondItems": [],
+        "furniSources": [],
+        "wiredId": 4,
+        "userSources": [],
+        "variableIds": [],
+        "options": [
+          1
+        ],
+        "config": "clock",
+        "items": [],
+        "variableId": "700"
+      }
+    ],
+    "addons": [
+      {
+        "wiredId": 5,
+        "options": [
+          9,
+          9
+        ],
+        "config": "mystery",
+        "futureField": {
+          "a": 1
+        }
+      },
+      {
+        "wiredId": 999,
+        "options": [
+          1
+        ],
+        "config": "box with no furni"
+      }
+    ],
+    "conditions": [],
+    "selectors": [],
+    "variables_map": {
+      "clock": "700",
+      "other": "701"
+    }
+  }
+}

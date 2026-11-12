@@ -1,0 +1,3952 @@
+{
+ "clientSource": {
+  "file": "HabboAir.swf",
+  "sha256": "aeece8c0bf8b"
+ },
+ "hotelChecked": true,
+ "summary": {
+  "client": 203,
+  "boxes": 203,
+  "editors": 203,
+  "gaps": {
+   "clientWithoutBox": 0,
+   "clientWithoutEditor": 0,
+   "boxWithoutClient": 0,
+   "editorWithoutClient": 0,
+   "codeClaimedTwice": 0,
+   "boxWithoutFurni": 6
+  }
+ },
+ "kinds": {
+  "trigger": {
+   "client": 29,
+   "boxes": 29,
+   "editors": 29,
+   "rows": [
+    {
+     "code": 0,
+     "client": [
+      "AVATAR_SAYS_SOMETHING"
+     ],
+     "editors": [
+      "AvatarSaysSomething.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredTriggerHabboSaysKeyword",
+       "logic": "wf_trg_says_something"
+      }
+     ],
+     "furni": [
+      "wf_trg_says_something"
+     ],
+     "name": "AVATAR_SAYS_SOMETHING"
+    },
+    {
+     "code": 1,
+     "client": [
+      "UnknownVarFromTriggerConfCodes_Int_1"
+     ],
+     "editors": [
+      "WalksOnFurni.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredTriggerWalkOnFurni",
+       "logic": "wf_trg_walks_on_furni"
+      }
+     ],
+     "furni": [
+      "wf_trg_walks_on_furni"
+     ],
+     "name": "AVATAR_WALKS_ON_FURNI"
+    },
+    {
+     "code": 2,
+     "client": [
+      "UnknownVarFromTriggerConfCodes_Int_2"
+     ],
+     "editors": [
+      "WalksOffFurni.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredTriggerWalksOffItem",
+       "logic": "wf_trg_walks_off_furni"
+      }
+     ],
+     "furni": [
+      "wf_trg_walks_off_furni"
+     ],
+     "name": "AVATAR_WALKS_OFF_FURNI"
+    },
+    {
+     "code": 3,
+     "client": [
+      "TRIGGER_ONCE"
+     ],
+     "editors": [
+      "TriggerOnce.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredTriggerAtTime",
+       "logic": "wf_trg_at_given_time"
+      }
+     ],
+     "furni": [
+      "wf_trg_at_given_time"
+     ],
+     "name": "TRIGGER_ONCE"
+    },
+    {
+     "code": 4,
+     "client": [
+      "USE_STUFF"
+     ],
+     "editors": [
+      "UseStuff.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredTriggerHabboChangesItemState",
+       "logic": "wf_trg_state_changed"
+      }
+     ],
+     "furni": [
+      "wf_trg_state_changed"
+     ],
+     "name": "USE_STUFF"
+    },
+    {
+     "code": 6,
+     "client": [
+      "TRIGGER_PERIODICALLY"
+     ],
+     "editors": [
+      "TriggerPeriodically.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredTriggerPeriodically",
+       "logic": "wf_trg_periodically"
+      }
+     ],
+     "furni": [
+      "wf_trg_periodically"
+     ],
+     "name": "TRIGGER_PERIODICALLY"
+    },
+    {
+     "code": 7,
+     "client": [
+      "AVATAR_ENTERS_ROOM"
+     ],
+     "editors": [
+      "AvatarEntersRoom.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredTriggerHabboJoinRoom",
+       "logic": "wf_trg_enter_room"
+      }
+     ],
+     "furni": [
+      "wf_trg_enter_room"
+     ],
+     "name": "AVATAR_ENTERS_ROOM"
+    },
+    {
+     "code": 8,
+     "client": [
+      "GAME_STARTS"
+     ],
+     "editors": [
+      "GameStarts.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredTriggerGameStarts",
+       "logic": "wf_trg_game_starts"
+      }
+     ],
+     "furni": [
+      "wf_trg_game_starts"
+     ],
+     "name": "GAME_STARTS"
+    },
+    {
+     "code": 9,
+     "client": [
+      "GAME_ENDS"
+     ],
+     "editors": [
+      "GameEnds.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredTriggerGameEnds",
+       "logic": "wf_trg_game_ends"
+      }
+     ],
+     "furni": [
+      "wf_trg_game_ends"
+     ],
+     "name": "GAME_ENDS"
+    },
+    {
+     "code": 10,
+     "client": [
+      "SCORE_ACHIEVED"
+     ],
+     "editors": [
+      "ScoreAchieved.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredTriggerScoreAchieved",
+       "logic": "wf_trg_score_achieved"
+      }
+     ],
+     "furni": [
+      "wf_trg_score_achieved"
+     ],
+     "name": "SCORE_ACHIEVED"
+    },
+    {
+     "code": 11,
+     "client": [
+      "AVATAR_CAUGHT"
+     ],
+     "editors": [
+      "AvatarCaught.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredTriggerHabboCollision",
+       "logic": "wf_trg_collision"
+      }
+     ],
+     "furni": [
+      "wf_trg_collision"
+     ],
+     "name": "AVATAR_CAUGHT"
+    },
+    {
+     "code": 12,
+     "client": [
+      "PERIODIC_LONG"
+     ],
+     "editors": [
+      "PeriodicLong.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredTriggerLongPeriodically",
+       "logic": "wf_trg_period_long"
+      }
+     ],
+     "furni": [
+      "wf_trg_period_long"
+     ],
+     "name": "PERIODIC_LONG"
+    },
+    {
+     "code": 13,
+     "client": [
+      "BOT_DESTINATION_REACHED"
+     ],
+     "editors": [
+      "BotDestinationReached.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredTriggerBotReachesItem",
+       "logic": "wf_trg_bot_reached_stf"
+      }
+     ],
+     "furni": [
+      "wf_trg_bot_reached_stf"
+     ],
+     "name": "BOT_DESTINATION_REACHED"
+    },
+    {
+     "code": 14,
+     "client": [
+      "BOT_AVATAR_REACHED"
+     ],
+     "editors": [
+      "BotAvatarReached.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredTriggerBotReachesHabbo",
+       "logic": "wf_trg_bot_reached_avtr"
+      }
+     ],
+     "furni": [
+      "wf_trg_bot_reached_avtr"
+     ],
+     "name": "BOT_AVATAR_REACHED"
+    },
+    {
+     "code": 15,
+     "client": [
+      "CLOCK_REACH_TIME"
+     ],
+     "editors": [
+      "ClockReachTime.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredTriggerCounterReachesTime",
+       "logic": "wf_trg_clock_counter"
+      }
+     ],
+     "furni": [
+      "wf_trg_clock_counter"
+     ],
+     "name": "CLOCK_REACH_TIME"
+    },
+    {
+     "code": 16,
+     "client": [
+      "UnknownVarFromTriggerConfCodes_Int_3"
+     ],
+     "editors": [
+      "PerformAction.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredTriggerHabboPerformsAction",
+       "logic": "wf_trg_user_performs_action"
+      }
+     ],
+     "furni": [
+      "wf_trg_user_performs_action"
+     ],
+     "name": "AVATAR_PERFORMS_ACTION"
+    },
+    {
+     "code": 17,
+     "client": [
+      "RECEIVE_SIGNAL"
+     ],
+     "editors": [
+      "ReceiveSignal.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredTriggerReceiveSignal",
+       "logic": "wf_trg_recv_signal"
+      }
+     ],
+     "furni": [
+      "wf_trg_recv_signal"
+     ],
+     "name": "RECEIVE_SIGNAL"
+    },
+    {
+     "code": 18,
+     "client": [
+      "AVATAR_CLICKS_FURNI"
+     ],
+     "editors": [
+      "AvatarClicksFurni.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredTriggerClickFurni",
+       "logic": "wf_trg_click_furni"
+      }
+     ],
+     "furni": [
+      "wf_trg_click_furni"
+     ],
+     "name": "AVATAR_CLICKS_FURNI"
+    },
+    {
+     "code": 19,
+     "client": [
+      "PERIODIC_SHORT"
+     ],
+     "editors": [
+      "PeriodicShort.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredTriggerShortPeriodically",
+       "logic": "wf_trg_period_short"
+      }
+     ],
+     "furni": [
+      "wf_trg_period_short"
+     ],
+     "name": "PERIODIC_SHORT"
+    },
+    {
+     "code": 20,
+     "client": [
+      "STATE_CHANGE"
+     ],
+     "editors": [
+      "StateChange.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredTriggerItemStateUpdated",
+       "logic": "wf_trg_stuff_state"
+      }
+     ],
+     "furni": [
+      "wf_trg_stuff_state"
+     ],
+     "name": "STATE_CHANGE"
+    },
+    {
+     "code": 21,
+     "client": [
+      "UnknownVarFromTriggerConfCodes_Int_4"
+     ],
+     "editors": [
+      "UserClicksTile.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredTriggerClickTile",
+       "logic": "wf_trg_click_tile"
+      }
+     ],
+     "furni": [
+      "wf_trg_click_tile"
+     ],
+     "name": "USER_CLICKS_TILE"
+    },
+    {
+     "code": 22,
+     "client": [
+      "VARIABLE_UPDATE"
+     ],
+     "editors": [
+      "VariableUpdate.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredTriggerVariableChanged",
+       "logic": "wf_trg_var_changed"
+      }
+     ],
+     "furni": [
+      "wf_trg_var_changed"
+     ],
+     "name": "VARIABLE_UPDATE"
+    },
+    {
+     "code": 23,
+     "client": [
+      "AVATAR_LEAVES_ROOM"
+     ],
+     "editors": [
+      "AvatarLeavesRoom.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredTriggerHabboLeaveRoom",
+       "logic": "wf_trg_leave_room"
+      }
+     ],
+     "furni": [
+      "wf_trg_leave_room"
+     ],
+     "name": "AVATAR_LEAVES_ROOM"
+    },
+    {
+     "code": 24,
+     "client": [
+      "USER_CLICKS_USER"
+     ],
+     "editors": [
+      "UserClicksUser.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredTriggerClickUser",
+       "logic": "wf_trg_click_user"
+      }
+     ],
+     "furni": [
+      "wf_trg_click_user"
+     ],
+     "name": "USER_CLICKS_USER"
+    },
+    {
+     "code": 25,
+     "client": [
+      "TRANSACTION_COMPLETED"
+     ],
+     "editors": [
+      "TransactionCompleted.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredTriggerTransactionCompleted",
+       "logic": "wf_trg_transaction_complete"
+      }
+     ],
+     "furni": [
+      "wf_trg_transaction_complete"
+     ],
+     "name": "TRANSACTION_COMPLETED"
+    },
+    {
+     "code": 26,
+     "client": [
+      "TRANSACTION_FAILED"
+     ],
+     "editors": [
+      "TransactionFailed.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredTriggerTransactionFailed",
+       "logic": "wf_trg_transaction_fail"
+      }
+     ],
+     "furni": [
+      "wf_trg_transaction_fail"
+     ],
+     "name": "TRANSACTION_FAILED"
+    },
+    {
+     "code": 28,
+     "client": [
+      "INITIALIZATION"
+     ],
+     "editors": [
+      "RoomInitialized.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredTriggerRoomInitialized",
+       "logic": "wf_trg_room_initializes"
+      }
+     ],
+     "furni": [
+      "wf_trg_room_initializes"
+     ],
+     "name": "INITIALIZATION"
+    },
+    {
+     "code": 29,
+     "client": [
+      "RECEIVE_LINK_MESSAGE"
+     ],
+     "editors": [
+      "ReceiveLinkMessage.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredTriggerReceiveMessage",
+       "logic": "wf_trg_receive_message"
+      }
+     ],
+     "furni": [
+      "wf_trg_receive_message"
+     ],
+     "name": "RECEIVE_LINK_MESSAGE"
+    },
+    {
+     "code": 30,
+     "client": [
+      "RECEIVE_LINK_DATAFRAME"
+     ],
+     "editors": [
+      "ReceiveLinkDataframe.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredTriggerReceiveDataframe",
+       "logic": "wf_trg_receive_dataframe"
+      }
+     ],
+     "furni": [
+      "wf_trg_receive_dataframe"
+     ],
+     "name": "RECEIVE_LINK_DATAFRAME"
+    }
+   ]
+  },
+  "action": {
+   "client": 62,
+   "boxes": 62,
+   "editors": 62,
+   "rows": [
+    {
+     "code": 0,
+     "client": [
+      "TOGGLE_FURNI_STATE"
+     ],
+     "editors": [
+      "ToggleFurniState.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionToggleItemState",
+       "logic": "wf_act_toggle_state"
+      }
+     ],
+     "furni": [
+      "wf_act_toggle_state"
+     ],
+     "name": "TOGGLE_FURNI_STATE"
+    },
+    {
+     "code": 1,
+     "client": [
+      "RESET"
+     ],
+     "editors": [
+      "ResetTimers.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionResetTimers",
+       "logic": "wf_act_reset_timers"
+      }
+     ],
+     "furni": [
+      "wf_act_reset_timers"
+     ],
+     "name": "RESET"
+    },
+    {
+     "code": 3,
+     "client": [
+      "UnknownVarFromActionTypeCodes_Int_1"
+     ],
+     "editors": [
+      "SetFurniStateTo.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionMatchToSnapshot",
+       "logic": "wf_act_match_to_sshot"
+      }
+     ],
+     "furni": [
+      "wf_act_match_to_sshot"
+     ],
+     "name": "SET_FURNI_STATE_TO"
+    },
+    {
+     "code": 4,
+     "client": [
+      "MOVE_FURNI"
+     ],
+     "editors": [
+      "MoveFurni.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionMoveRotateFurni",
+       "logic": "wf_act_move_rotate"
+      }
+     ],
+     "furni": [
+      "wf_act_move_rotate"
+     ],
+     "name": "MOVE_FURNI"
+    },
+    {
+     "code": 6,
+     "client": [
+      "GIVE_SCORE"
+     ],
+     "editors": [
+      "GiveScore.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionGiveScore",
+       "logic": "wf_act_give_score"
+      }
+     ],
+     "furni": [
+      "wf_act_give_score"
+     ],
+     "name": "GIVE_SCORE"
+    },
+    {
+     "code": 7,
+     "client": [
+      "CHAT"
+     ],
+     "editors": [
+      "Chat.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionShowMessage",
+       "logic": "wf_act_show_message"
+      }
+     ],
+     "furni": [
+      "wf_act_show_message"
+     ],
+     "name": "CHAT"
+    },
+    {
+     "code": 8,
+     "client": [
+      "UnknownVarFromActionTypeCodes_Int_2"
+     ],
+     "editors": [
+      "Teleport.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionTeleportTo",
+       "logic": "wf_act_teleport_to"
+      }
+     ],
+     "furni": [
+      "wf_act_teleport_to"
+     ],
+     "name": "TELEPORT"
+    },
+    {
+     "code": 9,
+     "client": [
+      "JOIN_TEAM"
+     ],
+     "editors": [
+      "JoinTeam.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionJoinTeam",
+       "logic": "wf_act_join_team"
+      }
+     ],
+     "furni": [
+      "wf_act_join_team"
+     ],
+     "name": "JOIN_TEAM"
+    },
+    {
+     "code": 10,
+     "client": [
+      "LEAVE_TEAM"
+     ],
+     "editors": [
+      "LeaveTeam.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionLeaveTeam",
+       "logic": "wf_act_leave_team"
+      }
+     ],
+     "furni": [
+      "wf_act_leave_team"
+     ],
+     "name": "LEAVE_TEAM"
+    },
+    {
+     "code": 11,
+     "client": [
+      "CHASE"
+     ],
+     "editors": [
+      "Chase.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionChaseHabbo",
+       "logic": "wf_act_chase"
+      }
+     ],
+     "furni": [
+      "wf_act_chase"
+     ],
+     "name": "CHASE"
+    },
+    {
+     "code": 12,
+     "client": [
+      "FLEE"
+     ],
+     "editors": [
+      "Flee.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionFleeHabbo",
+       "logic": "wf_act_flee"
+      }
+     ],
+     "furni": [
+      "wf_act_flee"
+     ],
+     "name": "FLEE"
+    },
+    {
+     "code": 13,
+     "client": [
+      "MOVE_TO_DIRECTION"
+     ],
+     "editors": [
+      "MoveToDirection.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionMoveToDirection",
+       "logic": "wf_act_move_to_dir"
+      }
+     ],
+     "furni": [
+      "wf_act_move_to_dir"
+     ],
+     "name": "MOVE_TO_DIRECTION"
+    },
+    {
+     "code": 14,
+     "client": [
+      "GIVE_SCORE_TO_PREDEFINED_TEAM"
+     ],
+     "editors": [
+      "GiveScoreToPredefinedTeam.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionGiveScoreToTeam",
+       "logic": "wf_act_give_score_tm"
+      }
+     ],
+     "furni": [
+      "wf_act_give_score_tm"
+     ],
+     "name": "GIVE_SCORE_TO_PREDEFINED_TEAM"
+    },
+    {
+     "code": 15,
+     "client": [
+      "TOGGLE_TO_RANDOM_STATE"
+     ],
+     "editors": [
+      "ToggleToRandomState.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionToggleToRandomState",
+       "logic": "wf_act_toggle_to_rnd"
+      }
+     ],
+     "furni": [
+      "wf_act_toggle_to_rnd"
+     ],
+     "name": "TOGGLE_TO_RANDOM_STATE"
+    },
+    {
+     "code": 16,
+     "client": [
+      "MOVE_FURNI_TO"
+     ],
+     "editors": [
+      "MoveFurniTo.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionMoveFurniTo",
+       "logic": "wf_act_move_furni_to"
+      }
+     ],
+     "furni": [
+      "wf_act_move_furni_to"
+     ],
+     "name": "MOVE_FURNI_TO"
+    },
+    {
+     "code": 17,
+     "client": [
+      "GIVE_REWARD"
+     ],
+     "editors": [
+      "GiveReward.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionGiveReward",
+       "logic": "wf_act_give_reward"
+      }
+     ],
+     "furni": [
+      "wf_act_give_reward"
+     ],
+     "name": "GIVE_REWARD"
+    },
+    {
+     "code": 18,
+     "client": [
+      "CALL_ANOTHER_STACK"
+     ],
+     "editors": [
+      "CallAnotherStack.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionCallStacks",
+       "logic": "wf_act_call_stacks"
+      }
+     ],
+     "furni": [
+      "wf_act_call_stacks"
+     ],
+     "name": "CALL_ANOTHER_STACK"
+    },
+    {
+     "code": 19,
+     "client": [
+      "KICK_FROM_ROOM"
+     ],
+     "editors": [
+      "KickFromRoom.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionKickUser",
+       "logic": "wf_act_kick_user"
+      }
+     ],
+     "furni": [
+      "wf_act_kick_user"
+     ],
+     "name": "KICK_FROM_ROOM"
+    },
+    {
+     "code": 20,
+     "client": [
+      "MUTE_USER"
+     ],
+     "editors": [
+      "MuteUser.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionMuteTriggerer",
+       "logic": "wf_act_mute_triggerer"
+      }
+     ],
+     "furni": [
+      "wf_act_mute_triggerer"
+     ],
+     "name": "MUTE_USER"
+    },
+    {
+     "code": 21,
+     "client": [
+      "BOT_TELEPORT"
+     ],
+     "editors": [
+      "BotTeleport.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionBotTeleport",
+       "logic": "wf_act_bot_teleport"
+      }
+     ],
+     "furni": [
+      "wf_act_bot_teleport"
+     ],
+     "name": "BOT_TELEPORT"
+    },
+    {
+     "code": 22,
+     "client": [
+      "BOT_MOVE"
+     ],
+     "editors": [
+      "BotMove.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionBotMove",
+       "logic": "wf_act_bot_move"
+      }
+     ],
+     "furni": [
+      "wf_act_bot_move"
+     ],
+     "name": "BOT_MOVE"
+    },
+    {
+     "code": 23,
+     "client": [
+      "BOT_TALK"
+     ],
+     "editors": [
+      "BotTalk.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionBotTalk",
+       "logic": "wf_act_bot_talk"
+      }
+     ],
+     "furni": [
+      "wf_act_bot_talk"
+     ],
+     "name": "BOT_TALK"
+    },
+    {
+     "code": 24,
+     "client": [
+      "BOT_GIVE_HAND_ITEM"
+     ],
+     "editors": [
+      "BotGiveHandItem.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionBotGiveHandItem",
+       "logic": "wf_act_bot_give_handitem"
+      }
+     ],
+     "furni": [
+      "wf_act_bot_give_handitem"
+     ],
+     "name": "BOT_GIVE_HAND_ITEM"
+    },
+    {
+     "code": 25,
+     "client": [
+      "BOT_FOLLOW_AVATAR"
+     ],
+     "editors": [
+      "BotFollowAvatar.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionBotFollowAvatar",
+       "logic": "wf_act_bot_follow_avatar"
+      }
+     ],
+     "furni": [
+      "wf_act_bot_follow_avatar"
+     ],
+     "name": "BOT_FOLLOW_AVATAR"
+    },
+    {
+     "code": 26,
+     "client": [
+      "BOT_CHANGE_FIGURE"
+     ],
+     "editors": [
+      "BotChangeFigure.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionBotChangeFigure",
+       "logic": "wf_act_bot_clothes"
+      }
+     ],
+     "furni": [
+      "wf_act_bot_clothes"
+     ],
+     "name": "BOT_CHANGE_FIGURE"
+    },
+    {
+     "code": 27,
+     "client": [
+      "BOT_TALK_DIRECT_TO_AVTR"
+     ],
+     "editors": [
+      "BotTalkDirectToAvatar.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionBotTalkToAvatar",
+       "logic": "wf_act_bot_talk_to_avatar"
+      }
+     ],
+     "furni": [
+      "wf_act_bot_talk_to_avatar"
+     ],
+     "name": "BOT_TALK_DIRECT_TO_AVTR"
+    },
+    {
+     "code": 28,
+     "client": [
+      "CONTROL_CLOCK"
+     ],
+     "editors": [
+      "ControlClock.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionControlClock",
+       "logic": "wf_act_control_clock"
+      }
+     ],
+     "furni": [
+      "wf_act_control_clock"
+     ],
+     "name": "CONTROL_CLOCK"
+    },
+    {
+     "code": 29,
+     "client": [
+      "SET_FURNI_ALTITUDE"
+     ],
+     "editors": [
+      "SetFurniAltitude.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionSetAltitude",
+       "logic": "wf_act_set_altitude"
+      }
+     ],
+     "furni": [
+      "wf_act_set_altitude"
+     ],
+     "name": "SET_FURNI_ALTITUDE"
+    },
+    {
+     "code": 30,
+     "client": [
+      "SEND_SIGNAL"
+     ],
+     "editors": [
+      "SendSignal.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionSendSignal",
+       "logic": "wf_act_send_signal"
+      }
+     ],
+     "furni": [
+      "wf_act_send_signal"
+     ],
+     "name": "SEND_SIGNAL"
+    },
+    {
+     "code": 31,
+     "client": [
+      "FREEZE_USER"
+     ],
+     "editors": [
+      "FreezeUser.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionFreezeUser",
+       "logic": "wf_act_freeze"
+      }
+     ],
+     "furni": [
+      "wf_act_freeze"
+     ],
+     "name": "FREEZE_USER"
+    },
+    {
+     "code": 32,
+     "client": [
+      "UNFREEZE_USER"
+     ],
+     "editors": [
+      "UnfreezeUser.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionUnfreezeUser",
+       "logic": "wf_act_unfreeze"
+      }
+     ],
+     "furni": [
+      "wf_act_unfreeze"
+     ],
+     "name": "UNFREEZE_USER"
+    },
+    {
+     "code": 33,
+     "client": [
+      "RELATIVE_FURNI_MOVE"
+     ],
+     "editors": [
+      "RelativeFurniMove.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionRelativeMove",
+       "logic": "wf_act_rel_mov"
+      }
+     ],
+     "furni": [
+      "wf_act_rel_mov"
+     ],
+     "name": "RELATIVE_FURNI_MOVE"
+    },
+    {
+     "code": 34,
+     "client": [
+      "MOVE_FURNI_TO_FURNI"
+     ],
+     "editors": [
+      "MoveFurniToFurni.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionFurniToFurni",
+       "logic": "wf_act_furni_to_furni"
+      }
+     ],
+     "furni": [
+      "wf_act_furni_to_furni"
+     ],
+     "name": "MOVE_FURNI_TO_FURNI"
+    },
+    {
+     "code": 35,
+     "client": [
+      "MOVE_FURNI_TO_USER"
+     ],
+     "editors": [
+      "MoveFurniToUser.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionFurniToUser",
+       "logic": "wf_act_furni_to_user"
+      }
+     ],
+     "furni": [
+      "wf_act_furni_to_user"
+     ],
+     "name": "MOVE_FURNI_TO_USER"
+    },
+    {
+     "code": 36,
+     "client": [
+      "NEG_CALL_ANOTHER_STACK"
+     ],
+     "editors": [
+      "CallAnotherStack.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionNegativeCallStacks",
+       "logic": "wf_act_neg_call_stacks"
+      }
+     ],
+     "furni": [
+      "wf_act_neg_call_stacks"
+     ],
+     "name": "NEG_CALL_ANOTHER_STACK"
+    },
+    {
+     "code": 37,
+     "client": [
+      "NEG_SEND_SIGNAL"
+     ],
+     "editors": [
+      "SendSignal.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionNegativeSendSignal",
+       "logic": "wf_act_neg_send_signal"
+      }
+     ],
+     "furni": [
+      "wf_act_neg_send_signal"
+     ],
+     "name": "NEG_SEND_SIGNAL"
+    },
+    {
+     "code": 38,
+     "client": [
+      "ADJUST_CLOCK"
+     ],
+     "editors": [
+      "AdjustClock.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionAdjustClock",
+       "logic": "wf_act_adjust_clock"
+      }
+     ],
+     "furni": [
+      "wf_act_adjust_clock"
+     ],
+     "name": "ADJUST_CLOCK"
+    },
+    {
+     "code": 39,
+     "client": [
+      "GIVE_VARIABLE"
+     ],
+     "editors": [
+      "GiveVariable.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionGiveVariable",
+       "logic": "wf_act_give_var"
+      }
+     ],
+     "furni": [
+      "wf_act_give_var"
+     ],
+     "name": "GIVE_VARIABLE"
+    },
+    {
+     "code": 40,
+     "client": [
+      "REMOVE_VARIABLE"
+     ],
+     "editors": [
+      "RemoveVariable.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionRemoveVariable",
+       "logic": "wf_act_remove_var"
+      }
+     ],
+     "furni": [
+      "wf_act_remove_var"
+     ],
+     "name": "REMOVE_VARIABLE"
+    },
+    {
+     "code": 41,
+     "client": [
+      "CHANGE_VARIABLE"
+     ],
+     "editors": [
+      "ChangeVariable.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionChangeVariable",
+       "logic": "wf_act_change_var_val"
+      }
+     ],
+     "furni": [
+      "wf_act_change_var_val"
+     ],
+     "name": "CHANGE_VARIABLE"
+    },
+    {
+     "code": 42,
+     "client": [
+      "MOVE_USER"
+     ],
+     "editors": [
+      "MoveUser.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionMoveRotateUser",
+       "logic": "wf_act_move_rotate_user"
+      }
+     ],
+     "furni": [
+      "wf_act_move_rotate_user"
+     ],
+     "name": "MOVE_USER"
+    },
+    {
+     "code": 43,
+     "client": [
+      "MOVE_USER_TO_FURNI"
+     ],
+     "editors": [
+      "MoveUserToFurni.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionUserToFurni",
+       "logic": "wf_act_user_to_furni"
+      }
+     ],
+     "furni": [
+      "wf_act_user_to_furni"
+     ],
+     "name": "MOVE_USER_TO_FURNI"
+    },
+    {
+     "code": 44,
+     "client": [
+      "TELEPORT_TO_ROOM"
+     ],
+     "editors": [
+      "TeleportToRoom.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionTeleportToRoom",
+       "logic": "wf_act_teleport_to_room"
+      }
+     ],
+     "furni": [
+      "wf_act_teleport_to_room"
+     ],
+     "name": "TELEPORT_TO_ROOM"
+    },
+    {
+     "code": 45,
+     "client": [
+      "GIVE_CURRENCY_FROM_CHEST"
+     ],
+     "editors": [
+      "chests/GiveCurrencyFromChest.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionGiveCurrencyFromChest",
+       "logic": "wf_act_give_currency"
+      }
+     ],
+     "furni": [
+      "wf_act_give_currency"
+     ],
+     "name": "GIVE_CURRENCY_FROM_CHEST"
+    },
+    {
+     "code": 46,
+     "client": [
+      "GIVE_FURNI_FROM_CHEST"
+     ],
+     "editors": [
+      "chests/GiveItemsFromChest.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionGiveFurniFromChest",
+       "logic": "wf_act_give_furni"
+      }
+     ],
+     "furni": [
+      "wf_act_give_furni"
+     ],
+     "name": "GIVE_FURNI_FROM_CHEST"
+    },
+    {
+     "code": 47,
+     "client": [
+      "INITIATE_TRANSACTION"
+     ],
+     "editors": [
+      "chests/InitiateTransaction.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionInitiateTransaction",
+       "logic": "wf_act_init_transaction"
+      }
+     ],
+     "furni": [
+      "wf_act_init_transaction"
+     ],
+     "name": "INITIATE_TRANSACTION"
+    },
+    {
+     "code": 48,
+     "client": [
+      "CANCEL_TRANSACTION"
+     ],
+     "editors": [
+      "chests/CancelTransaction.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionCancelTransaction",
+       "logic": "wf_act_cancel_transaction"
+      }
+     ],
+     "furni": [
+      "wf_act_cancel_transaction"
+     ],
+     "name": "CANCEL_TRANSACTION"
+    },
+    {
+     "code": 49,
+     "client": [
+      "UnknownVarFromActionTypeCodes_Int_3"
+     ],
+     "editors": [
+      "WriteToLogs.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionWriteToLogs",
+       "logic": "wf_act_log"
+      }
+     ],
+     "furni": [
+      "wf_act_log"
+     ],
+     "name": "WRITE_TO_LOGS"
+    },
+    {
+     "code": 50,
+     "client": [
+      "UnknownVarFromActionTypeCodes_Int_4"
+     ],
+     "editors": [
+      "WriteToLogs.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionNegativeWriteToLogs",
+       "logic": "wf_act_neg_log"
+      }
+     ],
+     "furni": [
+      "wf_act_neg_log"
+     ],
+     "name": "NEG_WRITE_TO_LOGS"
+    },
+    {
+     "code": 51,
+     "client": [
+      "PROGRESS_ACHIEVEMENT"
+     ],
+     "editors": [
+      "ProgressAchievement.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionProgressAchievement",
+       "logic": "wf_act_progress_ach"
+      }
+     ],
+     "furni": [
+      "wf_act_progress_ach"
+     ],
+     "name": "PROGRESS_ACHIEVEMENT"
+    },
+    {
+     "code": 52,
+     "client": [
+      "GIVE_EFFECT"
+     ],
+     "editors": [
+      "GiveEffect.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionGiveEffect",
+       "logic": "wf_act_give_effect"
+      }
+     ],
+     "furni": [],
+     "name": "GIVE_EFFECT"
+    },
+    {
+     "code": 53,
+     "client": [
+      "OVERRIDE_HEIGHT"
+     ],
+     "editors": [
+      "OverrideHeight.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionOverrideHeight",
+       "logic": "wf_act_override_height"
+      }
+     ],
+     "furni": [],
+     "name": "OVERRIDE_HEIGHT"
+    },
+    {
+     "code": 54,
+     "client": [
+      "UnknownVarFromActionTypeCodes_Int_5"
+     ],
+     "editors": [
+      "ClickSettings.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionClickSettings",
+       "logic": "wf_act_click_conf"
+      }
+     ],
+     "furni": [
+      "wf_act_click_conf"
+     ],
+     "name": "CLICK_SETTINGS"
+    },
+    {
+     "code": 55,
+     "client": [
+      "PLACE_FURNI"
+     ],
+     "editors": [
+      "PlaceFurni.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionPlaceFurni",
+       "logic": "wf_act_place_furni"
+      }
+     ],
+     "furni": [
+      "wf_act_place_furni"
+     ],
+     "name": "PLACE_FURNI"
+    },
+    {
+     "code": 56,
+     "client": [
+      "REMOVE_FURNI"
+     ],
+     "editors": [
+      "RemoveFurni.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionRemoveFurni",
+       "logic": "wf_act_remove_furni"
+      }
+     ],
+     "furni": [
+      "wf_act_remove_furni"
+     ],
+     "name": "REMOVE_FURNI"
+    },
+    {
+     "code": 57,
+     "client": [
+      "MOVE_AS_GROUP"
+     ],
+     "editors": [
+      "MoveAsGroup.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionMoveAsGroup",
+       "logic": "wf_act_move_furni_as_group"
+      }
+     ],
+     "furni": [
+      "wf_act_move_furni_as_group"
+     ],
+     "name": "MOVE_AS_GROUP"
+    },
+    {
+     "code": 58,
+     "client": [
+      "PROGRESS_REWARD_TRACK"
+     ],
+     "editors": [
+      "ProgressRewardTrack.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionProgressRewardTrack",
+       "logic": "wf_act_progress_reward_track"
+      }
+     ],
+     "furni": [],
+     "name": "PROGRESS_REWARD_TRACK"
+    },
+    {
+     "code": 59,
+     "client": [
+      "RESET_REWARD_TRACK"
+     ],
+     "editors": [
+      "ResetRewardTrack.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionResetRewardTrack",
+       "logic": "wf_act_reset_reward_track"
+      }
+     ],
+     "furni": [],
+     "name": "RESET_REWARD_TRACK"
+    },
+    {
+     "code": 61,
+     "client": [
+      "SET_FURNI_TRANSPARENCY"
+     ],
+     "editors": [
+      "SetFurniTransparency.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionSetFurniTransparency",
+       "logic": "wf_act_set_visibility"
+      }
+     ],
+     "furni": [
+      "wf_act_set_visibility"
+     ],
+     "name": "SET_FURNI_TRANSPARENCY"
+    },
+    {
+     "code": 62,
+     "client": [
+      "SET_FURNI_HIGHLIGHT"
+     ],
+     "editors": [
+      "SetFurniHighlight.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionSetHighlight",
+       "logic": "wf_act_set_highlight"
+      }
+     ],
+     "furni": [
+      "wf_act_set_highlight"
+     ],
+     "name": "SET_FURNI_HIGHLIGHT"
+    },
+    {
+     "code": 63,
+     "client": [
+      "SEND_LINK_MESSAGE"
+     ],
+     "editors": [
+      "SendLinkMessage.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionSendMessage",
+       "logic": "wf_act_send_message"
+      }
+     ],
+     "furni": [
+      "wf_act_send_message"
+     ],
+     "name": "SEND_LINK_MESSAGE"
+    },
+    {
+     "code": 64,
+     "client": [
+      "SEND_LINK_DATAFRAME"
+     ],
+     "editors": [
+      "SendLinkDataframe.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredActionSendDataframe",
+       "logic": "wf_act_send_dataframe"
+      }
+     ],
+     "furni": [
+      "wf_act_send_dataframe"
+     ],
+     "name": "SEND_LINK_DATAFRAME"
+    }
+   ]
+  },
+  "condition": {
+   "client": 45,
+   "boxes": 45,
+   "editors": 45,
+   "rows": [
+    {
+     "code": 0,
+     "client": [
+      "STATES_MATCH"
+     ],
+     "editors": [
+      "StatesMatch.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredConditionItemMatches",
+       "logic": "wf_cnd_match_snapshot"
+      }
+     ],
+     "furni": [
+      "wf_cnd_match_snapshot"
+     ],
+     "name": "STATES_MATCH"
+    },
+    {
+     "code": 1,
+     "client": [
+      "FURNIS_HAVE_AVATARS"
+     ],
+     "editors": [
+      "FurnisHaveAvatars.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredConditionItemHasHabbo",
+       "logic": "wf_cnd_furnis_hv_avtrs"
+      }
+     ],
+     "furni": [
+      "wf_cnd_furnis_hv_avtrs"
+     ],
+     "name": "FURNIS_HAVE_AVATARS"
+    },
+    {
+     "code": 2,
+     "client": [
+      "TRIGGERER_IS_ON_FURNI"
+     ],
+     "editors": [
+      "TriggererIsOnFurni.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredConditionExecutorOnItem",
+       "logic": "wf_cnd_trggrer_on_frn"
+      }
+     ],
+     "furni": [
+      "wf_cnd_trggrer_on_frn"
+     ],
+     "name": "TRIGGERER_IS_ON_FURNI"
+    },
+    {
+     "code": 3,
+     "client": [
+      "TIME_ELAPSED_MORE"
+     ],
+     "editors": [
+      "TimeElapsedMore.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredConditionTimerMoreThan",
+       "logic": "wf_cnd_time_more_than"
+      }
+     ],
+     "furni": [
+      "wf_cnd_time_more_than"
+     ],
+     "name": "TIME_ELAPSED_MORE"
+    },
+    {
+     "code": 4,
+     "client": [
+      "TIME_ELAPSED_LESS"
+     ],
+     "editors": [
+      "TimeElapsedLess.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredConditionTimerLessThan",
+       "logic": "wf_cnd_time_less_than"
+      }
+     ],
+     "furni": [
+      "wf_cnd_time_less_than"
+     ],
+     "name": "TIME_ELAPSED_LESS"
+    },
+    {
+     "code": 5,
+     "client": [
+      "USER_COUNT_IN"
+     ],
+     "editors": [
+      "UserCountIn.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredConditionRoomHabboCount",
+       "logic": "wf_cnd_user_count_in"
+      }
+     ],
+     "furni": [
+      "wf_cnd_user_count_in"
+     ],
+     "name": "USER_COUNT_IN"
+    },
+    {
+     "code": 6,
+     "client": [
+      "ACTOR_IS_IN_TEAM"
+     ],
+     "editors": [
+      "ActorIsInTeam.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredConditionHabboInTeam",
+       "logic": "wf_cnd_actor_in_team"
+      }
+     ],
+     "furni": [
+      "wf_cnd_actor_in_team"
+     ],
+     "name": "ACTOR_IS_IN_TEAM"
+    },
+    {
+     "code": 7,
+     "client": [
+      "HAS_STACKED_FURNIS"
+     ],
+     "editors": [
+      "HasStackedFurnis.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredConditionItemHasItems",
+       "logic": "wf_cnd_has_furni_on"
+      }
+     ],
+     "furni": [
+      "wf_cnd_has_furni_on"
+     ],
+     "name": "HAS_STACKED_FURNIS"
+    },
+    {
+     "code": 8,
+     "client": [
+      "STUFF_TYPE_MATCHES"
+     ],
+     "editors": [
+      "StuffTypeMatches.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredConditionItemPerType",
+       "logic": "wf_cnd_stuff_is"
+      }
+     ],
+     "furni": [
+      "wf_cnd_stuff_is"
+     ],
+     "name": "STUFF_TYPE_MATCHES"
+    },
+    {
+     "code": 10,
+     "client": [
+      "ACTOR_IS_GROUP_MEMBER"
+     ],
+     "editors": [
+      "ActorIsGroupMember.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredConditionGroupMember",
+       "logic": "wf_cnd_actor_in_group"
+      }
+     ],
+     "furni": [
+      "wf_cnd_actor_in_group"
+     ],
+     "name": "ACTOR_IS_GROUP_MEMBER"
+    },
+    {
+     "code": 11,
+     "client": [
+      "ACTOR_IS_WEARING_BADGE"
+     ],
+     "editors": [
+      "ActorIsWearingBadge.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredConditionHabboHasWearingBadge",
+       "logic": "wf_cnd_wearing_badge"
+      }
+     ],
+     "furni": [
+      "wf_cnd_wearing_badge"
+     ],
+     "name": "ACTOR_IS_WEARING_BADGE"
+    },
+    {
+     "code": 12,
+     "client": [
+      "ACTOR_IS_WEARING_EFFECT"
+     ],
+     "editors": [
+      "ActorIsWearingEffect.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredConditionHabboHasEffect",
+       "logic": "wf_cnd_wearing_effect"
+      }
+     ],
+     "furni": [
+      "wf_cnd_wearing_effect"
+     ],
+     "name": "ACTOR_IS_WEARING_EFFECT"
+    },
+    {
+     "code": 13,
+     "client": [
+      "NOT_STATES_MATCH"
+     ],
+     "editors": [
+      "StatesMatch.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredNegativeConditionItemMatches",
+       "logic": "wf_cnd_not_match_snap"
+      }
+     ],
+     "furni": [
+      "wf_cnd_not_match_snap"
+     ],
+     "name": "NOT_STATES_MATCH"
+    },
+    {
+     "code": 14,
+     "client": [
+      "NOT_FURNIS_HAVE_AVATARS"
+     ],
+     "editors": [
+      "FurnisHaveNoAvatars.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredNegativeConditionItemHasHabbo",
+       "logic": "wf_cnd_not_hv_avtrs"
+      }
+     ],
+     "furni": [
+      "wf_cnd_not_hv_avtrs"
+     ],
+     "name": "NOT_FURNIS_HAVE_AVATARS"
+    },
+    {
+     "code": 15,
+     "client": [
+      "NOT_TRIGGERER_IS_ON_FURNI"
+     ],
+     "editors": [
+      "TriggererIsOnFurni.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredNegativeConditionExecutorOnItem",
+       "logic": "wf_cnd_not_trggrer_on"
+      }
+     ],
+     "furni": [
+      "wf_cnd_not_trggrer_on"
+     ],
+     "name": "NOT_TRIGGERER_IS_ON_FURNI"
+    },
+    {
+     "code": 16,
+     "client": [
+      "NOT_USER_COUNT_IN"
+     ],
+     "editors": [
+      "UserCountIn.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredNegativeConditionRoomHabboCount",
+       "logic": "wf_cnd_not_user_count"
+      }
+     ],
+     "furni": [
+      "wf_cnd_not_user_count"
+     ],
+     "name": "NOT_USER_COUNT_IN"
+    },
+    {
+     "code": 17,
+     "client": [
+      "NOT_ACTOR_IS_IN_TEAM"
+     ],
+     "editors": [
+      "ActorIsInTeam.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredNegativeConditionHabboInTeam",
+       "logic": "wf_cnd_not_in_team"
+      }
+     ],
+     "furni": [
+      "wf_cnd_not_in_team"
+     ],
+     "name": "NOT_ACTOR_IS_IN_TEAM"
+    },
+    {
+     "code": 18,
+     "client": [
+      "NOT_HAS_STACKED_FURNIS"
+     ],
+     "editors": [
+      "DontHaveStackedFurnis.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredNegativeConditionItemHasItems",
+       "logic": "wf_cnd_not_furni_on"
+      }
+     ],
+     "furni": [
+      "wf_cnd_not_furni_on"
+     ],
+     "name": "NOT_HAS_STACKED_FURNIS"
+    },
+    {
+     "code": 19,
+     "client": [
+      "NOT_STUFF_TYPE_MATCHES"
+     ],
+     "editors": [
+      "StuffTypeMatches.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredNegativeConditionItemPerType",
+       "logic": "wf_cnd_not_stuff_is"
+      }
+     ],
+     "furni": [
+      "wf_cnd_not_stuff_is"
+     ],
+     "name": "NOT_STUFF_TYPE_MATCHES"
+    },
+    {
+     "code": 21,
+     "client": [
+      "NOT_ACTOR_IS_GROUP_MEMBER"
+     ],
+     "editors": [
+      "ActorIsGroupMember.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredNegativeConditionGroupMember",
+       "logic": "wf_cnd_not_in_group"
+      }
+     ],
+     "furni": [
+      "wf_cnd_not_in_group"
+     ],
+     "name": "NOT_ACTOR_IS_GROUP_MEMBER"
+    },
+    {
+     "code": 22,
+     "client": [
+      "NOT_ACTOR_IS_WEARING_BADGE"
+     ],
+     "editors": [
+      "ActorIsWearingBadge.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredNegativeConditionHabboHasWearingBadge",
+       "logic": "wf_cnd_not_wearing_b"
+      }
+     ],
+     "furni": [
+      "wf_cnd_not_wearing_b"
+     ],
+     "name": "NOT_ACTOR_IS_WEARING_BADGE"
+    },
+    {
+     "code": 23,
+     "client": [
+      "NOT_ACTOR_IS_WEARING_EFFECT"
+     ],
+     "editors": [
+      "ActorIsWearingEffect.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredNegativeConditionHabboHasEffect",
+       "logic": "wf_cnd_not_wearing_fx"
+      }
+     ],
+     "furni": [
+      "wf_cnd_not_wearing_fx"
+     ],
+     "name": "NOT_ACTOR_IS_WEARING_EFFECT"
+    },
+    {
+     "code": 24,
+     "client": [
+      "DATE_RANGE_ACTIVE"
+     ],
+     "editors": [
+      "DateRangeActive.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredConditionDateRangeActive",
+       "logic": "wf_cnd_date_rng_active"
+      }
+     ],
+     "furni": [
+      "wf_cnd_date_rng_active"
+     ],
+     "name": "DATE_RANGE_ACTIVE"
+    },
+    {
+     "code": 25,
+     "client": [
+      "ACTOR_HAS_HANDITEM"
+     ],
+     "editors": [
+      "ActorHasHandItem.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredConditionHabboHasHanditem",
+       "logic": "wf_cnd_has_handitem"
+      }
+     ],
+     "furni": [
+      "wf_cnd_has_handitem"
+     ],
+     "name": "ACTOR_HAS_HANDITEM"
+    },
+    {
+     "code": 26,
+     "client": [
+      "TRIGGERER_MATCHES"
+     ],
+     "editors": [
+      "TriggererMatches.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredConditionExecutorMatches",
+       "logic": "wf_cnd_triggerer_match"
+      }
+     ],
+     "furni": [
+      "wf_cnd_triggerer_match"
+     ],
+     "name": "TRIGGERER_MATCHES"
+    },
+    {
+     "code": 27,
+     "client": [
+      "NOT_TRIGGERER_MATCHES"
+     ],
+     "editors": [
+      "TriggererMatches.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredNegativeConditionExecutorMatches",
+       "logic": "wf_cnd_not_triggerer_match"
+      }
+     ],
+     "furni": [
+      "wf_cnd_not_triggerer_match"
+     ],
+     "name": "NOT_TRIGGERER_MATCHES"
+    },
+    {
+     "code": 28,
+     "client": [
+      "TIME_MATCHES"
+     ],
+     "editors": [
+      "TimeMatches.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredConditionTimeMatches",
+       "logic": "wf_cnd_match_time"
+      }
+     ],
+     "furni": [
+      "wf_cnd_match_time"
+     ],
+     "name": "TIME_MATCHES"
+    },
+    {
+     "code": 29,
+     "client": [
+      "DATE_MATCHES"
+     ],
+     "editors": [
+      "DateMatches.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredConditionDateMatches",
+       "logic": "wf_cnd_match_date"
+      }
+     ],
+     "furni": [
+      "wf_cnd_match_date"
+     ],
+     "name": "DATE_MATCHES"
+    },
+    {
+     "code": 30,
+     "client": [
+      "NOT_HAS_HANDITEM"
+     ],
+     "editors": [
+      "ActorHasHandItem.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredNegativeConditionHabboHasHanditem",
+       "logic": "wf_cnd_not_has_handitem"
+      }
+     ],
+     "furni": [
+      "wf_cnd_not_has_handitem"
+     ],
+     "name": "NOT_HAS_HANDITEM"
+    },
+    {
+     "code": 31,
+     "client": [
+      "TEAM_IS_WINNING"
+     ],
+     "editors": [
+      "TeamIsWinning.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredConditionTeamHasRank",
+       "logic": "wf_cnd_team_has_rank"
+      }
+     ],
+     "furni": [
+      "wf_cnd_team_has_rank"
+     ],
+     "name": "TEAM_IS_WINNING"
+    },
+    {
+     "code": 32,
+     "client": [
+      "PERFORMING_ACTION"
+     ],
+     "editors": [
+      "PerformingAction.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredConditionHabboPerformsAction",
+       "logic": "wf_cnd_user_performs_action"
+      }
+     ],
+     "furni": [
+      "wf_cnd_user_performs_action"
+     ],
+     "name": "PERFORMING_ACTION"
+    },
+    {
+     "code": 33,
+     "client": [
+      "NOT_PERFORMING_ACTION"
+     ],
+     "editors": [
+      "PerformingAction.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredNegativeConditionHabboPerformsAction",
+       "logic": "wf_cnd_not_user_performs_action"
+      }
+     ],
+     "furni": [
+      "wf_cnd_not_user_performs_action"
+     ],
+     "name": "NOT_PERFORMING_ACTION"
+    },
+    {
+     "code": 34,
+     "client": [
+      "TEAM_HAS_SCORE"
+     ],
+     "editors": [
+      "TeamHasScore.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredConditionTeamHasScore",
+       "logic": "wf_cnd_team_has_score"
+      }
+     ],
+     "furni": [
+      "wf_cnd_team_has_score"
+     ],
+     "name": "TEAM_HAS_SCORE"
+    },
+    {
+     "code": 35,
+     "client": [
+      "CLOCK_TIME_MATCHES"
+     ],
+     "editors": [
+      "ClockTimeMatches.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredConditionCounterTimeMatch",
+       "logic": "wf_cnd_counter_time_matches"
+      }
+     ],
+     "furni": [
+      "wf_cnd_counter_time_matches"
+     ],
+     "name": "CLOCK_TIME_MATCHES"
+    },
+    {
+     "code": 36,
+     "client": [
+      "FURNI_HAS_ALTITUDE"
+     ],
+     "editors": [
+      "FurniHasAltitude.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredConditionItemHeightMatch",
+       "logic": "wf_cnd_has_altitude"
+      }
+     ],
+     "furni": [
+      "wf_cnd_has_altitude"
+     ],
+     "name": "FURNI_HAS_ALTITUDE"
+    },
+    {
+     "code": 37,
+     "client": [
+      "USER_DIRECTION"
+     ],
+     "editors": [
+      "UserDirection.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredConditionEntityDirection",
+       "logic": "wf_cnd_actor_dir"
+      }
+     ],
+     "furni": [
+      "wf_cnd_actor_dir"
+     ],
+     "name": "USER_DIRECTION"
+    },
+    {
+     "code": 38,
+     "client": [
+      "INPUT_SOURCE_QUANTITY"
+     ],
+     "editors": [
+      "InputSourceQuantity.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredConditionSelectQuantity",
+       "logic": "wf_cnd_slc_quantity"
+      }
+     ],
+     "furni": [
+      "wf_cnd_slc_quantity"
+     ],
+     "name": "INPUT_SOURCE_QUANTITY"
+    },
+    {
+     "code": 39,
+     "client": [
+      "CAN_PERFORM_MOVE"
+     ],
+     "editors": [
+      "CanPerformMove.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredConditionValidMoves",
+       "logic": "wf_cnd_valid_moves"
+      }
+     ],
+     "furni": [
+      "wf_cnd_valid_moves"
+     ],
+     "name": "CAN_PERFORM_MOVE"
+    },
+    {
+     "code": 40,
+     "client": [
+      "UnknownConstFromVariableFxVisibilityIds_Int_1"
+     ],
+     "editors": [
+      "HasVariable.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredConditionHasVariable",
+       "logic": "wf_cnd_has_var"
+      }
+     ],
+     "furni": [
+      "wf_cnd_has_var"
+     ],
+     "name": "HAS_VARIABLE"
+    },
+    {
+     "code": 41,
+     "client": [
+      "NOT_HAS_VARIABLE"
+     ],
+     "editors": [
+      "HasVariable.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredNegativeConditionHasVariable",
+       "logic": "wf_cnd_neg_has_var"
+      }
+     ],
+     "furni": [
+      "wf_cnd_neg_has_var"
+     ],
+     "name": "NOT_HAS_VARIABLE"
+    },
+    {
+     "code": 42,
+     "client": [
+      "VARIABLE_VALUE"
+     ],
+     "editors": [
+      "VariableValue.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredConditionVariableValueMatch",
+       "logic": "wf_cnd_var_val_match"
+      }
+     ],
+     "furni": [
+      "wf_cnd_var_val_match"
+     ],
+     "name": "VARIABLE_VALUE"
+    },
+    {
+     "code": 43,
+     "client": [
+      "VARIABLE_AGE"
+     ],
+     "editors": [
+      "VariableAge.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredConditionVariableAgeMatch",
+       "logic": "wf_cnd_var_age_match"
+      }
+     ],
+     "furni": [
+      "wf_cnd_var_age_match"
+     ],
+     "name": "VARIABLE_AGE"
+    },
+    {
+     "code": 44,
+     "client": [
+      "USER_LEVEL"
+     ],
+     "editors": [
+      "LevelMatches.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredConditionUserLevel",
+       "logic": "wf_cnd_user_level"
+      }
+     ],
+     "furni": [],
+     "name": "USER_LEVEL"
+    },
+    {
+     "code": 45,
+     "client": [
+      "CHEST_HAS_ITEMS"
+     ],
+     "editors": [
+      "ChestHasAmount.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredConditionChestHasItems",
+       "logic": "wf_cnd_chest_has_items"
+      }
+     ],
+     "furni": [
+      "wf_cnd_chest_has_items"
+     ],
+     "name": "CHEST_HAS_ITEMS"
+    },
+    {
+     "code": 46,
+     "client": [
+      "CHEST_HAS_ITEM_TYPES"
+     ],
+     "editors": [
+      "ChestHasItemTypes.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredConditionChestHasItemTypes",
+       "logic": "wf_cnd_chest_has_item_type"
+      }
+     ],
+     "furni": [
+      "wf_cnd_chest_has_item_type"
+     ],
+     "name": "CHEST_HAS_ITEM_TYPES"
+    }
+   ]
+  },
+  "selector": {
+   "client": 20,
+   "boxes": 20,
+   "editors": 20,
+   "rows": [
+    {
+     "code": 0,
+     "client": [
+      "FURNI_BY_TYPE"
+     ],
+     "editors": [
+      "FurniByType.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredSelectorItemsByType",
+       "logic": "wf_slc_furni_bytype"
+      }
+     ],
+     "furni": [
+      "wf_slc_furni_bytype"
+     ],
+     "name": "FURNI_BY_TYPE"
+    },
+    {
+     "code": 1,
+     "client": [
+      "UnknownVarFromSelectorCodes_Int_1"
+     ],
+     "editors": [
+      "SelectedFurnis.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredSelectorSelectedItems",
+       "logic": "wf_slc_furni_picks"
+      }
+     ],
+     "furni": [
+      "wf_slc_furni_picks"
+     ],
+     "name": "SELECTED_FURNIS"
+    },
+    {
+     "code": 2,
+     "client": [
+      "USERS_BY_TYPE"
+     ],
+     "editors": [
+      "UsersByType.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredSelectorEntitiesByType",
+       "logic": "wf_slc_users_bytype"
+      }
+     ],
+     "furni": [
+      "wf_slc_users_bytype"
+     ],
+     "name": "USERS_BY_TYPE"
+    },
+    {
+     "code": 3,
+     "client": [
+      "USERS_IN_TEAM"
+     ],
+     "editors": [
+      "UsersInTeam.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredSelectorEntitiesInTeam",
+       "logic": "wf_slc_users_team"
+      }
+     ],
+     "furni": [
+      "wf_slc_users_team"
+     ],
+     "name": "USERS_IN_TEAM"
+    },
+    {
+     "code": 4,
+     "client": [
+      "FURNI_ON_FURNI"
+     ],
+     "editors": [
+      "FurniOnFurni.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredSelectorItemsOnItem",
+       "logic": "wf_slc_furni_onfurni"
+      }
+     ],
+     "furni": [
+      "wf_slc_furni_onfurni"
+     ],
+     "name": "FURNI_ON_FURNI"
+    },
+    {
+     "code": 5,
+     "client": [
+      "FURNI_FROM_SIGNAL"
+     ],
+     "editors": [
+      "FurniFromSignal.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredSelectorItemsFromSignal",
+       "logic": "wf_slc_furni_signal"
+      }
+     ],
+     "furni": [
+      "wf_slc_furni_signal"
+     ],
+     "name": "FURNI_FROM_SIGNAL"
+    },
+    {
+     "code": 6,
+     "client": [
+      "UnknownVarFromSelectorCodes_Int_2"
+     ],
+     "editors": [
+      "FurniInNeighborhood.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredSelectorItemsInNeighborhood",
+       "logic": "wf_slc_furni_neighborhood"
+      }
+     ],
+     "furni": [
+      "wf_slc_furni_neighborhood"
+     ],
+     "name": "FURNI_IN_NEIGHBORHOOD"
+    },
+    {
+     "code": 7,
+     "client": [
+      "UnknownVarFromSelectorCodes_Int_3"
+     ],
+     "editors": [
+      "FurniInArea.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredSelectorItemsInArea",
+       "logic": "wf_slc_furni_area"
+      }
+     ],
+     "furni": [
+      "wf_slc_furni_area"
+     ],
+     "name": "FURNI_IN_AREA"
+    },
+    {
+     "code": 8,
+     "client": [
+      "USERS_ON_FURNI"
+     ],
+     "editors": [
+      "UsersOnFurni.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredSelectorEntitiesOnItem",
+       "logic": "wf_slc_users_onfurni"
+      }
+     ],
+     "furni": [
+      "wf_slc_users_onfurni"
+     ],
+     "name": "USERS_ON_FURNI"
+    },
+    {
+     "code": 9,
+     "client": [
+      "USERS_PERFORMING_ACTION"
+     ],
+     "editors": [
+      "UsersPerformingAction.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredSelectorEntitiesByAction",
+       "logic": "wf_slc_users_byaction"
+      }
+     ],
+     "furni": [
+      "wf_slc_users_byaction"
+     ],
+     "name": "USERS_PERFORMING_ACTION"
+    },
+    {
+     "code": 10,
+     "client": [
+      "USERS_FROM_SIGNAL"
+     ],
+     "editors": [
+      "UsersFromSignal.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredSelectorEntitiesFromSignal",
+       "logic": "wf_slc_users_signal"
+      }
+     ],
+     "furni": [
+      "wf_slc_users_signal"
+     ],
+     "name": "USERS_FROM_SIGNAL"
+    },
+    {
+     "code": 11,
+     "client": [
+      "USERS_BY_NAME"
+     ],
+     "editors": [
+      "UsersByName.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredSelectorEntitiesByName",
+       "logic": "wf_slc_users_byname"
+      }
+     ],
+     "furni": [
+      "wf_slc_users_byname"
+     ],
+     "name": "USERS_BY_NAME"
+    },
+    {
+     "code": 12,
+     "client": [
+      "USERS_IN_NEIGHBORHOOD"
+     ],
+     "editors": [
+      "UsersInNeighborhood.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredSelectorEntitiesInNeighborhood",
+       "logic": "wf_slc_users_neighborhood"
+      }
+     ],
+     "furni": [
+      "wf_slc_users_neighborhood"
+     ],
+     "name": "USERS_IN_NEIGHBORHOOD"
+    },
+    {
+     "code": 13,
+     "client": [
+      "USERS_IN_AREA"
+     ],
+     "editors": [
+      "UsersInArea.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredSelectorEntitiesInArea",
+       "logic": "wf_slc_users_area"
+      }
+     ],
+     "furni": [
+      "wf_slc_users_area"
+     ],
+     "name": "USERS_IN_AREA"
+    },
+    {
+     "code": 14,
+     "client": [
+      "USERS_WITH_HANDITEM"
+     ],
+     "editors": [
+      "UsersWithHanditem.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredSelectorEntitiesWithHanditem",
+       "logic": "wf_slc_users_handitem"
+      }
+     ],
+     "furni": [
+      "wf_slc_users_handitem"
+     ],
+     "name": "USERS_WITH_HANDITEM"
+    },
+    {
+     "code": 15,
+     "client": [
+      "USERS_IN_GROUP"
+     ],
+     "editors": [
+      "UsersInGroup.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredSelectorEntitiesInGroup",
+       "logic": "wf_slc_users_group"
+      }
+     ],
+     "furni": [
+      "wf_slc_users_group"
+     ],
+     "name": "USERS_IN_GROUP"
+    },
+    {
+     "code": 16,
+     "client": [
+      "FURNI_WITH_ALTITUDE"
+     ],
+     "editors": [
+      "FurniWithAltitude.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredSelectorItemsWithAltitude",
+       "logic": "wf_slc_furni_altitude"
+      }
+     ],
+     "furni": [
+      "wf_slc_furni_altitude"
+     ],
+     "name": "FURNI_WITH_ALTITUDE"
+    },
+    {
+     "code": 17,
+     "client": [
+      "UnknownVarFromSelectorCodes_Int_4"
+     ],
+     "editors": [
+      "FurniWithVariable.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredSelectorItemsWithVariable",
+       "logic": "wf_slc_furni_with_var"
+      }
+     ],
+     "furni": [
+      "wf_slc_furni_with_var"
+     ],
+     "name": "FURNI_WITH_VARIABLE"
+    },
+    {
+     "code": 18,
+     "client": [
+      "USERS_WITH_VARIABLE"
+     ],
+     "editors": [
+      "UsersWithVariable.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredSelectorEntitiesWithVariable",
+       "logic": "wf_slc_users_with_var"
+      }
+     ],
+     "furni": [
+      "wf_slc_users_with_var"
+     ],
+     "name": "USERS_WITH_VARIABLE"
+    },
+    {
+     "code": 19,
+     "client": [
+      "REMOTE_SELECTOR"
+     ],
+     "editors": [
+      "RemoteSelector.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredSelectorRemoteSelection",
+       "logic": "wf_slc_remote"
+      }
+     ],
+     "furni": [
+      "wf_slc_remote"
+     ],
+     "name": "REMOTE_SELECTOR"
+    }
+   ]
+  },
+  "addon": {
+   "client": 37,
+   "boxes": 37,
+   "editors": 37,
+   "rows": [
+    {
+     "code": 0,
+     "client": [
+      "CONDITION_EVALUATION"
+     ],
+     "editors": [
+      "ConditionEvaluation.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredAddonConditionsEval",
+       "logic": "wf_xtra_or_eval"
+      }
+     ],
+     "furni": [
+      "wf_xtra_or_eval"
+     ],
+     "name": "CONDITION_EVALUATION"
+    },
+    {
+     "code": 1,
+     "client": [
+      "UnknownVarFromAddonCodes_Int_1"
+     ],
+     "editors": [
+      "RandomEffect.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredAddonRandomActions",
+       "logic": "wf_xtra_random"
+      }
+     ],
+     "furni": [
+      "wf_xtra_random"
+     ],
+     "name": "RANDOM"
+    },
+    {
+     "code": 2,
+     "client": [
+      "UnknownVarFromAddonCodes_Int_2"
+     ],
+     "editors": [
+      "UnseenEffect.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredAddonUnseenActions",
+       "logic": "wf_xtra_unseen"
+      }
+     ],
+     "furni": [
+      "wf_xtra_unseen"
+     ],
+     "name": "UNSEEN"
+    },
+    {
+     "code": 5,
+     "client": [
+      "UnknownVarFromAddonCodes_Int_3"
+     ],
+     "editors": [
+      "ExecutionLimit.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredAddonExecutionLimit",
+       "logic": "wf_xtra_execution_limit"
+      }
+     ],
+     "furni": [
+      "wf_xtra_execution_limit"
+     ],
+     "name": "EXECUTION_LIMIT"
+    },
+    {
+     "code": 6,
+     "client": [
+      "NO_MOVE_ANIMATION"
+     ],
+     "editors": [
+      "NoMoveAnimation.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredAddonCancelAnimationTime",
+       "logic": "wf_xtra_mov_no_animation"
+      }
+     ],
+     "furni": [
+      "wf_xtra_mov_no_animation"
+     ],
+     "name": "NO_MOVE_ANIMATION"
+    },
+    {
+     "code": 7,
+     "client": [
+      "UnknownVarFromAddonCodes_Int_4"
+     ],
+     "editors": [
+      "MovePhysics.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredAddonMovementPhysics",
+       "logic": "wf_xtra_mov_physics"
+      }
+     ],
+     "furni": [
+      "wf_xtra_mov_physics"
+     ],
+     "name": "MOVE_PHYSICS"
+    },
+    {
+     "code": 8,
+     "client": [
+      "CARRY_USERS"
+     ],
+     "editors": [
+      "CarryUsers.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredAddonCarryUsers",
+       "logic": "wf_xtra_mov_carry_users"
+      }
+     ],
+     "furni": [
+      "wf_xtra_mov_carry_users"
+     ],
+     "name": "CARRY_USERS"
+    },
+    {
+     "code": 9,
+     "client": [
+      "ANIMATION_TIME"
+     ],
+     "editors": [
+      "AnimationTime.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredAddonAnimationTime",
+       "logic": "wf_xtra_anim_time"
+      }
+     ],
+     "furni": [
+      "wf_xtra_anim_time"
+     ],
+     "name": "ANIMATION_TIME"
+    },
+    {
+     "code": 10,
+     "client": [
+      "FURNI_SELECTOR_FILTER"
+     ],
+     "editors": [
+      "FurniSelectorFilter.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredAddonFurniSelectorFilter",
+       "logic": "wf_xtra_filter_furni"
+      }
+     ],
+     "furni": [
+      "wf_xtra_filter_furni"
+     ],
+     "name": "FURNI_SELECTOR_FILTER"
+    },
+    {
+     "code": 11,
+     "client": [
+      "USER_SELECTOR_FILTER"
+     ],
+     "editors": [
+      "UserSelectorFilter.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredAddonUserSelectorFilter",
+       "logic": "wf_xtra_filter_users"
+      }
+     ],
+     "furni": [
+      "wf_xtra_filter_users"
+     ],
+     "name": "USER_SELECTOR_FILTER"
+    },
+    {
+     "code": 12,
+     "client": [
+      "FURNI_VARIABLE_FILTER"
+     ],
+     "editors": [
+      "FurniVariableFilter.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredAddonFilterFurniByVariable",
+       "logic": "wf_xtra_filter_furni_by_var"
+      }
+     ],
+     "furni": [
+      "wf_xtra_filter_furni_by_var"
+     ],
+     "name": "FURNI_VARIABLE_FILTER"
+    },
+    {
+     "code": 13,
+     "client": [
+      "USER_VARIABLE_FILTER"
+     ],
+     "editors": [
+      "UserVariableFilter.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredAddonFilterUsersByVariable",
+       "logic": "wf_xtra_filter_users_by_var"
+      }
+     ],
+     "furni": [
+      "wf_xtra_filter_users_by_var"
+     ],
+     "name": "USER_VARIABLE_FILTER"
+    },
+    {
+     "code": 14,
+     "client": [
+      "USERNAME_PLACEHOLDER"
+     ],
+     "editors": [
+      "UsernamePlaceholder.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredAddonUsernamePlaceholder",
+       "logic": "wf_xtra_text_output_username"
+      }
+     ],
+     "furni": [
+      "wf_xtra_text_output_username"
+     ],
+     "name": "USERNAME_PLACEHOLDER"
+    },
+    {
+     "code": 15,
+     "client": [
+      "VARIABLE_PLACEHOLDER"
+     ],
+     "editors": [
+      "VariablePlaceholder.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredAddonVariablePlaceholder",
+       "logic": "wf_xtra_text_output_variable"
+      }
+     ],
+     "furni": [
+      "wf_xtra_text_output_variable"
+     ],
+     "name": "VARIABLE_PLACEHOLDER"
+    },
+    {
+     "code": 16,
+     "client": [
+      "VARIABLE_CAPTURER"
+     ],
+     "editors": [
+      "VariableCapturer.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredAddonVariableCapturer",
+       "logic": "wf_xtra_text_input_variable"
+      }
+     ],
+     "furni": [
+      "wf_xtra_text_input_variable"
+     ],
+     "name": "VARIABLE_CAPTURER"
+    },
+    {
+     "code": 17,
+     "client": [
+      "EXECUTE_IN_ORDER"
+     ],
+     "editors": [
+      "ExecuteInOrder.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredAddonExecuteInOrder",
+       "logic": "wf_xtra_exec_in_order"
+      }
+     ],
+     "furni": [
+      "wf_xtra_exec_in_order"
+     ],
+     "name": "EXECUTE_IN_ORDER"
+    },
+    {
+     "code": 18,
+     "client": [
+      "CHEST_ITEM_TYPE_SCANNER"
+     ],
+     "editors": [
+      "chests/ChestItemTypeScanner.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredAddonChestItemTypeScanner",
+       "logic": "wf_xtra_scan_chest_furni_by_type"
+      }
+     ],
+     "furni": [
+      "wf_xtra_scan_chest_furni_by_type"
+     ],
+     "name": "CHEST_ITEM_TYPE_SCANNER"
+    },
+    {
+     "code": 19,
+     "client": [
+      "FURNI_NAME_PLACEHOLDER"
+     ],
+     "editors": [
+      "FurniNamePlaceholder.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredAddonFurniNamePlaceholder",
+       "logic": "wf_xtra_text_output_furni_name"
+      }
+     ],
+     "furni": [
+      "wf_xtra_text_output_furni_name"
+     ],
+     "name": "FURNI_NAME_PLACEHOLDER"
+    },
+    {
+     "code": 20,
+     "client": [
+      "CUSTOM_CONTRACT"
+     ],
+     "editors": [
+      "chests/CustomContract.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredAddonCustomContract",
+       "logic": "wf_xtra_custom_contract"
+      }
+     ],
+     "furni": [
+      "wf_xtra_custom_contract"
+     ],
+     "name": "CUSTOM_CONTRACT"
+    },
+    {
+     "code": 21,
+     "client": [
+      "PROJECTILE"
+     ],
+     "editors": [
+      "Projectile.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredAddonProjectile",
+       "logic": "wf_xtra_rotate_to_dir"
+      }
+     ],
+     "furni": [
+      "wf_xtra_rotate_to_dir"
+     ],
+     "name": "PROJECTILE"
+    },
+    {
+     "code": 22,
+     "client": [
+      "JUMP_STRENGTH"
+     ],
+     "editors": [
+      "JumpStrength.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredAddonJumpStrength",
+       "logic": "wf_xtra_mov_curve"
+      }
+     ],
+     "furni": [
+      "wf_xtra_mov_curve"
+     ],
+     "name": "JUMP_STRENGTH"
+    },
+    {
+     "code": 1000,
+     "client": [
+      "VARIABLE_TEXT_CONVERTER"
+     ],
+     "editors": [
+      "VariableTextConverter.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredAddonVariableTextConnector",
+       "logic": "wf_xtra_var_text_connector"
+      }
+     ],
+     "furni": [
+      "wf_xtra_var_text_connector"
+     ],
+     "name": "VARIABLE_TEXT_CONVERTER"
+    },
+    {
+     "code": 1001,
+     "client": [
+      "VARIABLE_LEVEL_UP"
+     ],
+     "editors": [
+      "VariableLevelUp.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredAddonVariableLevelUp",
+       "logic": "wf_xtra_var_lvlup_system"
+      }
+     ],
+     "furni": [
+      "wf_xtra_var_lvlup_system"
+     ],
+     "name": "VARIABLE_LEVEL_UP"
+    },
+    {
+     "code": 1002,
+     "client": [
+      "VARIABLE_TIME_UTIL"
+     ],
+     "editors": [
+      "VariableTimeUtil.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredAddonVariableTimeUtil",
+       "logic": "wf_xtra_var_time_util"
+      }
+     ],
+     "furni": [
+      "wf_xtra_var_time_util"
+     ],
+     "name": "VARIABLE_TIME_UTIL"
+    },
+    {
+     "code": 1003,
+     "client": [
+      "VARIABLE_ADDON_SHARE"
+     ],
+     "editors": [
+      "VariableAddonSharing.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredAddonVariableShare",
+       "logic": "wf_xtra_var_share"
+      }
+     ],
+     "furni": [
+      "wf_xtra_var_share"
+     ],
+     "name": "VARIABLE_ADDON_SHARE"
+    },
+    {
+     "code": 1004,
+     "client": [
+      "VARIABLE_ADDON_IMPORT"
+     ],
+     "editors": [
+      "VariableAddonSharing.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredAddonVariableImport",
+       "logic": "wf_xtra_var_import"
+      }
+     ],
+     "furni": [
+      "wf_xtra_var_import"
+     ],
+     "name": "VARIABLE_ADDON_IMPORT"
+    },
+    {
+     "code": 1005,
+     "client": [
+      "VARIABLE_LEADERBOARD"
+     ],
+     "editors": [
+      "leaderboard/VariableLeaderboardAddon.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredAddonVariableLeaderboard",
+       "logic": "wf_xtra_var_leaderboard"
+      }
+     ],
+     "furni": [
+      "wf_xtra_var_leaderboard"
+     ],
+     "name": "VARIABLE_LEADERBOARD"
+    },
+    {
+     "code": 1200,
+     "client": [
+      "VARIABLE_FX_HEALTH_POINTS"
+     ],
+     "editors": [
+      "variablefx/VariableFxHealthPoints.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredAddonVariableFxHealthPoints",
+       "logic": "wf_xtra_varfx_hp"
+      }
+     ],
+     "furni": [
+      "wf_xtra_varfx_hp"
+     ],
+     "name": "VARIABLE_FX_HEALTH_POINTS"
+    },
+    {
+     "code": 1201,
+     "client": [
+      "VARIABLE_FX_PROGRESS_BAR"
+     ],
+     "editors": [
+      "variablefx/VariableFxProgressBar.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredAddonVariableFxProgressBar",
+       "logic": "wf_xtra_varfx_prog"
+      }
+     ],
+     "furni": [
+      "wf_xtra_varfx_prog"
+     ],
+     "name": "VARIABLE_FX_PROGRESS_BAR"
+    },
+    {
+     "code": 1202,
+     "client": [
+      "VARIABLE_FX_LEVELLING_PROGRESS"
+     ],
+     "editors": [
+      "variablefx/VariableFxLevellingProgress.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredAddonVariableFxLevellingProgress",
+       "logic": "wf_xtra_varfx_levelling"
+      }
+     ],
+     "furni": [
+      "wf_xtra_varfx_levelling"
+     ],
+     "name": "VARIABLE_FX_LEVELLING_PROGRESS"
+    },
+    {
+     "code": 1203,
+     "client": [
+      "VARIABLE_FX_STATUS_BAR"
+     ],
+     "editors": [
+      "variablefx/VariableFxStatusBar.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredAddonVariableFxStatusBar",
+       "logic": "wf_xtra_varfx_status"
+      }
+     ],
+     "furni": [
+      "wf_xtra_varfx_status"
+     ],
+     "name": "VARIABLE_FX_STATUS_BAR"
+    },
+    {
+     "code": 1204,
+     "client": [
+      "VARIABLE_FX_BOSS_BAR"
+     ],
+     "editors": [
+      "variablefx/VariableFxBossBar.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredAddonVariableFxBossBar",
+       "logic": "wf_xtra_varfx_boss"
+      }
+     ],
+     "furni": [
+      "wf_xtra_varfx_boss"
+     ],
+     "name": "VARIABLE_FX_BOSS_BAR"
+    },
+    {
+     "code": 1205,
+     "client": [
+      "VARIABLE_FX_NUMBER_DISPLAY"
+     ],
+     "editors": [
+      "variablefx/VariableFxNumberDisplay.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredAddonVariableFxNumberDisplay",
+       "logic": "wf_xtra_varfx_number"
+      }
+     ],
+     "furni": [
+      "wf_xtra_varfx_number"
+     ],
+     "name": "VARIABLE_FX_NUMBER_DISPLAY"
+    },
+    {
+     "code": 2000,
+     "client": [
+      "GLOBAL_PLACEHOLDER"
+     ],
+     "editors": [
+      "GlobalPlaceholderAddon.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredAddonGlobalPlaceholder",
+       "logic": "wf_xtra_global_placeholder"
+      }
+     ],
+     "furni": [],
+     "name": "GLOBAL_PLACEHOLDER"
+    },
+    {
+     "code": 2001,
+     "client": [
+      "ACHIEVEMENT_ENABLER"
+     ],
+     "editors": [
+      "AchievementEnabler.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredAddonAchievementEnabler",
+       "logic": "wf_xtra_achievement_enabler"
+      }
+     ],
+     "furni": [
+      "wf_xtra_achievement_enabler"
+     ],
+     "name": "ACHIEVEMENT_ENABLER"
+    },
+    {
+     "code": 2002,
+     "client": [
+      "VARIABLES_WEB_API"
+     ],
+     "editors": [
+      "VariablesWebApiAddon.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredAddonVariablesWebApi",
+       "logic": null
+      }
+     ],
+     "furni": [],
+     "name": "VARIABLES_WEB_API"
+    },
+    {
+     "code": 2003,
+     "client": [
+      "LINK_SPEAKER"
+     ],
+     "editors": [
+      "LinkSpeaker.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredAddonLinkSpeaker",
+       "logic": "wf_xtra_link_speaker"
+      }
+     ],
+     "furni": [
+      "wf_xtra_link_speaker"
+     ],
+     "name": "LINK_SPEAKER"
+    }
+   ]
+  },
+  "variable": {
+   "client": 10,
+   "boxes": 10,
+   "editors": 10,
+   "rows": [
+    {
+     "code": 0,
+     "client": [
+      "UnknownVarFromVariableCodes_Int_1"
+     ],
+     "editors": [
+      "FurniVariable.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredVariableFurni",
+       "logic": "wf_var_furni"
+      }
+     ],
+     "furni": [
+      "wf_var_furni"
+     ],
+     "name": "FURNI_VARIABLE"
+    },
+    {
+     "code": 1,
+     "client": [
+      "USER_VARIABLE"
+     ],
+     "editors": [
+      "UserVariable.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredVariableUser",
+       "logic": "wf_var_user"
+      }
+     ],
+     "furni": [
+      "wf_var_user"
+     ],
+     "name": "USER_VARIABLE"
+    },
+    {
+     "code": 2,
+     "client": [
+      "GLOBAL_VARIABLE"
+     ],
+     "editors": [
+      "GlobalVariable.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredVariableRoom",
+       "logic": "wf_var_room"
+      }
+     ],
+     "furni": [
+      "wf_var_room"
+     ],
+     "name": "GLOBAL_VARIABLE"
+    },
+    {
+     "code": 3,
+     "client": [
+      "CONTEXT_VARIABLE"
+     ],
+     "editors": [
+      "ContextVariable.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredVariableContext",
+       "logic": "wf_var_context"
+      }
+     ],
+     "furni": [
+      "wf_var_context"
+     ],
+     "name": "CONTEXT_VARIABLE"
+    },
+    {
+     "code": 4,
+     "client": [
+      "REFERENCE_VARIABLE"
+     ],
+     "editors": [
+      "ReferenceVariable.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredVariableReference",
+       "logic": "wf_var_reference"
+      }
+     ],
+     "furni": [
+      "wf_var_reference"
+     ],
+     "name": "REFERENCE_VARIABLE"
+    },
+    {
+     "code": 5,
+     "client": [
+      "UnknownVarFromVariableCodes_Int_2"
+     ],
+     "editors": [
+      "QuestVariable.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredVariableQuest",
+       "logic": "wf_var_quest"
+      }
+     ],
+     "furni": [
+      "wf_var_quest"
+     ],
+     "name": "QUEST_VARIABLE"
+    },
+    {
+     "code": 6,
+     "client": [
+      "UnknownVarFromVariableCodes_Int_3"
+     ],
+     "editors": [
+      "QuestChainVariable.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredVariableQuestChain",
+       "logic": "wf_var_quest_chain"
+      }
+     ],
+     "furni": [
+      "wf_var_quest_chain"
+     ],
+     "name": "QUEST_CHAIN_VARIABLE"
+    },
+    {
+     "code": 7,
+     "client": [
+      "ECHO_VARIABLE"
+     ],
+     "editors": [
+      "EchoVariable.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredVariableEcho",
+       "logic": "wf_var_echo"
+      }
+     ],
+     "furni": [
+      "wf_var_echo"
+     ],
+     "name": "ECHO_VARIABLE"
+    },
+    {
+     "code": 8,
+     "client": [
+      "UnknownVarFromVariableCodes_Int_4"
+     ],
+     "editors": [
+      "DailyTaskVariable.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredVariableDailyTask",
+       "logic": "wf_var_dailytask"
+      }
+     ],
+     "furni": [
+      "wf_var_dailytask"
+     ],
+     "name": "DAILY_TASK_VARIABLE"
+    },
+    {
+     "code": 9,
+     "client": [
+      "UnknownVarFromVariableCodes_Int_5"
+     ],
+     "editors": [
+      "PointerVariable.ts"
+     ],
+     "boxes": [
+      {
+       "box": "WiredVariablePointer",
+       "logic": "wf_var_pointer"
+      }
+     ],
+     "furni": [
+      "wf_var_pointer"
+     ],
+     "name": "POINTER_VARIABLE"
+    }
+   ]
+  }
+ },
+ "gaps": {
+  "clientWithoutBox": [],
+  "clientWithoutEditor": [],
+  "boxWithoutClient": [],
+  "editorWithoutClient": [],
+  "codeClaimedTwice": [],
+  "boxWithoutFurni": [
+   {
+    "kind": "action",
+    "code": 52,
+    "name": "GIVE_EFFECT",
+    "logic": "wf_act_give_effect"
+   },
+   {
+    "kind": "action",
+    "code": 53,
+    "name": "OVERRIDE_HEIGHT",
+    "logic": "wf_act_override_height"
+   },
+   {
+    "kind": "action",
+    "code": 58,
+    "name": "PROGRESS_REWARD_TRACK",
+    "logic": "wf_act_progress_reward_track"
+   },
+   {
+    "kind": "action",
+    "code": 59,
+    "name": "RESET_REWARD_TRACK",
+    "logic": "wf_act_reset_reward_track"
+   },
+   {
+    "kind": "condition",
+    "code": 44,
+    "name": "USER_LEVEL",
+    "logic": "wf_cnd_user_level"
+   },
+   {
+    "kind": "addon",
+    "code": 2000,
+    "name": "GLOBAL_PLACEHOLDER",
+    "logic": "wf_xtra_global_placeholder"
+   }
+  ]
+ }
+}

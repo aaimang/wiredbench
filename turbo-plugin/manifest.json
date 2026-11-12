@@ -1,0 +1,12 @@
+{
+    "Name": "Wiredbench",
+    "Key": "wiredbench",
+    "Version": "0.3.0",
+    "Author": "aaimang",
+    "TablePrefix": "wiredbench_",
+    "Sources": [
+        "server/**/*.cs"
+    ],
+    "Dependencies": [],
+    "ApiVersion": 1
+}

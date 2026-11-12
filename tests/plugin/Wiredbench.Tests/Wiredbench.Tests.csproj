@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    The plugin's tests, with the Turbo plugin test kit (vendor/turbo-cloud docs/plugin-testing.md).
+    Kept out of turbo-plugin/: the hotel refuses a plugin folder holding .dll files.
+  -->
+  <PropertyGroup>
+    <TurboBin Condition="'$(TurboBin)' == ''">$(MSBuildThisFileDirectory)../../../vendor/turbo-cloud/Turbo.Main/bin/Debug/net10.0</TurboBin>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <Import Project="$(TurboBin)/plugin-sdk/Turbo.Plugin.Tests.props" />
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
+    <PackageReference Include="xunit.v3" Version="3.2.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" PrivateAssets="all" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../turbo-plugin/server/Wiredbench.csproj" />
+    <None Include="fixtures/**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

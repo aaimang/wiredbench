@@ -1,0 +1,8 @@
+[submodule "vendor/turbo-cloud"]
+	path = vendor/turbo-cloud
+	url = https://github.com/aaimang/turbo-cloud.git
+	branch = wiredbench-seams
+[submodule "vendor/nitro-next"]
+	path = vendor/nitro-next
+	url = https://github.com/aaimang/nitro-next.git
+	branch = wiredbench-ui

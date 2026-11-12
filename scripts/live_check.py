@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
-"""Records how a real room's WIRED Web API answers, so the mock can be compared with it.
+"""Records how a room's WIRED Web API answers: a Habbo hotel's, or Turbo's to compare with it.
 
 Reads WB_LIVE_CHECK_ROOM_ID, WB_LIVE_CHECK_READ_KEY, WB_LIVE_CHECK_WRITE_KEY and optionally
-WB_LIVE_CHECK_HOTEL (default sandbox) from the environment or --env-file. Reads only, unless --write
-is given. Prints status codes and response shapes: never keys, values, names or the room ID.
+WB_LIVE_CHECK_HOTEL (default sandbox) from the environment or --env-file. WB_LIVE_CHECK_BASE_URL, such
+as http://127.0.0.1:8092 for a local Turbo's public API, is used instead of the hotel when set. Run
+it once against Habbo and once against Turbo with --out, and compare the two files. Reads only,
+unless --write is given. Prints status codes and response shapes: never keys, values, names or the
+room ID.
 
 --write only changes a permanent global variable named wb_live_check, and puts its value back. Reload the room
 after adding it, or the API may not list it. Exits 0 when every step ran, and 1 when the room refused the key,
@@ -22,7 +25,19 @@ from typing import Any
 
 import httpx
 
-from wiredbench.config import HOTELS
+# Habbo's hotels by the code WB_LIVE_CHECK_HOTEL takes.
+HOTELS: dict[str, str] = {
+    "com": "www.habbo.com",
+    "com.br": "www.habbo.com.br",
+    "de": "www.habbo.de",
+    "es": "www.habbo.es",
+    "fi": "www.habbo.fi",
+    "fr": "www.habbo.fr",
+    "it": "www.habbo.it",
+    "nl": "www.habbo.nl",
+    "com.tr": "www.habbo.com.tr",
+    "sandbox": "sandbox.habbo.com",
+}
 
 SCRATCH = "wb_live_check"  # The global variable --write may change. Its value is put back afterwards.
 PAUSE_SECONDS = 0.2  # Habbo publishes no limits, so requests stay gentle.
@@ -256,13 +271,14 @@ def main() -> int:
     if args.write and not write:
         print("--write needs WB_LIVE_CHECK_WRITE_KEY", file=sys.stderr)
         return 2
+    base_url = os.environ.get("WB_LIVE_CHECK_BASE_URL", "").rstrip("/")
     hotel = os.environ.get("WB_LIVE_CHECK_HOTEL", "sandbox")
-    if hotel not in HOTELS:
+    if not base_url and hotel not in HOTELS:
         print(f"WB_LIVE_CHECK_HOTEL must be one of {sorted(HOTELS)}", file=sys.stderr)
         return 2
     headers = {"User-Agent": "wiredbench-live-check"}
     with httpx.Client(
-        base_url=f"https://{HOTELS[hotel]}", headers=headers, timeout=20, follow_redirects=False
+        base_url=base_url or f"https://{HOTELS[hotel]}", headers=headers, timeout=20, follow_redirects=False
     ) as client:
         check = Check(client, room, read, write)
         try:
