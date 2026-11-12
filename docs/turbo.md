@@ -68,6 +68,35 @@ offer ids, which the infostand's **Buy** and Builders Club **Place more** send. 
 `WB_HOTEL_GAMEDATA` before `deploy/client.sh` to change which files (`furnidata,productdata,texts`,
 or `none`).
 
+### On Windows
+
+Each script has a PowerShell twin (`deploy\*.ps1`) that does the same, reading the same
+`deploy\.env`. Install .NET SDK 10, Node 24 and MariaDB for Windows, then in PowerShell 7:
+
+```powershell
+git submodule update --init --recursive
+Copy-Item deploy\.env.example deploy\.env   # then fill it in
+pwsh -File deploy\setup.ps1
+```
+
+Then, each in its own terminal:
+
+```powershell
+pwsh -File deploy\turbo.ps1
+```
+
+```powershell
+pwsh -File deploy\client.ps1
+```
+
+```powershell
+pwsh -File deploy\panel.ps1
+```
+
+`deploy\check-client.ps1` type-checks the client module. Paths in `deploy\.env` are Windows paths
+(`C:\turbo\assets`). CI's **Windows** job runs `setup.ps1`, `check-client.ps1` and the plugin's tests
+on Windows.
+
 ## In the hotel
 
 - **Toolbar**: the Wiredbench window opens the Wired trace, Sandbox, Presets and Check windows.
