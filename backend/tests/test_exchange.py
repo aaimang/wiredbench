@@ -885,3 +885,97 @@ def test_bot_boxes_split_the_bot_name_from_their_text() -> None:
     assert (move["bot_name"], move["furni"]) == ("Frank", [5])
     clothes = exchange.friendly_settings("wf_act_bot_clothes", {"config": "Frank\thd-180-1"}, {})
     assert clothes["figure"] == "hd-180-1"
+
+
+def test_give_variable_writes_its_override() -> None:
+    document = {
+        "furni": [
+            {"id": 1, "classname": "wf_var_user", "x": 0, "y": 0, "wired": {"variable": "a"}},
+            {
+                "id": 2,
+                "classname": "wf_act_give_var",
+                "x": 1,
+                "y": 1,
+                "wired": {"variable": "a", "overwrite": True},
+            },
+        ]
+    }
+    out, warnings = exchange.export_gpresets(document)
+    assert out["wired"]["effects"][0]["options"][3] == 1
+    assert warnings == []
+
+
+def _time_read(field: str, with_util: bool = True) -> dict[str, Any]:
+    furni = [
+        {"id": 1, "classname": "wf_var_user", "x": 0, "y": 0, "wired": {"variable": "on"}},
+        {"id": 2, "classname": "wf_var_user", "x": 0, "y": 1, "wired": {"variable": "last"}},
+        {
+            "id": 4,
+            "classname": "wf_act_change_var_val",
+            "x": 2,
+            "y": 2,
+            "wired": {"variable": "last", "operation": "set", "from_variable": "on", "from_field": field},
+        },
+    ]
+    if with_util:
+        furni.append(
+            {"id": 3, "classname": "wf_xtra_var_time_util", "x": 0, "y": 0, "wired": {"variable": "on"}}
+        )
+    return {"furni": furni}
+
+
+@pytest.mark.parametrize(("field", "mode"), [("creation", 1), ("update", 2)])
+def test_a_time_read_points_at_the_time_utility_seconds(field: str, mode: int) -> None:
+    out, warnings = exchange.export_gpresets(_time_read(field))
+    on = out["wired"]["variables_map"]["on"]
+    change = out["wired"]["effects"][0]
+    util = next(b for b in out["wired"]["addons"] if b["wiredId"] == 3)
+    assert change["variableIds"][1] == f"s{on}-3-{exchange.TIME_UTIL_SECOND_INDEX}"
+    assert util["options"][:2] == [1 << exchange.TIME_UTIL_SECOND_BIT, mode]
+    assert warnings == []
+
+
+def test_a_time_read_without_a_time_utility_is_reported() -> None:
+    _, warnings = exchange.export_gpresets(_time_read("creation", with_util=False))
+    assert any("needs a Time Utility box on on" in warning for warning in warnings)
+
+
+def test_place_furni_writes_its_custom_target() -> None:
+    document = {
+        "furni": [
+            {
+                "id": 2,
+                "classname": "wf_act_place_furni",
+                "x": 1,
+                "y": 1,
+                "wired": {
+                    "furni": [50],
+                    "location": "custom",
+                    "target_furni": [60],
+                    "target_source": "picks",
+                },
+            },
+        ]
+    }
+    out, warnings = exchange.export_gpresets(document)
+    box = out["wired"]["effects"][0]
+    assert box["secondItems"] == [60]
+    assert box["furniSources"][1] == 101
+    assert not [w for w in warnings if "target" in w]
+
+
+def test_the_older_exact_keyword_setting_writes_exact_matching() -> None:
+    document = {
+        "furni": [
+            {
+                "id": 1,
+                "classname": "wf_trg_says_something",
+                "x": 1,
+                "y": 1,
+                "wired": {"text": "hi", "exact": True},
+            },
+        ]
+    }
+    out, warnings = exchange.export_gpresets(document)
+    assert out["wired"]["triggers"][0]["options"][1] == 1
+    assert warnings == []

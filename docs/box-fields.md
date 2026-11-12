@@ -8,7 +8,7 @@ it, and a named position is still unverified until a box is changed and read aga
 
 No reply from: `wf_contract_payment`, `wf_contract_reward`, `wf_contract_trade`. The cause is unconfirmed.
 
-Named positions: 217. Unnamed positions: 365, of which 94 have a client name.
+Named positions: 218. Unnamed positions: 364, of which 93 have a client name.
 
 Client names come from the box setup forms in Habbo's client `HabboAir.swf`, read on
 2026-11-09 by `scripts/client_labels.py`. A name in backticks is the text key the form
@@ -39,7 +39,7 @@ goes, used when the form shows no text. They show what the client expects, not w
 | `wf_act_give_furni` | effect | `[0, 1, 0, -20, 1, 0]` |  | 0, 1, 2, 3, 4, 5 | 5: `chest_iteration_type` |
 | `wf_act_give_score` | effect | `[5, 0]` | 0: points, 1: times |  |  |
 | `wf_act_give_score_tm` | effect | `[5, 0, 1]` | 0: points, 1: times, 2: team |  |  |
-| `wf_act_give_var` | effect | `[1, 0, 0, 0, 0, -10, 0]` | 2: value | 0, 1, 3, 4, 5, 6 | 3: `variables.value_settings.override_existing`, 5: field `initialValue` |
+| `wf_act_give_var` | effect | `[1, 0, 0, 0, 0, -10, 0]` | 2: value, 3: overwrite | 0, 1, 4, 5, 6 | 5: field `initialValue` |
 | `wf_act_init_transaction` | effect | `[0, 10, 0, -20, 0, 300]` |  | 0, 1, 2, 3, 4, 5 | 0: `contract.mode` |
 | `wf_act_join_team` | effect | `[1, 0]` | 0: team, 1: team_type |  |  |
 | `wf_act_kick_user` | effect | `[]` |  |  |  |

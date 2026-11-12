@@ -91,6 +91,9 @@ FX_RANGE_FIELDS = [*FX_FIELDS, ("fx_min", 11, LONG), ("fx_max", 13, LONG)]
 PICKED_FURNI = 100
 # Here the first slot is the furni that moves, and the picks belong to the second.
 TWO_FURNI_SLOTS = {"wf_act_furni_to_furni"}
+# A box's second furni list (a custom target): its picks are the file's secondItems, and its
+# source is the second furni source, where the client numbers those picks 101.
+SECOND_SOURCE_NUMBERS = {"trigger": 0, "picks": 101, "selector": 200, "signal": 201}
 PLACEHOLDER_BOX, PLACEHOLDER_TARGET = "wf_xtra_text_output_variable", 1
 AREA_FIELDS = [("area_x", 0, int), ("area_y", 1, int), ("area_width", 2, int), ("area_height", 3, int)]
 # A selector's two switches sit on the box itself. The file calls invert "inverse".
@@ -302,7 +305,7 @@ OPTION_FIELDS: dict[str, list[tuple[str, int, Any]]] = {
         ("types", 0, {1: "habbo", 2: "pet", 4: "bot", 3: "habbo_pet", 5: "habbo_bot", 6: "pet_bot", 7: "all"})
     ],
     "wf_act_toggle_state": [("toggle_type", 0, ("next", "previous"))],
-    "wf_act_give_var": [("value", 2, LONG)],
+    "wf_act_give_var": [("value", 2, LONG), ("overwrite", 3, bool)],
     "wf_act_change_var_val": [
         ("operation", 1, OPERATION_CODES),
         ("value", 4, LONG),
@@ -354,6 +357,13 @@ BOT_SECOND_FIELD = {
     "wf_act_bot_clothes": "figure",
 }
 STAND_IN_FIELDS = {"wf_var_echo": "source", "wf_var_pointer": "accessor"}
+# Habbo has no "using its creation time" on a value source: a Time Utility add-on on the variable
+# derives it, and the box reads that sub-variable. The add-on's options are a mask of the fields it
+# derives and which instant it reads (value 0, creation 1, update 2); "second" is bit 21, the
+# twelfth field (sub-variable index 11), whole seconds since 1970 like our creation and update.
+TIME_UTIL = "wf_xtra_var_time_util"
+TIME_UTIL_MODES = {"creation": 1, "update": 2}
+TIME_UTIL_SECOND_BIT, TIME_UTIL_SECOND_INDEX = 21, 11
 TARGET_NUMBERS = {"user": 1, "furni": 0, "global": -10, "context": -20}
 # Boxes whose first option says what kind of holder their variable has.
 TARGET_FIRST = {
@@ -757,6 +767,53 @@ def _write_reference(
     _write_option(box, REFERENCE_SAME_HOLDER, 1 if scope in ("user", "furni") else 0)
 
 
+def _write_time_reference(
+    box: dict[str, Any],
+    classname: str,
+    settings: dict[str, Any],
+    time_utils: dict[str, Any],
+    variables: dict[str, Any],
+    used: list[int],
+    warnings: list[str],
+) -> None:
+    """A value read from a variable's creation or update time points at its Time Utility's seconds."""
+    field, source = settings.get("from_field"), str(settings.get("from_variable", "")).strip()
+    if field not in TIME_UTIL_MODES or not source:
+        return
+    util = time_utils.get(source)
+    if util is None:
+        warnings.append(
+            f"{classname}: reading the {field} time of {source} needs a Time Utility box on {source} in Habbo."
+        )
+        return
+    ids: list[Any] = box["variableIds"] if isinstance(box.get("variableIds"), list) else []
+    parent = _variable_id(source, variables, used)
+    box["variableIds"] = [
+        ids[0] if ids else "0",
+        f"s{parent}-{util['id']}-{TIME_UTIL_SECOND_INDEX}",
+        *ids[2:],
+    ]
+
+
+def _time_util_options(
+    box: dict[str, Any], name: str, needs: dict[str, set[str]], warnings: list[str]
+) -> None:
+    """A Time Utility whose variable's time a box reads derives whole seconds of the instant asked for."""
+    fields = needs.get(name)
+    if not fields:
+        return
+    if len(fields) > 1:
+        warnings.append(
+            f"{TIME_UTIL}: {name} is read at both its creation and update time; one add-on reads one."
+        )
+    options = box["options"] if isinstance(box.get("options"), list) else []
+    options += [0] * (2 - len(options))
+    mask = options[0] if isinstance(options[0], int) and not isinstance(options[0], bool) else 0
+    options[0] = mask | (1 << TIME_UTIL_SECOND_BIT)
+    options[1] = TIME_UTIL_MODES[sorted(fields)[0]]
+    box["options"] = options
+
+
 def _apply_settings(
     item: dict[str, Any],
     box: dict[str, Any],
@@ -765,6 +822,7 @@ def _apply_settings(
     used: list[int],
     warnings: list[str],
     scopes: dict[str, str],
+    time_utils: dict[str, Any] | None = None,
 ) -> None:
     """Writes back only the settings that differ from what the box already said."""
     settings: dict[str, Any] = item["wired"] if isinstance(item.get("wired"), dict) else {}
@@ -807,6 +865,7 @@ def _apply_settings(
             box[SELECTOR_SWITCHES[name]] = bool(value)
         elif name == "from_variable" and classname in REFERENCE_FLAG:
             _write_reference(box, classname, str(value).strip(), scopes, variables, used, warnings)
+            _write_time_reference(box, classname, settings, time_utils or {}, variables, used, warnings)
         elif name == "delay":
             box["delay"] = value
         elif name in ("furni", "antenna"):
@@ -834,6 +893,23 @@ def _apply_settings(
                 _write_option(box, 0, TARGET_NUMBERS[scope])
             if classname == PLACEHOLDER_BOX and scope:
                 _write_option(box, PLACEHOLDER_TARGET, TARGET_NUMBERS[scope])
+        elif name == "target_furni":
+            box["secondItems"] = value
+        elif name == "target_source" and value in SECOND_SOURCE_NUMBERS:
+            slots = list(box["furniSources"]) if isinstance(box.get("furniSources"), list) else []
+            slots += [0] * (2 - len(slots))
+            slots[1] = SECOND_SOURCE_NUMBERS[value]
+            box["furniSources"] = slots
+        elif name == "exact" and classname == "wf_trg_says_something":
+            # An older name for "match": exact.
+            if value is True:
+                _write_option(box, 1, 1)
+        elif (
+            name == "from_field"
+            and classname in REFERENCE_FLAG
+            and str(settings.get("from_variable", "")).strip()
+        ):
+            _write_time_reference(box, classname, settings, time_utils or {}, variables, used, warnings)
         elif name != "variable" and value != _default(classname, name):
             warnings.append(f"{classname}: the setting {name} cannot go into a G-Presets file yet.")
     if classname == "wf_act_set_highlight" and (
@@ -890,6 +966,17 @@ def export_gpresets(document: dict[str, Any]) -> tuple[dict[str, Any], list[str]
         for i in items
         if i["classname"] in VARIABLE_SCOPES and isinstance(i.get("wired"), dict)
     }
+    time_utils = {
+        str(i["wired"].get("variable", "")).strip(): i
+        for i in items
+        if i["classname"] == TIME_UTIL and isinstance(i.get("wired"), dict)
+    }
+    time_needs: dict[str, set[str]] = {}
+    for i in items:
+        wired_settings = i.get("wired") if isinstance(i.get("wired"), dict) else {}
+        if i["classname"] in REFERENCE_FLAG and wired_settings.get("from_field") in TIME_UTIL_MODES:
+            source = str(wired_settings.get("from_variable", "")).strip()
+            time_needs.setdefault(source, set()).add(str(wired_settings["from_field"]))
     rows: dict[str, list[tuple[int, Any]]] = {key: [] for key in saved.get("sections", REQUIRED_SECTIONS)}
     next_order = 1_000_000
     for item in items:
@@ -912,7 +999,11 @@ def export_gpresets(document: dict[str, Any]) -> tuple[dict[str, Any], list[str]
             if classname.startswith("wf_var_") and "variable" not in (item.get("wired") or {}):
                 warnings.append(f"{classname} at {item['x']}, {item['y']} has no variable name.")
         box["wiredId"] = item["id"]
-        _apply_settings(item, box, base, variables, used, warnings, scopes)
+        _apply_settings(item, box, base, variables, used, warnings, scopes, time_utils)
+        if classname == TIME_UTIL:
+            _time_util_options(
+                box, str((item.get("wired") or {}).get("variable", "")).strip(), time_needs, warnings
+            )
         rows.setdefault(str(section), []).append((order, box))
     for orphan in orphans:
         rows.setdefault(orphan["section"], []).append((orphan["order"], copy.deepcopy(orphan["box"])))

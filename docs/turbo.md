@@ -50,6 +50,38 @@ Wiredbench icon on the toolbar opens its window.
 The plugin is loaded from `turbo-plugin/` through `Turbo:Plugin:DevPluginPaths`, so the hotel
 reloads it when its files change.
 
+## Behaviour against the Python engine
+
+`docs/behaviour/README.md` compares the old Python engine with Turbo on every room the engine's own
+tests build: 271 rooms, of which 248 or 249 match (a room with random draws may match by chance).
+Every one that differs has a cause written beside it:
+Turbo is the reference (built-in variables and placeholders), a traced cause (which engine is off,
+or open until a Habbo capture settles it), or a note on what the replay cannot carry (random draws,
+inputs it does not send).
+
+`docs/behaviour/scenarios.json` is the Python engine's answer for each room, recorded on 2026-11-12.
+It is the reference Turbo is checked against once the Python engine is gone: only the last three
+commands below need Turbo, and the first needs the Python engine. To write it all again:
+
+```bash
+uv run python scripts/behaviour.py record
+```
+
+The Turbo replay test is kept in `tests/turbo-replay/`, since turbo-cloud is a submodule this
+repository does not commit to; copy it into the submodule before running it:
+
+```bash
+cp tests/turbo-replay/WiredbenchBehaviourReplayTests.cs vendor/turbo-cloud/Turbo.Tests/Rooms/
+```
+
+```bash
+cd vendor/turbo-cloud && WB_BEHAVIOUR_SCENARIOS=$PWD/../../docs/behaviour/scenarios.json WB_BEHAVIOUR_OUT=$PWD/../../docs/behaviour/turbo.json dotnet test Turbo.Tests/Turbo.Tests.csproj --filter FullyQualifiedName~WiredbenchBehaviourReplay
+```
+
+```bash
+uv run python scripts/behaviour.py report
+```
+
 ## Check it
 
 ```bash
