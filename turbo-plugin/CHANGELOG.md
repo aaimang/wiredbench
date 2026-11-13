@@ -7,6 +7,14 @@ version the server sends, so a player sees the plugin they are talking to.
 Releases continue the numbering of Wiredbench's old web app, whose last was v0.11.0: the plugin's
 first release is 0.12.0. The 0.2.0 to 0.3.0 headings below were never released on their own.
 
+## 0.13.1 (2026-11-14)
+
+- `:pause [on|off]` and `:step [count]` do from chat what the trace window's Pause, Resume and Step
+  do. Whoever may change the room's wired may use them.
+- A preset imported into a new room waits until the player is in the room before placing it. It
+  went on as soon as the hotel recorded the player as heading there, was refused, and left the room
+  empty.
+
 ## 0.13.0 (2026-11-13)
 
 - The Wired trace window can pause the room's wired and step through it. Paused, triggers fire and
