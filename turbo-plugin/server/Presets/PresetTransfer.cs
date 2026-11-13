@@ -745,7 +745,13 @@ public sealed class PresetTransfer(IHotel hotel, PresetLibrary library)
 
         while (hotel.Clock.GetUtcNow() < until)
         {
-            if (await hotel.Players.CurrentRoomAsync(player, ct).ConfigureAwait(false) == room)
+            // In the room for the room's own sake, not just recorded as heading there: the
+            // layout calls answer nothing for a room no one is in yet, which an import into a
+            // new room read as a refusal and left the room empty.
+            if (
+                await hotel.Players.CurrentRoomAsync(player, ct).ConfigureAwait(false) == room
+                && (await hotel.Rooms.PlayersAsync(room, ct).ConfigureAwait(false)).Contains(player)
+            )
                 return true;
 
             await Task.Delay(ARRIVAL_POLL, hotel.Clock, ct).ConfigureAwait(false);

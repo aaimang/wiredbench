@@ -21,7 +21,7 @@ G-Presets.
 > | 5 | WIRED box parity report and admin page | Done |
 > | 6 | Behaviour comparison, Python engine against Turbo | Done |
 > | 7 | Room check and tutorials in the plugin; the old app removed | Done |
-> | 8 | Pause and step through a stack run (optional) | Built; not yet tried in the hotel |
+> | 8 | Pause and step through a stack run (optional) | Done; released in 0.13.0, `:pause` and `:step` in 0.13.1 |
 
 - **Status (app, before the move):** Phases 1 and 2 merged. Phase 3 (engine) built. Phase 0
   results were in `spikes/RESULTS.md`.
@@ -197,7 +197,7 @@ Commands use a fixed grammar and never run as code.
 | `:vars global` | Global variables |
 | `:set <scope> <target> <name> <value>` | Change a value |
 | `:trace on\|off` | Execution trace |
-| `:pause`, `:step` | Debugger controls |
+| `:pause [on\|off]`, `:step [count]` | Debugger controls (built, 0.13.1) |
 | `:as <user>` | Act as another user |
 
 ### Other pages
