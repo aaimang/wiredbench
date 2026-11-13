@@ -928,7 +928,7 @@
         "variableIds": [],
         "options": [
           0,
-          0
+          1
         ],
         "config": "seconds",
         "items": [],
@@ -942,7 +942,7 @@
         "variableIds": [],
         "options": [
           0,
-          0
+          1
         ],
         "config": "on_duty",
         "items": [],
@@ -956,7 +956,7 @@
         "variableIds": [],
         "options": [
           0,
-          0
+          1
         ],
         "config": "last_duty",
         "items": [],
@@ -970,7 +970,7 @@
         "variableIds": [],
         "options": [
           0,
-          0
+          1
         ],
         "config": "tmp",
         "items": [],

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
@@ -21,6 +22,17 @@ public sealed record TraceSetMessage(bool Enabled) : IPluginMessage;
 /// <summary>Client to server: the trace steps of the room I am in after <paramref name="AfterId"/>.</summary>
 [PluginMessage("wiredbench.trace.read")]
 public sealed record TraceReadMessage(long AfterId) : IPluginMessage;
+
+/// <summary>Client to server: pause or resume the wired of the room I am in; the reply carries the steps after <paramref name="AfterId"/>, which a resume may have run.</summary>
+[PluginMessage("wiredbench.trace.pause")]
+public sealed record TracePauseMessage(bool Paused, long AfterId) : IPluginMessage;
+
+/// <summary>Client to server: run the next <paramref name="Count"/> held effects of the room I am in; the reply carries the steps after <paramref name="AfterId"/>.</summary>
+[PluginMessage("wiredbench.trace.step")]
+public sealed record TraceStepMessage(int Count, long AfterId) : IPluginMessage;
+
+/// <summary>An effect a paused room holds back, as the window lists it.</summary>
+public sealed record HeldEffect(int StackId, int BoxId, string BoxLogic, int Remaining);
 
 /// <summary>One step of the trace, as the window lists it.</summary>
 public sealed record TraceStep(
@@ -49,7 +61,9 @@ public sealed record TraceStateMessage(
     bool Allowed,
     bool Enabled,
     long LastId,
-    ImmutableArray<TraceStep> Steps
+    ImmutableArray<TraceStep> Steps,
+    bool Paused,
+    ImmutableArray<HeldEffect> Held
 ) : IPluginMessage;
 
 /// <summary>Turns the trace on or off for the room the player is in, then answers with its state.</summary>
@@ -65,6 +79,41 @@ public sealed class TraceSetHandler(IHotel hotel) : IPluginMessageHandler<TraceS
             await hotel.Wired.SetTraceAsync(room, ctx.PlayerId, message.Enabled, ct).ConfigureAwait(false);
 
         await TraceReply.SendAsync(hotel, ctx, afterId: long.MaxValue, ct).ConfigureAwait(false);
+    }
+}
+
+/// <summary>Pauses or resumes the wired of the room the player is in, then answers with its state.</summary>
+public sealed class TracePauseHandler(IHotel hotel) : IPluginMessageHandler<TracePauseMessage>
+{
+    public async ValueTask HandleAsync(
+        TracePauseMessage message,
+        PluginMessageContext ctx,
+        CancellationToken ct
+    )
+    {
+        if (await hotel.Players.CurrentRoomAsync(ctx.PlayerId, ct).ConfigureAwait(false) is { } room)
+            await hotel.Wired.SetPausedAsync(room, ctx.PlayerId, message.Paused, ct).ConfigureAwait(false);
+
+        await TraceReply.SendAsync(hotel, ctx, afterId: message.AfterId, ct).ConfigureAwait(false);
+    }
+}
+
+/// <summary>Steps the held effects of the player's room, then answers with its state.</summary>
+public sealed class TraceStepHandler(IHotel hotel) : IPluginMessageHandler<TraceStepMessage>
+{
+    // A window asks for one or a few; the room is not left running for long in a single call.
+    private const int MAX_STEP = 50;
+
+    public async ValueTask HandleAsync(
+        TraceStepMessage message,
+        PluginMessageContext ctx,
+        CancellationToken ct
+    )
+    {
+        if (await hotel.Players.CurrentRoomAsync(ctx.PlayerId, ct).ConfigureAwait(false) is { } room)
+            await hotel.Wired.StepAsync(room, ctx.PlayerId, Math.Clamp(message.Count, 1, MAX_STEP), ct).ConfigureAwait(false);
+
+        await TraceReply.SendAsync(hotel, ctx, afterId: message.AfterId, ct).ConfigureAwait(false);
     }
 }
 
@@ -95,6 +144,10 @@ internal static class TraceReply
             ? await hotel.Wired.GetTraceAsync(id, ctx.PlayerId, afterId, ct).ConfigureAwait(false)
             : null;
 
+        var pause = room is { } paused
+            ? await hotel.Wired.GetPauseAsync(paused, ctx.PlayerId, ct).ConfigureAwait(false)
+            : null;
+
         await ctx.ReplyAsync(
                 new TraceStateMessage(
                     room?.Value ?? 0,
@@ -103,7 +156,9 @@ internal static class TraceReply
                     trace is not null,
                     trace?.Enabled ?? false,
                     trace?.LastId ?? 0,
-                    trace is null ? [] : [.. trace.Entries.TakeLast(MAX_STEPS_PER_REPLY).Select(ToStep)]
+                    trace is null ? [] : [.. trace.Entries.TakeLast(MAX_STEPS_PER_REPLY).Select(ToStep)],
+                    pause?.Paused ?? false,
+                    pause is null ? [] : [.. pause.Held.Select(x => new HeldEffect(x.StackId, x.BoxId, x.BoxLogic, x.Remaining))]
                 ),
                 ct
             )

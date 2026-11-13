@@ -100,6 +100,9 @@ on Windows.
 ## In the hotel
 
 - **Toolbar**: the Wiredbench window opens the Wired trace, Sandbox, Presets and Check windows.
+- **Pause and step**: the Wired trace window's Pause holds each stack's effects while triggers still
+  fire and conditions are asked; Step runs the next held effect and Resume runs the rest. A held
+  effect runs against the room as it is when stepped, and each step's execution budgets start afresh.
 - **Check room** reads every wired box in the room and lists what cannot work as built, without
   running it: errors (picks of furni no longer in the room, a slot or antenna with nothing picked,
   a keyword trigger with no keyword, a variable no box makes) and warnings (a stack nothing starts
