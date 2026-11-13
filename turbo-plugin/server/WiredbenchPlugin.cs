@@ -27,6 +27,7 @@ public sealed class WiredbenchPlugin : TurboPlugin
         services.AddSingleton<WiredUsage>();
         services.AddSingleton(_ => new Looks.HabboLookup());
         services.AddSingleton<Looks.LookCopier>();
+        services.AddSingleton<Inventory.InventoryWipe>();
     }
 
     /// <summary>The library gets the tutorial rooms it lacks (data/presets).</summary>

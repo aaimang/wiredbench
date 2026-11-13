@@ -8,12 +8,15 @@
  * - the Sandbox window (its button, or the `wiredbench/sandbox` link) saves and resets the room and
  *   gives wired kits;
  * - the Presets window (its button, or the `wiredbench/presets` link) imports and exports G-Presets files;
- * - the Check window (its button, or the `wiredbench/check` link) finds wired that cannot work as built.
+ * - the Check window (its button, or the `wiredbench/check` link) finds wired that cannot work as built;
+ * - the Delete inventory popups open when `:deleteinventory` asks, and ask twice before it deletes.
  */
 import { assetUrl, defineModule } from '@nitrodevco/client-module-sdk';
 
 import { CHECK_STATE, checkStore, toCheckState } from './check';
 import { CheckWindow } from './CheckWindow';
+import { INVENTORY_ASK, INVENTORY_DONE, inventoryStore, toAsk, toDone } from './inventory';
+import { InventoryWindow } from './InventoryWindow';
 import { STATUS, statusStore, toStatus } from './messages';
 import { PRESETS_STATE, presetsStore, toPresetsState } from './presets';
 import { PresetsWindow } from './PresetsWindow';
@@ -31,12 +34,22 @@ export default defineModule({
         api.messages.on(SANDBOX_STATE, data => sandboxStore.set(toSandboxState(data)));
         api.messages.on(PRESETS_STATE, data => presetsStore.set(toPresetsState(data)));
         api.messages.on(CHECK_STATE, data => checkStore.set(toCheckState(data)));
+        // `:deleteinventory`: each question and the end open the popup, which shows what the store holds.
+        api.messages.on(INVENTORY_ASK, data => {
+            inventoryStore.set(toAsk(data));
+            api.windows.open('inventory');
+        });
+        api.messages.on(INVENTORY_DONE, data => {
+            inventoryStore.set(toDone(data));
+            api.windows.open('inventory');
+        });
 
         api.windows.register('main', WiredbenchWindow);
         api.windows.register('trace', TraceWindow);
         api.windows.register('sandbox', SandboxWindow);
         api.windows.register('presets', PresetsWindow);
         api.windows.register('check', CheckWindow);
+        api.windows.register('inventory', InventoryWindow);
         api.toolbar.add({
             id: 'wiredbench',
             icon: assetUrl('toolbar.png'),
