@@ -99,6 +99,8 @@ public sealed class DeleteInventoryTests
         await _wipe.ConfirmAsync(_alice.Id, Ct);
 
         Assert.Equal(3, Held(_alice));
+        Assert.Equal(0, _hotel.Players.AssertSent<InventoryDoneMessage>(_alice.Id).Deleted);
+        Assert.Contains("too long", _hotel.Players.AssertSent<InventoryDoneMessage>(_alice.Id).Message);
     }
 
     [Fact]

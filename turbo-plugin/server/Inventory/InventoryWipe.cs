@@ -67,22 +67,29 @@ public sealed class InventoryWipe(IHotel hotel)
     public async Task ConfirmAsync(PlayerId player, CancellationToken ct)
     {
         int step;
+        bool lapsed;
 
         lock (_lock)
         {
-            if (!_asked.TryGetValue(player, out var at) || at.Until < hotel.Clock.GetUtcNow())
-            {
+            lapsed = !_asked.TryGetValue(player, out var at) || at.Until < hotel.Clock.GetUtcNow();
+            step = lapsed ? 0 : at.Step;
+
+            if (lapsed)
                 _asked.Remove(player);
 
-                return;
-            }
-
-            step = at.Step;
-
-            if (step == 1)
+            else if (step == 1)
                 _asked[player] = (2, hotel.Clock.GetUtcNow() + WAIT);
             else
                 _asked.Remove(player);
+        }
+
+        // A yes that came too late, or with nothing asked: the popup is waiting on an answer, so
+        // it is told nothing was deleted rather than left as it was.
+        if (lapsed)
+        {
+            await SendDoneAsync(player, 0, "That took too long, so nothing was deleted. Type :deleteinventory to start again.", ct).ConfigureAwait(false);
+
+            return;
         }
 
         if (step == 1)

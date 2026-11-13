@@ -14,6 +14,7 @@ first release is 0.12.0. The 0.2.0 to 0.3.0 headings below were never released o
   seconds, cancels it. Furni standing in rooms are not touched, and a rented furni stays. Every
   player may use it unless a rank is denied `wiredbench.command.deleteinventory`. Needs the
   `wiredbench-seams` change that adds `IHotelInventory.DeleteAllFurnitureAsync`.
+  A yes that comes after the 60 seconds, or with nothing asked, deletes nothing and the popup says so.
 
 ## 0.13.2 (2026-11-14)
 
