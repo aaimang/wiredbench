@@ -9,6 +9,12 @@ export const TRACE_SET = 'wiredbench.trace.set';
 /** Client to server: the steps of the room I am in after `afterId`. */
 export const TRACE_READ = 'wiredbench.trace.read';
 
+/** Client to server: pause or resume the wired of the room I am in. */
+export const TRACE_PAUSE = 'wiredbench.trace.pause';
+
+/** Client to server: run the next `count` held effects of the room I am in. */
+export const TRACE_STEP = 'wiredbench.trace.step';
+
 /** Server to client: the trace state and the steps asked for. */
 export const TRACE_STATE = 'wiredbench.trace.state';
 
@@ -16,7 +22,7 @@ export const TRACE_STATE = 'wiredbench.trace.state';
 export const STEP = { stack: 0, condition: 1, effect: 2 } as const;
 
 /** `WiredTraceOutcomeType`, by its value. */
-export const OUTCOMES = [ 'Passed', 'Failed', 'Stopped', 'Dropped', 'Ran', 'No effect', 'Threw', 'Delayed', 'Cancelled' ] as const;
+export const OUTCOMES = [ 'Passed', 'Failed', 'Stopped', 'Dropped', 'Ran', 'No effect', 'Threw', 'Delayed', 'Cancelled', 'Held' ] as const;
 
 export interface TraceStep {
     id: number;
@@ -32,6 +38,15 @@ export interface TraceStep {
     time: string;
 }
 
+/** An effect a paused room holds back; the first one listed runs next. */
+export interface HeldEffect {
+    stackId: number;
+    boxId: number;
+    boxLogic: string;
+    /** How many effects of its chain are left, this one included. */
+    remaining: number;
+}
+
 export interface TraceState {
     roomId: number;
     roomName: string;
@@ -40,6 +55,8 @@ export interface TraceState {
     enabled: boolean;
     lastId: number;
     steps: TraceStep[];
+    paused: boolean;
+    held: HeldEffect[];
 }
 
 const isNumber = (value: unknown): value is number => typeof value === 'number';
@@ -55,6 +72,16 @@ const toStep = (data: unknown): TraceStep | null => {
     return { id: x.id, runId: x.runId, stackId: x.stackId, step: x.step, outcome: x.outcome, boxId: x.boxId, boxLogic: x.boxLogic, boxCode: x.boxCode, detail: x.detail, time: (typeof x.time === 'string') ? x.time : '' };
 };
 
+const toHeld = (data: unknown): HeldEffect | null => {
+    if (!data || (typeof data !== 'object')) return null;
+
+    const x = data as Record<string, unknown>;
+
+    if (!isNumber(x.stackId) || !isNumber(x.boxId) || !isNumber(x.remaining) || (typeof x.boxLogic !== 'string')) return null;
+
+    return { stackId: x.stackId, boxId: x.boxId, boxLogic: x.boxLogic, remaining: x.remaining };
+};
+
 /** `wiredbench.trace.state` as the client hands it over, or null when it is not one. */
 export const toTraceState = (data: Record<string, unknown>): TraceState | null => {
     if (!isNumber(data.roomId) || (typeof data.allowed !== 'boolean') || (typeof data.enabled !== 'boolean') || !isNumber(data.lastId) || !Array.isArray(data.steps)) return null;
@@ -63,8 +90,14 @@ export const toTraceState = (data: Record<string, unknown>): TraceState | null =
 
     if (steps.some(x => x === null)) return null;
 
+    const held = Array.isArray(data.held) ? data.held.map(toHeld) : [];
+
+    if (held.some(x => x === null)) return null;
+
     return {
         roomId: data.roomId,
+        paused: data.paused === true,
+        held: held as HeldEffect[],
         roomName: (typeof data.roomName === 'string') ? data.roomName : '',
         timeZone: (typeof data.timeZone === 'string') ? data.timeZone : '',
         allowed: data.allowed,
@@ -118,9 +151,11 @@ export interface TraceView {
     enabled: boolean;
     lastId: number;
     steps: TraceStep[];
+    paused: boolean;
+    held: HeldEffect[];
 }
 
-export const EMPTY_VIEW: TraceView = { roomId: 0, roomName: '', timeZone: '', allowed: false, enabled: false, lastId: 0, steps: [] };
+export const EMPTY_VIEW: TraceView = { roomId: 0, roomName: '', timeZone: '', allowed: false, enabled: false, lastId: 0, steps: [], paused: false, held: [] };
 
 /** The view after a state message: a new room starts over, the same room adds the new steps. */
 export const applyState = (view: TraceView, state: TraceState): TraceView => {
@@ -129,7 +164,7 @@ export const applyState = (view: TraceView, state: TraceState): TraceView => {
     const fresh = state.steps.filter(x => !kept.length || (x.id > kept[kept.length - 1].id));
     const steps = [ ...kept, ...fresh ].slice(-MAX_KEPT_STEPS);
 
-    return { roomId: state.roomId, roomName: state.roomName, timeZone: state.timeZone, allowed: state.allowed, enabled: state.enabled, lastId: Math.max(sameRoom ? view.lastId : 0, state.lastId), steps };
+    return { roomId: state.roomId, roomName: state.roomName, timeZone: state.timeZone, allowed: state.allowed, enabled: state.enabled, lastId: Math.max(sameRoom ? view.lastId : 0, state.lastId), steps, paused: state.paused, held: state.held };
 };
 
 type Listener = (view: TraceView) => void;

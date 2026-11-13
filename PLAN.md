@@ -21,7 +21,7 @@ G-Presets.
 > | 5 | WIRED box parity report and admin page | Done |
 > | 6 | Behaviour comparison, Python engine against Turbo | Done |
 > | 7 | Room check and tutorials in the plugin; the old app removed | Done |
-> | 8 | Pause and step through a stack run (optional) | Open |
+> | 8 | Pause and step through a stack run (optional) | Built; not yet tried in the hotel |
 
 - **Status (app, before the move):** Phases 1 and 2 merged. Phase 3 (engine) built. Phase 0
   results were in `spikes/RESULTS.md`.

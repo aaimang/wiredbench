@@ -7,6 +7,16 @@ version the server sends, so a player sees the plugin they are talking to.
 Releases continue the numbering of Wiredbench's old web app, whose last was v0.11.0: the plugin's
 first release is 0.12.0. The 0.2.0 to 0.3.0 headings below were never released on their own.
 
+## 0.13.0 (2026-11-13)
+
+- The Wired trace window can pause the room's wired and step through it. Paused, triggers fire and
+  conditions are asked, but each stack's effects are held; Step runs the next one, and Resume runs
+  what is held. Needs the `wiredbench-seams` change that adds `IHotelWired.SetPausedAsync`,
+  `StepAsync` and `GetPauseAsync`.
+- The tutorial rooms' variables now hold a value. They were made without one, so a score or a
+  counter had nothing to give or change. A library copy that is still exactly the old file is
+  replaced at the next plugin load; one you edited is left as it is.
+
 ## 0.12.0 (2026-11-13)
 
 Wiredbench's first release as a Turbo plugin. The web app of v0.11.0 (room editor, Python engine,
