@@ -68,6 +68,77 @@ public sealed class PresetImportTests
         Assert.Equal((_fridge, 1, 2), (fridge.DefinitionId, fridge.X, fridge.Y));
     }
 
+    // The room an import running in the background has made.
+    private async Task<FakeRoom> NewRoomAsync(string name)
+    {
+        for (var i = 0; i < 100; i++)
+        {
+            if (_hotel.Rooms.All.FirstOrDefault(x => x.Name == name) is { } room)
+                return room;
+
+            await Task.Delay(50, Ct);
+        }
+
+        throw new InvalidOperationException($"No room called {name} was made");
+    }
+
+    [Fact]
+    public async Task An_import_into_a_new_room_leaves_the_caller_free_so_the_player_can_arrive()
+    {
+        _alice.Permissions.Add("command.giveitem");
+        _hotel.Inventory.Hold(_alice, _fridge);
+        _hotel.Rooms.Leave(_alice);
+
+        var reported = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        // What the message handler does: start it and return. It must come back at once, with the
+        // player still outside the new room: the client enters only after the handler is done.
+        var job = new PresetTransfer(_hotel, null!).StartNewRoomImport(
+            _alice.Id,
+            PRESET,
+            "Lab 2",
+            (text, _) =>
+            {
+                reported.TrySetResult(text);
+
+                return Task.CompletedTask;
+            }
+        );
+
+        Assert.False(job.IsCompleted);
+
+        await Task.Delay(700, Ct);
+
+        Assert.False(reported.Task.IsCompleted, "the import should be waiting for the player to arrive");
+
+        var created = await NewRoomAsync("Lab 2");
+
+        _hotel.Rooms.Enter(created, _alice);
+
+        var message = await reported.Task.WaitAsync(TimeSpan.FromSeconds(10), Ct);
+
+        Assert.Contains("Placed 3 of 3 furni.", message);
+        Assert.Equal(3, (await _hotel.Rooms.FurniAsync(created, Ct)).Count);
+    }
+
+    [Fact]
+    public async Task A_second_new_room_import_while_one_runs_is_refused()
+    {
+        _hotel.Rooms.Leave(_alice);
+
+        var transfer = new PresetTransfer(_hotel, null!);
+        var first = transfer.StartNewRoomImport(_alice.Id, PRESET, "Lab 2", (_, _) => Task.CompletedTask);
+        string? second = null;
+
+        await transfer.StartNewRoomImport(_alice.Id, PRESET, "Lab 3", (text, _) => Task.FromResult(second = text));
+
+        Assert.Equal("An import into a new room is already running.", second);
+        Assert.False(first.IsCompleted);
+
+        _hotel.Rooms.Enter(await NewRoomAsync("Lab 2"), _alice);
+        await first.WaitAsync(TimeSpan.FromSeconds(10), Ct);
+    }
+
     [Fact]
     public async Task A_player_who_may_give_furni_has_the_rest_made_and_the_wired_set_up()
     {

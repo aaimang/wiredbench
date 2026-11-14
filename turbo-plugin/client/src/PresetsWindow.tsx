@@ -31,9 +31,12 @@ export const PresetsWindow = ({ close }: ClientModuleWindowProps) => {
     const [ confirmDelete, setConfirmDelete ] = useState<number | null>(null);
 
     useEffect(() => {
+        // A reply with no message is the library read the window asks for every few seconds: it
+        // keeps the last report on screen, and does not end the work an import is still doing.
         const stop = presetsStore.listen(next => {
-            setState(next);
-            setBusy(false);
+            setState(prev => ({ ...next, message: next.message || prev.message }));
+
+            if (next.message) setBusy(false);
         });
 
         api.messages.send(PRESETS_READ, {});
@@ -51,6 +54,7 @@ export const PresetsWindow = ({ close }: ClientModuleWindowProps) => {
     const send = (name: string, data: Record<string, unknown>) => {
         setBusy(true);
         setConfirmDelete(null);
+        setState(prev => ({ ...prev, message: '' }));
         api.messages.send(name, data);
     };
 
@@ -74,7 +78,7 @@ export const PresetsWindow = ({ close }: ClientModuleWindowProps) => {
                     width={ INNER }
                     onIcon={ () => api.windows.open('main') } />
                 <Box layout={ { flexDirection: 'row', gap: GAP, alignItems: 'center' } }>
-                    <IconButton glyph="icon-refresh" tintColor={ TINT.blue } tooltip={ text('refresh_tip', 'Reload the library') } disabled={ busy } onTap={ () => send(PRESETS_READ, {}) } />
+                    <IconButton glyph="icon-refresh" tintColor={ TINT.blue } tooltip={ text('refresh_tip', 'Reload the library') } disabled={ busy } onTap={ () => api.messages.send(PRESETS_READ, {}) } />
                     <Button variant={ BUTTON.dark } disabled={ busy || !inRoom } tooltip={ text('export_tip', 'Save this room to the library as a G-Presets file') } layout={ { width: 150 } } onPointerTap={ () => send(PRESETS_EXPORT, { name: exportName(state.roomId, new Date()) }) }>
                         <ThemeText text={ text('export', 'Export this room') } />
                     </Button>

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
@@ -40,6 +41,64 @@ public sealed class PresetTransfer(IHotel hotel, PresetLibrary library)
     // How long an import into a new room waits for the player to arrive in it.
     private static readonly TimeSpan ARRIVAL_WAIT = TimeSpan.FromSeconds(20);
     private static readonly TimeSpan ARRIVAL_POLL = TimeSpan.FromMilliseconds(250);
+
+    // The longest a whole import into a new room may take, the wait for arrival included.
+    private static readonly TimeSpan NEW_ROOM_LIMIT = TimeSpan.FromMinutes(2);
+
+    private readonly ConcurrentDictionary<PlayerId, byte> _newRoomRunning = new();
+
+    /// <summary>
+    /// An import into a new room, started and left running: this returns at once, with the task
+    /// that finishes it. It must not be waited for in a message handler. The import waits for the
+    /// player to arrive in the room, and the client only enters the room after the server has
+    /// answered its "open this room" packet, which waits behind the handler of the message that
+    /// asked for the import: waited for there, the player never arrives and the import gave up
+    /// after the full wait with an empty room. <paramref name="report"/> gets the message for the
+    /// player when it is over, however it ended.
+    /// </summary>
+    public Task StartNewRoomImport(
+        PlayerId player,
+        string json,
+        string roomName,
+        Func<string, CancellationToken, Task> report
+    )
+    {
+        if (!_newRoomRunning.TryAdd(player, 0))
+            return report("An import into a new room is already running.", CancellationToken.None);
+
+        return Task.Run(async () =>
+        {
+            string message;
+
+            try
+            {
+                using var limit = new CancellationTokenSource(NEW_ROOM_LIMIT);
+
+                message = (await ImportAsync(player, json, true, roomName, limit.Token).ConfigureAwait(false)).Message;
+            }
+            catch (OperationCanceledException)
+            {
+                message = "The import took too long and was stopped; check the new room in your navigator.";
+            }
+            catch (Exception)
+            {
+                message = "The import failed; check the new room in your navigator.";
+            }
+            finally
+            {
+                _newRoomRunning.TryRemove(player, out _);
+            }
+
+            try
+            {
+                await report(message, CancellationToken.None).ConfigureAwait(false);
+            }
+            catch (Exception)
+            {
+                // The player left: nobody to tell.
+            }
+        });
+    }
 
     /// <summary>
     /// Imports a file into the room the player is in, or a new room (<paramref name="newRoom"/>).

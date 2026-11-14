@@ -7,6 +7,17 @@ version the server sends, so a player sees the plugin they are talking to.
 Releases continue the numbering of Wiredbench's old web app, whose last was v0.11.0: the plugin's
 first release is 0.12.0. The 0.2.0 to 0.3.0 headings below were never released on their own.
 
+## 0.14.1 (2026-11-14)
+
+- Importing a preset into a **new room** now works in the client. The import waited for the player
+  to arrive in the new room inside the message handler, but the client only enters the room after
+  the server has answered its "open this room" packet, which waits behind that handler: the player
+  arrived after the 20 second wait had ended and the room stayed empty. The import now runs in the
+  background and the Presets window gets its report when it is over (an import into a new room is
+  also refused while another of yours is still running).
+- The Presets window keeps the last report on screen: its library refresh every 10 seconds used to
+  replace the report with nothing, and ended the "Working..." line before a long import was over.
+
 ## 0.14.0 (2026-11-14)
 
 - `:deleteinventory` deletes every furni in your own inventory, after two popups: the first says how
