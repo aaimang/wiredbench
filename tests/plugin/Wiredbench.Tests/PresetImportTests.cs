@@ -122,6 +122,37 @@ public sealed class PresetImportTests
     }
 
     [Fact]
+    public async Task A_new_room_without_a_floor_plan_in_the_file_gets_the_largest_flat_floor()
+    {
+        _hotel.Rooms.Leave(_alice);
+
+        var job = new PresetTransfer(_hotel, null!).StartNewRoomImport(_alice.Id, PRESET, "Big", (_, _) => Task.CompletedTask);
+
+        _hotel.Rooms.Enter(await NewRoomAsync("Big"), _alice);
+        await job.WaitAsync(TimeSpan.FromSeconds(10), Ct);
+
+        var rows = (await NewRoomAsync("Big")).FloorPlan!.Split('\r');
+
+        Assert.Equal(64, rows.Length);
+        Assert.All(rows, row => Assert.Equal(new string('0', 64), row));
+    }
+
+    [Fact]
+    public async Task A_new_room_keeps_the_floor_plan_the_file_brings()
+    {
+        _hotel.Rooms.Leave(_alice);
+
+        var withPlan = PRESET.Replace("\"furni\":", "\"floorplan\": \"000\\r000\", \"furni\":");
+
+        var job = new PresetTransfer(_hotel, null!).StartNewRoomImport(_alice.Id, withPlan, "Small", (_, _) => Task.CompletedTask);
+
+        _hotel.Rooms.Enter(await NewRoomAsync("Small"), _alice);
+        await job.WaitAsync(TimeSpan.FromSeconds(10), Ct);
+
+        Assert.Equal("000\r000", (await NewRoomAsync("Small")).FloorPlan);
+    }
+
+    [Fact]
     public async Task A_second_new_room_import_while_one_runs_is_refused()
     {
         _hotel.Rooms.Leave(_alice);

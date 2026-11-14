@@ -15,6 +15,11 @@ first release is 0.12.0. The 0.2.0 to 0.3.0 headings below were never released o
   arrived after the 20 second wait had ended and the room stayed empty. The import now runs in the
   background and the Presets window gets its report when it is over (an import into a new room is
   also refused while another of yours is still running).
+- A new room made by an import gets a flat 64 x 64 floor (the most the hotel saves) when the file
+  brings no floor plan, so the tutorial presets' furni all have tiles; a file's own floor plan is
+  still used. Past 55 tiles a side the player needs `room.floorplan.large`, and saving a floor plan
+  needs a Builders Club membership or `room.floorplan.save_without_club`; when the hotel refuses
+  the plan, the report says so and the room keeps the default floor.
 - The Presets window keeps the last report on screen: its library refresh every 10 seconds used to
   replace the report with nothing, and ended the "Working..." line before a long import was over.
 

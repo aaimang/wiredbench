@@ -38,6 +38,16 @@ public sealed class PresetTransfer(IHotel hotel, PresetLibrary library)
 
     private const int NEW_ROOM_PLAYERS_MAX = 25;
 
+    /// <summary>
+    /// The side of the flat floor a new room gets when the file brings none: the longest the hotel
+    /// saves (<c>Turbo:Rooms:FloorPlanMaxAxisLength</c>, 64), so a preset's furni always have
+    /// tiles. Past 55 tiles a side it needs the player to hold <c>room.floorplan.large</c>.
+    /// </summary>
+    public const int NEW_ROOM_SIDE = 64;
+
+    /// <summary>A flat floor plan of <paramref name="side"/> by <paramref name="side"/> tiles, all at height 0.</summary>
+    public static string FlatFloorPlan(int side) => string.Join('\r', Enumerable.Repeat(new string('0', side), side));
+
     // How long an import into a new room waits for the player to arrive in it.
     private static readonly TimeSpan ARRIVAL_WAIT = TimeSpan.FromSeconds(20);
     private static readonly TimeSpan ARRIVAL_POLL = TimeSpan.FromMilliseconds(250);
@@ -143,6 +153,7 @@ public sealed class PresetTransfer(IHotel hotel, PresetLibrary library)
         }
 
         RoomId room;
+        string? planNote = null;
 
         if (newRoom)
         {
@@ -152,7 +163,7 @@ public sealed class PresetTransfer(IHotel hotel, PresetLibrary library)
                     roomName,
                     BASE_MODEL,
                     NEW_ROOM_PLAYERS_MAX,
-                    file.FloorPlan.Length > 0 ? file.FloorPlan : null,
+                    file.FloorPlan.Length > 0 ? file.FloorPlan : FlatFloorPlan(NEW_ROOM_SIDE),
                     ct
                 )
                 .ConfigureAwait(false);
@@ -161,6 +172,10 @@ public sealed class PresetTransfer(IHotel hotel, PresetLibrary library)
                 return new(null, "The hotel would not make a room: you may be at your room limit, or the name was refused.");
 
             room = created.Room;
+
+            if (!created.FloorPlanSaved)
+                planNote =
+                    "The hotel kept the room's default floor: it did not take the floor plan (a floor plan past 55 tiles a side needs room.floorplan.large, and saving one needs a Builders Club membership or room.floorplan.save_without_club).";
 
             await hotel
                 .Players.SendAsync(player, new RoomForwardMessageComposer { RoomId = room }, ct)
@@ -209,6 +224,9 @@ public sealed class PresetTransfer(IHotel hotel, PresetLibrary library)
         var placed = ids.Where(x => inRoom.Contains(x.Value)).ToDictionary(x => x.Key, x => x.Value);
 
         report.Insert(0, $"Placed {placed.Count} of {file.Furni.Length} furni.");
+
+        if (planNote is not null)
+            report.Add(planNote);
 
         if (placed.Count < ids.Count)
             report.Add($"{ids.Count - placed.Count} could not be placed (a blocked or missing tile, or the room's limits) and stay in your inventory.");
