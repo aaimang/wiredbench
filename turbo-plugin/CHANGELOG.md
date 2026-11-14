@@ -7,6 +7,13 @@ version the server sends, so a player sees the plugin they are talking to.
 Releases continue the numbering of Wiredbench's old web app, whose last was v0.11.0: the plugin's
 first release is 0.12.0. The 0.2.0 to 0.3.0 headings below were never released on their own.
 
+## 0.13.2 (2026-11-14)
+
+- Fixes 0.13.1, which the hotel refused to load: `:pause` and `:step` named no permission node, and
+  Turbo wants one on every command. They now use `wiredbench.command.pause` and
+  `wiredbench.command.step`, granted to everyone unless a rank is denied them. A test now checks
+  that every command names a node and that a source offers it.
+
 ## 0.13.1 (2026-11-14)
 
 - `:pause [on|off]` and `:step [count]` do from chat what the trace window's Pause, Resume and Step

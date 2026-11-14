@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Turbo.Contracts.Hotel;
 using Turbo.Primitives.Commands;
+using Turbo.Primitives.Players.Permissions;
 
 namespace Wiredbench;
 
@@ -19,10 +20,11 @@ public sealed record StepArguments(
 
 /// <summary>
 /// <c>:pause</c> holds the effects of the room's wired, <c>:pause off</c> lets them run on: the
-/// Trace window's Pause and Resume, from chat. Who may use it is who may change the room's wired;
-/// the hotel asks that, so the command has no permission of its own.
+/// Trace window's Pause and Resume, from chat. The node lets a rank type it; whether the player
+/// may change this room's wired is still the hotel's to say.
 /// </summary>
 [Command("pause", Description = "Hold the room's wired effects: :pause [on|off]")]
+[RequiresPermission(PausePermissions.PAUSE)]
 public sealed class PauseCommand(IHotel hotel) : ICommand<PauseArguments>
 {
     public const string PAUSED = "paused";
@@ -67,6 +69,7 @@ public sealed class PauseCommand(IHotel hotel) : ICommand<PauseArguments>
 
 /// <summary><c>:step</c> runs the next held effect, <c>:step 3</c> the next three.</summary>
 [Command("step", Description = "Run held wired effects: :step [count]")]
+[RequiresPermission(PausePermissions.STEP)]
 public sealed class StepCommand(IHotel hotel) : ICommand<StepArguments>
 {
     /// <summary>The Trace window asks for the same few at most.</summary>
@@ -100,4 +103,21 @@ public sealed class StepCommand(IHotel hotel) : ICommand<StepArguments>
             ? CommandResult.Fail(REFUSED)
             : CommandResult.Done(STEPPED, after.Stepped.ToString(), after.Held.Length.ToString());
     }
+}
+
+/// <summary>Who may type <c>:pause</c> and <c>:step</c>: everyone, unless a rank is denied them.</summary>
+public sealed class PausePermissions : IPermissionNodeSource
+{
+    public const string PAUSE = "wiredbench.command.pause";
+    public const string STEP = "wiredbench.command.step";
+
+    public string? Prefix => "wiredbench";
+
+    public IEnumerable<PermissionNodeDefinition> Nodes =>
+        [
+            new(PAUSE, "Hold the room's wired with :pause", GrantedByDefault: true),
+            new(STEP, "Step through held wired effects with :step", GrantedByDefault: true),
+        ];
+
+    public IEnumerable<PermissionMetaDefinition> MetaKeys => [];
 }

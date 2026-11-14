@@ -2,6 +2,7 @@ using Turbo.Primitives.Action;
 using Turbo.Primitives.Commands;
 using Turbo.Primitives.Rooms;
 using Turbo.Primitives.Players;
+using Turbo.Primitives.Players.Permissions;
 using Turbo.Primitives.Rooms.Object.Avatars;
 using Turbo.Testing;
 using Xunit;
@@ -84,5 +85,44 @@ public sealed class PauseCommandTests
         var result = await new StepCommand(_hotel).ExecuteAsync(Ctx, new StepArguments(3), Ct);
 
         Assert.Equal(StepCommand.STEPPED, result.Status);
+    }
+}
+
+/// <summary>
+/// The hotel refuses to load a plugin with a command that names no permission node, which took
+/// the whole plugin down once; so every command the plugin has names one, and a source offers it.
+/// </summary>
+public sealed class CommandDeclarationTests
+{
+    private static readonly System.Reflection.Assembly PLUGIN = typeof(PauseCommand).Assembly;
+
+    private static IEnumerable<Type> Commands =>
+        PLUGIN.GetTypes().Where(x => x.GetCustomAttributes(typeof(CommandAttribute), false).Length > 0);
+
+    [Fact]
+    public void Every_command_names_a_permission_node()
+    {
+        Assert.NotEmpty(Commands);
+
+        foreach (var command in Commands)
+            Assert.True(
+                command.GetCustomAttributes(typeof(RequiresPermissionAttribute), false).Length > 0,
+                $"{command.Name} has no [RequiresPermission]"
+            );
+    }
+
+    [Fact]
+    public void Every_node_a_command_names_is_offered_by_a_source()
+    {
+        var offered = PLUGIN
+            .GetTypes()
+            .Where(x => typeof(IPermissionNodeSource).IsAssignableFrom(x) && x is { IsAbstract: false, IsInterface: false })
+            .SelectMany(x => ((IPermissionNodeSource)Activator.CreateInstance(x)!).Nodes)
+            .Select(x => x.Node)
+            .ToHashSet();
+
+        foreach (var command in Commands)
+        foreach (var node in command.GetCustomAttributes(typeof(RequiresPermissionAttribute), false).Cast<RequiresPermissionAttribute>().SelectMany(x => x.Nodes))
+            Assert.True(offered.Contains(node), $"{command.Name} needs {node}, which no source offers");
     }
 }
