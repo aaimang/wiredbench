@@ -106,6 +106,19 @@ public sealed class PresetsImportHandler(IHotel hotel, PresetLibrary library, Pr
 
         if (await library.GetAsync(message.Id, ct).ConfigureAwait(false) is not { } preset)
             report = "That preset is no longer in the library.";
+        else if (message.NewRoom)
+        {
+            // Left running: the player's client can only enter the new room once this handler is
+            // done (see StartNewRoomImport), and the report comes when the import is over.
+            _ = transfer.StartNewRoomImport(
+                ctx.PlayerId,
+                preset.Json,
+                preset.Name,
+                (text, token) => PresetsReply.SendAsync(hotel, library, ctx.PlayerId, text, token).AsTask()
+            );
+
+            return;
+        }
         else
             report = (
                 await transfer
