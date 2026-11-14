@@ -7,6 +7,15 @@ version the server sends, so a player sees the plugin they are talking to.
 Releases continue the numbering of Wiredbench's old web app, whose last was v0.11.0: the plugin's
 first release is 0.12.0. The 0.2.0 to 0.3.0 headings below were never released on their own.
 
+## 0.14.0 (2026-11-14)
+
+- `:deleteinventory` deletes every furni in your own inventory, after two popups: the first says how
+  many, the second asks once more before anything is deleted. Closing a popup, or waiting 60
+  seconds, cancels it. Furni standing in rooms are not touched, and a rented furni stays. Every
+  player may use it unless a rank is denied `wiredbench.command.deleteinventory`. Needs the
+  `wiredbench-seams` change that adds `IHotelInventory.DeleteAllFurnitureAsync`.
+  A yes that comes after the 60 seconds, or with nothing asked, deletes nothing and the popup says so.
+
 ## 0.13.2 (2026-11-14)
 
 - Fixes 0.13.1, which the hotel refused to load: `:pause` and `:step` named no permission node, and
